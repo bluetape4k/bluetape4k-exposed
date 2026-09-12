@@ -1,4 +1,3 @@
-
 tasks.named<Test>("test") {
     useJUnitPlatform {
         excludeTags("driver-timeout")

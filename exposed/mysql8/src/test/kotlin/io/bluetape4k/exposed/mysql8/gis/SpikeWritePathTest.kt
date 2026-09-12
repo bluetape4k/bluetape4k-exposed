@@ -1,5 +1,21 @@
 package io.bluetape4k.exposed.mysql8.gis
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.warn
+import org.junit.jupiter.api.Test
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.PrecisionModel
+import org.locationtech.jts.io.ByteOrderValues
+import org.locationtech.jts.io.WKBReader
+import org.locationtech.jts.io.WKBWriter
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.sql.DriverManager
+
 /**
  * ## Spike 결과 (2026-03-28)
  *
@@ -18,23 +34,8 @@ package io.bluetape4k.exposed.mysql8.gis
  * - write: `buildMysqlInternalFormat(srid, WKBWriter.write(geom))` → `ps.setBytes()`
  * - read: `rs.getBytes()` → 4바이트 SRID skip → `WKBReader.read()` — 축 swap 불필요
  */
-
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.logging.info
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
-import org.junit.jupiter.api.Test
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.PrecisionModel
-import org.locationtech.jts.io.ByteOrderValues
-import org.locationtech.jts.io.WKBReader
-import org.locationtech.jts.io.WKBWriter
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.sql.DriverManager
-
 class SpikeWritePathTest: AbstractMySqlGisTest() {
+
     companion object: KLogging() {
         val geometryFactory = GeometryFactory(PrecisionModel(), 4326)
     }
@@ -88,7 +89,7 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     resultWkb.shouldNotBeNull()
                     val result = WKBReader().read(resultWkb)
                     result.shouldNotBeNull()
-                    log.info { "ST_AsWKB 결과: x=${result.coordinate.x}, y=${result.coordinate.y} (lat, lng 순서)" }
+                    log.debug { "ST_AsWKB 결과: x=${result.coordinate.x}, y=${result.coordinate.y} (lat, lng 순서)" }
                     // ST_AsWKB는 SRS 축 순서(lat, lng)로 반환 → x=lat, y=lng
                     result.coordinate.x shouldBeEqualTo lat
                     result.coordinate.y shouldBeEqualTo lng
@@ -105,7 +106,7 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     resultWkb.shouldNotBeNull()
                     val result = WKBReader().read(resultWkb)
                     result.shouldNotBeNull()
-                    log.info { "ST_AsWKB(axis-order=long-lat): x=${result.coordinate.x}, y=${result.coordinate.y}" }
+                    log.debug { "ST_AsWKB(axis-order=long-lat): x=${result.coordinate.x}, y=${result.coordinate.y}" }
                     result.coordinate.x shouldBeEqualTo lng
                     result.coordinate.y shouldBeEqualTo lat
                 }
@@ -143,7 +144,7 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     rs.next()
                     val stLng = rs.getDouble(1)
                     val stLat = rs.getDouble(2)
-                    log.info { "ST_Longitude=$stLng, ST_Latitude=$stLat" }
+                    log.debug { "ST_Longitude=$stLng, ST_Latitude=$stLat" }
                     stLng shouldBeEqualTo lng
                     stLat shouldBeEqualTo lat
                 }
@@ -189,7 +190,7 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     val resultWkb = rawBytes.copyOfRange(4, rawBytes.size)
                     val result = WKBReader().read(resultWkb)
                     result.shouldNotBeNull()
-                    log.info { "raw Internal Format: srid=$srid, x=${result.coordinate.x}, y=${result.coordinate.y}" }
+                    log.debug { "raw Internal Format: srid=$srid, x=${result.coordinate.x}, y=${result.coordinate.y}" }
                     // raw getBytes()는 원본 WKB 바이트 그대로 반환 (lng, lat 순서 유지)
                     result.coordinate.x shouldBeEqualTo lng
                     result.coordinate.y shouldBeEqualTo lat
@@ -216,9 +217,9 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     ps.setBytes(1, internal)
                     ps.executeUpdate()
                 }
-                log.info { "SRID mismatch: 자동 수용됨 (예외 없음)" }
+                log.debug { "SRID mismatch: 자동 수용됨 (예외 없음)" }
             } catch (e: Exception) {
-                log.info { "SRID mismatch: 예외 발생 = ${e.message}" }
+                log.warn(e) { "SRID mismatch: 예외 발생" }
             }
         }
     }
@@ -248,7 +249,7 @@ class SpikeWritePathTest: AbstractMySqlGisTest() {
                     rs.next()
                     val stLng = rs.getDouble(1)
                     val stLat = rs.getDouble(2)
-                    log.info { "WKT fallback: ST_Longitude=$stLng, ST_Latitude=$stLat" }
+                    log.debug { "WKT fallback: ST_Longitude=$stLng, ST_Latitude=$stLat" }
                     stLng shouldBeEqualTo lng
                     stLat shouldBeEqualTo lat
                 }

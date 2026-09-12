@@ -902,8 +902,12 @@ public final class io/bluetape4k/exposed/tests/JdbcFixtureExecutionKt {
 }
 
 public final class io/bluetape4k/exposed/tests/JdbcTestDbFixture {
+	public static final field Companion Lio/bluetape4k/exposed/tests/JdbcTestDbFixture$Companion;
 	public final fun getDatabase ()Lorg/jetbrains/exposed/v1/jdbc/Database;
 	public final fun getKey ()Ljava/lang/Object;
+}
+
+public final class io/bluetape4k/exposed/tests/JdbcTestDbFixture$Companion : io/bluetape4k/logging/KLogging {
 }
 
 public final class io/bluetape4k/exposed/tests/JdbcTestDbFixtureKt {

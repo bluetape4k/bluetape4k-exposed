@@ -4,17 +4,21 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
+import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.ObjectStreamClass
-import org.junit.jupiter.api.Test
 
 /**
  * [ExposedCursorPage]의 커서 진행 상태 불변식을 검증합니다.
  */
 class ExposedCursorPageTest {
+
+    companion object: KLogging()
+
     @Test
     fun `마지막 페이지는 다음 커서 없이 반환된다`() {
         val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = null, hasNext = false)

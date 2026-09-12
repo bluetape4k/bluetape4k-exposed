@@ -1,7 +1,9 @@
 package io.bluetape4k.exposed.trino
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotBlank
 import java.io.Serializable
-import java.util.Properties
+import java.util.*
 
 /**
  * 운영 및 성능 tuning에 사용하는 typed Trino JDBC connection property입니다.
@@ -20,14 +22,16 @@ data class TrinoConnectionOptions(
     val extraHeaders: Map<String, String> = emptyMap(),
 ): Serializable {
 
-    companion object {
+    companion object: KLogging() {
         private const val serialVersionUID: Long = 1L
     }
 
     init {
-        encoding?.let { require(it.isNotBlank()) { "encoding must not be blank." } }
-        source?.let { require(it.isNotBlank()) { "source must not be blank." } }
+        encoding?.requireNotBlank("encoding")
+        source?.requireNotBlank("source")
         require(clientTags.none { it.isBlank() }) { "clientTags must not contain blank entries." }
+
+
         validatePairs("sessionProperties", sessionProperties)
         validatePairs("extraCredentials", extraCredentials)
         validatePairs("extraHeaders", extraHeaders)

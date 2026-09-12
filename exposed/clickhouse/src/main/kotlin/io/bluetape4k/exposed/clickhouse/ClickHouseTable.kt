@@ -44,11 +44,13 @@ abstract class ClickHouseTable(
             .map { sql -> sanitizeForClickHouse(sql) + "\n${engine.toClause()}" }
     }
 }
-private val CH_CONSTRAINT_PK_REGEX = Regex(",?\\s*CONSTRAINT\\s+\\S+\\s+PRIMARY\\s+KEY\\s*\\([^)]*\\)", RegexOption.IGNORE_CASE)
+
+private val CH_CONSTRAINT_PK_REGEX =
+    Regex(",?\\s*CONSTRAINT\\s+\\S+\\s+PRIMARY\\s+KEY\\s*\\([^)]*\\)", RegexOption.IGNORE_CASE)
 private val CH_INLINE_PK_REGEX = Regex("\\s+PRIMARY\\s+KEY(?!\\s*\\()", RegexOption.IGNORE_CASE)
 private val CH_REFERENCES_REGEX = Regex(
     "\\s+REFERENCES\\s+\\S+\\s*\\([^)]*\\)" +
-        "(\\s+ON\\s+(DELETE|UPDATE)\\s+(CASCADE|RESTRICT|NO ACTION|SET NULL|SET DEFAULT))*",
+            "(\\s+ON\\s+(DELETE|UPDATE)\\s+(CASCADE|RESTRICT|NO ACTION|SET NULL|SET DEFAULT))*",
     RegexOption.IGNORE_CASE,
 )
 private val CH_NOT_NULL_REGEX = Regex("\\s+NOT\\s+NULL\\b", RegexOption.IGNORE_CASE)
@@ -117,10 +119,11 @@ private fun maskDdlQuotedRegions(sql: String): String {
             quote == '\'' || quote == '"' || quote == '`' -> {
                 index = quotedRegionEnd(sql, index)
             }
-            sql.startsWith("--", index) -> index = sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
+            sql.startsWith("--", index) ->
+                index = sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
             sql.startsWith("/*", index) ->
                 index = sql.indexOf("*/", index + 2).takeIf { it >= 0 }?.plus(2) ?: sql.length
-            else -> {
+            else                        -> {
                 index++
                 continue
             }

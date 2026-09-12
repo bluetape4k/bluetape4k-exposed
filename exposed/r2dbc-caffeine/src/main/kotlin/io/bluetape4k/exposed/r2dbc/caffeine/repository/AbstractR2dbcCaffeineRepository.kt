@@ -23,12 +23,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
@@ -95,31 +95,31 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     abstract override val table: IdTable<ID>
 
-/** [ResultRow]를 [E] 엔티티로 변환합니다. */
+    /** [ResultRow]를 [E] 엔티티로 변환합니다. */
     abstract override suspend fun ResultRow.toEntity(): E
 
-/** 기존 행을 갱신할 때 엔티티 필드를 매핑합니다. */
+    /** 기존 행을 갱신할 때 엔티티 필드를 매핑합니다. */
     abstract fun UpdateStatement.updateEntity(entity: E)
 
-/** 새 행을 삽입할 때 엔티티 필드를 매핑합니다. */
+    /** 새 행을 삽입할 때 엔티티 필드를 매핑합니다. */
     abstract fun BatchInsertStatement.insertEntity(entity: E)
 
-/** 엔티티 ID를 캐시 키 문자열로 직렬화합니다. 기본 구현은 [toString]을 사용합니다. */
+    /** 엔티티 ID를 캐시 키 문자열로 직렬화합니다. 기본 구현은 [toString]을 사용합니다. */
     open fun serializeKey(id: ID): String = id.toString()
 
     // -------------------------------------------------------------------------
     // R2dbcCacheRepository 필수 프로퍼티 구현
     // -------------------------------------------------------------------------
 
-/** 키 접두사로 사용할 캐시 이름입니다. */
+    /** 키 접두사로 사용할 캐시 이름입니다. */
     override val cacheName: String
         get() = config.keyPrefix
 
-/** 캐시 저장 모드입니다. Caffeine 저장소는 항상 로컬 모드를 사용합니다. */
+    /** 캐시 저장 모드입니다. Caffeine 저장소는 항상 로컬 모드를 사용합니다. */
     override val cacheMode: CacheMode
         get() = CacheMode.LOCAL
 
-/** 이 저장소에 구성된 캐시 쓰기 전략입니다. */
+    /** 이 저장소에 구성된 캐시 쓰기 전략입니다. */
     override val cacheWriteMode: CacheWriteMode
         get() = config.writeMode
 
@@ -167,6 +167,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     private var writeBehindCloseStartedAtNanos = 0L
     private var writeBehindCloseWaitBudgetNanos = 0L
     private var writeBehindCloseDeadlineNanos = 0L
+
     @Volatile
     private var writeBehindCloseOutcome: WriteBehindCloseOutcome? = null
     private val writeBehindWorkerState = AtomicReference(
@@ -267,7 +268,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     when {
                         cause == null -> WriteBehindWorkerCompletion.DRAINED
                         cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
-                        else -> WriteBehindWorkerCompletion.FAILED
+                        else          -> WriteBehindWorkerCompletion.FAILED
                     }
                 )
                 writeBehindLifecycleLock.withLock {
@@ -438,7 +439,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             lastFlushError.set(e)
             log.warn {
                 "Write-Behind event: component=r2dbc operation=flush " +
-                    "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
             }
             return false
         }
@@ -468,7 +469,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
                 if (remainingNanos <= 0L) continue
-                    delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
             } else {
                 delay(backoffMillis)
             }
@@ -566,7 +567,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 } catch (_: Exception) {
                     log.warn {
                         "Cache event: component=r2dbc operation=cache_warming failureKind=error " +
-                            "queueDepth=${writeBehindQueueDepth.get()}"
+                                "queueDepth=${writeBehindQueueDepth.get()}"
                     }
                 }
             }
@@ -582,7 +583,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
     override fun extractId(entity: E): ID =
         error(
             "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
+                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
         )
 
     // -------------------------------------------------------------------------
@@ -679,7 +680,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 }
             }
 
-            else -> cache.put(key, CompletableFuture.completedFuture(entity))  // READ_ONLY: 캐시만 갱신
+            else                        -> cache.put(
+                key,
+                CompletableFuture.completedFuture(entity)
+            )  // READ_ONLY: 캐시만 갱신
         }
     }
 
@@ -785,8 +789,8 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun CacheWorkerState.isWriteBehindTerminalOrDraining(): Boolean =
         this == CacheWorkerState.DRAINING ||
-            this == CacheWorkerState.FAILED ||
-            this == CacheWorkerState.STOPPED
+                this == CacheWorkerState.FAILED ||
+                this == CacheWorkerState.STOPPED
 
     private fun markWriteBehindCachePublicationStarted(key: String) {
         writeBehindCachePublicationsInProgress.compute(key) { _, count ->
@@ -878,7 +882,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                 ?: state.name
         return IllegalStateException(
             "Write-Behind worker is not accepting writes because the repository is closing, closed, or terminal. " +
-                "cacheName=$cacheName, workerState=$state, terminalReason=$terminalReason"
+                    "cacheName=$cacheName, workerState=$state, terminalReason=$terminalReason"
         )
     }
 
@@ -977,7 +981,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             if (!writeBehindJob.isCompleted) {
                 log.warn {
                     "Write-Behind event: component=r2dbc operation=close " +
-                        "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()}"
+                            "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()}"
                 }
             }
         } else {
@@ -991,7 +995,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         } catch (_: Exception) {
             log.warn {
                 "Write-Behind event: component=r2dbc operation=close_cleanup " +
-                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -1070,15 +1074,15 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
 
         if (restoreInterrupt) Thread.currentThread().interrupt()
         when (closeOutcome) {
-            WriteBehindCloseOutcome.TIMEOUT -> log.warn {
+            WriteBehindCloseOutcome.TIMEOUT     -> log.warn {
                 "Write-Behind event: component=r2dbc operation=close " +
-                    "failureKind=close_timeout queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=close_timeout queueDepth=${writeBehindQueueDepth.get()}"
             }
             WriteBehindCloseOutcome.INTERRUPTED -> log.warn {
                 "Write-Behind event: component=r2dbc operation=close " +
-                    "failureKind=close_interrupted queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=close_interrupted queueDepth=${writeBehindQueueDepth.get()}"
             }
-            else -> Unit
+            else                                -> Unit
         }
         return closeOutcome
     }
@@ -1090,14 +1094,14 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         val outcome = writeBehindCloseOutcome
         val completed = outcome == null || outcome == WriteBehindCloseOutcome.COMPLETED
         val drained = completed && snapshot.queueDepth == 0 &&
-            writeBehindWorkerState.get() == CacheWorkerState.STOPPED
+                writeBehindWorkerState.get() == CacheWorkerState.STOPPED
         val kind = if (drained) {
             CloseCompletionKind.COMPLETED
         } else {
             when (outcome) {
                 WriteBehindCloseOutcome.TIMEOUT -> CloseCompletionKind.TIMEOUT
                 WriteBehindCloseOutcome.INTERRUPTED -> CloseCompletionKind.INTERRUPTED
-                else -> CloseCompletionKind.FAILED
+                else                            -> CloseCompletionKind.FAILED
             }
         }
         writeBehindCoordinator.publishCloseCompletion(
@@ -1124,13 +1128,13 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             when (reason) {
                 WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
                 WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindFailureKind.CLOSE_INTERRUPTED
-                WriteBehindCloseFailureReason.WORKER -> WriteBehindFailureKind.WORKER
+                WriteBehindCloseFailureReason.WORKER  -> WriteBehindFailureKind.WORKER
             }
         )
         writeBehindCloseOutcome = when (reason) {
             WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindCloseOutcome.TIMEOUT
             WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindCloseOutcome.INTERRUPTED
-            WriteBehindCloseFailureReason.WORKER -> WriteBehindCloseOutcome.FAILED
+            WriteBehindCloseFailureReason.WORKER  -> WriteBehindCloseOutcome.FAILED
         }
         writeBehindLifecycleChanged.signalAll()
     }
@@ -1162,13 +1166,17 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         val failureReason: WriteBehindCloseFailureReason?
             get() = when (this) {
                 COMPLETED -> null
-                TIMEOUT -> WriteBehindCloseFailureReason.TIMEOUT
+                TIMEOUT   -> WriteBehindCloseFailureReason.TIMEOUT
                 INTERRUPTED -> WriteBehindCloseFailureReason.INTERRUPTED
-                FAILED -> WriteBehindCloseFailureReason.WORKER
+                FAILED    -> WriteBehindCloseFailureReason.WORKER
             }
     }
 
-    private enum class WriteBehindCloseFailureReason { TIMEOUT, INTERRUPTED, WORKER }
+    private enum class WriteBehindCloseFailureReason {
+        TIMEOUT,
+        INTERRUPTED,
+        WORKER
+    }
 
     private class WriteBehindCloseFailure(
         val reason: WriteBehindCloseFailureReason,

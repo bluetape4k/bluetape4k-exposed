@@ -2,9 +2,12 @@ package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class StarRocksTestServerLifecycleTest {
+
+    companion object: KLogging()
 
     @Test
     fun `container reuse is disabled by default`() {
@@ -17,6 +20,7 @@ class StarRocksTestServerLifecycleTest {
         StarRocksTestServer.shouldReuseContainer(
             mapOf(StarRocksTestServer.REUSE_ENV to "true")
         ).shouldBeTrue()
+
         StarRocksTestServer.create(
             mapOf(StarRocksTestServer.REUSE_ENV to "true")
         ).reusable.shouldBeTrue()

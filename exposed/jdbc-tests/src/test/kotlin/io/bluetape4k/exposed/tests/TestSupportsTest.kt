@@ -1,18 +1,21 @@
 package io.bluetape4k.exposed.tests
 
-import kotlinx.coroutines.runBlocking
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
 
 class TestSupportsTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private object UtilityTable: Table("utility_extension_test") {
         val id = integer("id")

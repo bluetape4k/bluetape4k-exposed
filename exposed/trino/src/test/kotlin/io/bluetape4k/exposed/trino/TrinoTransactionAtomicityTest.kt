@@ -1,12 +1,13 @@
 package io.bluetape4k.exposed.trino
 
-import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * Trino autocommit 모드에서의 트랜잭션 원자성 동작을 검증하는 테스트.
@@ -16,6 +17,8 @@ import io.bluetape4k.assertions.assertFailsWith
  * 이 테스트는 해당 특성에 따른 부분 반영 및 nested transaction 동작을 명시적으로 검증합니다.
  */
 class TrinoTransactionAtomicityTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `정상 흐름 - INSERT 2건 모두 반영`() = withEventsTable {

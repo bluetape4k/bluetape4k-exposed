@@ -7,7 +7,6 @@ import com.google.api.services.bigquery.model.QueryResponse
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
-import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest.Companion.setupEventsTable
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Op
@@ -101,8 +100,11 @@ abstract class AbstractBigQueryTest {
         fun setupEventsTable() {
             // 이전 테스트 실행에서 남은 테이블 정리 (에뮬레이터는 DROP TABLE IF EXISTS 미지원)
             runCatching { runRawQuery("DROP TABLE ${Events.tableName}") }
+
             // Exposed Table 정의에서 DDL 자동 생성 후 실행
-            with(bqContext) { Events.execCreateTable() }
+            with(bqContext) {
+                Events.execCreateTable()
+            }
         }
     }
 

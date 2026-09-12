@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.Schema
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

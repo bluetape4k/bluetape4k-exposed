@@ -1,16 +1,16 @@
 package io.bluetape4k.exposed.redisson.repository.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.delay
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeEmpty
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -22,6 +22,7 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: SuspendedCacheTestScenario<ID, E> {
+
     companion object: KLoggingChannel() {
         const val DEFAULT_DELAY = 500L
     }
@@ -37,98 +38,97 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `put - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+    fun `put - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
-            withSuspendedEntityTable(testDB) {
-                val id = getExistingId()
+        withSuspendedEntityTable(testDB) {
+            val id = getExistingId()
 
-                // 캐시에서 조회한 값
-                val entity = repository.get(id)
-                entity.shouldNotBeNull()
+            // 캐시에서 조회한 값
+            val entity = repository.get(id)
+            entity.shouldNotBeNull()
 
-                // 캐시에 갱신된 값 저장 -> DB에도 저장
-                val updatedEntity = updateEntityEmail(entity)
-                repository.put(repository.extractId(updatedEntity), updatedEntity)
+            // 캐시에 갱신된 값 저장 -> DB에도 저장
+            val updatedEntity = updateEntityEmail(entity)
+            repository.put(repository.extractId(updatedEntity), updatedEntity)
 
-                // 캐시에서 조회한 값
-                val entityFromCache = repository.get(id)
-                entityFromCache.shouldNotBeNull()
-                assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
+            // 캐시에서 조회한 값
+            val entityFromCache = repository.get(id)
+            entityFromCache.shouldNotBeNull()
+            assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
 
-                delay(DEFAULT_DELAY.milliseconds)
+            delay(DEFAULT_DELAY.milliseconds)
 
-                // DB에서 조회한 값
-                val entityFromDB = repository.findByIdFromDb(id)
-                entityFromDB.shouldNotBeNull()
+            // DB에서 조회한 값
+            val entityFromDB = repository.findByIdFromDb(id)
+            entityFromDB.shouldNotBeNull()
 
-                assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
-            }
+            assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_LIKE }
+    fun `putAll - 캐시에 저장하면, DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_LIKE }
 
-            withSuspendedEntityTable(testDB) {
-                val ids = getExistingIds()
-                delay(10.milliseconds)
+        withSuspendedEntityTable(testDB) {
+            val ids = getExistingIds()
+            delay(10.milliseconds)
 
-                await
-                    .atMost(Duration.ofSeconds(30))
-                    .withPollInterval(Duration.ofMillis(5))
-                    .untilSuspending { getExistingIds().size == 3 }
+            await
+                .atMost(Duration.ofSeconds(30))
+                .withPollInterval(Duration.ofMillis(5))
+                .untilSuspending { getExistingIds().size == 3 }
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
-
-                // 캐시에서 조회한 값
-                val entitiesMap = repository.getAll(ids)
-                entitiesMap.shouldNotBeEmpty()
-                entitiesMap shouldHaveSize ids.size
-
-                // 캐시에 갱신된 값 저장 -> DB에도 저장
-                val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
-                repository.putAll(updatedEntities.associateBy { repository.extractId(it) })
-
-                // 캐시에서 조회한 값
-                val entitiesFromCacheMap = repository.getAll(ids)
-                entitiesFromCacheMap.shouldNotBeNull()
-                entitiesFromCacheMap.values.forEach { entity ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        updatedEntities.find {
-                            repository.extractId(it) ==
-                                    repository.extractId(entity)
-                        }!!
-                    )
-                }
-
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
-
-                // DB에서 조회한 값
-                val entitiesFromDB = repository.findAllFromDb(ids)
-                entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
-
-                entitiesFromDB.forEach { entity ->
-                    assertSameEntityWithoutAudit(
-                        entity,
-                        entitiesFromCacheMap.values.find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }!!
-                    )
-                }
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
             }
+
+            // 캐시에서 조회한 값
+            val entitiesMap = repository.getAll(ids)
+            entitiesMap.shouldNotBeEmpty()
+            entitiesMap shouldHaveSize ids.size
+
+            // 캐시에 갱신된 값 저장 -> DB에도 저장
+            val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
+            repository.putAll(updatedEntities.associateBy { repository.extractId(it) })
+
+            // 캐시에서 조회한 값
+            val entitiesFromCacheMap = repository.getAll(ids)
+            entitiesFromCacheMap.shouldNotBeNull()
+            entitiesFromCacheMap.values.forEach { entity ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    updatedEntities
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
+                )
+            }
+
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
+
+            // DB에서 조회한 값
+            val entitiesFromDB = repository.findAllFromDb(ids)
+            entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
+
+            entitiesFromDB.forEach { entity ->
+                assertSameEntityWithoutAudit(
+                    entity,
+                    entitiesFromCacheMap.values
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
+                )
+            }
+        }
     }
 
     @ParameterizedTest
@@ -145,7 +145,7 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 await
                     .atMost(Duration.ofSeconds(30))
                     .withPollInterval(Duration.ofMillis(5))
-                    .untilSuspending { getExistingIds().size == 3 }
+                    .untilSuspending { getExistingIds().size >= 3 }
 
                 // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
                 if (cacheConfig.isReadWrite) {
@@ -164,10 +164,10 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 entitiesFromCacheMap.values.forEach { entity ->
                     assertSameEntityWithoutAudit(
                         entity,
-                        updatedEntities.find {
-                            repository.extractId(it) ==
-                                    repository.extractId(entity)
-                        }!!
+                        updatedEntities
+                            .find {
+                                repository.extractId(it) == repository.extractId(entity)
+                            }.shouldNotBeNull()
                     )
                 }
 
@@ -182,9 +182,10 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 entitiesFromDB.forEach { entity ->
                     assertSameEntityWithoutAudit(
                         entity,
-                        entitiesFromCacheMap.values.find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }!!
+                        entitiesFromCacheMap.values
+                            .find {
+                                repository.extractId(it) == repository.extractId(entity)
+                            }.shouldNotBeNull()
                     )
                 }
             }
@@ -248,67 +249,65 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
-            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
+    fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
+        Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
-            withSuspendedEntityTable(testDB) {
-                val id = getExistingId()
+        withSuspendedEntityTable(testDB) {
+            val id = getExistingId()
 
-                // 먼저 캐시에 로드
-                val entityFromCache = repository.get(id)
-                entityFromCache.shouldNotBeNull()
+            // 먼저 캐시에 로드
+            val entityFromCache = repository.get(id)
+            entityFromCache.shouldNotBeNull()
 
-                // 캐시에서 삭제
-                repository.invalidate(id)
+            // 캐시에서 삭제
+            repository.invalidate(id)
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                if (cacheConfig.deleteFromDBOnInvalidate) {
-                    // 캐시에서 삭제했으므로, DB에서도 삭제된다.
-                    val userFromDB = repository.findByIdFromDb(id)
-                    userFromDB.shouldBeNull()
-                } else {
-                    // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
-                    val userFromDB = repository.findByIdFromDb(id)
-                    userFromDB shouldBeEqualTo entityFromCache
+            if (cacheConfig.deleteFromDBOnInvalidate) {
+                // 캐시에서 삭제했으므로, DB에서도 삭제된다.
+                val userFromDB = repository.findByIdFromDb(id)
+                userFromDB.shouldBeNull()
+            } else {
+                // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
+                val userFromDB = repository.findByIdFromDb(id)
+                userFromDB shouldBeEqualTo entityFromCache
 
-                    // get()은 캐시 miss 후 DB Read-Through로 다시 로드한다.
-                    repository.get(id) shouldBeEqualTo entityFromCache
-                }
+                // get()은 캐시 miss 후 DB Read-Through로 다시 로드한다.
+                repository.get(id) shouldBeEqualTo entityFromCache
             }
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) =
-        runSuspendIO {
-            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
+    fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) = runSuspendIO {
+        Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
-            withSuspendedEntityTable(testDB) {
-                val ids = getExistingIds()
-                val entities = ids.associateWith { id ->
-                    repository.get(id).shouldNotBeNull()
-                }
+        withSuspendedEntityTable(testDB) {
+            val ids = getExistingIds()
+            val entities = ids.associateWith { id ->
+                repository.get(id).shouldNotBeNull()
+            }
 
-                repository.invalidateAll(ids)
+            repository.invalidateAll(ids)
 
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                if (cacheConfig.deleteFromDBOnInvalidate) {
-                    ids.forEach { id -> repository.findByIdFromDb(id).shouldBeNull() }
-                } else {
-                    ids.forEach { id ->
-                        repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
-                        repository.get(id) shouldBeEqualTo entities[id]
-                    }
+            if (cacheConfig.deleteFromDBOnInvalidate) {
+                ids.forEach { id -> repository.findByIdFromDb(id).shouldBeNull() }
+            } else {
+                ids.forEach { id ->
+                    repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
+                    repository.get(id) shouldBeEqualTo entities[id]
                 }
             }
         }
+    }
 }

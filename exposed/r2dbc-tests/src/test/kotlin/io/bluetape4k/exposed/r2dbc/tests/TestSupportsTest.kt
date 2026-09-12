@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -19,6 +20,8 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 
 class TestSupportsTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     object UtilityTable: IntIdTable("utility_r2dbc_table") {
         val name = varchar("name", 64)
@@ -92,7 +95,7 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
         }
 
         cancellation.suppressed.shouldBeEmpty()
-        (cancellation.message?.contains("cleanup cancelled") ?: false).shouldBeFalse()
+        cancellation.message shouldNotContain ("cleanup cancelled")
     }
 
     @Test
@@ -113,6 +116,6 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `connect 는 db 필드를 설정한다`(testDB: TestDB) = runSuspendIO {
         val database = testDB.connect()
-        testDB.db.shouldNotBeNull() shouldBeEqualTo database
+        testDB.db shouldBeEqualTo database
     }
 }

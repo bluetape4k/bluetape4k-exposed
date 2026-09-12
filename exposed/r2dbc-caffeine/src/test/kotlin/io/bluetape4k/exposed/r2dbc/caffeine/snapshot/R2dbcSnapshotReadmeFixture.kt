@@ -5,7 +5,6 @@ import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
-import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.R2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.r2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageInvalidation
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageSnapshot
@@ -14,7 +13,7 @@ import java.io.Serializable
 
 data class R2dbcOrderRow(val id: Long, val description: String)
 
-data class R2dbcOrderSnapshot(val id: Long, val description: String) : Serializable {
+data class R2dbcOrderSnapshot(val id: Long, val description: String): Serializable {
     private companion object {
         private const val serialVersionUID: Long = 1L
     }

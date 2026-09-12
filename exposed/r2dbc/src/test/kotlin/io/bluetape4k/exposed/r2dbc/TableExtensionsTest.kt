@@ -1,16 +1,16 @@
 package io.bluetape4k.exposed.r2dbc
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldContainIgnoringCase
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldContainIgnoringCase
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeEmpty
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
@@ -21,11 +21,11 @@ import org.junit.jupiter.params.provider.MethodSource
  *
  * 각 suspend 확장 함수가 올바른 메타데이터를 반환하는지 검증합니다.
  */
-class TableExtensionsTest : AbstractExposedR2dbcTest() {
+class TableExtensionsTest: AbstractExposedR2dbcTest() {
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
-    private val tester = object : IntIdTable("r2dbc_table_ext_tester") {
+    private val tester = object: IntIdTable("r2dbc_table_ext_tester") {
         val name = varchar("name", 255)
         val price = integer("price")
 
@@ -75,7 +75,7 @@ class TableExtensionsTest : AbstractExposedR2dbcTest() {
     fun `suspendSequences 는 PostgreSQL 에서 시퀀스 목록을 반환한다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in TestDB.ALL_POSTGRES_LIKE }
 
-        val identityTable = object : IntIdTable("r2dbc_identity_seq_table") {}
+        val identityTable = object: IntIdTable("r2dbc_identity_seq_table") {}
 
         withTables(testDB, identityTable) {
             val sequences = identityTable.suspendSequences()

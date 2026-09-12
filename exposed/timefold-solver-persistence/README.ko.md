@@ -17,16 +17,16 @@
 
 ## 지원 Score 유형
 
-| Score 유형                        | 설명                      | DB 저장 형식                  |
-|---------------------------------|-------------------------|---------------------------|
-| `SimpleScore`                   | 단일 점수 값                 | BigInt                    |
-| `SimpleBigDecimalScore`         | BigDecimal 단일 점수        | VarChar                   |
+| Score 유형                      | 설명                        | DB 저장 형식               |
+|---------------------------------|-----------------------------|----------------------------|
+| `SimpleScore`                   | 단일 점수 값                | BigInt                     |
+| `SimpleBigDecimalScore`         | BigDecimal 단일 점수        | VarChar                    |
 | `HardSoftScore`                 | Hard/Soft 2단계 점수        | VarChar (예: "100/-50")    |
-| `HardSoftBigDecimalScore`       | BigDecimal Hard/Soft 점수 | VarChar                   |
+| `HardSoftBigDecimalScore`       | BigDecimal Hard/Soft 점수   | VarChar                    |
 | `HardMediumSoftScore`           | Hard/Medium/Soft 3단계 점수 | VarChar (예: "100/50/-30") |
-| `HardMediumSoftBigDecimalScore` | BigDecimal 3단계 점수       | VarChar                   |
-| `BendableScore`                 | 가변적 Hard/Soft 레벨 점수     | VarChar                   |
-| `BendableBigDecimalScore`       | BigDecimal Bendable 점수  | VarChar                   |
+| `HardMediumSoftBigDecimalScore` | BigDecimal 3단계 점수       | VarChar                    |
+| `BendableScore`                 | 가변적 Hard/Soft 레벨 점수  | VarChar                    |
+| `BendableBigDecimalScore`       | BigDecimal Bendable 점수    | VarChar                    |
 
 ## Score 컬럼 계열
 

@@ -2,13 +2,15 @@ package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
@@ -28,6 +30,7 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.CredentialR2dbcCaffeineRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
@@ -50,10 +53,12 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import org.junit.jupiter.api.parallel.Isolated
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.*
 import java.time.Duration
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -61,8 +66,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
-import org.junit.jupiter.api.Timeout
-import org.junit.jupiter.api.parallel.Isolated
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -277,7 +280,7 @@ class WriteBehindCacheTest {
                     writeBehindJobOf(repository).join()
 
                     repository.updateAttempts.get() shouldBeEqualTo 2
-                    findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
+                    findActorById(existingId)?.firstName shouldBeEqualTo updated.firstName
                 } finally {
                     releaseCachePut.countDown()
                     repository.close()
@@ -320,7 +323,7 @@ class WriteBehindCacheTest {
                     releaseFlush.countDown()
                     closeFuture.get(5, TimeUnit.SECONDS)
 
-                    findActorById(existingId).shouldNotBeNull().firstName shouldBeEqualTo updated.firstName
+                    findActorById(existingId)?.firstName shouldBeEqualTo updated.firstName
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
                 } finally {
                     releaseFlush.countDown()
@@ -659,7 +662,7 @@ class WriteBehindCacheTest {
 
                     val loaded = repository.get(persisted.id).shouldNotBeNull()
                     loaded.firstName shouldBeEqualTo persisted.firstName
-                    loaded.firstName.equals(dirty.firstName).shouldBeFalse()
+                    loaded.firstName shouldNotBeEqualTo dirty.firstName
                 } finally {
                     completeCachePublication(repository, key)
                     repository.close()
@@ -705,8 +708,8 @@ class WriteBehindCacheTest {
                         releaseCachePut.countDown()
 
                         val failure = putFailure.await().shouldNotBeNull()
-                        (failure is IllegalStateException).shouldBeTrue()
-                        failure.message.orEmpty().contains("terminal").shouldBeTrue()
+                        failure.shouldBeInstanceOf<IllegalStateException>()
+                        failure.message shouldContain "terminal"
                         repository.cache.synchronous().getIfPresent(actor.id.toString()).shouldBeNull()
                     }
                 } finally {
@@ -982,10 +985,12 @@ class WriteBehindCacheTest {
                     repository.put(blocked.id, blocked)
                     flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     repository.put(queued.id, queued)
+
                     val failure = assertFailsWith<IllegalStateException> {
                         repository.put(cancelled.id, cancelled)
                     }
-                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
+
+                    failure.message shouldContain "queue is full"
                     repository.cache.synchronous().getIfPresent(cancelled.id.toString()).shouldBeNull()
                     repository.validateConsistency().queueDepth shouldBeEqualTo 2
                 } finally {
@@ -1014,10 +1019,12 @@ class WriteBehindCacheTest {
                     awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
 
                     repository.get(actor.id).shouldNotBeNull().id shouldBeEqualTo actor.id
+
                     val failure = assertFailsWith<IllegalStateException> {
                         repository.put(actor.id, actor.copy(firstName = "rejected-terminal"))
                     }
-                    failure.message.orEmpty().contains("terminal").shouldBeTrue()
+
+                    failure.message shouldContain "terminal"
                     repository.validateConsistency().queueDepth shouldBeEqualTo 0
                 } finally {
                     repository.close()

@@ -1,4 +1,3 @@
-
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }
@@ -28,6 +27,5 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mysql)
 
-    testRuntimeOnly(bt4k.mysql.connector.j)
-    testRuntimeOnly(bt4k.hikaricp)
+    testImplementation(bt4k.hikaricp)
 }

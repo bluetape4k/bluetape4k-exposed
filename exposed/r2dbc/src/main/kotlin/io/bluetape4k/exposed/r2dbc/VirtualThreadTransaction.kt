@@ -2,8 +2,8 @@ package io.bluetape4k.exposed.r2dbc
 
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.r2dbc.spi.IsolationLevel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher

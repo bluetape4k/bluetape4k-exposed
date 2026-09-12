@@ -1,14 +1,18 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.assertions.shouldStartWith
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.redisson.api.options.LocalCachedMapOptions
 import org.redisson.client.codec.StringCodec
 import java.io.Serializable
 
 class SnapshotNamespaceFingerprintTest {
+
+    companion object: KLogging()
 
     @Test
     fun `fingerprint hashes the sorted canonical UTF-8 allowlist`() {
@@ -25,9 +29,10 @@ class SnapshotNamespaceFingerprintTest {
         )
         val fieldLines = canonical.lineSequence().drop(1).filter(String::isNotBlank).toList()
 
-        canonical.startsWith("bt4k-snapshot-fingerprint/v1\n").shouldBeTrue()
+        canonical shouldStartWith "bt4k-snapshot-fingerprint/v1\n"
         fieldLines.map { it.substringBefore('=') } shouldBeEqualTo fieldLines.map { it.substringBefore('=') }.sorted()
         canonical.toByteArray(Charsets.UTF_8).decodeToString() shouldBeEqualTo canonical
+
         snapshotNamespaceFingerprint(
             backend = "redisson",
             namespace = "orders-snapshot:v1",
@@ -62,10 +67,10 @@ class SnapshotNamespaceFingerprintTest {
         fingerprint(codec, MaliciousPayload::class.java) shouldBeEqualTo baseline
         first.snapshot.namespace shouldBeEqualTo second.snapshot.namespace
         MaliciousPayload.toStringCalls shouldBeEqualTo 0
-        baseline.contains("redis://").shouldBeFalse()
-        baseline.contains("username").shouldBeFalse()
-        baseline.contains("credential").shouldBeFalse()
-        baseline.contains("secret").shouldBeFalse()
+        baseline shouldNotContain "redis://"
+        baseline shouldNotContain "username"
+        baseline shouldNotContain "credential"
+        baseline shouldNotContain "secret"
     }
 
     @Test
@@ -73,13 +78,59 @@ class SnapshotNamespaceFingerprintTest {
         val codec = snapshotRedissonCodec(StringCodec(), "json-v1", longSnapshotIdentifierPolicy())
         val baseline = fingerprint(codec, Payload::class.java)
         val variants = listOf(
-            snapshotNamespaceFingerprint("other", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            snapshotNamespaceFingerprint("redisson", "other-snapshot:v1", Long::class.java, Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Class.forName("java.lang.Long"), Payload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, OtherPayload::class.java, "orders-v3", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            snapshotNamespaceFingerprint("redisson", "orders-snapshot:v1", Long::class.java, Payload::class.java, "orders-v4", codec, LocalCachedMapOptions.SyncStrategy.INVALIDATE),
-            fingerprint(snapshotRedissonCodec(StringCodec(), "json-v2", longSnapshotIdentifierPolicy()), Payload::class.java),
-            fingerprint(snapshotRedissonCodec(StringCodec(), "json-v1", uuidSnapshotIdentifierPolicy()), Payload::class.java),
+            snapshotNamespaceFingerprint(
+                "other",
+                "orders-snapshot:v1",
+                Long::class.java,
+                Payload::class.java,
+                "orders-v3",
+                codec,
+                LocalCachedMapOptions.SyncStrategy.INVALIDATE
+            ),
+            snapshotNamespaceFingerprint(
+                "redisson",
+                "other-snapshot:v1",
+                Long::class.java,
+                Payload::class.java,
+                "orders-v3",
+                codec,
+                LocalCachedMapOptions.SyncStrategy.INVALIDATE
+            ),
+            snapshotNamespaceFingerprint(
+                "redisson",
+                "orders-snapshot:v1",
+                Class.forName("java.lang.Long"),
+                Payload::class.java,
+                "orders-v3",
+                codec,
+                LocalCachedMapOptions.SyncStrategy.INVALIDATE
+            ),
+            snapshotNamespaceFingerprint(
+                "redisson",
+                "orders-snapshot:v1",
+                Long::class.java,
+                OtherPayload::class.java,
+                "orders-v3",
+                codec,
+                LocalCachedMapOptions.SyncStrategy.INVALIDATE
+            ),
+            snapshotNamespaceFingerprint(
+                "redisson",
+                "orders-snapshot:v1",
+                Long::class.java,
+                Payload::class.java,
+                "orders-v4",
+                codec,
+                LocalCachedMapOptions.SyncStrategy.INVALIDATE
+            ),
+            fingerprint(
+                snapshotRedissonCodec(StringCodec(), "json-v2", longSnapshotIdentifierPolicy()),
+                Payload::class.java
+            ),
+            fingerprint(
+                snapshotRedissonCodec(StringCodec(), "json-v1", uuidSnapshotIdentifierPolicy()),
+                Payload::class.java
+            ),
         )
 
         variants.all { it != baseline }.shouldBeTrue()
@@ -96,8 +147,8 @@ class SnapshotNamespaceFingerprintTest {
             synchronizationStrategy = LocalCachedMapOptions.SyncStrategy.INVALIDATE,
         )
 
-    private data class Payload(val value: String) : Serializable
-    private data class OtherPayload(val value: String) : Serializable
+    private data class Payload(val value: String): Serializable
+    private data class OtherPayload(val value: String): Serializable
 
     private class MaliciousPayload private constructor() {
         override fun toString(): String {

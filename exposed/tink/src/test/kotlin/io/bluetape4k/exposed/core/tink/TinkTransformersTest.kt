@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.core.tink
 
-import io.bluetape4k.tink.aead.TinkAeads
-import io.bluetape4k.tink.daead.TinkDaeads
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.tink.aead.TinkAeads
+import io.bluetape4k.tink.daead.TinkDaeads
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 class TinkTransformersTest {
     @Test

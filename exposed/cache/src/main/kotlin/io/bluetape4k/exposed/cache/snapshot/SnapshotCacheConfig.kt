@@ -27,7 +27,7 @@ data class SnapshotCacheConfig(
     val maxStagedMutations: Int = 10_000,
     /** 한 transaction에 참여 가능한 store 개수 상한입니다. */
     val maxParticipatingStores: Int = 8,
-) : Serializable {
+): Serializable {
 
     init {
         require(NAMESPACE_PATTERN.matches(namespace)) {
@@ -83,7 +83,7 @@ data class CaffeineSnapshotCacheConfig(
     val fenceStripes: Int = 1_024,
     /** 동시에 유지할 수 있는 opaque miss token 상한입니다. */
     val maxOutstandingMissTokens: Int = 10_000,
-) : Serializable {
+): Serializable {
 
     init {
         require(maximumSize > 0L) { "maximumSize[$maximumSize] must be positive." }

@@ -1,30 +1,32 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.exposed.r2dbc.tests.withDb
-import io.bluetape4k.exposed.r2dbc.tests.withTables
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withDb
+import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -47,7 +49,7 @@ import java.util.concurrent.TimeoutException
  */
 class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
-    private data class TestEntity(val id: Long, val name: String) : Serializable
+    private data class TestEntity(val id: Long, val name: String): Serializable
 
     private object TestTable: LongIdTable("r2dbc_entity_map_loader_test") {
         val name = varchar("name", 64)
@@ -224,7 +226,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
     fun `loadAllKeys timeout 로그는 timeout과 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
         withDb(TestDB.H2) {
             val secret = "password=r2dbc-timeout-secret"
-            val loader = object : R2dbcEntityMapLoader<Long, TestEntity>(
+            val loader = object: R2dbcEntityMapLoader<Long, TestEntity>(
                 loadByIdFromDB = { null },
                 loadAllIdsFromDB = { awaitCancellation() },
             ) {
@@ -314,7 +316,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 val failure = assertFailsWith<ExecutionException> {
                     iterator.next().toCompletableFuture().get()
                 }
-                failure.cause?.javaClass shouldBeEqualTo NoSuchElementException::class.java
+                failure.cause shouldBeInstanceOf NoSuchElementException::class
             }
         }
     }
@@ -331,7 +333,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) { TestEntity(this[TestTable.id].value, this[TestTable.name]) }
 
             val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
-            ids shouldBeEqualTo emptyList()
+            ids.shouldBeEmpty()
         }
     }
 
@@ -363,7 +365,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
         val iter = items.iterator()
         var peek: String? = null
 
-        val asyncIter = object : org.redisson.api.AsyncIterator<String> {
+        val asyncIter = object: org.redisson.api.AsyncIterator<String> {
             override fun hasNext(): java.util.concurrent.CompletionStage<Boolean?> {
                 if (peek != null) return CompletableFuture.completedFuture(true)
                 return if (iter.hasNext()) {
@@ -451,7 +453,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 val failure = assertFailsWith<ExecutionException> {
                     iterator.hasNext().toCompletableFuture().get()
                 }
-                failure.cause?.javaClass shouldBeEqualTo expectedFailure.javaClass
+                failure.cause shouldBeInstanceOf expectedFailure::class
                 failure.cause?.message shouldBeEqualTo expectedFailure.message
                 configuredMaxAttempts shouldBeEqualTo 1
             }
@@ -484,7 +486,7 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 failure.cause?.javaClass shouldBeEqualTo expectedFailure.javaClass
                 failure.cause?.message shouldBeEqualTo expectedFailure.message
 
-                val handlerFailure = withTimeout(5_000) { observedFailure.await() }
+                val handlerFailure = withTimeout(timeMillis = 5_000) { observedFailure.await() }
                 handlerFailure.javaClass shouldBeEqualTo expectedFailure.javaClass
                 handlerFailure.message shouldBeEqualTo expectedFailure.message
             } finally {
@@ -575,13 +577,13 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
                 loader.useLoader(TestDB.H2) {
                     val pending = loader.loadAllKeys().hasNext().toCompletableFuture()
-                    withTimeout(5_000) { producerStarted.await() }
+                    withTimeout(timeMillis = 5_000) { producerStarted.await() }
 
                     pending.cancel(true)
 
                     // 소비자가 더 이상 iterator를 기다리지 않으면 producer transaction도 남아 있으면 안 됩니다.
-                    withTimeout(5_000) { producerCancelled.await() }
-                    withTimeout(5_000) { producerCompleted.await() }
+                    withTimeout(timeMillis = 5_000) { producerCancelled.await() }
+                    withTimeout(timeMillis = 5_000) { producerCompleted.await() }
                 }
             } finally {
                 scope.cancel()
@@ -616,13 +618,13 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
                 loader.useLoader(TestDB.H2) {
                     val iterator = loader.loadAllKeys()
-                    withTimeout(5_000) { producerStarted.await() }
+                    withTimeout(timeMillis = 5_000) { producerStarted.await() }
 
                     iterator.close()
 
-                    withTimeout(5_000) { producerCancelled.await() }
+                    withTimeout(timeMillis = 5_000) { producerCancelled.await() }
                     iterator.closeAndJoin()
-                    withTimeout(5_000) { producerCompleted.await() }
+                    withTimeout(timeMillis = 5_000) { producerCompleted.await() }
                 }
             } finally {
                 scope.cancel()
@@ -657,12 +659,12 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
                 loader.useLoader(TestDB.H2) {
                     loader.loadAllKeys()
-                    withTimeout(5_000) { producerStarted.await() }
+                    withTimeout(timeMillis = 5_000) { producerStarted.await() }
 
                     scope.cancel()
 
-                    withTimeout(5_000) { producerCancelled.await() }
-                    withTimeout(5_000) { producerCompleted.await() }
+                    withTimeout(timeMillis = 5_000) { producerCancelled.await() }
+                    withTimeout(timeMillis = 5_000) { producerCompleted.await() }
                 }
             } finally {
                 scope.cancel()
@@ -690,11 +692,13 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
             loader.useLoader(TestDB.H2) {
                 loader.loadAllKeys()
-                withTimeout(5_000) { producerStarted.await() }
+                withTimeout(timeMillis = 5_000) { producerStarted.await() }
 
                 loader.close()
-                withTimeout(5_000) { producerCancelled.await() }
-                assertFailsWith<IllegalStateException> { loader.loadAllKeys() }
+                withTimeout(timeMillis = 5_000) { producerCancelled.await() }
+                assertFailsWith<IllegalStateException> {
+                    loader.loadAllKeys()
+                }
             }
         }
     }
@@ -702,11 +706,11 @@ class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
     @Test
     fun `loadAllKeys - timeout은 transaction marker write를 rollback한다`() = runSuspendIO {
         withTables(TestDB.H2, TestTable) {
-            val loader = object : R2dbcEntityMapLoader<Long, TestEntity>(
+            val loader = object: R2dbcEntityMapLoader<Long, TestEntity>(
                 loadByIdFromDB = { null },
                 loadAllIdsFromDB = {
                     TestTable.insert { it[name] = "timeout-marker" }
-                    delay(100)
+                    delay(timeMillis = 100)
                 },
             ) {
                 override fun loadAllIdsTimeoutMillis(): Long = 20

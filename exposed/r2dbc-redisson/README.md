@@ -17,7 +17,8 @@ Combines Exposed R2DBC with Redisson caching to implement coroutine-friendly Rea
     - each database statement executed by `loadAllKeys()` uses an Exposed transaction `queryTimeout` of 30 seconds (the property unit is seconds); the full enumeration budget is a separate 60-second timeout delivered as an `AsyncIterator` failure
     - a caller-owned ambient transaction keeps its own retry policy, so a partial ID can be observed again after an outer retry; exactly-once observation requires deduplication/idempotent handling or buffering external side effects until success, while retrying the whole enumeration restores completeness only. The default loader scope isolates one failed load from subsequent calls
 - **Repository abstraction**: Common cache + DB access pattern (`R2dbcRedissonRepository`)
-- **Coroutines-native repository API**: Cache and repository calls are `suspend` functions; Redisson SPI adapters remain async internally
+- **Coroutines-native repository
+  API**: Cache and repository calls are `suspend` functions; Redisson SPI adapters remain async internally
 - **Near Cache support**: Two-tier Local Cache + Redis caching
 - **Read-Through/Write-Through/Write-Behind**: Multiple cache patterns supported
 
@@ -155,11 +156,7 @@ val nearCacheConfig = RedissonCacheConfig.readOnly(
 
 ## Redis Codec Safety
 
-`RedissonCacheConfig` constants use Fory-family binary codecs by default. Repository constructors
-reject Fory/Kryo/JDK-family binary codecs unless `trustedBinaryCache = true` is passed explicitly.
-Use that opt-in only for private Redis instances whose contents are not writable by untrusted
-clients. For dependency-facing Redis data, provide a reviewed custom codec instead of relying on
-the default binary codec.
+`RedissonCacheConfig` constants use Fory-family binary codecs by default. Repository constructors reject Fory/Kryo/JDK-family binary codecs unless `trustedBinaryCache = true` is passed explicitly. Use that opt-in only for private Redis instances whose contents are not writable by untrusted clients. For dependency-facing Redis data, provide a reviewed custom codec instead of relying on the default binary codec.
 
 ## Cache Patterns
 
@@ -183,28 +180,28 @@ In `WRITE_BEHIND` mode, `put(id, entity)` and bulk writes return after Redisson 
 
 ## R2dbcRedissonRepository Key Methods
 
-| Method                                  | Description                                                |
-|-----------------------------------------|------------------------------------------------------------|
-| `containsKey(id)`                            | Check ID existence in cache (suspend)                      |
-| `get(id)`                               | Retrieve entity from cache, load from DB on miss (suspend) |
-| `getAll(ids, batchSize)`                | Batch retrieve from cache (suspend)                        |
-| `findByIdFromDb(id)`                    | Bypass cache, query DB directly (suspend)                  |
-| `findAllFromDb(ids)`                    | Bypass cache, batch query DB (suspend)                     |
-| `findAll(limit, offset, sortBy, where)` | Load from DB and sync cache (suspend)                      |
-| `put(id, entity)`                       | Store one entity in cache; writer behavior depends on cache mode (suspend) |
-| `putAll(entities, batchSize)`           | Store an ID-to-entity map in cache; writer behavior depends on cache mode (suspend) |
-| `upsertAll(entities, batchSize)`        | Explicit bulk cache upsert with batched map writes (suspend) |
-| `invalidate(id)`                        | Remove one cache entry; database delete is opt-in via `deleteFromDBOnInvalidate` (suspend) |
+| Method                                  | Description                                                                                       |
+|-----------------------------------------|---------------------------------------------------------------------------------------------------|
+| `containsKey(id)`                       | Check ID existence in cache (suspend)                                                             |
+| `get(id)`                               | Retrieve entity from cache, load from DB on miss (suspend)                                        |
+| `getAll(ids, batchSize)`                | Batch retrieve from cache (suspend)                                                               |
+| `findByIdFromDb(id)`                    | Bypass cache, query DB directly (suspend)                                                         |
+| `findAllFromDb(ids)`                    | Bypass cache, batch query DB (suspend)                                                            |
+| `findAll(limit, offset, sortBy, where)` | Load from DB and sync cache (suspend)                                                             |
+| `put(id, entity)`                       | Store one entity in cache; writer behavior depends on cache mode (suspend)                        |
+| `putAll(entities, batchSize)`           | Store an ID-to-entity map in cache; writer behavior depends on cache mode (suspend)               |
+| `upsertAll(entities, batchSize)`        | Explicit bulk cache upsert with batched map writes (suspend)                                      |
+| `invalidate(id)`                        | Remove one cache entry; database delete is opt-in via `deleteFromDBOnInvalidate` (suspend)        |
 | `invalidateAll(ids)`                    | Remove multiple cache entries; database delete is opt-in via `deleteFromDBOnInvalidate` (suspend) |
-| `clear()`                               | Clear map entries; the default path uses writerless cache-only removal (suspend) |
-| `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern (suspend)          |
+| `clear()`                               | Clear map entries; the default path uses writerless cache-only removal (suspend)                  |
+| `invalidateByPattern(pattern, count)`   | Remove cache entries matching a pattern (suspend)                                                 |
 
 ## Cache Configuration Constants (`RedissonCacheConfig`)
 
 Commonly used cache mode constants are provided as named constants.
 
-| Constant                                              | Description                      |
-|-------------------------------------------------------|----------------------------------|
+| Constant                                                 | Description                      |
+|----------------------------------------------------------|----------------------------------|
 | `RedissonCacheConfig.READ_ONLY`                          | Read-Through only (remote cache) |
 | `RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE`          | Read-Through + Near Cache        |
 | `RedissonCacheConfig.READ_WRITE_THROUGH`                 | Read-Through + Write-Through     |
@@ -216,10 +213,10 @@ Commonly used cache mode constants are provided as named constants.
 
 ### Repository (repository/)
 
-| File                                 | Description                                    |
-|--------------------------------------|------------------------------------------------|
-| `R2dbcRedissonRepository.kt`         | R2DBC async cache Repository interface         |
-| `AbstractR2dbcRedissonRepository.kt` | R2DBC async cache Repository abstract class    |
+| File                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| `R2dbcRedissonRepository.kt`         | R2DBC async cache Repository interface           |
+| `AbstractR2dbcRedissonRepository.kt` | R2DBC async cache Repository abstract class      |
 | `ExposedR2dbcRedissonCodecSafety.kt` | Repository guard for trusted binary codec opt-in |
 
 ### Map (map/)
@@ -234,10 +231,8 @@ Commonly used cache mode constants are provided as named constants.
 
 ## Operational Logging Contract
 
-Loader and writer operational logs contain only a fixed operation name,
-bounded counts/timeouts, and a safe exception type. They never attach a
-`Throwable` or emit caller-owned IDs, entity payloads, exception messages, or
-stack traces. `CancellationException` is rethrown without an error log.
+Loader and writer operational logs contain only a fixed operation name, bounded counts/timeouts, and a safe exception type. They never attach a
+`Throwable` or emit caller-owned IDs, entity payloads, exception messages, or stack traces. `CancellationException` is rethrown without an error log.
 
 ## Testing
 

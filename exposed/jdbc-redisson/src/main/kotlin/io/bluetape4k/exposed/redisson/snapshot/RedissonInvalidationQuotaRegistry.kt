@@ -70,7 +70,7 @@ internal class RedissonInvalidationQuotaRegistry {
         }
     }
 
-/** Redisson map과 상호 작용하기 전에 namespace composition 하나를 예약합니다. */
+    /** Redisson map과 상호 작용하기 전에 namespace composition 하나를 예약합니다. */
     fun reserveComposition(
         redissonClient: RedissonClient,
         descriptor: RedissonInvalidationCompositionDescriptor,
@@ -209,7 +209,7 @@ internal class RedissonInvalidationQuota(
     private var outstandingEncodedBytes = 0L
     private var rejectedChunks = 0L
 
-/** chunk 하나와 실제 canonical encoded byte 수를 원자적으로 승인합니다. */
+    /** chunk 하나와 실제 canonical encoded byte 수를 원자적으로 승인합니다. */
     fun tryAdmit(encodedBytes: Long): RedissonInvalidationQuotaLease? {
         require(encodedBytes > 0L) { "encodedBytes[$encodedBytes] must be positive." }
 
@@ -229,7 +229,7 @@ internal class RedissonInvalidationQuota(
         }
     }
 
-/** payload를 포함하지 않는 현재 승인 상태 snapshot을 반환합니다. */
+    /** payload를 포함하지 않는 현재 승인 상태 snapshot을 반환합니다. */
     fun health(): SnapshotInvalidationQuotaHealth = lock.withLock {
         SnapshotInvalidationQuotaHealth(
             maxOutstandingChunks = maxOutstandingChunks,
@@ -268,7 +268,7 @@ internal class RedissonInvalidationQuotaLease(
 ) {
     private val released = atomic(false)
 
-/** 승인된 count를 한 번만 해제하며, 중복 완료 알림은 영향을 주지 않습니다. */
+    /** 승인된 count를 한 번만 해제하며, 중복 완료 알림은 영향을 주지 않습니다. */
     fun release() {
         if (released.compareAndSet(false, true)) {
             quota.release(encodedBytes)
@@ -279,7 +279,7 @@ internal class RedissonInvalidationQuotaLease(
 internal class RedissonClientIdentityWeakReference(
     redissonClient: RedissonClient,
     queue: ReferenceQueue<RedissonClient>? = null,
-) : WeakReference<RedissonClient>(redissonClient, queue) {
+): WeakReference<RedissonClient>(redissonClient, queue) {
     private val identityHashCode = System.identityHashCode(redissonClient)
 
     override fun hashCode(): Int = identityHashCode

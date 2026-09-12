@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.clickhouse
 
-import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialect
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialect
 import org.junit.jupiter.api.Test
 
 /**

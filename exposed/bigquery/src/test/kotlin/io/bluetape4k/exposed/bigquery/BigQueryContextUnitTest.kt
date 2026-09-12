@@ -3,9 +3,10 @@ package io.bluetape4k.exposed.bigquery
 import com.google.api.services.bigquery.Bigquery
 import com.google.api.services.bigquery.Bigquery.Jobs
 import com.google.api.services.bigquery.model.ErrorProto
+import com.google.api.services.bigquery.model.JobReference
 import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
-import com.google.api.services.bigquery.model.JobReference
+import com.google.api.services.bigquery.model.TableReference
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -14,14 +15,15 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import io.mockk.CapturingSlot
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -29,6 +31,8 @@ import org.junit.jupiter.api.Test
  * [BigQueryContext] 단위 테스트 — 에뮬레이터 없이 MockK로 동작 검증.
  */
 class BigQueryContextUnitTest {
+
+    companion object: KLogging()
 
     private val bq = mockk<Bigquery>(relaxed = true)
     private val jobs = mockk<Jobs>(relaxed = true)
@@ -95,9 +99,9 @@ class BigQueryContextUnitTest {
 
         request.captured.maximumBytesBilled shouldBeEqualTo 10_000L
         request.captured.labels shouldBeEqualTo mapOf("workload" to "unit")
-        request.captured.get("priority") shouldBeEqualTo "BATCH"
+        request.captured["priority"] shouldBeEqualTo "BATCH"
         request.captured.location shouldBeEqualTo "US"
-        (request.captured.get("destinationTable") as com.google.api.services.bigquery.model.TableReference).tableId shouldBeEqualTo "result_1"
+        request.captured["destinationTable"].shouldBeInstanceOf<TableReference>().tableId shouldBeEqualTo "result_1"
         request.captured.timeoutMs shouldBeEqualTo 7_000L
         request.captured.useQueryCache.shouldBeFalse()
     }
@@ -136,8 +140,8 @@ class BigQueryContextUnitTest {
             context.runRawQuery("SELECT * FROM missing_table")
         }
         ex.message.shouldNotBeNull()
-        ex.message!! shouldContain "reasons=notFound"
-        ex.message!! shouldNotContain "테이블을 찾을 수 없습니다"
+        ex.message shouldContain "reasons=notFound"
+        ex.message shouldNotContain "테이블을 찾을 수 없습니다"
     }
 
     @Test
@@ -170,11 +174,11 @@ class BigQueryContextUnitTest {
         val ex = assertFailsWith<BigQueryQueryException> {
             context.runRawQuery(sql)
         }
-        ex.message!! shouldContain "statement=SELECT"
-        ex.message!! shouldContain "sqlFingerprint=sha256:"
-        ex.message!! shouldContain "jobId=job-safe-123"
-        ex.message!! shouldNotContain secret
-        ex.message!! shouldNotContain "bad_table"
+        ex.message shouldContain "statement=SELECT"
+        ex.message shouldContain "sqlFingerprint=sha256:"
+        ex.message shouldContain "jobId=job-safe-123"
+        ex.message shouldNotContain secret
+        ex.message shouldNotContain "bad_table"
     }
 
     @Test
@@ -190,8 +194,8 @@ class BigQueryContextUnitTest {
             context.runRawQuery("$secret is not SQL")
         }
 
-        ex.message!! shouldContain "statement=UNKNOWN"
-        ex.message!! shouldNotContain secret
+        ex.message shouldContain "statement=UNKNOWN"
+        ex.message shouldNotContain secret
     }
 
     @Test
@@ -207,8 +211,8 @@ class BigQueryContextUnitTest {
             context.runRawQuery("SELECT 1")
         }
 
-        ex.message!! shouldContain "reasons=unknown"
-        ex.message!! shouldNotContain secretReason
+        ex.message shouldContain "reasons=unknown"
+        ex.message shouldNotContain secretReason
     }
 
     @Test
@@ -234,7 +238,7 @@ class BigQueryContextUnitTest {
             val ex = assertFailsWith<IllegalArgumentException> {
                 with(context) { table.execDeleteAll() }
             }
-            ex.message.orEmpty() shouldNotContain unsafeName
+            ex.message shouldNotContain unsafeName
         }
 
         verify(exactly = 0) { jobs.query(any(), any()) }

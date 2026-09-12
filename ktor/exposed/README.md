@@ -2,24 +2,18 @@
 
 [English](./README.md) | [한국어](./README.ko.md)
 
-Ktor helpers for using caller-owned JetBrains Exposed JDBC and R2DBC resources
-inside bluetape4k applications.
+Ktor helpers for using caller-owned JetBrains Exposed JDBC and R2DBC resources inside bluetape4k applications.
 
 ## Features
 
-- `installBluetape4kExposedKtor()` for explicit opt-in health/readiness route
-  installation.
-- `ApplicationCall.exposedJdbcTransaction()` for blocking JDBC work on a
-  caller-owned dispatcher.
+- `installBluetape4kExposedKtor()` for explicit opt-in health/readiness route installation.
+- `ApplicationCall.exposedJdbcTransaction()` for blocking JDBC work on a caller-owned dispatcher.
 - `ApplicationCall.exposedR2dbcTransaction()` for coroutine-native R2DBC work.
-- `StatusPagesConfig.bluetape4kExposedErrors()` for client-safe Exposed error
-  responses.
+- `StatusPagesConfig.bluetape4kExposedErrors()` for client-safe Exposed error responses.
 - `/healthz/exposed` and `/readyz/exposed` route helpers backed by caller-owned
   `Database` and `R2dbcDatabase` instances.
 
-The default `installBluetape4kExposedKtor()` call is a no-op. It does not
-install status pages, health routes, content negotiation, database pools,
-dispatchers, meter registries, or generic bluetape4k Ktor core.
+The default `installBluetape4kExposedKtor()` call is a no-op. It does not install status pages, health routes, content negotiation, database pools, dispatchers, meter registries, or generic bluetape4k Ktor core.
 
 ## Dependency
 
@@ -38,8 +32,7 @@ dependencies {
 }
 ```
 
-For new services, choose the backend-selective artifacts instead of bringing
-the compatibility aggregator into every classpath:
+For new services, choose the backend-selective artifacts instead of bringing the compatibility aggregator into every classpath:
 
 ```kotlin
 dependencies {
@@ -52,14 +45,9 @@ dependencies {
 
 Tenant-aware transaction routing is opt-in and backend-specific. Add
 `bluetape4k-exposed-ktor-tenant-jdbc` for JDBC or
-`bluetape4k-exposed-ktor-tenant-r2dbc` for R2DBC, alongside the matching
-backend adapter. Bind a validated `TenantId` to `KtorTenantContext` before
-calling the tenant transaction helper; the resolver remains caller-owned and
-must be an exact-match, O(1), non-blocking lookup.
+`bluetape4k-exposed-ktor-tenant-r2dbc` for R2DBC, alongside the matching backend adapter. Bind a validated `TenantId` to `KtorTenantContext` before calling the tenant transaction helper; the resolver remains caller-owned and must be an exact-match, O (1), non-blocking lookup.
 
-`bluetape4k-exposed-ktor` remains the compatibility aggregator. Existing
-imports continue to work during the 2.0 migration window; migrate one backend
-at a time to keep the consumer classpath selective.
+`bluetape4k-exposed-ktor` remains the compatibility aggregator. Existing imports continue to work during the 2.0 migration window; migrate one backend at a time to keep the consumer classpath selective.
 
 ## Caller-Owned Resources
 
@@ -83,9 +71,7 @@ val r2dbcDatabase: R2dbcDatabase = R2dbcDatabase.connect(
 )
 ```
 
-The JDBC dispatcher isolates blocking JDBC calls from Ktor event-loop threads.
-Close it in the same lifecycle that closes the JDBC pool. R2DBC does not need a
-blocking dispatcher.
+The JDBC dispatcher isolates blocking JDBC calls from Ktor event-loop threads. Close it in the same lifecycle that closes the JDBC pool. R2DBC does not need a blocking dispatcher.
 
 ## Installation
 
@@ -130,9 +116,7 @@ fun Application.module() {
 }
 ```
 
-Standalone `installStatusPages = true` is available only when `StatusPages` is
-not already installed. Because Exposed error responses use the standard
-bluetape4k JSON payload, the caller must still install content negotiation.
+Standalone `installStatusPages = true` is available only when `StatusPages` is not already installed. Because Exposed error responses use the standard bluetape4k JSON payload, the caller must still install content negotiation.
 
 ```kotlin
 import io.bluetape4k.exposed.ktor.Bluetape4kExposedKtorConfig
@@ -224,11 +208,7 @@ suspendTransaction(db = r2dbcDatabase) {
 
 ## Transaction Timeout Contract
 
-`exposedJdbcTransaction` and `exposedR2dbcTransaction` use the statement timeout
-from the caller-owned Exposed database configuration. Configure the integer
-number of seconds when creating the database; `0` keeps Exposed's driver
-default (no statement timeout). `defaultQueryTimeout` may be `0` or a positive
-number of seconds, while Ktor's `readinessProbeTimeout` and `jdbcQueryTimeout`
+`exposedJdbcTransaction` and `exposedR2dbcTransaction` use the statement timeout from the caller-owned Exposed database configuration. Configure the integer number of seconds when creating the database; `0` keeps Exposed's driver default (no statement timeout). `defaultQueryTimeout` may be `0` or a positive number of seconds, while Ktor's `readinessProbeTimeout` and `jdbcQueryTimeout`
 must be positive Durations.
 
 ```kotlin
@@ -246,76 +226,67 @@ val r2dbcDatabase = R2dbcDatabase.connect(
 )
 ```
 
-A transaction receiver inherits the caller-owned database default. The
-receiver `queryTimeout` override wins for that transaction only. The value is
-measured in whole driver seconds, and unsupported drivers may ignore the
-statement timeout.
+A transaction receiver inherits the caller-owned database default. The receiver `queryTimeout` override wins for that transaction only. The value is measured in whole driver seconds, and unsupported drivers may ignore the statement timeout.
 
-For `/readyz/exposed`, `readinessProbeTimeout` is the coroutine wall-clock
-budget. JDBC readiness always applies `jdbcQueryTimeout`; sub-second durations
-are truncated to whole seconds with a minimum of one, so it overrides
-`DatabaseConfig.defaultQueryTimeout`.
-R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and exposes no
-separate Ktor query-timeout setting. The caller still creates and closes the
-databases, pools, and dispatcher.
+For `/readyz/exposed`, `readinessProbeTimeout` is the coroutine wall-clock budget. JDBC readiness always applies `jdbcQueryTimeout`; sub-second durations are truncated to whole seconds with a minimum of one, so it overrides
+`DatabaseConfig.defaultQueryTimeout`. R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and exposes no separate Ktor query-timeout setting. The caller still creates and closes the databases, pools, and dispatcher.
 
 ## Cache Readiness Contributors
 
-Use a fixed operational component name. It must match `[a-z][a-z0-9_-]{0,62}`;
-one configuration accepts `1..16` unique contributors. Never put a tenant, cache
-key, URL, endpoint, namespace, credential, or secret in the component. Suppliers
-must be side-effect-free O(1) reads of existing in-memory state.
+Use a fixed operational component name. It must match `[a-z][a-z0-9_-]{0,62}`; one configuration accepts `1..16` unique contributors. Never put a tenant, cache key, URL, endpoint, namespace, credential, or secret in the component. Suppliers must be side-effect-free O (1) reads of existing in-memory state.
 
 <!-- example:jdbc-report:start -->
+
 ```kotlin
 fun jdbcCacheContributor(
     report: () -> CacheHealthReport,
 ): ExposedKtorCacheContributor =
     ExposedKtorCacheContributor.jdbcRepository("orders", report)
 ```
+
 <!-- example:jdbc-report:end -->
 
 <!-- example:r2dbc-report:start -->
+
 ```kotlin
 fun r2dbcCacheContributor(
     report: suspend () -> CacheHealthReport,
 ): ExposedKtorCacheContributor =
     ExposedKtorCacheContributor.r2dbcRepository("sessions", report)
 ```
+
 <!-- example:r2dbc-report:end -->
 
 <!-- example:snapshot:start -->
+
 ```kotlin
 fun snapshotContributor(
     failureBuffer: SnapshotCacheFailureBuffer,
 ): ExposedKtorCacheContributor =
     ExposedKtorCacheContributor.snapshot("snapshots", failureBuffer)
 ```
+
 <!-- example:snapshot:end -->
 
 <!-- example:custom-status:start -->
+
 ```kotlin
 fun customContributor(
     probe: suspend () -> ExposedKtorCacheStatus,
 ): ExposedKtorCacheContributor =
     ExposedKtorCacheContributor.custom("redis", probe)
 ```
+
 <!-- example:custom-status:end -->
 
-JDBC reports are ordinary in-memory reads; R2DBC and custom suppliers are
-suspending, non-blocking, and cancellation-cooperative. Blocking,
-cancellation-insensitive, database, cache, network, or file I/O is unsupported.
-A coroutine timeout cannot terminate a blocking thread or process, so such a
-supplier may outlive the request deadline.
-A supplier that throws `CancellationException` while the request is still active
-is sanitized as `DOWN`, and later contributors continue. Cancellation of the
-request context is rethrown and stops readiness processing.
+JDBC reports are ordinary in-memory reads; R2DBC and custom suppliers are suspending, non-blocking, and cancellation-cooperative. Blocking, cancellation-insensitive, database, cache, network, or file I/O is unsupported. A coroutine timeout cannot terminate a blocking thread or process, so such a supplier may outlive the request deadline. A supplier that throws `CancellationException` while the request is still active is sanitized as `DOWN`, and later contributors continue. Cancellation of the request context is rethrown and stops readiness processing.
 
 ## Installation and Security
 
 Cache-only installation needs no database:
 
 <!-- example:cache-only-installer:start -->
+
 ```kotlin
 fun Application.installCacheOnlyReadiness(
     cacheReadiness: ExposedKtorCacheReadinessConfig,
@@ -326,12 +297,13 @@ fun Application.installCacheOnlyReadiness(
     )
 }
 ```
+
 <!-- example:cache-only-installer:end -->
 
-The installer places root routes in the application routing tree. Use this
-shape only when ingress or network policy restricts the probe paths:
+The installer places root routes in the application routing tree. Use this shape only when ingress or network policy restricts the probe paths:
 
 <!-- example:ingress-root-route:start -->
+
 ```kotlin
 fun Application.installIngressProtectedReadiness(
     cacheReadiness: ExposedKtorCacheReadinessConfig,
@@ -343,12 +315,13 @@ fun Application.installIngressProtectedReadiness(
     )
 }
 ```
+
 <!-- example:ingress-root-route:end -->
 
-To apply application authentication, disable installer-owned routes and mount
-the direct overload once inside the caller-owned authentication block:
+To apply application authentication, disable installer-owned routes and mount the direct overload once inside the caller-owned authentication block:
 
 <!-- example:authenticated-direct-route:start -->
+
 ```kotlin
 fun Application.installAuthenticatedReadiness(
     cacheReadiness: ExposedKtorCacheReadinessConfig,
@@ -369,44 +342,36 @@ fun Application.installAuthenticatedReadiness(
     }
 }
 ```
+
 <!-- example:authenticated-direct-route:end -->
 
-Do not install a second unprotected route. The caller owns authentication,
-authorization, request concurrency, and rate limiting.
+Do not install a second unprotected route. The caller owns authentication, authorization, request concurrency, and rate limiting.
 
-`healthPath` and `readinessPath` must remain distinct after trailing slashes are removed. A collision is rejected
-before route registration so the probe-free liveness handler cannot mask readiness failures.
+`healthPath` and `readinessPath` must remain distinct after trailing slashes are removed. A collision is rejected before route registration so the probe-free liveness handler cannot mask readiness failures.
 
 ## Readiness Semantics and Budget
 
-| Path or state | Ktor result |
-|---|---|
-| `/healthz/exposed` | Probe-free liveness: `UP` with `exposed=UP`; it never invokes database or cache suppliers. |
-| `/readyz/exposed` | Traffic readiness. JDBC runs first, then R2DBC, then cache contributors in configuration order. |
-| Repository `NOT_APPLICABLE`, `IDLE`, or `RUNNING` with no flush error | `cache.<component>=UP` |
-| Repository `DRAINING`, `FAILED`, or `STOPPED`, or any flush error | `cache.<component>=DOWN` and aggregate HTTP 503 |
-| Snapshot pending, dropped, or observer-failure count | Measurements only; they never make readiness fail by themselves. |
+| Path or state                                                         | Ktor result                                                                                     |
+|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `/healthz/exposed`                                                    | Probe-free liveness: `UP` with `exposed=UP`; it never invokes database or cache suppliers.      |
+| `/readyz/exposed`                                                     | Traffic readiness. JDBC runs first, then R2DBC, then cache contributors in configuration order. |
+| Repository `NOT_APPLICABLE`, `IDLE`, or `RUNNING` with no flush error | `cache.<component>=UP`                                                                          |
+| Repository `DRAINING`, `FAILED`, or `STOPPED`, or any flush error     | `cache.<component>=DOWN` and aggregate HTTP 503                                                 |
+| Snapshot pending, dropped, or observer-failure count                  | Measurements only; they never make readiness fail by themselves.                                |
 
-Ktor has no `OUT_OF_SERVICE` response state: draining and stopped repositories
-are not ready for traffic, so they map to `DOWN`. Spring Actuator keeps the
-management-specific `OUT_OF_SERVICE` distinction for `DRAINING` and `STOPPED`.
+Ktor has no `OUT_OF_SERVICE` response state: draining and stopped repositories are not ready for traffic, so they map to `DOWN`. Spring Actuator keeps the management-specific `OUT_OF_SERVICE` distinction for `DRAINING` and `STOPPED`.
 
 Responses contain only allowlisted `jdbc`, `r2dbc`, and `cache.<component>`
-details with `UP`, `DOWN`, or `timeout`. Supplier exceptions, messages, causes,
-keys, SQL, URLs, and credentials are never returned.
+details with `UP`, `DOWN`, or `timeout`. Supplier exceptions, messages, causes, keys, SQL, URLs, and credentials are never returned.
 
-Let `R` be `readinessProbeTimeout`. Cache contributors share one cache-phase
-deadline, rather than receiving `R` each. Use this conservative planning bound:
+Let `R` be `readinessProbeTimeout`. Cache contributors share one cache-phase deadline, rather than receiving `R` each. Use this conservative planning bound:
 
 ```text
 T_endpoint = I_jdbc * (R + J_effective) + I_r2dbc * R + I_cache * R + overhead
 ```
 
-The JDBC query timeout is truncated to whole seconds with a minimum of one
-second: `J_effective = max(1 second, jdbcQueryTimeout.inWholeSeconds)`. With all
-three phases enabled, `R=2s`, and `jdbcQueryTimeout=1500ms`, the planned bound is
-`(2+1)+2+2 = 7s` plus overhead. This is not a hard guarantee for saturated
-drivers or unsupported blocking probes.
+The JDBC query timeout is truncated to whole seconds with a minimum of one second: `J_effective = max(1 second, jdbcQueryTimeout.inWholeSeconds)`. With all three phases enabled, `R=2s`, and `jdbcQueryTimeout=1500ms`, the planned bound is
+`(2+1)+2+2 = 7s` plus overhead. This is not a hard guarantee for saturated drivers or unsupported blocking probes.
 
 ```yaml
 readinessProbe:
@@ -423,56 +388,42 @@ Round the bound up and add margin. Keep `periodSeconds > timeoutSeconds` and
 
 ## Metrics
 
-These dotted names are Micrometer meter IDs, not fixed Prometheus or OpenTelemetry
-series names:
+These dotted names are Micrometer meter IDs, not fixed Prometheus or OpenTelemetry series names:
 
-| Meter ID | Tags | Base unit / meaning |
-|---|---|---|
-| `bluetape4k.exposed.ktor.cache.readiness` | `component`, `kind`, `operation=readiness`, `outcome=success|error|timeout|cancelled` | timer |
-| `bluetape4k.exposed.ktor.cache.queue.depth` | `component`, `kind` | `entries` |
-| `bluetape4k.exposed.ktor.cache.snapshot.pending` | `component`, `kind` | `events` |
-| `bluetape4k.exposed.ktor.cache.snapshot.dropped` | `component`, `kind` | cumulative `events` |
-| `bluetape4k.exposed.ktor.cache.snapshot.observer.failures` | `component`, `kind` | cumulative `events` |
+| Meter ID                                                   | Tags                                                         | Base unit / meaning |
+|------------------------------------------------------------|--------------------------------------------------------------|---------------------|
+| `bluetape4k.exposed.ktor.cache.readiness`                  | `component`, `kind`, `operation=readiness`, `outcome=success | error               |timeout|cancelled` | timer |
+| `bluetape4k.exposed.ktor.cache.queue.depth`                | `component`, `kind`                                          | `entries`           |
+| `bluetape4k.exposed.ktor.cache.snapshot.pending`           | `component`, `kind`                                          | `events`            |
+| `bluetape4k.exposed.ktor.cache.snapshot.dropped`           | `component`, `kind`                                          | cumulative `events` |
+| `bluetape4k.exposed.ktor.cache.snapshot.observer.failures` | `component`, `kind`                                          | cumulative `events` |
 
 Each contributor registers four gauges and four finite-outcome timers: at most
-`16 * 8 = 128` meter IDs. Exported time-series counts and suffixes depend on the
-registry and its distribution configuration; inspect the actual exporter before
-writing queries. A missing, omitted, or `NaN` gauge is unavailable, not zero.
-Correlate it with readiness and timer outcome. Apply `rate`/`increase` to
-cumulative dropped or observer-failure counters with process restart/reset
-awareness.
+`16 * 8 = 128` meter IDs. Exported time-series counts and suffixes depend on the registry and its distribution configuration; inspect the actual exporter before writing queries. A missing, omitted, or `NaN` gauge is unavailable, not zero. Correlate it with readiness and timer outcome. Apply `rate`/`increase` to cumulative dropped or observer-failure counters with process restart/reset awareness.
 
-Meter identities live for the registry lifetime. Installation rejects an
-existing matching identity with `reason=identity_collision` and rolls back newly
-claimed meters. Prefer one route per registry, or use a fresh registry. Never
-remove colliding meters while an older route may still serve requests.
+Meter identities live for the registry lifetime. Installation rejects an existing matching identity with `reason=identity_collision` and rolls back newly claimed meters. Prefer one route per registry, or use a fresh registry. Never remove colliding meters while an older route may still serve requests.
 
-When installation fails, only meters claimed by the current attempt are removed
-in reverse order on a best-effort basis. Every removal is attempted, so one
-`remove` failure does not stop the remaining cleanup. Removal failures are
-preserved as a suppressed structured diagnostic on the stable installation
-exception, including `attempted`, `removed`, `notFound`, `failed`, and `residual`
+When installation fails, only meters claimed by the current attempt are removed in reverse order on a best-effort basis. Every removal is attempted, so one
+`remove` failure does not stop the remaining cleanup. Removal failures are preserved as a suppressed structured diagnostic on the stable installation exception, including `attempted`, `removed`, `notFound`, `failed`, and `residual`
 counts plus a sanitized per-meter failure reason. Treat a non-zero `residual`
-count as a contaminated registry: withdraw traffic and reinstall with a fresh
-registry. A successful rollback leaves the registry clean and makes a retry with
-the same configuration deterministic.
+count as a contaminated registry: withdraw traffic and reinstall with a fresh registry. A successful rollback leaves the registry clean and makes a retry with the same configuration deterministic.
 
 ## Runbook
 
-| Situation | Action |
-|---|---|
-| Database `DOWN` | Check caller-owned pool connectivity and credentials, schema availability, and SQL errors. The response intentionally exposes only the finite `jdbc` / `r2dbc` state. |
-| Database `timeout` | Check pool exhaustion, network latency, slow `SELECT 1`, blocked JDBC dispatcher threads, `readinessProbeTimeout`, and `jdbcQueryTimeout`. |
-| Repository `DOWN` | Inspect `workerState`, queue depth, and caller-owned repository telemetry. `DRAINING` is expected during withdrawal; `FAILED` is a worker failure; `STOPPED` is terminal. Do not expose exception messages through Ktor. |
-| Cache `timeout` | Check the shared `R` budget and supplier cooperation. Remove backend I/O or blocking work; the helper cannot terminate it. |
-| Snapshot cumulative counters rise | Inspect caller-owned drain/observer handling. Counters are measurements only; use restart/reset-aware rate or increase queries. |
-| Gauge is missing, omitted, or `NaN` | Treat it as unavailable, not zero, and correlate with the latest readiness and timer outcome. |
-| Invalid configuration | Fix component regex/uniqueness/count or unsafe data. Do not derive component names from runtime values. |
-| Unsupported custom probe | Replace it with a side-effect-free O(1) in-memory status read; keep backend diagnostics in caller telemetry. |
-| Meter collision | Keep the older route serving until traffic is withdrawn, then close its application/registry or use a fresh registry before reinstalling. |
-| Disable Exposed status mapping | Keep `installStatusPages = false` and omit `bluetape4kExposedErrors()` from the shared `StatusPages` block. |
-| Roll back route helpers | Replace the Ktor helpers with caller-owned raw Exposed transaction calls. |
-| Shutdown | Withdraw traffic, start repository drain/close, observe readiness enter `DRAINING` and then `STOPPED`, stop the application, then close the registry and other caller-owned pools/dispatchers. Route probes only observe; they close nothing. |
+| Situation                           | Action                                                                                                                                                                                                                                        |
+|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Database `DOWN`                     | Check caller-owned pool connectivity and credentials, schema availability, and SQL errors. The response intentionally exposes only the finite `jdbc` / `r2dbc` state.                                                                         |
+| Database `timeout`                  | Check pool exhaustion, network latency, slow `SELECT 1`, blocked JDBC dispatcher threads, `readinessProbeTimeout`, and `jdbcQueryTimeout`.                                                                                                    |
+| Repository `DOWN`                   | Inspect `workerState`, queue depth, and caller-owned repository telemetry. `DRAINING` is expected during withdrawal; `FAILED` is a worker failure; `STOPPED` is terminal. Do not expose exception messages through Ktor.                      |
+| Cache `timeout`                     | Check the shared `R` budget and supplier cooperation. Remove backend I/O or blocking work; the helper cannot terminate it.                                                                                                                    |
+| Snapshot cumulative counters rise   | Inspect caller-owned drain/observer handling. Counters are measurements only; use restart/reset-aware rate or increase queries.                                                                                                               |
+| Gauge is missing, omitted, or `NaN` | Treat it as unavailable, not zero, and correlate with the latest readiness and timer outcome.                                                                                                                                                 |
+| Invalid configuration               | Fix component regex/uniqueness/count or unsafe data. Do not derive component names from runtime values.                                                                                                                                       |
+| Unsupported custom probe            | Replace it with a side-effect-free O(1) in-memory status read; keep backend diagnostics in caller telemetry.                                                                                                                                  |
+| Meter collision                     | Keep the older route serving until traffic is withdrawn, then close its application/registry or use a fresh registry before reinstalling.                                                                                                     |
+| Disable Exposed status mapping      | Keep `installStatusPages = false` and omit `bluetape4kExposedErrors()` from the shared `StatusPages` block.                                                                                                                                   |
+| Roll back route helpers             | Replace the Ktor helpers with caller-owned raw Exposed transaction calls.                                                                                                                                                                     |
+| Shutdown                            | Withdraw traffic, start repository drain/close, observe readiness enter `DRAINING` and then `STOPPED`, stop the application, then close the registry and other caller-owned pools/dispatchers. Route probes only observe; they close nothing. |
 
 ## Non-goals
 
@@ -484,8 +435,7 @@ the same configuration deterministic.
 
 ## Verification
 
-The examples above are configuration and route fragments. Public API names and
-default behavior are covered by `Bluetape4kExposedKtorTest`; run:
+The examples above are configuration and route fragments. Public API names and default behavior are covered by `Bluetape4kExposedKtorTest`; run:
 
 ```bash
 ./gradlew :bluetape4k-exposed-ktor:test

@@ -21,7 +21,7 @@ object EdgeCaseSchema {
      * 엣지 케이스 테스트용 테이블.
      * name 컬럼에 UNIQUE 제약이 있어 batchUpsert 충돌 시나리오 구현 가능.
      */
-    object EdgeCaseTable : LongIdTable("edge_case_items") {
+    object EdgeCaseTable: LongIdTable("edge_case_items") {
         val name = varchar("name", 255).uniqueIndex()
         val age = integer("age").default(0)
         val isActive = bool("is_active").default(true)
@@ -35,7 +35,7 @@ object EdgeCaseSchema {
         val name: String,
         val age: Int = 0,
         val isActive: Boolean = true,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -44,7 +44,7 @@ object EdgeCaseSchema {
     /**
      * EdgeCaseTable에 대한 JDBC Repository 구현체.
      */
-    object EdgeCaseRepository : LongJdbcRepository<EdgeCaseRecord> {
+    object EdgeCaseRepository: LongJdbcRepository<EdgeCaseRecord> {
         override val table = EdgeCaseTable
 
         override fun extractId(entity: EdgeCaseRecord): Long = entity.id

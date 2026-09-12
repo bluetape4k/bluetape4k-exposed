@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.core.dao.id
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -66,7 +66,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
             KsuidItems.selectAll().toList() shouldHaveSize 2
         }
     }
@@ -94,7 +94,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
         }
     }
 
@@ -121,7 +121,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
         }
     }
 
@@ -148,7 +148,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
         }
     }
 
@@ -175,7 +175,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
         }
     }
 
@@ -202,7 +202,7 @@ class CustomIdTablesTest: AbstractExposedTest() {
 
             id1.shouldNotBeNull()
             id2.shouldNotBeNull()
-            (id1.value == id2.value).shouldBeFalse()
+            id1.value shouldNotBeEqualTo id2.value
         }
     }
 }

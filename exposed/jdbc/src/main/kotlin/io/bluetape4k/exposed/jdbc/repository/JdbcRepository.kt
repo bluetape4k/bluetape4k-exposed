@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.exposed.core.ExposedPage
+import io.bluetape4k.support.requireEquals
 import io.bluetape4k.support.requireGe
 import io.bluetape4k.support.requireLe
 import io.bluetape4k.support.requirePositiveNumber
@@ -28,7 +29,6 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
@@ -198,9 +198,7 @@ interface JdbcRepository<ID: Any, E: Any> {
      * @param query 존재 여부를 확인할 서브쿼리
      */
     fun exists(query: AbstractQuery<*>): Boolean {
-        val exists =
-            org.jetbrains.exposed.v1.core
-                .exists(query)
+        val exists = org.jetbrains.exposed.v1.core.exists(query)
         return table.select(exists).firstOrNull()?.getOrNull(exists) ?: false
     }
 
@@ -276,7 +274,8 @@ interface JdbcRepository<ID: Any, E: Any> {
             .apply {
                 limit?.run { limit(limit) }
                 offset?.run { offset(offset) }
-            }.orderBy(table.id, sortOrder)
+            }
+            .orderBy(table.id, sortOrder)
             .map { it.toEntity() }
 
     /**
@@ -294,10 +293,9 @@ interface JdbcRepository<ID: Any, E: Any> {
         offset: Long? = null,
         sortOrder: SortOrder = SortOrder.ASC,
     ): List<E> {
-        val condition: Op<Boolean> =
-            filters.fold(Op.TRUE as Op<Boolean>) { acc, filter ->
-                acc.and(filter.invoke())
-            }
+        val condition: Op<Boolean> = filters.fold(Op.TRUE as Op<Boolean>) { acc, filter ->
+            acc.and(filter.invoke())
+        }
         return findAll(limit, offset, sortOrder) { condition }
     }
 
@@ -342,7 +340,8 @@ interface JdbcRepository<ID: Any, E: Any> {
             .limit(1)
             .apply {
                 offset?.run { offset(offset) }
-            }.firstOrNull()
+            }
+            .firstOrNull()
             ?.toEntity()
 
     /**
@@ -523,7 +522,8 @@ interface JdbcRepository<ID: Any, E: Any> {
                 ignore = ignore,
                 shouldReturnGeneratedValues = shouldReturnGeneratedValues,
                 body = insertStatement
-            ).map { it.toEntity() }
+            )
+            .map { it.toEntity() }
 
     /**
      * 호출자가 제공한 [insertStatement] 람다로 [Sequence]의 [entities]를 배치 삽입하고
@@ -547,7 +547,8 @@ interface JdbcRepository<ID: Any, E: Any> {
                 ignore = ignore,
                 shouldReturnGeneratedValues = shouldReturnGeneratedValues,
                 body = insertStatement
-            ).map { it.toEntity() }
+            )
+            .map { it.toEntity() }
 
 
     /**
@@ -582,9 +583,13 @@ interface JdbcRepository<ID: Any, E: Any> {
         if (!useMultiRowValues) {
             return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
         }
-        require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        ignore.requireEquals(false) {
+            "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path"
+        }
         val rows = multiRowValuesData(entities.iterator(), table)
-        return if (rows.isEmpty()) emptyList() else table.batchInsert(
+
+        return if (rows.isEmpty()) emptyList()
+        else table.batchInsert(
             data = rows,
             useMultiRowValues = true,
             ignore = ignore,
@@ -625,9 +630,13 @@ interface JdbcRepository<ID: Any, E: Any> {
         if (!useMultiRowValues) {
             return batchInsert(entities, ignore, shouldReturnGeneratedValues, insertStatement)
         }
-        require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
+        ignore.requireEquals(false) {
+            "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path"
+        }
         val rows = multiRowValuesData(entities.iterator(), table)
-        return if (rows.isEmpty()) emptyList() else table.batchInsert(
+
+        return if (rows.isEmpty()) emptyList()
+        else table.batchInsert(
             data = rows,
             useMultiRowValues = true,
             ignore = ignore,
@@ -668,7 +677,8 @@ interface JdbcRepository<ID: Any, E: Any> {
                 where = where,
                 shouldReturnGeneratedValues = shouldReturnGeneratedValues,
                 body = body
-            ).map { it.toEntity() }
+            )
+            .map { it.toEntity() }
 
     /**
      * [Sequence]의 [entities]를 배치 업서트하고 [ResultRow.toEntity]로 매핑한 결과 엔티티를 반환합니다.
@@ -702,7 +712,8 @@ interface JdbcRepository<ID: Any, E: Any> {
                 where = where,
                 shouldReturnGeneratedValues = shouldReturnGeneratedValues,
                 body = body
-            ).map { it.toEntity() }
+            )
+            .map { it.toEntity() }
 
     /**
      * [predicate]와 일치하는 엔티티의 페이지 조각을 반환합니다.
@@ -798,7 +809,6 @@ interface LongJdbcRepository<E: Any>: JdbcRepository<Long, E>
  *
  * @param E 엔티티 타입
  */
-@OptIn(ExperimentalUuidApi::class)
 interface KotlinUuidJdbcRepository<E: Any>: JdbcRepository<Uuid, E>
 
 /**
@@ -822,7 +832,6 @@ interface JavaUuidJdbcRepository<E: Any>: JdbcRepository<UUID, E>
     message = "Use KotlinUuidJdbcRepository instead.",
     replaceWith = ReplaceWith("KotlinUuidJdbcRepository<E>"),
 )
-@OptIn(ExperimentalUuidApi::class)
 typealias UuidJdbcRepository<E> = KotlinUuidJdbcRepository<E>
 
 /**

@@ -6,8 +6,8 @@ import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -16,6 +16,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.time.Duration
@@ -26,6 +27,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcCaffeineSnapshotCacheTest {
+
+    companion object: KLogging() {
+        private const val RACE_REPETITIONS: Int = 100
+        private const val CONCURRENT_PUTS: Int = 8
+        private const val CONCURRENT_MAXIMUM_SIZE: Long = 2L
+    }
 
     @Test
     fun `explicit and reified factories preserve caller failure buffer identity`() {
@@ -202,7 +209,7 @@ class JdbcCaffeineSnapshotCacheTest {
                 start.countDown()
                 futures.forEach { future ->
                     future.get(5, TimeUnit.SECONDS).results.map { it.outcome to it.affectedCount } shouldBeEqualTo
-                        listOf(SnapshotCacheOutcome.SUCCESS to 1)
+                            listOf(SnapshotCacheOutcome.SUCCESS to 1)
                 }
 
                 val caffeine = caffeineCache(cache)
@@ -330,7 +337,7 @@ class JdbcCaffeineSnapshotCacheTest {
         maxOutstandingMissTokens = maxOutstandingMissTokens,
     )
 
-    private data class Payload(val value: String) : Serializable
+    private data class Payload(val value: String): Serializable
 
     private fun weightedSize(cache: JdbcCaffeineSnapshotCache<Long, Payload>): Long {
         return caffeineCache(cache).policy().eviction().orElseThrow().weightedSize().orElseThrow()
@@ -341,25 +348,25 @@ class JdbcCaffeineSnapshotCacheTest {
         return field.get(cache) as Cache<*, *>
     }
 
-    private object NeverExpiredDeadline : SnapshotCacheDeadline {
+    private object NeverExpiredDeadline: SnapshotCacheDeadline {
         override fun remaining(): Duration = Duration.ofDays(1)
         override val isExpired: Boolean = false
     }
 
-    private class ExpireAfterFirstPollDeadline : SnapshotCacheDeadline {
+    private class ExpireAfterFirstPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 1
     }
 
-    private class ExpireAfterSecondPollDeadline : SnapshotCacheDeadline {
+    private class ExpireAfterSecondPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
         val pollCount: Int get() = polls.get()
         override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
         override val isExpired: Boolean get() = polls.incrementAndGet() > 2
     }
 
-    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+    private class TrackedExecutor(threadCount: Int): AutoCloseable {
         private val executor = Executors.newFixedThreadPool(threadCount)
         private val futures = mutableListOf<Future<*>>()
 
@@ -372,9 +379,4 @@ class JdbcCaffeineSnapshotCacheTest {
         }
     }
 
-    companion object {
-        private const val RACE_REPETITIONS: Int = 100
-        private const val CONCURRENT_PUTS: Int = 8
-        private const val CONCURRENT_MAXIMUM_SIZE: Long = 2L
-    }
 }

@@ -6,6 +6,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDBConfig
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.testcontainers.database.CockroachServer
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
@@ -18,8 +20,8 @@ import java.sql.SQLException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
 
@@ -29,6 +31,12 @@ import javax.sql.DataSource
  * 관찰, cancel acknowledgement, rollback, 다음 query recovery, Hikari lease를 함께 봅니다.
  */
 class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private const val HIKARI_TIMEOUT_MS = 5_000L
+        private const val LATCH_TIMEOUT_SECONDS = 5L
+        private const val POSTGRESQL_CONNECTION_TYPE = "org.postgresql.PGConnection"
+    }
 
     @Test
     @Suppress("LongMethod")
@@ -106,12 +114,13 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
     private fun awaitCockroachSleep(observer: Connection) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)
         while (System.nanoTime() < deadline) {
+            log.debug { "Waiting for CockroachDB sleep to complete" }
             observer.createStatement().use { probe ->
                 probe.executeQuery("SHOW QUERIES").use { result ->
                     val queryColumn = (1..result.metaData.columnCount)
                         .firstOrNull { column ->
                             result.metaData.getColumnLabel(column).equals("query", ignoreCase = true) ||
-                                result.metaData.getColumnName(column).equals("query", ignoreCase = true)
+                                    result.metaData.getColumnName(column).equals("query", ignoreCase = true)
                         }
                     if (queryColumn != null) {
                         while (result.next()) {
@@ -131,6 +140,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
         connection: Connection,
         methodName: String,
     ) {
+        log.debug { "Invoking PostgreSQL connection method: $methodName" }
         val connectionType = Class.forName(POSTGRESQL_CONNECTION_TYPE)
         val extension = connection.unwrap(connectionType)
         try {
@@ -144,7 +154,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
         generateSequence(failure) { it.cause }.any { cause ->
             val sqlException = cause as? SQLException
             sqlException?.sqlState == "57014" ||
-                cause.message.orEmpty().contains("canceling statement", ignoreCase = true)
+                    cause.message.orEmpty().contains("canceling statement", ignoreCase = true)
         }
 
     private class TrackingDataSource(
@@ -193,17 +203,12 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
                     }
                 }
             }
+            log.debug { "Tracking PostgreSQL connection" }
             return Proxy.newProxyInstance(
                 Connection::class.java.classLoader,
                 arrayOf(Connection::class.java),
                 handler,
             ) as Connection
         }
-    }
-
-    companion object {
-        private const val HIKARI_TIMEOUT_MS = 5_000L
-        private const val LATCH_TIMEOUT_SECONDS = 5L
-        private const val POSTGRESQL_CONNECTION_TYPE = "org.postgresql.PGConnection"
     }
 }

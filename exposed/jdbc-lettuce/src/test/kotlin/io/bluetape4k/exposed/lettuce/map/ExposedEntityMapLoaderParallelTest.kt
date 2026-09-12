@@ -8,24 +8,33 @@ import io.bluetape4k.exposed.jdbc.JdbcParallelKeyEnumerationOptions
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.api.Test
+import java.io.Serializable
 
 class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
 
-    private data class LoaderEntity(val id: Long, val name: String)
+    companion object: KLogging()
+
+    private data class LoaderEntity(val id: Long, val name: String): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     private object LoaderTable: LongIdTable("lettuce_parallel_loader_test") {
         val name = varchar("name", 64)
     }
 
-    private fun ResultRow.toLoaderEntity(): LoaderEntity =
-        LoaderEntity(
-            id = this[LoaderTable.id].value,
-            name = this[LoaderTable.name],
-        )
+    private fun ResultRow.toLoaderEntity(): LoaderEntity = LoaderEntity(
+        id = this[LoaderTable.id].value,
+        name = this[LoaderTable.name],
+    )
 
     @Test
     fun `parallel key enumeration matches sequential keyset and preserves range order`() {
@@ -41,14 +50,13 @@ class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
                 toEntity = { row -> row.toLoaderEntity() },
             )
             val sequential = loader.loadAllKeys().toList()
-            val parallel =
-                loader.loadAllKeysInParallel(
-                    ranges = listOf(
-                        JdbcKeyRange(upperExclusive = 5L),
-                        JdbcKeyRange(lowerInclusive = 5L),
-                    ),
-                    options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 2),
-                )
+            val parallel = loader.loadAllKeysInParallel(
+                ranges = listOf(
+                    JdbcKeyRange(upperExclusive = 5L),
+                    JdbcKeyRange(lowerInclusive = 5L),
+                ),
+                options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 2),
+            )
 
             parallel shouldBeEqualTo sequential
             parallel shouldBeEqualTo (1L..8L).toList()

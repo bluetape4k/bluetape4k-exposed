@@ -8,13 +8,14 @@ import io.bluetape4k.exposed.core.CteTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.IExpressionAlias
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.crossJoin
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -24,6 +25,10 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class CteQueryTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private val cteCapableDialects: Set<TestDB> = TestDB.ALL_H2 + TestDB.ALL_POSTGRES_LIKE + TestDB.MYSQL_V8
+    }
 
     private object CteUsers: Table("cte_query_users") {
         val id = integer("id")
@@ -56,6 +61,7 @@ class CteQueryTest: AbstractExposedTest() {
 
             val builder = QueryBuilder(prepared = true)
             val sql = query.prepareSQL(builder)
+            log.debug { "Generated SQL: $sql" }
 
             sql shouldContain "WITH"
             sql.lowercase() shouldContain "active_users"
@@ -92,6 +98,7 @@ class CteQueryTest: AbstractExposedTest() {
                 .orderBy(hierarchy[CteUsers.id])
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
+            log.debug { "Generated SQL: $sql" }
 
             sql shouldContain "WITH RECURSIVE"
             query.map { it[hierarchyName] } shouldBeEqualTo listOf("root", "child", "inactive-child")
@@ -131,6 +138,7 @@ class CteQueryTest: AbstractExposedTest() {
             val expectedPairs = listOf("root:root", "root:other-root", "child:root", "child:other-root")
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
+            log.debug { "Generated SQL: $sql" }
 
             sql shouldContain "active_users"
             sql shouldContain ", root_users"
@@ -162,6 +170,7 @@ class CteQueryTest: AbstractExposedTest() {
                 .withCte(hierarchy)
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
+            log.debug { "Generated SQL: $sql" }
 
             sql shouldContain " UNION "
             sql shouldNotContain "UNION ALL"
@@ -209,6 +218,7 @@ class CteQueryTest: AbstractExposedTest() {
                 .orderBy(aliasedUsers[CteUsers.id])
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
+            log.debug { "Generated SQL: $sql" }
 
             sql shouldContain "user_name"
             query.map { it[aliasedName] } shouldBeEqualTo listOf("root", "child")
@@ -240,10 +250,5 @@ class CteQueryTest: AbstractExposedTest() {
             it[active] = false
             it[managerId] = null
         }
-    }
-
-    companion object {
-        private val cteCapableDialects: Set<TestDB> =
-            TestDB.ALL_H2 + TestDB.ALL_POSTGRES_LIKE + TestDB.MYSQL_V8
     }
 }

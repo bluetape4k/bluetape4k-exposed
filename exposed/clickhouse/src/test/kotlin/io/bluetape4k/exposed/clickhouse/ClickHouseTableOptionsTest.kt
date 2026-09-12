@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.clickhouse
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -10,6 +11,8 @@ import org.junit.jupiter.params.provider.ValueSource
 
 /** generic 옵션을 SQL로 렌더링하거나 transaction을 찾기 전에 거부하는지 검증한다. */
 class ClickHouseTableOptionsTest {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @ValueSource(
@@ -23,8 +26,10 @@ class ClickHouseTableOptionsTest {
             val id = long("id")
             override val options = listOf(RawTableOption(sql))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "options"
+
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message shouldContain "options"
     }
 
     @Test
@@ -32,8 +37,10 @@ class ClickHouseTableOptionsTest {
         val table = object: ClickHouseTable("clickhouse_typed_options") {
             override val options = listOf(EngineOption(TableEngine.INNODB), CharsetOption("utf8mb4"))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "options"
+
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message shouldContain "options"
     }
 
     @ParameterizedTest
@@ -43,20 +50,27 @@ class ClickHouseTableOptionsTest {
             val id = long("id")
             override val storageParameters = listOf(FillFactorParameter(70), RawTableStorageParameter(sql))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "storageParameters"
+
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message shouldContain "storageParameters"
     }
 
     @Test
     fun `사용자 option renderer는 거부 과정에서 실행하지 않는다`() {
         var calls = 0
         val option = object: Table.TableOption() {
-            override fun toSQL(): String { calls++; return "ENGINE = MergeTree()" }
+            override fun toSQL(): String {
+                calls++; return "ENGINE = MergeTree()"
+            }
         }
         val table = object: ClickHouseTable("clickhouse_custom_option") {
             override val options = listOf(option)
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
+
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }
         calls shouldBeEqualTo 0
     }
 }

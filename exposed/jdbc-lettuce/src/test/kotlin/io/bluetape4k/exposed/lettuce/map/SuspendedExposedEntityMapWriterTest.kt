@@ -1,13 +1,15 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.WriteMode
-import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -18,7 +20,6 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
 import java.io.Serializable
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [SuspendedExposedEntityMapWriter] 단위 테스트.
@@ -29,12 +30,19 @@ import io.bluetape4k.assertions.assertFailsWith
  * writer가 커밋한 데이터는 이후 같은 외부 트랜잭션에서 READ_COMMITTED로 볼 수 있다.
  */
 class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
+
     companion object: KLogging()
 
     private data class SuspendedWriterEntity(
         val id: Long,
         val name: String,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     /** 클라이언트 생성 ID 테이블 (AutoInc 아님) — Writer 삽입 동작을 직접 테스트하기 위해 사용 */
     private object SuspendedWriterTable: IdTable<Long>("suspended_writer_test") {
@@ -43,32 +51,31 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
         override val primaryKey = PrimaryKey(id)
     }
 
-    private fun ResultRow.toSuspendedWriterEntity(): SuspendedWriterEntity =
-        SuspendedWriterEntity(
-            id = this[SuspendedWriterTable.id].value,
-            name = this[SuspendedWriterTable.name]
-        )
+    private fun ResultRow.toSuspendedWriterEntity(): SuspendedWriterEntity = SuspendedWriterEntity(
+        id = this[SuspendedWriterTable.id].value,
+        name = this[SuspendedWriterTable.name]
+    )
 
     private fun newWriter(
         writeMode: WriteMode = WriteMode.WRITE_THROUGH,
-    ): SuspendedExposedEntityMapWriter<Long, SuspendedWriterEntity> =
-        SuspendedExposedEntityMapWriter(
-            table = SuspendedWriterTable,
-            writeMode = writeMode,
-            updateEntity = { stmt: UpdateStatement, entity: SuspendedWriterEntity ->
-                stmt[SuspendedWriterTable.name] = entity.name
-            },
-            insertEntity = { stmt: BatchInsertStatement, entity: SuspendedWriterEntity ->
-                stmt[SuspendedWriterTable.id] = entity.id
-                stmt[SuspendedWriterTable.name] = entity.name
-            }
-        )
+    ): SuspendedExposedEntityMapWriter<Long, SuspendedWriterEntity> = SuspendedExposedEntityMapWriter(
+        table = SuspendedWriterTable,
+        writeMode = writeMode,
+        updateEntity = { stmt: UpdateStatement, entity: SuspendedWriterEntity ->
+            stmt[SuspendedWriterTable.name] = entity.name
+        },
+        insertEntity = { stmt: BatchInsertStatement, entity: SuspendedWriterEntity ->
+            stmt[SuspendedWriterTable.id] = entity.id
+            stmt[SuspendedWriterTable.name] = entity.name
+        }
+    )
 
     @Test
     fun `write - 새 엔티티를 DB에 삽입한다`() = runSuspendIO {
         withTablesSuspending(TestDB.H2, SuspendedWriterTable) {
             val writer = newWriter()
             val entity = SuspendedWriterEntity(id = 1L, name = "alice")
+
             // write()는 별도 트랜잭션에서 커밋한다
             writer.write(mapOf(entity.id to entity))
 
@@ -103,7 +110,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
             val writer = newWriter()
             writer.write(emptyMap())
 
-            SuspendedWriterTable.selectAll().toList().shouldHaveSize(0)
+            SuspendedWriterTable.selectAll().toList().shouldBeEmpty()
         }
     }
 
@@ -113,7 +120,7 @@ class SuspendedExposedEntityMapWriterTest: AbstractExposedTest() {
             val writer = newWriter(WriteMode.NONE)
             writer.write(mapOf(1L to SuspendedWriterEntity(id = 1L, name = "alice")))
 
-            SuspendedWriterTable.selectAll().toList().shouldHaveSize(0)
+            SuspendedWriterTable.selectAll().toList().shouldBeEmpty()
         }
     }
 

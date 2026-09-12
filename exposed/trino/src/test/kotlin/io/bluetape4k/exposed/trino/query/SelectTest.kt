@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.trino.query
 
-import io.bluetape4k.exposed.trino.AbstractTrinoTest
-import io.bluetape4k.exposed.trino.domain.Events
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.exposed.trino.AbstractTrinoTest
+import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.eq
@@ -158,7 +158,7 @@ class SelectTest: AbstractTrinoTest() {
             val names = Events.eventName.groupConcat(separator = "o'clock)--);")
 
             names.toString() shouldBeEqualTo
-                "ARRAY_JOIN(ARRAY_AGG(events.event_name), 'o''clock)--);')"
+                    "ARRAY_JOIN(ARRAY_AGG(events.event_name), 'o''clock)--);')"
         }
     }
 
@@ -183,7 +183,7 @@ class SelectTest: AbstractTrinoTest() {
             val position = Events.eventName.locate("x') OR 1=1 --;")
 
             position.toString() shouldBeEqualTo
-                "POSITION('x'') OR 1=1 --;' IN events.event_name)"
+                    "POSITION('x'') OR 1=1 --;' IN events.event_name)"
         }
     }
 }

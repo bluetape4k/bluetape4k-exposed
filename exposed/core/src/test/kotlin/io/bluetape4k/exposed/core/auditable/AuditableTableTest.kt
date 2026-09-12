@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.core.auditable
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -47,8 +48,8 @@ class AuditableTableTest: AbstractExposedTest() {
             row[IntAuditTable.name] shouldBeEqualTo "test-int"
             row[IntAuditTable.createdBy] shouldBeEqualTo UserContext.DEFAULT_USERNAME
             row[IntAuditTable.createdAt].shouldNotBeNull()
-            row[IntAuditTable.updatedBy] shouldBeEqualTo null
-            row[IntAuditTable.updatedAt] shouldBeEqualTo null
+            row[IntAuditTable.updatedBy].shouldBeNull()
+            row[IntAuditTable.updatedAt].shouldBeNull()
         }
     }
 
@@ -79,8 +80,8 @@ class AuditableTableTest: AbstractExposedTest() {
             row[LongAuditTable.title] shouldBeEqualTo "long-title"
             row[LongAuditTable.createdBy] shouldBeEqualTo UserContext.DEFAULT_USERNAME
             row[LongAuditTable.createdAt].shouldNotBeNull()
-            row[LongAuditTable.updatedBy] shouldBeEqualTo null
-            row[LongAuditTable.updatedAt] shouldBeEqualTo null
+            row[LongAuditTable.updatedBy].shouldBeNull()
+            row[LongAuditTable.updatedAt].shouldBeNull()
         }
     }
 
@@ -112,8 +113,8 @@ class AuditableTableTest: AbstractExposedTest() {
             row[UUIDAuditTable.createdBy] shouldBeEqualTo UserContext.DEFAULT_USERNAME
             row[UUIDAuditTable.createdAt].shouldNotBeNull()
             row[UUIDAuditTable.id].shouldNotBeNull()
-            row[UUIDAuditTable.updatedBy] shouldBeEqualTo null
-            row[UUIDAuditTable.updatedAt] shouldBeEqualTo null
+            row[UUIDAuditTable.updatedBy].shouldBeNull()
+            row[UUIDAuditTable.updatedAt].shouldBeNull()
         }
     }
 

@@ -7,14 +7,15 @@ import io.bluetape4k.logging.trace
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Exposed [IdTable]을 코루틴으로 조회해 Redisson 비동기 read-through에 공급하는 loader입니다.
@@ -95,7 +96,7 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
                     if (keysetSupported == null) {
                         keysetSupported = currentLastId.isKeysetScalar()
                     }
-                    if (keysetSupported == true) {
+                    if (keysetSupported) {
                         lastId = currentLastId
                     } else {
                         offset += rows.size.toLong()
@@ -104,10 +105,10 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
                 }
             }
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=$rowCount" }
-        } catch (cause: kotlinx.coroutines.CancellationException) {
+        } catch (cause: CancellationException) {
             throw cause
         } catch (cause: Throwable) {
-            log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+            log.error(cause) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
             throw cause
         }
     },
@@ -120,7 +121,6 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
     init {
         batchSize.requirePositiveNumber("batchSize")
     }
-
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -131,14 +131,15 @@ private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
 @JvmSynthetic
 internal fun Any.isKeysetScalar(): Boolean =
     this is Comparable<*> &&
-        when (this) {
-            is Byte, is Short, is Int, is Long, is Float, is Double,
-            is UByte, is UShort, is UInt, is ULong,
-            is java.math.BigDecimal, is java.math.BigInteger,
-            is String, is Char, is java.util.UUID,
-            is java.sql.Date, is java.sql.Time, is java.sql.Timestamp -> true
-            else -> javaClass.name.startsWith("java.time.")
-        }
+            when (this) {
+                is Byte, is Short, is Int, is Long, is Float, is Double,
+                is UByte, is UShort, is UInt, is ULong,
+                is java.math.BigDecimal, is java.math.BigInteger,
+                is String, is Char, is java.util.UUID,
+                is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
+                     -> true
+                else -> javaClass.name.startsWith("java.time.")
+            }
 
 @Suppress("UNCHECKED_CAST")
 private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =

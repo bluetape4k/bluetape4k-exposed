@@ -35,6 +35,7 @@ import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RMap
 import org.redisson.api.RMapCache
 import org.redisson.api.RedissonClient
+import org.redisson.api.map.WriteMode
 import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
 import java.time.Duration
@@ -77,6 +78,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
     trustedBinaryCache: Boolean = false,
     protected val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ): SuspendedJdbcRedissonRepository<ID, E> {
+
     companion object: KLoggingChannel() {
         const val DEFAULT_BATCH_SIZE = SuspendedJdbcCacheRepository.DEFAULT_BATCH_SIZE
     }
@@ -92,9 +94,9 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
 
     override val cacheWriteMode: CacheWriteMode
         get() = when {
-            config.isReadOnly -> CacheWriteMode.READ_ONLY
-            config.writeMode == org.redisson.api.map.WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
-            else              -> CacheWriteMode.WRITE_THROUGH
+            config.isReadOnly                          -> CacheWriteMode.READ_ONLY
+            config.writeMode == WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
+            else                                       -> CacheWriteMode.WRITE_THROUGH
         }
 
     /**
@@ -122,10 +124,9 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      */
     protected val suspendedMapWriter: SuspendedEntityMapWriter<ID, E>? by lazy {
         when (config.cacheMode) {
-            RedissonCacheConfig.CacheMode.READ_ONLY  -> {
-                null
-            }
-            RedissonCacheConfig.CacheMode.READ_WRITE -> {
+            RedissonCacheConfig.CacheMode.READ_ONLY  -> null
+
+            RedissonCacheConfig.CacheMode.READ_WRITE ->
                 SuspendedExposedEntityMapWriter(
                     scope = scope,
                     entityTable = table,
@@ -137,13 +138,14 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                         }
                     },
                     batchInsertBody = { entity ->
-                        val stmt =
-                            this; with(this@AbstractSuspendedJdbcRedissonRepository) { stmt.insertEntity(entity) }
+                        val stmt = this;
+                        with(this@AbstractSuspendedJdbcRedissonRepository) {
+                            stmt.insertEntity(entity)
+                        }
                     },
                     deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate, // 캐시 invalidated 시 DB에서도 삭제할 것인지 여부
                     writeMode = config.writeMode // Write Through 모드
                 )
-            }
         }
     }
 
@@ -176,14 +178,15 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      * 삭제 이벤트는 Redisson local-cache sync 경로를 타지만 DB writer는 호출하지 않습니다.
      */
     protected fun createCacheOnlyLocalCacheMap(): RLocalCachedMap<ID, E?> =
-        LocalCachedMapOptions.name<ID, E?>(cacheName).apply {
-            codec(config.codec)
-            syncStrategy(config.nearCacheSyncStrategy)
-            timeToLive(config.ttl)
-            if (config.nearCacheMaxIdleTime > Duration.ZERO) {
-                maxIdle(config.nearCacheMaxIdleTime)
-            }
-        }.let { redissonClient.getLocalCachedMap(it) }
+        LocalCachedMapOptions.name<ID, E?>(cacheName)
+            .apply {
+                codec(config.codec)
+                syncStrategy(config.nearCacheSyncStrategy)
+                timeToLive(config.ttl)
+                if (config.nearCacheMaxIdleTime > Duration.ZERO) {
+                    maxIdle(config.nearCacheMaxIdleTime)
+                }
+            }.let { redissonClient.getLocalCachedMap(it) }
 
     /**
      * Near Cache(로컬 캐시)가 활성화된 [RLocalCachedMap]을 생성합니다.
@@ -310,15 +313,14 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
             return 0
         }
 
-        val removed =
-            if (config.deleteFromDBOnInvalidate) {
-                var countRemoved = 0L
-                keys.forEach { countRemoved += cache.fastRemoveAsync(it).await() }
-                countRemoved
-            } else {
-                @Suppress("UNCHECKED_CAST")
-                cacheOnlyMap.fastRemoveAsync(*keys.toTypedArray<Any>() as Array<ID>).await()
-            }
+        val removed = if (config.deleteFromDBOnInvalidate) {
+            var countRemoved = 0L
+            keys.forEach { countRemoved += cache.fastRemoveAsync(it).await() }
+            countRemoved
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            cacheOnlyMap.fastRemoveAsync(*keys.toTypedArray<Any>() as Array<ID>).await()
+        }
         clearNearCacheIfNeeded()
         return removed
     }
@@ -337,7 +339,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      */
     @Suppress("DEPRECATION")
     override suspend fun findByIdFromDb(id: ID): E? =
-        suspendedTransactionAsync(Dispatchers.IO) {
+        suspendedTransactionAsync(scope.coroutineContext) {
             table
                 .selectAll()
                 .where { table.id eq id }
@@ -353,7 +355,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      */
     @Suppress("DEPRECATION")
     override suspend fun findAllFromDb(ids: Collection<ID>): List<E> =
-        suspendedTransactionAsync(Dispatchers.IO) {
+        suspendedTransactionAsync(scope.coroutineContext) {
             table
                 .selectAll()
                 .where { table.id inList ids }
@@ -367,7 +369,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      */
     @Suppress("DEPRECATION")
     override suspend fun countFromDb(): Long =
-        suspendedTransactionAsync(Dispatchers.IO) {
+        suspendedTransactionAsync(scope.coroutineContext) {
             table.selectAll().count()
         }.await()
 
@@ -398,11 +400,13 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                     limit?.run { limit(limit) }
                     offset?.run { offset(offset) }
                 }.map { it.toEntity() }
-        }.await().also { entities ->
-            if (entities.isNotEmpty()) {
-                upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
-            }
         }
+            .await()
+            .also { entities ->
+                if (entities.isNotEmpty()) {
+                    upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
+                }
+            }
     }
 
     /**
@@ -426,17 +430,21 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
         ids: Collection<ID>,
         batchSize: Int,
     ): Map<ID, E> {
-        batchSize.requirePositiveNumber("batchSize")
         if (ids.isEmpty()) {
             return emptyMap()
         }
-        return ids.chunked(batchSize).flatMap { chunk ->
-            log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
-            cache
-                .getAllAsync(chunk.toSet())
-                .await()
-                .entries
-                .mapNotNull { (key, value) -> value?.let { key to it } }
-        }.toMap()
+        batchSize.requirePositiveNumber("batchSize")
+
+        return ids
+            .chunked(batchSize)
+            .flatMap { chunk ->
+                log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
+                cache
+                    .getAllAsync(chunk.toSet())
+                    .await()
+                    .entries
+                    .mapNotNull { (key, value) -> value?.let { key to it } }
+            }
+            .toMap()
     }
 }

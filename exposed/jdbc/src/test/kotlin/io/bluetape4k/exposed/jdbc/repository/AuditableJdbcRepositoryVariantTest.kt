@@ -1,6 +1,8 @@
 package io.bluetape4k.exposed.jdbc.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableIntIdTable
 import io.bluetape4k.exposed.core.auditable.AuditableUUIDTable
@@ -8,17 +10,14 @@ import io.bluetape4k.exposed.core.auditable.UserContext
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.io.Serializable
 import java.time.Instant
 import java.util.*
 
@@ -28,13 +27,13 @@ import java.util.*
  * `Int` PK 테이블과 `UUID` PK 테이블에서 [AuditableJdbcRepository.auditedUpdateById]와
  * [AuditableJdbcRepository.auditedUpdateAll]의 감사 필드 자동 갱신 동작을 검증합니다.
  */
-class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
+class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ── Int PK 테이블 정의 ──────────────────────────────────────────────────────
 
-    object IntAuditableTable : AuditableIntIdTable("variant_int_items") {
+    object IntAuditableTable: AuditableIntIdTable("variant_int_items") {
         val name = varchar("name", 255)
         val category = varchar("category", 100).default("general")
     }
@@ -49,7 +48,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable, Serializable {
+    ): Auditable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -57,7 +56,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
 
     // ── Int PK Repository 구현 ──────────────────────────────────────────────────
 
-    object IntAuditableRepository : IntAuditableJdbcRepository<IntAuditableRecord, IntAuditableTable> {
+    object IntAuditableRepository: IntAuditableJdbcRepository<IntAuditableRecord, IntAuditableTable> {
         override val table = IntAuditableTable
 
         override fun extractId(entity: IntAuditableRecord): Int = entity.id
@@ -81,7 +80,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
 
     // ── UUID PK 테이블 정의 ─────────────────────────────────────────────────────
 
-    object UUIDAuditableTable : AuditableUUIDTable("variant_uuid_items") {
+    object UUIDAuditableTable: AuditableUUIDTable("variant_uuid_items") {
         val name = varchar("name", 255)
         val category = varchar("category", 100).default("general")
     }
@@ -96,7 +95,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable, Serializable {
+    ): Auditable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -104,7 +103,7 @@ class AuditableJdbcRepositoryVariantTest : AbstractExposedTest() {
 
     // ── UUID PK Repository 구현 ─────────────────────────────────────────────────
 
-    object UUIDAuditableRepository : UUIDAuditableJdbcRepository<UUIDAuditableRecord, UUIDAuditableTable> {
+    object UUIDAuditableRepository: UUIDAuditableJdbcRepository<UUIDAuditableRecord, UUIDAuditableTable> {
         override val table = UUIDAuditableTable
 
         override fun extractId(entity: UUIDAuditableRecord): UUID = entity.id

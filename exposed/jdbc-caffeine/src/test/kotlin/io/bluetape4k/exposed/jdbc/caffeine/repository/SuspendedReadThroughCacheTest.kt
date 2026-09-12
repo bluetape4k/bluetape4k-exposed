@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -15,6 +14,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedCrede
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select

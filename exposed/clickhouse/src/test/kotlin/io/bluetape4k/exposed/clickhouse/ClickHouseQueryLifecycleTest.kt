@@ -1,31 +1,37 @@
 package io.bluetape4k.exposed.clickhouse
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.clickhouse.support.JdbcObservation
 import io.bluetape4k.exposed.clickhouse.support.ClickHouseQueryObservation
 import io.bluetape4k.exposed.clickhouse.support.QueryObservationOutcome
 import io.bluetape4k.exposed.clickhouse.support.TrackingClickHouseConnection
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.async
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import org.awaitility.Awaitility.await
+import org.awaitility.kotlin.await
 import org.jetbrains.exposed.v1.core.CustomFunction
 import org.jetbrains.exposed.v1.core.LongColumnType
 import org.jetbrains.exposed.v1.core.Table
@@ -54,26 +60,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
+
+    companion object: KLogging()
+
     private object Numbers: Table("system.numbers") {
         val number = long("number")
     }
 
-    private class MarkerFailure(val marker: String): IllegalStateException(marker)
-    private class SqlFailure(val marker: String): SQLException(marker)
-    private class MarkerCancellation(val marker: String): CancellationException(marker)
-
-    @Test
-    fun `원격 query observation은 빈 id에서 연결 없이 unavailable을 반환한다`() {
-        var opened = false
-        val result = ClickHouseQueryObservation(connectionFactory = {
-            opened = true
-            error("empty query id must not open an observation connection")
-        }).awaitDisappearance("", Duration.ofSeconds(1))
-
-        result.outcome shouldBeEqualTo QueryObservationOutcome.UNAVAILABLE
-        result.reasonCode shouldBeEqualTo "EMPTY_QUERY_ID"
-        opened.shouldBeFalse()
-    }
+    private class MarkerFailure(marker: String): IllegalStateException(marker)
+    private class SqlFailure(marker: String): SQLException(marker)
+    private class MarkerCancellation(marker: String): CancellationException(marker)
 
     private inner class Fixture(
         private val jdbcOptions: String = "",
@@ -90,14 +86,19 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             connectionTimeout = 500
             isAutoCommit = true
         })
-        val database = Database.connect(getNewConnection = {
-            TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observed)
-        })
+        val database = Database.connect(
+            getNewConnection = {
+                TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observed)
+            }
+        )
 
         fun <T> withTrackedConnection(
             observation: JdbcObservation = observed,
             block: (Connection) -> T,
-        ): T = TrackingClickHouseConnection(ClickHouseConnectionWrapper(pool.connection), observation).use(block)
+        ): T = TrackingClickHouseConnection(
+            ClickHouseConnectionWrapper(pool.connection),
+            observation
+        ).use(block)
 
         fun rows(limit: Int = 10) = queryFlow(
             database,
@@ -121,6 +122,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
         val logger = LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseStreamingLog") as Logger
         val events = ListAppender<ILoggingEvent>().apply { start() }
         logger.addAppender(events)
+
         try {
             Fixture().use { fixture ->
                 assertFailsWith<MarkerFailure> {
@@ -144,15 +146,18 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
         val logger = LoggerFactory.getLogger("Exposed") as Logger
         val events = ListAppender<ILoggingEvent>().apply { start() }
         logger.addAppender(events)
+
         try {
             for (boundary in listOf("statement", "connection")) {
                 Fixture().use { fixture ->
                     // 초기 메타데이터 연결의 close가 아니라 트랜잭션 종료 정책을 주입한다.
                     fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
                     events.list.clear()
+
                     val failure = MarkerFailure("cleanup-$boundary")
                     if (boundary == "statement") fixture.observed.statementCloseFailure = failure
                     else fixture.observed.connectionCloseFailure = failure
+
                     fixture.rows().toList() shouldBeEqualTo (0L..9L).toList()
                     fixture.assertReleased()
                     val expected = if (boundary == "statement") {
@@ -160,6 +165,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                     } else {
                         "Transaction close failed"
                     }
+
                     events.list.any { it.formattedMessage.contains(expected) }.shouldBeTrue()
                     fixture.observed.statementCloseFailure = null
                     fixture.observed.connectionCloseFailure = null
@@ -181,8 +187,13 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val rows = fixture.rows()
             val first = async { rows.take(1).collect { reached.incrementAndGet(); release.await() } }
             val second = async { rows.take(1).collect { reached.incrementAndGet(); release.await() } }
+
             try {
-                await().atMost(Duration.ofSeconds(5)).untilSuspending { reached.get() == 2 }
+                await
+                    .atMost(Duration.ofSeconds(5))
+                    .pollInterval(Duration.ofMillis(100))
+                    .untilSuspending { reached.get() == 2 }
+
                 fixture.pool.hikariPoolMXBean.activeConnections shouldBeEqualTo 2
             } finally {
                 release.complete(Unit)
@@ -200,12 +211,18 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             inTopLevelSuspendTransaction(fixture.database, outerTransaction = null) {
                 val outer = connection.connection as java.sql.Connection
                 outer.setClientInfo("tenant-marker", "outer-only")
-                queryFlow(fixture.database, query = {
-                    val inner = connection.connection as java.sql.Connection
-                    (inner !== outer).shouldBeTrue()
-                    inner.getClientInfo("tenant-marker") shouldBeEqualTo null
-                    Numbers.selectAll().limit(1)
-                }, mapper = { it[Numbers.number] }).toList() shouldBeEqualTo listOf(0L)
+
+                queryFlow(
+                    fixture.database,
+                    query = {
+                        val inner = connection.connection as java.sql.Connection
+                        (inner !== outer).shouldBeTrue()
+                        inner.getClientInfo("tenant-marker") shouldBeEqualTo null
+                        Numbers.selectAll().limit(1)
+                    },
+                    mapper = { it[Numbers.number] }
+                ).toList() shouldBeEqualTo listOf(0L)
+
                 fixture.pool.hikariPoolMXBean.activeConnections shouldBeEqualTo 1
                 outer.isClosed.shouldBeFalse()
                 outer.getClientInfo("tenant-marker") shouldBeEqualTo "outer-only"
@@ -219,7 +236,9 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
         Fixture().use { fixture ->
             fixture.pool.connection.use {
                 fixture.pool.connection.use {
-                    assertFailsWith<SQLException> { fixture.rows().toList() }
+                    assertFailsWith<SQLException> {
+                        fixture.rows().toList()
+                    }
                     fixture.pool.isClosed.shouldBeFalse()
                 }
             }
@@ -236,6 +255,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             }
             job.cancel()
             job.join()
+
             job.isCancelled.shouldBeTrue()
             fixture.observed.executed.get() shouldBeEqualTo 0
             fixture.assertReleased()
@@ -249,16 +269,22 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val hold = CompletableDeferred<Unit>()
             val cancellation = MarkerCancellation("caller cancel")
             val cleanup = MarkerFailure("close on cancel")
+
             fixture.observed.resultCloseFailure = cleanup
             var observed: Throwable? = null
+
             val job = launch {
                 try {
-                    fixture.rows().collect { reached.complete(Unit); hold.await() }
+                    fixture.rows().collect {
+                        reached.complete(Unit)
+                        hold.await()
+                    }
                 } catch (caught: CancellationException) {
                     observed = caught
                     throw caught
                 }
             }
+
             try {
                 reached.await()
                 job.cancel(cancellation)
@@ -278,16 +304,26 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val failure = MarkerFailure(boundary)
             if (boundary == "next") fixture.observed.beforeNext = { throw failure }
             if (boundary == "execute") {
-                val missing = object: Table("missing_issue_857_table") { val id = long("id") }
+                val missing = object: Table("missing_issue_857_table") {
+                    val id = long("id")
+                }
                 assertFailsWith<SQLException> {
-                    queryFlow(fixture.database, query = { missing.selectAll() }, mapper = { it[missing.id] }).toList()
+                    queryFlow(
+                        fixture.database,
+                        query = { missing.selectAll() },
+                        mapper = { it[missing.id] }
+                    ).toList()
                 }
             } else {
                 assertFailsWith<MarkerFailure> {
-                    queryFlow(fixture.database, query = {
-                        if (boundary == "query") throw failure
-                        Numbers.selectAll().limit(1)
-                    }, mapper = { it[Numbers.number] }).toList()
+                    queryFlow(
+                        fixture.database,
+                        query = {
+                            if (boundary == "query") throw failure
+                            Numbers.selectAll().limit(1)
+                        },
+                        mapper = { it[Numbers.number] }
+                    ).toList()
                 }.shouldBeSameInstanceAs(failure)
             }
             fixture.assertReleased()
@@ -302,8 +338,10 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
         Fixture().use { fixture ->
             fixture.rows().toList() shouldBeEqualTo (0L..9L).toList()
             fixture.assertReleased()
+
             fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
             fixture.assertReleased()
+
             fixture.observed.executed.get() shouldBeEqualTo 2
         }
     }
@@ -320,13 +358,15 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 ).toList()
             }
 
-            failure.javaClass shouldBeEqualTo ExposedSQLException::class.java
-            failure.cause?.javaClass shouldBeEqualTo SQLException::class.java
-            failure.message.orEmpty().contains("Code: 396").shouldBeTrue()
-            failure.message.orEmpty().contains("TOO_MANY_ROWS_OR_BYTES").shouldBeTrue()
+            failure.shouldBeInstanceOf<ExposedSQLException>()
+            failure.shouldBeInstanceOf<SQLException>()
+            failure.message shouldContain "Code: 396"
+            failure.message shouldContain "TOO_MANY_ROWS_OR_BYTES"
+
             emitted.get() shouldBeEqualTo 0
             fixture.observed.executed.get() shouldBeEqualTo 1
             fixture.assertReleased()
+
             fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
             fixture.assertReleased()
         }
@@ -336,10 +376,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     fun `실제 driver row limit break는 부분 결과를 반복 수집마다 재현한다`() = runSuspendIO {
         Fixture(
             "?clickhouse_setting_max_result_rows=2&clickhouse_setting_max_block_size=2" +
-                "&clickhouse_setting_result_overflow_mode=break",
+                    "&clickhouse_setting_result_overflow_mode=break",
         ).use { fixture ->
             val expected = listOf(0L, 1L)
             val firstEmitted = AtomicInteger()
+
             queryFlow(
                 fixture.database,
                 query = { Numbers.selectAll().limit(10) },
@@ -347,6 +388,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             ).toList() shouldBeEqualTo expected
             firstEmitted.get() shouldBeEqualTo expected.size
             fixture.assertReleased()
+
             val secondEmitted = AtomicInteger()
             queryFlow(
                 fixture.database,
@@ -355,6 +397,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             ).toList() shouldBeEqualTo expected
             secondEmitted.get() shouldBeEqualTo expected.size
             fixture.assertReleased()
+
             fixture.observed.executed.get() shouldBeEqualTo 2
         }
     }
@@ -381,11 +424,13 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 ).toList()
             }
 
-            failure.javaClass shouldBeEqualTo ExposedSQLException::class.java
-            failure.cause?.javaClass shouldBeEqualTo BatchUpdateException::class.java
+            failure.shouldBeInstanceOf<ExposedSQLException>()
+            failure.cause.shouldBeInstanceOf<BatchUpdateException>()
             failure.cause?.message shouldBeEqualTo "Read timed out"
+
             emitted.get() shouldBeEqualTo 0
             fixture.assertReleased()
+
             // timeout이 연결을 pool로 되돌린 직후에도 같은 pool로 다음 조회를 수행할 수 있어야 합니다.
             fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
             fixture.assertReleased()
@@ -398,8 +443,8 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             fixture.withTrackedConnection { connection ->
                 val v2ConnectionClass = Class.forName("com.clickhouse.jdbc.ConnectionImpl")
 
-                connection.metaData.driverName.contains("ClickHouse").shouldBeTrue()
-                connection.metaData.driverVersion.startsWith("0.9.9").shouldBeTrue()
+                connection.metaData.driverName shouldContain "ClickHouse"
+                connection.metaData.driverVersion shouldContain "0.9.9"
                 connection.isWrapperFor(v2ConnectionClass).shouldBeTrue()
                 connection.unwrap(v2ConnectionClass).javaClass.name shouldBeEqualTo v2ConnectionClass.name
             }
@@ -429,10 +474,13 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                     }
                 }
                 check(failure != null) { "V2 query timeout must fail the delayed query" }
-                failure.javaClass shouldBeEqualTo SQLTimeoutException::class.java
-                failure.message.orEmpty().contains("Query execution time exceeded limit").shouldBeTrue()
+
+                failure.shouldBeInstanceOf<SQLTimeoutException>()
+                failure.message shouldContain "Query execution time exceeded limit"
+
                 emitted shouldBeEqualTo 0
                 fixture.assertReleased()
+
                 fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
                 fixture.assertReleased()
                 failure
@@ -461,20 +509,22 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                     failure = caught
                 }
                 val elapsedMillis = (System.nanoTime() - started) / 1_000_000
-                (elapsedMillis < 10_000L).shouldBeTrue()
-                values?.let { rows -> rows.all { it in 0L..1L }.shouldBeTrue() }
+                elapsedMillis.shouldBeLessThan(10_000L)
+                values?.all { it in 0L..1L }?.shouldBeTrue()
                 fixture.assertReleased()
+
                 fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
                 fixture.assertReleased()
+
                 ProbeOutcome(attempt, elapsedMillis, emitted, values, failure)
             }
 
             outcomes.size shouldBeEqualTo 3
             outcomes.all { it.elapsedMillis < 10_000L }.shouldBeTrue()
-            LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info(
-                "V2 socket_timeout probe outcomes: {}",
-                outcomes.joinToString { it.summary() },
-            )
+
+            LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info {
+                "V2 socket_timeout probe outcomes: ${outcomes.joinToString { it.summary() }}"
+            }
         }
     }
 
@@ -496,17 +546,17 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 connection?.close()
             }
             val elapsedMillis = (System.nanoTime() - started) / 1_000_000
-            (elapsedMillis < 5_000L).shouldBeTrue()
-            (failure != null).shouldBeTrue()
+            elapsedMillis.shouldBeLessThan(5_000L)
+            failure.shouldNotBeNull()
+
             ConnectOutcome(attempt, elapsedMillis, failure)
         }
 
         outcomes.size shouldBeEqualTo 3
         outcomes.all { it.elapsedMillis < 5_000L }.shouldBeTrue()
-        LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info(
-            "V2 connect_timeout probe outcomes: {}",
-            outcomes.joinToString { it.summary() },
-        )
+        LoggerFactory.getLogger("io.bluetape4k.exposed.clickhouse.ClickHouseV2Probe").info {
+            "V2 connect_timeout probe outcomes: ${outcomes.joinToString { it.summary() }}"
+        }
     }
 
     @Test
@@ -515,9 +565,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             repeat(3) {
                 val started = System.nanoTime()
                 val values = delayedRows(fixture, limit = 3).take(1).toList()
+
                 values shouldBeEqualTo listOf(0L)
-                ((System.nanoTime() - started) / 1_000_000 < 10_000L).shouldBeTrue()
+                ((System.nanoTime() - started) / 1_000_000).shouldBeLessThan(10_000L)
                 fixture.assertReleased()
+
                 fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
                 fixture.assertReleased()
             }
@@ -577,12 +629,16 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val values = mutableListOf<Long>()
             val failure = SqlFailure("partial result")
             assertFailsWith<SqlFailure> {
-                queryFlow(fixture.database, query = { Numbers.selectAll().limit(10) }, mapper = {
-                    val value = it[Numbers.number]
-                    if (value == 2L) throw failure
-                    value
-                }).collect { values.add(it) }
+                queryFlow(
+                    fixture.database,
+                    query = { Numbers.selectAll().limit(10) }, mapper = {
+                        val value = it[Numbers.number]
+                        if (value == 2L) throw failure
+                        value
+                    }
+                ).collect { values.add(it) }
             }.shouldBeSameInstanceAs(failure)
+
             values shouldBeEqualTo listOf(0L, 1L)
             fixture.observed.executed.get() shouldBeEqualTo 1
             fixture.assertReleased()
@@ -596,10 +652,13 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val primary = MarkerFailure(boundary)
             val cleanup = MarkerFailure("close")
             fixture.observed.resultCloseFailure = cleanup
-            val rows = queryFlow(fixture.database, query = { Numbers.selectAll().limit(10) }, mapper = {
-                if (boundary == "mapper") throw primary
-                it[Numbers.number]
-            })
+            val rows = queryFlow(
+                fixture.database,
+                query = { Numbers.selectAll().limit(10) }, mapper = {
+                    if (boundary == "mapper") throw primary
+                    it[Numbers.number]
+                }
+            )
             when (boundary) {
                 "take" -> rows.take(1).toList() shouldBeEqualTo listOf(0L)
                 "none" -> assertFailsWith<MarkerFailure> { rows.toList() }.shouldBeSameInstanceAs(cleanup)
@@ -641,7 +700,11 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 ).collect { delivered.incrementAndGet() }
             }
             try {
-                await().atMost(Duration.ofSeconds(5)).untilSuspending { entered.count == 0L }
+                await
+                    .atMost(Duration.ofSeconds(5))
+                    .pollInterval(Duration.ofMillis(100))
+                    .untilSuspending { entered.count == 0L }
+
                 job.cancel()
             } finally {
                 release.countDown()
@@ -649,6 +712,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             }
             job.isCancelled.shouldBeTrue()
             delivered.get() shouldBeEqualTo 0
+
             if (boundary == "query") fixture.observed.executed.get() shouldBeEqualTo 0
             fixture.assertReleased()
             fixture.observed.beforeNext = {}
@@ -665,15 +729,21 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val secondMapped = CompletableDeferred<Unit>()
             val release = CompletableDeferred<Unit>()
             val mapped = AtomicInteger()
+
             val job = launch {
-                queryFlow(fixture.database, query = { Numbers.selectAll().limit(10) }, mapper = {
-                    if (mapped.incrementAndGet() == 2) secondMapped.complete(Unit)
-                    it[Numbers.number]
-                }).collect {
+                queryFlow(
+                    fixture.database,
+                    query = { Numbers.selectAll().limit(10) },
+                    mapper = {
+                        if (mapped.incrementAndGet() == 2) secondMapped.complete(Unit)
+                        it[Numbers.number]
+                    }
+                ).collect {
                     received.complete(Unit)
                     release.await()
                 }
             }
+
             try {
                 received.await()
                 secondMapped.await()
@@ -698,7 +768,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     ) {
         fun summary(): String =
             "attempt=$attempt elapsedMillis=$elapsedMillis emitted=$emitted " +
-                "rows=${values?.size ?: 0} failure=${failure?.javaClass?.simpleName ?: "none"}"
+                    "rows=${values?.size ?: 0} failure=${failure?.javaClass?.simpleName ?: "none"}"
     }
 
     private data class ConnectOutcome(

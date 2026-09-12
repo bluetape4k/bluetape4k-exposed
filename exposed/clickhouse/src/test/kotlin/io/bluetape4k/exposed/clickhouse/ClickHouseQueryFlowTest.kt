@@ -1,22 +1,23 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeIn
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.exposed.clickhouse.engine.Memory
 import io.bluetape4k.exposed.clickhouse.types.Date32ColumnType
 import io.bluetape4k.exposed.clickhouse.types.chString
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.CustomFunction
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.TextColumnType
-import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.alias
+import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.decimalLiteral
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.stringLiteral
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
@@ -25,9 +26,9 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.time.LocalDate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import java.time.LocalDate
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
@@ -45,15 +46,22 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
 
     @Test
     fun `nullable 날짜 집계 결과를 트랜잭션 밖에서도 읽을 수 있다`() = runSuspendIO {
-        val one = object: Table("system.one") { val dummy = long("dummy") }
+        val one = object: Table("system.one") {
+            val dummy = long("dummy")
+        }
         val nullable = CustomFunction<String?>(
             "nullIf", TextColumnType(), stringLiteral("same"), stringLiteral("same"),
         )
         val date = CustomFunction<LocalDate>("toDate", Date32ColumnType(), stringLiteral("2026-09-08"))
         val count = one.dummy.count()
-        val values = queryFlow(db, query = {
-            one.select(nullable, date, count)
-        }, mapper = { listOf(it[nullable], it[date], it[count]) }).toList()
+        val values = queryFlow(
+            db,
+            query = {
+                one.select(nullable, date, count)
+            },
+            mapper = { listOf(it[nullable], it[date], it[count]) }
+        ).toList()
+
         values shouldBeEqualTo listOf(listOf(null, LocalDate.of(2026, 9, 8), 1L))
     }
 
@@ -62,11 +70,16 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         val label = stringLiteral("행 값").alias("label")
         val amount = decimalLiteral("123.45".toBigDecimal()).alias("amount")
         val numberAlias = Numbers.number.alias("number_alias")
-        val values = queryFlow(db, query = {
-            Numbers.select(Numbers.number, Numbers.number, numberAlias, label, amount).limit(3)
-        }, mapper = {
-            listOf(it[Numbers.number], it[numberAlias], it[label], it[amount])
-        }).toList()
+        val values = queryFlow(
+            db,
+            query = {
+                Numbers.select(Numbers.number, Numbers.number, numberAlias, label, amount).limit(3)
+            },
+            mapper = {
+                listOf(it[Numbers.number], it[numberAlias], it[label], it[amount])
+            }
+        ).toList()
+        
         values shouldBeEqualTo (0L..2L).map { listOf(it, it, "행 값", "123.45".toBigDecimal()) }
     }
 
@@ -90,7 +103,9 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
                 values shouldBeEqualTo if (input == "tenant-a") listOf("tenant-a") else emptyList()
             }
         } finally {
-            transaction(db) { SchemaUtils.drop(TenantRows) }
+            transaction(db) {
+                SchemaUtils.drop(TenantRows)
+            }
         }
     }
 
@@ -117,14 +132,18 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         }).take(1).toList()
 
         values shouldBeEqualTo listOf(0L)
-        (mapped.get() in 1..2).shouldBeTrue()
+        mapped.get().shouldBeIn(1..2)
     }
 
     @Test
     fun `빈 결과를 정상 종료한다`() = runSuspendIO {
-        queryFlow(db, query = { Numbers.selectAll().limit(0) }, mapper = {
-            it[Numbers.number]
-        }).toList() shouldBeEqualTo emptyList<Long>()
+        queryFlow(
+            db,
+            query = { Numbers.selectAll().limit(0) },
+            mapper = {
+                it[Numbers.number]
+            }
+        ).toList().shouldBeEmpty()
     }
 
     @Test
@@ -132,13 +151,18 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "clickhouse-stream-test")
         }.asCoroutineDispatcher().use { dispatcher ->
-            queryFlow(db, dispatcher, query = {
-                Thread.currentThread().name.startsWith("clickhouse-stream-test").shouldBeTrue()
-                Numbers.selectAll().limit(3)
-            }, mapper = {
-                Thread.currentThread().name.startsWith("clickhouse-stream-test").shouldBeTrue()
-                it[Numbers.number]
-            }).toList() shouldBeEqualTo listOf(0L, 1L, 2L)
+            queryFlow(
+                db,
+                dispatcher,
+                query = {
+                    Thread.currentThread().name.startsWith("clickhouse-stream-test").shouldBeTrue()
+                    Numbers.selectAll().limit(3)
+                },
+                mapper = {
+                    Thread.currentThread().name.startsWith("clickhouse-stream-test").shouldBeTrue()
+                    it[Numbers.number]
+                }
+            ).toList() shouldBeEqualTo listOf(0L, 1L, 2L)
         }
     }
 }

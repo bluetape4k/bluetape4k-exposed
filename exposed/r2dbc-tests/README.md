@@ -2,21 +2,15 @@
 
 English | [한국어](./README.ko.md)
 
-
 ## Exposed 1.5.0 one-way hashing
 
 Use upstream `exposed-crypt` directly, without a new Bluetape adapter.
 [`R2dbcHashedColumnContractTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/tests/crypt/R2dbcHashedColumnContractTest.kt)
-covers H2 storage, reads, nullable values, resaving, custom hashers, and rehashing.
-R2DBC coverage is for the DSL, not DAO support.
+covers H2 storage, reads, nullable values, resaving, custom hashers, and rehashing. R2DBC coverage is for the DSL, not DAO support.
 
 Applications explicitly opt in using their existing Exposed BOM/catalog.
-`exposed-crypt` 1.5.0 transitively requires `spring-security-crypto`, but no Spring Boot starter.
-Argon2/SCrypt additionally require BouncyCastle at runtime.
-With the Spring Security 7.1.1 resolved by this repository, validation also needs
-`spring-core`; its absence produced `NoClassDefFoundError: org/springframework/util/StringUtils`.
-The example assumes Spring versions are managed by the application's BOM.
-For test-only usage, replace implementation/runtimeOnly below with testImplementation/testRuntimeOnly.
+`exposed-crypt` 1.5.0 transitively requires `spring-security-crypto`, but no Spring Boot starter. Argon2/SCrypt additionally require BouncyCastle at runtime. With the Spring Security 7.1.1 resolved by this repository, validation also needs
+`spring-core`; its absence produced `NoClassDefFoundError: org/springframework/util/StringUtils`. The example assumes Spring versions are managed by the application's BOM. For test-only usage, replace implementation/runtimeOnly below with testImplementation/testRuntimeOnly.
 
 ```kotlin
 dependencies {
@@ -38,10 +32,7 @@ val encoded = Accounts.password.hash(submittedPassword)
 val accepted = encoded.matches(submittedPassword)
 ```
 
-Use these values with the suspending R2DBC insert/update DSL inside its transaction.
-Declare nullable columns with `varchar("optional", 512).nullable().hashed()`.
-Assign a loaded `Hashed` directly when resaving. `Hashed(hasher, encodedValue)` only wraps an
-existing encoded value; it does not hash, so never pass plaintext to that constructor.
+Use these values with the suspending R2DBC insert/update DSL inside its transaction. Declare nullable columns with `varchar("optional", 512).nullable().hashed()`. Assign a loaded `Hashed` directly when resaving. `Hashed(hasher, encodedValue)` only wraps an existing encoded value; it does not hash, so never pass plaintext to that constructor.
 
 - BCrypt produces 60 characters. The example's 512-character column leaves room for algorithm identifiers and parameter changes, but cannot guarantee space for every custom hasher.
 - Argon2/SCrypt output lengths depend on parameters. A PBKDF2 pepper is a separate secret and must remain available for verification.
@@ -53,7 +44,6 @@ existing encoded value; it does not hash, so never pass plaintext to that constr
 - Reversible and searchable encryption remain separate [Tink module](../tink/README.md) features.
 
 Official baseline: [Exposed 1.5.0 crypt sources](https://github.com/JetBrains/Exposed/tree/84361204b6639cad5696506a26595c97afac3531/exposed-crypt).
-
 
 ## Overview
 
@@ -275,11 +265,9 @@ object TestDBConfig {
 }
 ```
 
-The module default is `useFastDB = false`, so `enabledDialects()` returns H2,
-PostgreSQL, and MySQL 8.0 unless the environment narrows the matrix. Set
+The module default is `useFastDB = false`, so `enabledDialects()` returns H2, PostgreSQL, and MySQL 8.0 unless the environment narrows the matrix. Set
 `useFastDB = true` for an H2-only fast path. `EXPOSED_TEST_DB=POSTGRESQL` or
-`EXPOSED_TEST_DB=MYSQL_V8` narrows CI runs to H2 plus one real driver. Docker is
-needed for Testcontainers-backed databases.
+`EXPOSED_TEST_DB=MYSQL_V8` narrows CI runs to H2 plus one real driver. Docker is needed for Testcontainers-backed databases.
 
 ## Test Schema and Data
 

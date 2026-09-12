@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.cache.internal
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -94,6 +95,7 @@ class WriteBehindCoordinatorTest {
         val token = coordinator.reserveAdmission()
         coordinator.markEnqueued(token)
         coordinator.settleEnqueue(token, accepted = true)
+
         val owner = coordinator.beginClose() as CloseLease.Owner
         coordinator.onCloseFailed(WriteBehindFailureKind.CLOSE_TIMEOUT)
         coordinator.onFlushSucceeded(1)
@@ -119,11 +121,13 @@ class WriteBehindCoordinatorTest {
         coordinator.markEnqueued(token)
         coordinator.beginClose()
 
-        coordinator.settleEnqueue(token, accepted = true) shouldBeEqualTo false
+        coordinator.settleEnqueue(token, accepted = true).shouldBeFalse()
         coordinator.snapshot().queueDepth shouldBeEqualTo 0
         coordinator.snapshot().workerState shouldBeEqualTo CacheWorkerState.DRAINING
 
-        assertFailsWith<IllegalStateException> { coordinator.reserveAdmission() }
+        assertFailsWith<IllegalStateException> {
+            coordinator.reserveAdmission()
+        }
     }
 
     @Test
@@ -132,7 +136,10 @@ class WriteBehindCoordinatorTest {
         val snapshot = coordinator.snapshot()
         snapshot.workerState shouldBeEqualTo CacheWorkerState.NOT_APPLICABLE
         snapshot.queueDepth shouldBeEqualTo 0
-        assertFailsWith<IllegalStateException> { coordinator.reserveAdmission() }
+
+        assertFailsWith<IllegalStateException> {
+            coordinator.reserveAdmission()
+        }
     }
 
     @Test

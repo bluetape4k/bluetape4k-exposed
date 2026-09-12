@@ -10,14 +10,12 @@ import org.redisson.codec.ProtobufCodec
 import org.redisson.codec.SnappyCodecV2
 import org.redisson.codec.ZStdCodec
 import java.lang.reflect.InaccessibleObjectException
-import java.util.ArrayDeque
-import java.util.Collections
-import java.util.IdentityHashMap
+import java.util.*
 
 /** 실행 가능한 객체 그래프를 역직렬화할 수 있는 Redisson codec에 공통으로 적용하는 fail-fast 정책입니다. */
 object ExposedRedissonCodecSafety {
 
-/** 저장소 [config]에 포함된 codec을 검증합니다. */
+    /** 저장소 [config]에 포함된 codec을 검증합니다. */
     fun requireSafe(config: RedissonCacheConfig, trustedBinaryCache: Boolean) {
         requireSafe(config.codec, trustedBinaryCache)
     }
@@ -63,34 +61,34 @@ object ExposedRedissonCodecSafety {
                 declaringClass = CompositeCodec::class.java,
                 fieldNames = arrayOf("mapKeyCodec", "mapValueCodec", "valueCodec"),
             )
-            is LZ4Codec -> readCodecFields(
+            is LZ4Codec       -> readCodecFields(
                 codec = this,
                 declaringClass = LZ4Codec::class.java,
                 fieldNames = arrayOf("innerCodec"),
             )
-            is ZStdCodec -> readCodecFields(
+            is ZStdCodec      -> readCodecFields(
                 codec = this,
                 declaringClass = ZStdCodec::class.java,
                 fieldNames = arrayOf("innerCodec"),
             )
-            is LZ4CodecV2 -> readCodecFields(
+            is LZ4CodecV2     -> readCodecFields(
                 codec = this,
                 declaringClass = LZ4CodecV2::class.java,
                 fieldNames = arrayOf("innerCodec"),
             )
-            is SnappyCodecV2 -> readCodecFields(
+            is SnappyCodecV2  -> readCodecFields(
                 codec = this,
                 declaringClass = SnappyCodecV2::class.java,
                 fieldNames = arrayOf("innerCodec"),
             )
-            is ProtobufCodec -> readCodecFields(
+            is ProtobufCodec  -> readCodecFields(
                 codec = this,
                 declaringClass = ProtobufCodec::class.java,
                 fieldNames = arrayOf("blacklistCodec"),
             )
             // BaseEventCodec and MapCacheEventCodec are Redisson event decoders whose map-value encoder is unsupported;
             // they cannot serve as a repository map-value codec and are intentionally outside this consumer gate.
-            else -> emptyList()
+            else              -> emptyList()
         }
 
     private fun readCodecFields(
@@ -169,6 +167,6 @@ object ExposedRedissonCodecSafety {
 }
 
 /** 각 소비자가 보존된 raw delegate를 자체 신뢰 권한으로 다시 검증할 수 있게 하는 내부 경계입니다. */
-internal interface ExposedRedissonDelegatingCodec : Codec {
+internal interface ExposedRedissonDelegatingCodec: Codec {
     val delegateCodec: Codec
 }

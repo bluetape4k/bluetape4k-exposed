@@ -11,7 +11,8 @@ Provides Entity helpers, String-based DAO entities, auditable DAO bases, and Ent
 - **DAO extension functions**: Helpers for common Entity implementations such as `idEquals`, `idHashCode`, and
   `entityToStringBuilder`
 - **StringEntity**: DAO entity and EntityClass bases for `String` primary keys
-- **Generated-ID DAO wrappers**: Entity and EntityClass pairs for KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, and Timebased UUID Base62 tables from `exposed-core`
+- **Generated-ID DAO
+  wrappers**: Entity and EntityClass pairs for KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, and Timebased UUID Base62 tables from `exposed-core`
 - **Auditable DAO bases**: `AuditableEntity` and Int/Long/UUID EntityClass pairs that fill audit users during `flush()`
 - Built on `exposed-core`, keeping table definitions and DAO entity helpers in separate modules
 
@@ -221,31 +222,31 @@ does not add a dedicated `SoftDeletedEntity` base, so soft-delete filtering rema
 
 ## Key Files and Classes
 
-| File                                 | Description                                                       |
-|--------------------------------------|-------------------------------------------------------------------|
-| `EntityExtensions.kt`                | Entity helpers: `idEquals`, `idHashCode`, `entityToStringBuilder` |
-| `StringEntity.kt`                    | Entity/EntityClass with a String primary key                      |
-| `auditable/AuditableEntity.kt`       | DAO audit base; sets `createdBy` or `updatedBy` during `flush()`   |
-| `auditable/AuditableEntityClass.kt`  | Int/Long/UUID auditable EntityClass helpers                       |
-| `dao/id/KsuidEntity.kt`              | KSUID Entity/EntityClass pair                                     |
-| `dao/id/KsuidMillisEntity.kt`        | KSUID millis Entity/EntityClass pair                              |
-| `dao/id/UlidEntity.kt`               | ULID Entity/EntityClass pair                                      |
-| `dao/id/SnowflakeIdEntity.kt`        | Snowflake Long Entity/EntityClass pair                            |
-| `dao/id/TimebasedUUIDEntity.kt`      | UUIDv7 Entity/EntityClass pair                                    |
-| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass pairs, including MySQL variant  |
+| File                                  | Description                                                       |
+|---------------------------------------|-------------------------------------------------------------------|
+| `EntityExtensions.kt`                 | Entity helpers: `idEquals`, `idHashCode`, `entityToStringBuilder` |
+| `StringEntity.kt`                     | Entity/EntityClass with a String primary key                      |
+| `auditable/AuditableEntity.kt`        | DAO audit base; sets `createdBy` or `updatedBy` during `flush()`  |
+| `auditable/AuditableEntityClass.kt`   | Int/Long/UUID auditable EntityClass helpers                       |
+| `dao/id/KsuidEntity.kt`               | KSUID Entity/EntityClass pair                                     |
+| `dao/id/KsuidMillisEntity.kt`         | KSUID millis Entity/EntityClass pair                              |
+| `dao/id/UlidEntity.kt`                | ULID Entity/EntityClass pair                                      |
+| `dao/id/SnowflakeIdEntity.kt`         | Snowflake Long Entity/EntityClass pair                            |
+| `dao/id/TimebasedUUIDEntity.kt`       | UUIDv7 Entity/EntityClass pair                                    |
+| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass pairs, including MySQL variant   |
 
 ## ID Strategy Comparison
 
-| Core table                  | DAO helper pair                           | PK type  | Length   | Characteristics                           |
-|-----------------------------|-------------------------------------------|----------|----------|-------------------------------------------|
-| `KsuidTable`                | `KsuidEntity` / `KsuidEntityClass`         | `String` | 27 chars | Time-sortable, URL-safe                   |
-| `KsuidMillisTable`          | `KsuidMillisEntity` / Class                | `String` | 27 chars | Millisecond-precision KSUID               |
-| `UlidTable`                 | `UlidEntity` / `UlidEntityClass`           | `String` | 26 chars | StatefulMonotonic ULID                    |
-| `SnowflakeIdTable`          | `SnowflakeIdEntity` / Class                | `Long`   | —        | Distributed environments, high throughput |
-| `TimebasedUUIDTable`        | `TimebasedUUIDEntity` / Class              | `UUID`   | 36 chars | Time-sortable UUID v7                     |
-| `TimebasedUUIDBase62Table`  | `TimebasedUUIDBase62Entity` / Class        | `String` | up to 24 | UUID v7 encoded as Base62                 |
+| Core table                      | DAO helper pair                          | PK type  | Length   | Characteristics                           |
+|---------------------------------|------------------------------------------|----------|----------|-------------------------------------------|
+| `KsuidTable`                    | `KsuidEntity` / `KsuidEntityClass`       | `String` | 27 chars | Time-sortable, URL-safe                   |
+| `KsuidMillisTable`              | `KsuidMillisEntity` / Class              | `String` | 27 chars | Millisecond-precision KSUID               |
+| `UlidTable`                     | `UlidEntity` / `UlidEntityClass`         | `String` | 26 chars | StatefulMonotonic ULID                    |
+| `SnowflakeIdTable`              | `SnowflakeIdEntity` / Class              | `Long`   | —        | Distributed environments, high throughput |
+| `TimebasedUUIDTable`            | `TimebasedUUIDEntity` / Class            | `UUID`   | 36 chars | Time-sortable UUID v7                     |
+| `TimebasedUUIDBase62Table`      | `TimebasedUUIDBase62Entity` / Class      | `String` | up to 24 | UUID v7 encoded as Base62                 |
 | `TimebasedUUIDBase62TableMySql` | `TimebasedUUIDBase62EntityMySql` / Class | `String` | up to 24 | Base62 UUID with MySQL binary collation   |
-| `SoftDeletedIdTable`        | Core table only                            | Generic  | —        | Includes an `isDeleted` column            |
+| `SoftDeletedIdTable`            | Core table only                          | Generic  | —        | Includes an `isDeleted` column            |
 
 ## AuditableEntity (Audit Tracking for DAO)
 

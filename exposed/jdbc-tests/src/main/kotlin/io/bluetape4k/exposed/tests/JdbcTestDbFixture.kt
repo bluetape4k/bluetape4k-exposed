@@ -3,6 +3,7 @@
 
 package io.bluetape4k.exposed.tests
 
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.info
 import io.bluetape4k.utils.Runtimex
 import org.jetbrains.exposed.v1.core.DatabaseConfig
@@ -23,6 +24,9 @@ class JdbcTestDbFixture<K> internal constructor(
     private val onShutdown: () -> Unit,
     private val registerShutdown: (() -> Unit) -> Unit,
 ) {
+
+    companion object: KLogging()
+
     @Volatile
     var database: Database? = null
         private set
@@ -44,7 +48,7 @@ class JdbcTestDbFixture<K> internal constructor(
             throw failure
         }
         database = created
-        logger.info { "JDBC fixture initialized" }
+        log.info { "JDBC fixture initialized" }
         return created
     }
 

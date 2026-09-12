@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.cache.scenarios
 
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Assumptions
@@ -107,7 +107,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
                     entity,
                     updatedEntities.find {
                         repository.extractId(it) == repository.extractId(entity)
-                    }!!
+                    }.shouldNotBeNull()
                 )
             }
 
@@ -121,7 +121,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
                     entity,
                     entitiesFromCache.values.find {
                         repository.extractId(it) == repository.extractId(entity)
-                    }!!
+                    }.shouldNotBeNull()
                 )
             }
         }

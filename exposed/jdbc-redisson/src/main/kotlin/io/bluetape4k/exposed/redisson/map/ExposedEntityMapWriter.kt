@@ -61,7 +61,7 @@ open class ExposedEntityMapWriter<ID: Any, E: Any>(
         if (deleteFromDBOnInvalidate) {
             log.debug {
                 "캐시가 Invalidated 되어, DB에서도 삭제합니다... count=${ids.size}, " +
-                    "idType=${ids.firstOrNull()?.javaClass?.simpleName ?: "unknown"}"
+                        "idType=${ids.firstOrNull()?.javaClass?.simpleName ?: "unknown"}"
             }
 
             // Map Key가 String Codec 인데, UUID로 변환을 못함
@@ -72,6 +72,7 @@ open class ExposedEntityMapWriter<ID: Any, E: Any>(
     }
 ) {
     companion object: KLogging() {
+
         private const val DEFAULT_BATCH_SIZE = 1000
 
         private fun <K: Any, V: Any> writeThrough(

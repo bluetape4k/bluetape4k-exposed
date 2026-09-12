@@ -31,7 +31,6 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.jvm.JvmSynthetic
 
 /**
  * JDBC PK enumeration에 사용하는 반개방 구간입니다.
@@ -438,7 +437,7 @@ private fun <ID: Any> IdTable<ID>.readParallelKeyRange(range: JdbcKeyRange<ID>):
                 (rawIdColumn greaterEq lower.asComparableKey()) and (rawIdColumn less upper.asComparableKey())
             lower != null -> rawIdColumn greaterEq lower.asComparableKey()
             upper != null -> rawIdColumn less upper.asComparableKey()
-            else -> error("JdbcKeyRange must have a lowerInclusive or upperExclusive boundary")
+            else          -> error("JdbcKeyRange must have a lowerInclusive or upperExclusive boundary")
         }
 
     return select(id)

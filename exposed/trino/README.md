@@ -76,8 +76,7 @@ val db = TrinoDatabase.connect(HikariDataSource(hikariConfig))
 
 ### 1.1 JDBC Performance and Session Options
 
-Use `TrinoConnectionOptions` to pass Trino JDBC properties for large-result and
-optimizer-sensitive workloads while keeping the existing connection overloads.
+Use `TrinoConnectionOptions` to pass Trino JDBC properties for large-result and optimizer-sensitive workloads while keeping the existing connection overloads.
 
 ```kotlin
 import io.bluetape4k.exposed.trino.TrinoConnectionOptions
@@ -97,9 +96,7 @@ val db = TrinoDatabase.connect(
 )
 ```
 
-Actual pushdown support remains connector-specific. Use `EXPLAIN` against the
-target catalog for stable signals such as predicate, projection, aggregation,
-top-N, or limit pushdown, and avoid full-plan snapshot assertions in tests.
+Actual pushdown support remains connector-specific. Use `EXPLAIN` against the target catalog for stable signals such as predicate, projection, aggregation, top-N, or limit pushdown, and avoid full-plan snapshot assertions in tests.
 
 ### 2. Synchronous Transaction
 
@@ -161,9 +158,7 @@ queryFlow(db) {
 
 ### 5. Paged Flow Query
 
-Use `pagedQueryFlow` for large result sets that should not be materialized in a
-single transaction. Each page is loaded inside its own Exposed transaction and
-then emitted after the transaction is closed.
+Use `pagedQueryFlow` for large result sets that should not be materialized in a single transaction. Each page is loaded inside its own Exposed transaction and then emitted after the transaction is closed.
 
 ```kotlin
 import io.bluetape4k.exposed.trino.TrinoPagedQueryOptions
@@ -187,19 +182,13 @@ Large result set guidance:
 - `pagedQueryFlow` is the preferred API for large JDBC result sets.
 - Always use a deterministic `orderBy` with `limit` and `offset`.
 - The block must return at most the provided `limit` rows.
-- `pageSize` bounds application-side materialization. Trino JDBC throughput
-  tuning remains a driver/cluster protocol concern, including Trino's spooling
-  protocol for high-volume result transfer.
-- Cancellation stops before the next page request; the in-flight page
-  transaction is closed before collection continues or fails.
-- True row-by-row cursor streaming is intentionally not exposed because it
-  would couple the `ResultSet` lifetime to Flow collection outside the
-  transaction boundary.
+- `pageSize` bounds application-side materialization. Trino JDBC throughput tuning remains a driver/cluster protocol concern, including Trino's spooling protocol for high-volume result transfer.
+- Cancellation stops before the next page request; the in-flight page transaction is closed before collection continues or fails.
+- True row-by-row cursor streaming is intentionally not exposed because it would couple the `ResultSet` lifetime to Flow collection outside the transaction boundary.
 
 ### 6. Batch Write Helper
 
-Use `trinoBatchInsert` when the target Trino catalog supports `INSERT` and you
-want explicit client-side chunking around Exposed `batchInsert`.
+Use `trinoBatchInsert` when the target Trino catalog supports `INSERT` and you want explicit client-side chunking around Exposed `batchInsert`.
 
 ```kotlin
 import io.bluetape4k.exposed.trino.TrinoBatchInsertOptions
@@ -216,14 +205,10 @@ transaction(db) {
 
 Batch write guidance:
 
-- Trino supports `INSERT INTO ... query` and multi-row `VALUES` syntax, but
-  actual write support is connector-specific.
-- `trinoBatchInsert` is a bounded wrapper over Exposed JDBC `batchInsert`; it is
-  not a Trino connector bulk-loader protocol.
-- `shouldReturnGeneratedValues` defaults to `false` because generated keys are
-  not a reliable Trino write contract.
-- If a later chunk fails, earlier chunks may already be visible. This module
-  does not claim rollback or all-or-nothing semantics for Trino writes.
+- Trino supports `INSERT INTO ... query` and multi-row `VALUES` syntax, but actual write support is connector-specific.
+- `trinoBatchInsert` is a bounded wrapper over Exposed JDBC `batchInsert`; it is not a Trino connector bulk-loader protocol.
+- `shouldReturnGeneratedValues` defaults to `false` because generated keys are not a reliable Trino write contract.
+- If a later chunk fails, earlier chunks may already be visible. This module does not claim rollback or all-or-nothing semantics for Trino writes.
 - Connector-side write tuning, such as JDBC connector `write.batch-size`
   catalog properties, remains a Trino catalog configuration concern.
 
@@ -234,10 +219,10 @@ Trino does not support ACID transactions. While
 
 | Behavior           | Trino                          | Standard RDBMS        |
 |--------------------|--------------------------------|-----------------------|
-| Atomicity          | ❌ Not guaranteed               | ✅ Guaranteed          |
-| Rollback           | ❌ no-op                        | ✅ Works               |
-| Nested transaction | ⚠️ Calls allowed, no atomicity | ✅ Supported           |
-| Savepoint          | ❌ Not supported                | ✅ Supported           |
+| Atomicity          | ❌ Not guaranteed              | ✅ Guaranteed         |
+| Rollback           | ❌ no-op                       | ✅ Works              |
+| Nested transaction | ⚠️ Calls allowed, no atomicity | ✅ Supported          |
+| Savepoint          | ❌ Not supported               | ✅ Supported          |
 | Autocommit mode    | Always ON (cannot be changed)  | Can be toggled ON/OFF |
 
 **Practical impact**:
@@ -251,20 +236,20 @@ Trino does not support ACID transactions. While
 
 ### General Trino Contract
 
-| Feature                        | Supported              | Notes                                                                         |
-|--------------------------------|------------------------|-------------------------------------------------------------------------------|
-| SELECT / JOIN / Aggregation    | ✅                      | Standard SQL                                                                  |
+| Feature                        | Supported              | Notes                                                                                  |
+|--------------------------------|------------------------|----------------------------------------------------------------------------------------|
+| SELECT / JOIN / Aggregation    | ✅                     | Standard SQL                                                                           |
 | INSERT / batch INSERT          | ⚠️ Connector-dependent | `trinoBatchInsert` is verified against Memory; actual support depends on the connector |
-| UPDATE / DELETE                | ⚠️ Connector-dependent | This module provides the Exposed DSL; actual support depends on the connector |
-| CREATE TABLE / DROP TABLE      | ⚠️ Connector-dependent | Tests verified against the Memory connector                                   |
-| DDL via SchemaUtils            | ⚠️ Connector-dependent | Prefer `TrinoTable`                                                           |
-| Window functions (GROUPS mode) | ✅                      | `supportsWindowFrameGroupsMode = true`                                        |
-| Transaction atomicity          | ❌                      | Autocommit only                                                               |
-| Rollback                       | ❌                      | no-op                                                                         |
-| Savepoint                      | ❌                      | Not supported                                                                 |
-| ALTER COLUMN TYPE              | ❌                      | `supportsColumnTypeChange = false`                                            |
-| Multiple generated keys        | ❌                      | `supportsMultipleGeneratedKeys = false`                                       |
-| FK constraint metadata lookup  | ❌                      | `getImportedKeys` not supported → no-op                                       |
+| UPDATE / DELETE                | ⚠️ Connector-dependent | This module provides the Exposed DSL; actual support depends on the connector          |
+| CREATE TABLE / DROP TABLE      | ⚠️ Connector-dependent | Tests verified against the Memory connector                                            |
+| DDL via SchemaUtils            | ⚠️ Connector-dependent | Prefer `TrinoTable`                                                                    |
+| Window functions (GROUPS mode) | ✅                     | `supportsWindowFrameGroupsMode = true`                                                 |
+| Transaction atomicity          | ❌                     | Autocommit only                                                                        |
+| Rollback                       | ❌                     | no-op                                                                                  |
+| Savepoint                      | ❌                     | Not supported                                                                          |
+| ALTER COLUMN TYPE              | ❌                     | `supportsColumnTypeChange = false`                                                     |
+| Multiple generated keys        | ❌                     | `supportsMultipleGeneratedKeys = false`                                                |
+| FK constraint metadata lookup  | ❌                     | `getImportedKeys` not supported → no-op                                                |
 
 ### Memory Connector Test Coverage (test environment only)
 
@@ -272,16 +257,16 @@ Features verified in a Trino Memory connector environment via Testcontainers.
 
 | Feature                              | Verified | Notes                                |
 |--------------------------------------|----------|--------------------------------------|
-| CREATE/DROP TABLE                    | ✅        | Memory connector                     |
-| Single/batch INSERT                  | ✅        | Memory connector                     |
-| trinoBatchInsert                     | ✅        | Chunked Exposed batchInsert wrapper  |
-| SELECT / WHERE / ORDER BY            | ✅        |                                      |
-| COUNT / Aggregation functions        | ✅        |                                      |
-| suspendTransaction                   | ✅        | Dispatchers.IO                       |
-| queryFlow                            | ✅        | Materialized before emit             |
-| pagedQueryFlow                       | ✅        | Page materialized before emit        |
-| TrinoConnectionWrapper compatibility | ✅        | prepareStatement overloads           |
-| Automatic JDBC driver registration   | ✅        | init{} block on TrinoDatabase access |
+| CREATE/DROP TABLE                    | ✅       | Memory connector                     |
+| Single/batch INSERT                  | ✅       | Memory connector                     |
+| trinoBatchInsert                     | ✅       | Chunked Exposed batchInsert wrapper  |
+| SELECT / WHERE / ORDER BY            | ✅       |                                      |
+| COUNT / Aggregation functions        | ✅       |                                      |
+| suspendTransaction                   | ✅       | Dispatchers.IO                       |
+| queryFlow                            | ✅       | Materialized before emit             |
+| pagedQueryFlow                       | ✅       | Page materialized before emit        |
+| TrinoConnectionWrapper compatibility | ✅       | prepareStatement overloads           |
+| Automatic JDBC driver registration   | ✅       | init{} block on TrinoDatabase access |
 
 ## Key Files / Classes
 
@@ -313,11 +298,11 @@ Core regression test examples:
 
 The following features are planned for future releases.
 
-| Feature                   | Description                                                                   |
-|---------------------------|-------------------------------------------------------------------------------|
-| `exposed-bigquery-trino`  | Integrated pipeline module: BigQuery → Trino → Exposed                        |
-| Connector-specific bulk loaders | Dedicated non-Exposed bulk write protocols for connectors that expose them |
-| Result set streaming      | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
+| Feature                         | Description                                                                      |
+|---------------------------------|----------------------------------------------------------------------------------|
+| `exposed-bigquery-trino`        | Integrated pipeline module: BigQuery → Trino → Exposed                           |
+| Connector-specific bulk loaders | Dedicated non-Exposed bulk write protocols for connectors that expose them       |
+| Result set streaming            | True row-by-row cursor streaming is deferred until a safe cursor contract exists |
 
 ## References
 

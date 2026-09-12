@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.tenant.jdbc
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
-import com.zaxxer.hikari.HikariDataSource
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
 class TenantJdbcResourceRegistryTest {
+
+    companion object: KLogging()
 
     private enum class Tenant {
         ALPHA,
@@ -58,6 +60,7 @@ class TenantJdbcResourceRegistryTest {
         registry.use {
             input += "beta"
             it.configuredTenants.toList() shouldBeEqualTo listOf("alpha")
+
             @Suppress("UNCHECKED_CAST")
             assertFailsWith<UnsupportedOperationException> {
                 (it.configuredTenants as MutableSet<String>).add("beta")
@@ -70,6 +73,7 @@ class TenantJdbcResourceRegistryTest {
         val first = ConstantHashTenant("first")
         val second = ConstantHashTenant("second")
         val registry = registryOf(first, second)
+
         registry.use {
             it.resourceFor(first).dataSource shouldBeSameInstanceAs it.dataSourceFor(first)
             it.resourceFor(second).dataSource shouldBeSameInstanceAs it.dataSourceFor(second)

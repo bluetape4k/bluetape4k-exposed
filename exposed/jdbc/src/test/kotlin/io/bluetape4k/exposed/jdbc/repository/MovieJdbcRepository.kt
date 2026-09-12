@@ -26,6 +26,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import java.time.LocalDate
 
 class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
+
     companion object: KLogging()
 
     override val table = MovieTable
@@ -66,13 +67,12 @@ class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
     fun save(movieRecord: MovieRecord): MovieRecord {
         log.debug { "Create new movie. movie: $movieRecord" }
 
-        val id =
-            MovieTable.insertAndGetId {
-                it[this.name] = movieRecord.name
-                it[this.producerName] = movieRecord.producerName
-                it[this.releaseDate] = LocalDate.parse(movieRecord.releaseDate)
-            }
-        return movieRecord.copy(id = id.value)
+        val id = MovieTable.insertAndGetId {
+            it[this.name] = movieRecord.name
+            it[this.producerName] = movieRecord.producerName
+            it[this.releaseDate] = LocalDate.parse(movieRecord.releaseDate)
+        }
+        return movieRecord.withId(id = id.value)
     }
 
     /**
@@ -97,29 +97,27 @@ class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
         val movies = mutableMapOf<Long, MovieWithActorRecord>()
         val actors = mutableListOf<ActorRecord>()
 
-        join
-            .select(
-                MovieTable.id,
-                MovieTable.name,
-                MovieTable.producerName,
-                MovieTable.releaseDate,
-                ActorTable.id,
-                ActorTable.firstName,
-                ActorTable.lastName,
-                ActorTable.birthday
-            ).forEach { row ->
-                val movieId = row[MovieTable.id].value
-                val movie =
-                    movies.computeIfAbsent(movieId) {
-                        MovieWithActorRecord(
-                            id = row[MovieTable.id].value,
-                            name = row[MovieTable.name],
-                            producerName = row[MovieTable.producerName],
-                            releaseDate = row[MovieTable.releaseDate].toString()
-                        )
-                    }
-                movie.actors.add(row.toActorRecord())
+        join.select(
+            MovieTable.id,
+            MovieTable.name,
+            MovieTable.producerName,
+            MovieTable.releaseDate,
+            ActorTable.id,
+            ActorTable.firstName,
+            ActorTable.lastName,
+            ActorTable.birthday
+        ).forEach { row ->
+            val movieId = row[MovieTable.id].value
+            val movie = movies.computeIfAbsent(movieId) {
+                MovieWithActorRecord(
+                    id = row[MovieTable.id].value,
+                    name = row[MovieTable.name],
+                    producerName = row[MovieTable.producerName],
+                    releaseDate = row[MovieTable.releaseDate].toString()
+                )
             }
+            movie.actors.add(row.toActorRecord())
+        }
 
         return movies.values.toList()
     }
@@ -195,17 +193,16 @@ class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
     fun findMoviesWithActingProducers(): List<MovieWithProducingActorRecord> {
         log.debug { "Find movies with acting producers." }
 
-        val query =
-            MovieTable
-                .innerJoin(ActorInMovieTable)
-                .innerJoin(ActorTable)
-                .select(
-                    MovieTable.name,
-                    ActorTable.firstName,
-                    ActorTable.lastName
-                ).where {
-                    MovieTable.producerName eq ActorTable.firstName
-                }
+        val query = MovieTable
+            .innerJoin(ActorInMovieTable)
+            .innerJoin(ActorTable)
+            .select(
+                MovieTable.name,
+                ActorTable.firstName,
+                ActorTable.lastName
+            ).where {
+                MovieTable.producerName eq ActorTable.firstName
+            }
 
         return query.map { it.toMovieWithProducingActorRecord() }
     }

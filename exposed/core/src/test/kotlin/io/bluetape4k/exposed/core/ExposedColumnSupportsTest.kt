@@ -1,24 +1,26 @@
 package io.bluetape4k.exposed.core
 
-import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
-import kotlin.random.Random
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
 import org.junit.jupiter.api.Test
 import java.util.*
+import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
 
 @OptIn(ExperimentalUuidApi::class)
 class ExposedColumnSupportsTest {
+
+    companion object: KLogging()
 
     private object TypedTable: Table("typed_table_for_supports") {
         val intCol = integer("int_col")
         val uuidCol = javaUUID("uuid_col")
     }
-
 
     @Test
     fun `convertToLanguageType 는 기본 타입 변환을 지원한다`() {
@@ -29,14 +31,12 @@ class ExposedColumnSupportsTest {
         val uuid = BluetapeUuid.V7.nextId()
         convertToLanguageType(uuid, UUID::class) shouldBeEqualTo uuid
 
-
         val bytes = Random.nextBytes(16)
         convertToLanguageType(bytes, ByteArray::class) shouldBeEqualTo bytes
     }
 
     @Test
     fun `convertToLanguageType for kotlin Uuid type`() {
-        // Kotlin 2.3+ Uuid API (비활성화)
         val kotlinUuid = Uuid.generateV7()
         convertToLanguageType(kotlinUuid, Uuid::class) shouldBeEqualTo kotlinUuid
     }

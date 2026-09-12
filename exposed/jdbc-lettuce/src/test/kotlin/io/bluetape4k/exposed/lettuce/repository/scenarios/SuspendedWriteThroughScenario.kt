@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.lettuce.repository.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.scenarios.SuspendedJdbcWriteThroughScenario
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -36,77 +36,75 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>:
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `put - 캐시와 DB 모두에 반영된다`(testDB: TestDB) =
-        runSuspendIO {
-            withSuspendedEntityTable(testDB) {
-                val id = getExistingId()
-                val entity = repository.findByIdFromDb(id).shouldNotBeNull()
-                val updated = updateEmail(entity)
-                repository.put(id, updated)
+    fun `put - 캐시와 DB 모두에 반영된다`(testDB: TestDB) = runSuspendIO {
+        withSuspendedEntityTable(testDB) {
+            val id = getExistingId()
+            val entity = repository.findByIdFromDb(id).shouldNotBeNull()
+            val updated = updateEmail(entity)
 
-                repository.get(id) shouldBeEqualTo updated
-                repository.findByIdFromDb(id) shouldBeEqualTo updated
-            }
+            repository.put(id, updated)
+            repository.get(id) shouldBeEqualTo updated
+            repository.findByIdFromDb(id) shouldBeEqualTo updated
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - Map 일괄 저장 후 캐시와 DB 모두 반영된다`(testDB: TestDB) =
-        runSuspendIO {
-            withSuspendedEntityTable(testDB) {
-                val ids = getExistingIds()
-                val entities = repository.getAll(ids)
-                val updated = entities.mapValues { (_, v) -> updateEmail(v) }
-                repository.putAll(updated)
+    fun `putAll - Map 일괄 저장 후 캐시와 DB 모두 반영된다`(testDB: TestDB) = runSuspendIO {
+        withSuspendedEntityTable(testDB) {
+            val ids = getExistingIds()
+            val entities = repository.getAll(ids)
+            val updated = entities.mapValues { (_, v) -> updateEmail(v) }
+            repository.putAll(updated)
 
-                updated.forEach { (id, entity) ->
-                    repository.get(id) shouldBeEqualTo entity
-                    repository.findByIdFromDb(id) shouldBeEqualTo entity
-                }
-            }
-        }
-
-    @ParameterizedTest
-    @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - 캐시에서만 삭제되고 DB는 유지된다`(testDB: TestDB) =
-        runSuspendIO {
-            withSuspendedEntityTable(testDB) {
-                val id = getExistingId()
-                val entity = repository.findByIdFromDb(id).shouldNotBeNull()
-                repository.put(id, entity)
-                repository.invalidate(id)
-
-                // DB에는 여전히 존재한다 (invalidate는 캐시만 제거)
-                repository.findByIdFromDb(id) shouldBeEqualTo entity
-                // get()은 캐시 미스 후 DB Read-Through로 다시 로드
+            updated.forEach { (id, entity) ->
                 repository.get(id) shouldBeEqualTo entity
+                repository.findByIdFromDb(id) shouldBeEqualTo entity
             }
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 복수 ID를 캐시에서만 삭제하고 DB는 유지된다`(testDB: TestDB) =
-        runSuspendIO {
-            withSuspendedEntityTable(testDB) {
-                val ids = getExistingIds()
-                val entities = ids.associateWith { repository.findByIdFromDb(it).shouldNotBeNull() }
-                ids.forEach { id -> repository.put(id, entities[id]!!) }
-                repository.invalidateAll(ids)
+    fun `invalidate - 캐시에서만 삭제되고 DB는 유지된다`(testDB: TestDB) = runSuspendIO {
+        withSuspendedEntityTable(testDB) {
+            val id = getExistingId()
+            val entity = repository.findByIdFromDb(id).shouldNotBeNull()
+            repository.put(id, entity)
+            repository.invalidate(id)
 
-                // DB에는 모두 여전히 존재한다
-                ids.forEach { id ->
-                    repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
-                    repository.get(id) shouldBeEqualTo entities[id]
-                }
-            }
+            // DB에는 여전히 존재한다 (invalidate는 캐시만 제거)
+            repository.findByIdFromDb(id) shouldBeEqualTo entity
+
+            // get()은 캐시 미스 후 DB Read-Through로 다시 로드
+            repository.get(id) shouldBeEqualTo entity
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `countFromDb - DB 전체 레코드 수를 반환한다`(testDB: TestDB) =
-        runSuspendIO {
-            withSuspendedEntityTable(testDB) {
-                repository.countFromDb() shouldBeEqualTo getExistingIds().size.toLong()
+    fun `invalidateAll - 복수 ID를 캐시에서만 삭제하고 DB는 유지된다`(testDB: TestDB) = runSuspendIO {
+        withSuspendedEntityTable(testDB) {
+            val ids = getExistingIds()
+            val entities = ids.associateWith { repository.findByIdFromDb(it).shouldNotBeNull() }
+            ids.forEach { id ->
+                repository.put(id, entities[id]!!)
+            }
+            repository.invalidateAll(ids)
+
+            // DB에는 모두 여전히 존재한다
+            ids.forEach { id ->
+                repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
+                repository.get(id) shouldBeEqualTo entities[id]
             }
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource(ENABLE_DIALECTS_METHOD)
+    fun `countFromDb - DB 전체 레코드 수를 반환한다`(testDB: TestDB) = runSuspendIO {
+        withSuspendedEntityTable(testDB) {
+            repository.countFromDb() shouldBeEqualTo getExistingIds().size.toLong()
+        }
+    }
 }

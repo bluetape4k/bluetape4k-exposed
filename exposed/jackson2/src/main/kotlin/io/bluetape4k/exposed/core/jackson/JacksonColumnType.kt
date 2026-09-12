@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.core.jackson
 import io.bluetape4k.jackson.JacksonSerializer
 import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.support.toUtf8String
-import java.sql.Clob
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.JsonColumnMarker
@@ -14,6 +13,7 @@ import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.core.vendors.currentDialect
+import java.sql.Clob
 
 private val jsonSqlLiteralStringColumnType = TextColumnType()
 

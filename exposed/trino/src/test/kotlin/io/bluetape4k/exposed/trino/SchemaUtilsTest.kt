@@ -1,8 +1,9 @@
 package io.bluetape4k.exposed.trino
 
-import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Test
  * 정상 동작하는지 검증하는 테스트.
  */
 class SchemaUtilsTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `SchemaUtils create Events 테이블 생성 성공`() {
@@ -47,6 +50,7 @@ class SchemaUtilsTest: AbstractTrinoTest() {
     fun `create drop create 순서로 테이블 재생성 가능`() {
         transaction(db) { SchemaUtils.create(Events) }
         transaction(db) { SchemaUtils.drop(Events) }
+
         transaction(db) { SchemaUtils.create(Events) }
         transaction(db) { SchemaUtils.drop(Events) }
     }

@@ -3,17 +3,17 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.io.ObjectStreamClass
-import java.io.Serializable
 import java.time.Duration
 
 class SnapshotCacheConfigTest {
+
+    companion object: KLogging()
 
     @Test
     fun `snapshot config exposes documented defaults`() {
@@ -78,7 +78,7 @@ class SnapshotCacheConfigTest {
             SnapshotCacheConfig(invalid, "schema")
         }
 
-        thrown.message.orEmpty().shouldNotContain(invalid)
+        thrown.message shouldNotContain invalid
     }
 
     @Test
@@ -202,13 +202,8 @@ class SnapshotCacheConfigTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> serializeRoundTrip(value: T): T {
-        val bytes = ByteArrayOutputStream().use { output ->
-            ObjectOutputStream(output).use { it.writeObject(value) }
-            output.toByteArray()
-        }
-        return ByteArrayInputStream(bytes).use { input ->
-            ObjectInputStream(input).use { it.readObject() as T }
-        }
+    private fun <T: Any> serializeRoundTrip(value: T): T {
+        val bytes = BinarySerializers.FastFory.serialize(value)
+        return BinarySerializers.FastFory.deserialize<T>(bytes).shouldNotBeNull()
     }
 }

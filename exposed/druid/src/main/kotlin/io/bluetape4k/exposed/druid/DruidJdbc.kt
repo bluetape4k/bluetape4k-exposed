@@ -1,10 +1,13 @@
 package io.bluetape4k.exposed.druid
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requireNotBlank
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.Serializable
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
@@ -36,6 +39,8 @@ object DruidJdbc: KLogging() {
         mapper: (ResultSet) -> T,
     ): List<T> {
         requireQueryOnlySql(sql)
+        log.debug { "Executing query: $sql" }
+        
         return connection(options).use { conn ->
             conn.createStatement().use { statement ->
                 statement.executeQuery(sql).use { rs ->
@@ -69,8 +74,8 @@ object DruidJdbc: KLogging() {
         schema: String = "druid",
         options: DruidConnectionOptions = DruidConnectionOptions(),
     ): List<DruidColumnMetadata> {
-        require(datasource.isNotBlank()) { "datasource must not be blank." }
-        require(schema.isNotBlank()) { "schema must not be blank." }
+        datasource.requireNotBlank("datasource")
+        schema.requireNotBlank("schema")
 
         return connection(options).use { conn ->
             conn.prepareStatement(DRUID_COLUMNS_SQL).use { statement ->
@@ -101,10 +106,10 @@ object DruidJdbc: KLogging() {
         require(normalized.isNotBlank()) { "sql must not be blank." }
         require(
             normalized.startsWith("select") ||
-                normalized.startsWith("with") ||
-                normalized.startsWith("explain") ||
-                normalized.startsWith("describe") ||
-                normalized.startsWith("show")
+                    normalized.startsWith("with") ||
+                    normalized.startsWith("explain") ||
+                    normalized.startsWith("describe") ||
+                    normalized.startsWith("show")
         ) {
             "DruidJdbc is query-only; DDL, DML, repository, and migration statements are out of scope."
         }
@@ -112,9 +117,9 @@ object DruidJdbc: KLogging() {
 
     internal const val DRUID_COLUMNS_SQL: String =
         "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE, ORDINAL_POSITION, IS_NULLABLE " +
-            "FROM INFORMATION_SCHEMA.COLUMNS " +
-            "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? " +
-            "ORDER BY ORDINAL_POSITION"
+                "FROM INFORMATION_SCHEMA.COLUMNS " +
+                "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? " +
+                "ORDER BY ORDINAL_POSITION"
 }
 
 /** Druid `INFORMATION_SCHEMA.COLUMNS`가 반환하는 column metadata입니다. */
@@ -125,4 +130,8 @@ data class DruidColumnMetadata(
     val dataType: String,
     val ordinalPosition: Int,
     val isNullable: String,
-)
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}

@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRecord
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseRepository
 import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.EdgeCaseTable
@@ -7,12 +14,7 @@ import io.bluetape4k.exposed.jdbc.repository.EdgeCaseSchema.withEdgeCaseTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
@@ -25,9 +27,9 @@ import org.junit.jupiter.params.provider.MethodSource
  * updateAll, deleteAll(op), deleteAllByIds, deleteAllIgnore(MySQL only),
  * deleteByIdIgnore(MySQL only), batchInsert(Sequence) 동작을 검증한다.
  */
-class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
+class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ── batchUpsert ─────────────────────────────────────────────────────────
 
@@ -39,18 +41,19 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
     fun `batchUpsert(Iterable) 는 신규 record INSERT`(testDB: TestDB) {
         // MySQL은 UPSERT에서 conflict key 지정을 지원하지 않음
         Assumptions.assumeTrue(testDB != TestDB.MYSQL_V8)
+
         withEdgeCaseTable(testDB) {
             val records = listOf(
                 EdgeCaseRecord(name = "Alice", age = 30, isActive = true),
-                EdgeCaseRecord(name = "Bob",   age = 25, isActive = false),
+                EdgeCaseRecord(name = "Bob", age = 25, isActive = false),
             )
 
             val result = EdgeCaseRepository.batchUpsert(
                 records,
                 keys = arrayOf(EdgeCaseTable.name),
             ) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 
@@ -82,8 +85,8 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
                 upsertRecords,
                 keys = arrayOf(EdgeCaseTable.name),
             ) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 
@@ -91,8 +94,9 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
             EdgeCaseRepository.count() shouldBeEqualTo 1L
 
             val updated = EdgeCaseRepository.findById(result.first().id)
-            updated.name     shouldBeEqualTo "Alice"
-            updated.age      shouldBeEqualTo 99
+            log.debug { "updated: $updated" }
+            updated.name shouldBeEqualTo "Alice"
+            updated.age shouldBeEqualTo 99
             updated.isActive.shouldBeFalse()
         }
     }
@@ -111,15 +115,15 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
 
             val records = sequenceOf(
                 EdgeCaseRecord(name = "Seq-Existing", age = 20),  // UPDATE
-                EdgeCaseRecord(name = "Seq-New",      age = 30),  // INSERT
+                EdgeCaseRecord(name = "Seq-New", age = 30),  // INSERT
             )
 
             val result = EdgeCaseRepository.batchUpsert(
                 records,
                 keys = arrayOf(EdgeCaseTable.name),
             ) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 
@@ -154,8 +158,8 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
                     update[EdgeCaseTable.age] = insertValue(EdgeCaseTable.age)
                 },
             ) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 
@@ -190,8 +194,8 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
                 keys = arrayOf(EdgeCaseTable.name),
                 onUpdateExclude = listOf(EdgeCaseTable.isActive),
             ) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 
@@ -240,9 +244,7 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Count-B", age = 2, isActive = true))
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Count-C", age = 3, isActive = false))
 
-            val updatedCount = EdgeCaseRepository.updateAll(
-                predicate = { EdgeCaseTable.isActive eq true },
-            ) {
+            val updatedCount = EdgeCaseRepository.updateAll(predicate = { EdgeCaseTable.isActive eq true }) {
                 it[EdgeCaseTable.age] = 100
             }
 
@@ -267,7 +269,7 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
 
             deleted shouldBeEqualTo 1
             EdgeCaseRepository.count() shouldBeEqualTo 2L
-            EdgeCaseRepository.findAll { EdgeCaseTable.name eq "Del-C" } shouldHaveSize 0
+            EdgeCaseRepository.findAll { EdgeCaseTable.name eq "Del-C" }.shouldBeEmpty()
         }
     }
 
@@ -352,8 +354,8 @@ class JdbcRepositoryWriteEdgeCaseTest : AbstractExposedTest() {
             }
 
             val inserted = EdgeCaseRepository.batchInsert(records) { rec ->
-                this[EdgeCaseTable.name]     = rec.name
-                this[EdgeCaseTable.age]      = rec.age
+                this[EdgeCaseTable.name] = rec.name
+                this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
 

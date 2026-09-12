@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.codecs
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.toUserRecord
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
@@ -10,7 +11,6 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.test.runTest
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.dao.flushCache
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId

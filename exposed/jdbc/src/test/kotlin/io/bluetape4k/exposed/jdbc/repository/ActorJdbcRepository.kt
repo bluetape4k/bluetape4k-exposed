@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import java.time.LocalDate
 
 class ActorJdbcRepository: LongJdbcRepository<ActorRecord> {
+
     companion object: KLogging()
 
     override val table = ActorTable
@@ -66,6 +67,6 @@ class ActorJdbcRepository: LongJdbcRepository<ActorRecord> {
                 it[lastName] = actor.lastName
                 it[birthday] = actor.birthday?.let { birthday -> LocalDate.parse(birthday) }
             }
-        return actor.copy(id = id.value)
+        return actor.withId(id = id.value)
     }
 }

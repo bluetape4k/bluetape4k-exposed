@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val exposedCacheMainClasses = project(":bluetape4k-exposed-cache")
@@ -21,6 +20,7 @@ dependencies {
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.caffeine)
+    compileOnly(bt4k.bluetape4k.cache.core)
 
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)

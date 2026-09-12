@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.core.auditable
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -150,7 +150,7 @@ class UserContextTest {
 
         MultithreadingTester()
             .workers(2)
-            .rounds(1)
+            .rounds(4)
             .addAll(
                 listOf(
                     {

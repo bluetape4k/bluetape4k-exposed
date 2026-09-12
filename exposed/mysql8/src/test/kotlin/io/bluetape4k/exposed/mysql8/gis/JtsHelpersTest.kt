@@ -1,12 +1,11 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [JtsHelpers] 팩토리 함수 단위 테스트.
@@ -15,7 +14,7 @@ import io.bluetape4k.assertions.assertFailsWith
  */
 class JtsHelpersTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── wgs84Point ──────────────────────────────────────────────────────────
 

@@ -3,23 +3,24 @@ package io.bluetape4k.exposed.r2dbc.repository
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.junit.jupiter.api.Test
-import java.util.UUID
-import kotlin.uuid.ExperimentalUuidApi
+import java.util.*
 import kotlin.uuid.Uuid
 
 /** R2DBC UUID 특수화가 case-only JVM 이름을 만들지 않는지 검증합니다. */
 class UuidRepositoryNamingTest {
 
+    companion object: KLoggingChannel()
+
     @Test
     fun `canonical UUID repository names are filesystem safe`() {
-        val names =
-            listOf(
-                KotlinUuidR2dbcRepository::class.java,
-                JavaUuidR2dbcRepository::class.java,
-                KotlinUuidSoftDeletedR2dbcRepository::class.java,
-                JavaUuidSoftDeletedR2dbcRepository::class.java,
-            ).map(Class<*>::getName)
+        val names = listOf(
+            KotlinUuidR2dbcRepository::class.java,
+            JavaUuidR2dbcRepository::class.java,
+            KotlinUuidSoftDeletedR2dbcRepository::class.java,
+            JavaUuidSoftDeletedR2dbcRepository::class.java,
+        ).map(Class<*>::getName)
 
         names.distinct().size shouldBeEqualTo names.size
         names.all { it.substringAfterLast('.').contains("Uuid") }.shouldBeTrue()
@@ -27,7 +28,6 @@ class UuidRepositoryNamingTest {
     }
 
     @Test
-    @OptIn(ExperimentalUuidApi::class)
     @Suppress("DEPRECATION")
     fun `legacy aliases remain source compatible`() {
         val kotlinR2dbc: UuidR2dbcRepository<Any>? = null

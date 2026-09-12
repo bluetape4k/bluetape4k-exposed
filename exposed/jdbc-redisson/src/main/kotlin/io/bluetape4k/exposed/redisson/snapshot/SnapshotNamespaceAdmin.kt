@@ -85,19 +85,19 @@ annotation class DelicateSnapshotCacheAdminApi
 
 /** 제한된 snapshot namespace 정리 시도의 구조적 결과입니다. */
 enum class SnapshotNamespaceCleanupOutcome {
-/** 요청한 정리와 최종 remote-state 검증을 완료했습니다. */
+    /** 요청한 정리와 최종 remote-state 검증을 완료했습니다. */
     COMPLETED,
 
-/** 호출자 local view를 비운 뒤 remote map과 marker가 없음을 다시 검증했습니다. */
+    /** 호출자 local view를 비운 뒤 remote map과 marker가 없음을 다시 검증했습니다. */
     ALREADY_COMPLETE,
 
-/** map과 호출자 local view를 비우고 정확한 marker는 유지했습니다. */
+    /** map과 호출자 local view를 비우고 정확한 marker는 유지했습니다. */
     MARKER_RETAINED,
 
-/** 정리 command는 승인됐지만 공유 deadline 만료 시 최종 상태를 알 수 없었습니다. */
+    /** 정리 command는 승인됐지만 공유 deadline 만료 시 최종 상태를 알 수 없었습니다. */
     TIMED_OUT_ACCEPTED_UNKNOWN,
 
-/** 요청한 terminal state를 입증하기 전에 정리가 fail-closed로 실패했습니다. */
+    /** 요청한 terminal state를 입증하기 전에 정리가 fail-closed로 실패했습니다. */
     FAILED,
 }
 
@@ -112,7 +112,7 @@ data class SnapshotNamespaceCleanupResult(
     val mapAbsent: Boolean,
     val markerPresent: Boolean,
     val exceptionType: String? = null,
-) : Serializable {
+): Serializable {
     init {
         exceptionType?.let(::requireSafeSnapshotCacheExceptionType)
     }
@@ -133,7 +133,7 @@ data class SnapshotNamespaceCleanupResult(
  * 하나의 shared monotonic deadline을 사용하며 취소되지 않습니다. 이 함수를 다시 실행해 안전하게 재개할 수 있습니다.
  */
 @DelicateSnapshotCacheAdminApi
-fun <ID : Any> clearSnapshotNamespace(
+fun <ID: Any> clearSnapshotNamespace(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
     namespace: String,
@@ -150,7 +150,7 @@ fun <ID : Any> clearSnapshotNamespace(
  * 승인된 command는 취소되지 않으며, 작업을 다시 실행해 부분 정리 상태를 확인하고 재개합니다.
  */
 @DelicateSnapshotCacheAdminApi
-fun <ID : Any> clearMapRetainingMarker(
+fun <ID: Any> clearMapRetainingMarker(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
     namespace: String,
@@ -457,9 +457,9 @@ private data class RemoteNamespaceState(
             require(result.size == 2) { "Unexpected snapshot namespace marker response." }
             val marker = when ((result[0] as? Number)?.toLong()) {
                 MARKER_ABSENT -> RemoteMarker.ABSENT
-                MARKER_EXACT -> RemoteMarker.EXACT
+                MARKER_EXACT  -> RemoteMarker.EXACT
                 MARKER_MISMATCH -> RemoteMarker.MISMATCH
-                else -> throw IllegalStateException("Unexpected snapshot namespace marker state.")
+                else          -> throw IllegalStateException("Unexpected snapshot namespace marker state.")
             }
             val mapAbsent = when ((result[1] as? Number)?.toLong()) {
                 0L -> true

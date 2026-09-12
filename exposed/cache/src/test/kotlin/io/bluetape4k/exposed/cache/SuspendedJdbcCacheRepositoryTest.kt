@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.cache
 
-import io.bluetape4k.logging.KLogging
-import io.mockk.mockk
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -19,7 +19,7 @@ import java.io.Serializable
  */
 class SuspendedJdbcCacheRepositoryTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // Companion 상수
@@ -50,14 +50,14 @@ class SuspendedJdbcCacheRepositoryTest {
     // Stub
     // ----------------------------------------------------------------
 
-    private data class DummyEntity(val id: Long = 0L) : Serializable {
+    private data class DummyEntity(val id: Long = 0L): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
     }
 
     /** close()를 오버라이드하지 않아 인터페이스 기본 구현을 그대로 사용하는 스텁. */
-    private class MinimalSuspendedJdbcCacheRepository : SuspendedJdbcCacheRepository<Long, DummyEntity> {
+    private class MinimalSuspendedJdbcCacheRepository: SuspendedJdbcCacheRepository<Long, DummyEntity> {
         override val table: IdTable<Long> = mockk(relaxed = true)
         override val cacheName = "test"
         override val cacheMode = CacheMode.LOCAL

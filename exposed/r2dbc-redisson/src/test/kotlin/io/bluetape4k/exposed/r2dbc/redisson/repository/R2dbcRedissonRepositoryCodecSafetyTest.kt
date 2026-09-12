@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.r2dbc.redisson.repository
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
-import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig

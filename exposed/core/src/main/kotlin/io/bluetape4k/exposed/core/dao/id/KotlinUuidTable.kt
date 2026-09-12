@@ -1,8 +1,6 @@
 package io.bluetape4k.exposed.core.dao.id
 
-import org.jetbrains.exposed.v1.core.Table.UuidVersion
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
-import kotlin.uuid.ExperimentalUuidApi
 
 /**
  * Kotlin `kotlin.uuid.Uuid`를 기본 키로 사용하는 Exposed [UuidTable] 어댑터입니다.
@@ -22,7 +20,6 @@ import kotlin.uuid.ExperimentalUuidApi
  * @param columnName 기본 키 컬럼 이름이며 기본값은 `id`입니다.
  * @param uuidVersion ID 생성에 사용할 UUID 버전이며 기본값은 `UuidVersion.V4`입니다.
  */
-@OptIn(ExperimentalUuidApi::class)
 open class KotlinUuidTable(
     name: String = "",
     columnName: String = "id",

@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.bigquery.domain.Events
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -125,14 +126,13 @@ class BigQueryQueryContinuationHttpUnitTest {
             datasetId = DATASET_ID,
             sqlGenDb = Database.connect(
                 url = "jdbc:h2:mem:bq_http_location_${transport.id};" +
-                    "MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+                        "MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
                 driver = "org.h2.Driver",
             ),
         )
 
-    private class RecordingTransport(
-        responses: List<String>,
-    ): MockHttpTransport() {
+    private class RecordingTransport(responses: List<String>): MockHttpTransport() {
+
         private val remainingResponses = ArrayDeque(responses)
         val requestUrls = mutableListOf<String>()
         val id: Int = nextId++
@@ -152,7 +152,8 @@ class BigQueryQueryContinuationHttpUnitTest {
         }
     }
 
-    private companion object {
+    private companion object: KLogging() {
+        
         private const val PROJECT_ID = "proj"
         private const val DATASET_ID = "ds"
 

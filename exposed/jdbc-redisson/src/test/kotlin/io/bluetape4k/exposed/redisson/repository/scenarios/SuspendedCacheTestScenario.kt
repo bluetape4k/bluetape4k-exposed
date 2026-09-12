@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import kotlin.coroutines.CoroutineContext
 
 interface SuspendedCacheTestScenario<ID: Any, E: java.io.Serializable> {
+
     companion object: KLoggingChannel() {
         val DefaultCacheDispatcher = Dispatchers.IO
     }
@@ -20,7 +21,7 @@ interface SuspendedCacheTestScenario<ID: Any, E: java.io.Serializable> {
      */
     val cacheConfig: RedissonCacheConfig
 
-     /**
+    /**
      * 테스트에 사용할 캐시 저장소
      */
     val repository: SuspendedJdbcRedissonRepository<ID, E>

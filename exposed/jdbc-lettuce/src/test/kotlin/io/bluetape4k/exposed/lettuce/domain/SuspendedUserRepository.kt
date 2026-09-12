@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
 import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.Dispatchers
@@ -28,16 +29,18 @@ class SuspendedUserRepository(
     config,
     ExposedLettuceCodecs.jackson3(UserRecord::class.java)
 ) {
+
+    companion object: KLoggingChannel()
+
     override val table: IdTable<Long> = UserTable
 
-    override fun ResultRow.toEntity(): UserRecord =
-        UserRecord(
-            id = this[UserTable.id].value,
-            firstName = this[UserTable.firstName],
-            lastName = this[UserTable.lastName],
-            email = this[UserTable.email],
-            createdAt = this[UserTable.createdAt]
-        )
+    override fun ResultRow.toEntity(): UserRecord = UserRecord(
+        id = this[UserTable.id].value,
+        firstName = this[UserTable.firstName],
+        lastName = this[UserTable.lastName],
+        email = this[UserTable.email],
+        createdAt = this[UserTable.createdAt]
+    )
 
     override fun UpdateStatement.updateEntity(entity: UserRecord) {
         this[UserTable.firstName] = entity.firstName
@@ -55,35 +58,33 @@ class SuspendedUserRepository(
     override fun extractId(entity: UserRecord): Long = entity.id
 
     /** DB에 직접 row를 삽입하고 UserRecord를 반환한다 (테스트 편의용). */
-    fun createInDb(record: UserRecord): UserRecord =
-        transaction {
-            val id =
-                UserTable
-                    .insertAndGetId {
-                        it[UserTable.id] = record.id
-                        it[UserTable.firstName] = record.firstName
-                        it[UserTable.lastName] = record.lastName
-                        it[UserTable.email] = record.email
-                    }.value
-            record.copy(id = id)
-        }
+    fun createInDb(record: UserRecord): UserRecord = transaction {
+        val id = UserTable
+            .insertAndGetId {
+                it[UserTable.id] = record.id
+                it[UserTable.firstName] = record.firstName
+                it[UserTable.lastName] = record.lastName
+                it[UserTable.email] = record.email
+            }.value
+
+        record.withId(id)
+    }
 
     /** DB에서 직접 조회한다 (캐시를 거치지 않음, 테스트 검증용). */
     @Suppress("DEPRECATION")
-    suspend fun findFromDb(id: Long): UserRecord? =
-        suspendedTransactionAsync(Dispatchers.IO) {
-            UserTable
-                .selectAll()
-                .where { UserTable.id eq id }
-                .singleOrNull()
-                ?.let {
-                    UserRecord(
-                        id = it[UserTable.id].value,
-                        firstName = it[UserTable.firstName],
-                        lastName = it[UserTable.lastName],
-                        email = it[UserTable.email],
-                        createdAt = it[UserTable.createdAt]
-                    )
-                }
-        }.await()
+    suspend fun findFromDb(id: Long): UserRecord? = suspendedTransactionAsync(Dispatchers.IO) {
+        UserTable
+            .selectAll()
+            .where { UserTable.id eq id }
+            .singleOrNull()
+            ?.let {
+                UserRecord(
+                    id = it[UserTable.id].value,
+                    firstName = it[UserTable.firstName],
+                    lastName = it[UserTable.lastName],
+                    email = it[UserTable.email],
+                    createdAt = it[UserTable.createdAt]
+                )
+            }
+    }.await()
 }

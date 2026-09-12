@@ -13,7 +13,7 @@ internal data class CockroachDbCompatibilityItem(
     val feature: String,
     val status: CockroachDbCompatibilityStatus,
     val evidence: String,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }

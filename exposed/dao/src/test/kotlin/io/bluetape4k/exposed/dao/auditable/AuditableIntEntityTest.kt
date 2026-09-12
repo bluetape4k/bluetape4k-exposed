@@ -1,18 +1,17 @@
 package io.bluetape4k.exposed.dao.auditable
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.AuditableIntIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.entityCache
-import org.jetbrains.exposed.v1.dao.flushCache
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
@@ -49,10 +48,9 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "첫 번째 댓글"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Comment.findById(comment.id)!!
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
             loaded.createdBy.shouldNotBeNull()
             loaded.createdAt.shouldNotBeNull()
         }
@@ -65,10 +63,9 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "두 번째 댓글"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Comment.findById(comment.id)!!
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
             loaded.updatedAt.shouldBeNull()
             loaded.updatedBy.shouldBeNull()
         }
@@ -83,13 +80,12 @@ class AuditableIntEntityTest: AbstractExposedTest() {
                 val comment = Comment.new {
                     content = "작성자 지정 댓글"
                 }
-                flushCache()
                 comment.id
             }
 
             entityCache.clear()
 
-            val loaded = Comment.findById(commentId)!!
+            val loaded = Comment.findById(commentId).shouldNotBeNull()
             loaded.createdBy shouldBeEqualTo authorName
         }
     }
@@ -101,16 +97,15 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "수정 전 댓글"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Comment.findById(comment.id)!!
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
             loaded.content = "수정 후 댓글"
             loaded.flush()
 
             entityCache.clear()
 
-            val updated = Comment.findById(comment.id)!!
+            val updated = Comment.findById(comment.id).shouldNotBeNull()
             updated.updatedBy.shouldNotBeNull()
             updated.content shouldBeEqualTo "수정 후 댓글"
         }
@@ -124,10 +119,9 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "시스템 댓글"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Comment.findById(comment.id)!!
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
             loaded.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
         }
     }
@@ -139,10 +133,10 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "equals 테스트"
             }
-            flushCache()
+            entityCache.clear()
 
-            val reloaded = Comment.findById(comment.id)!!
-            comment shouldBeEqualTo reloaded
+            val reloaded = Comment.findById(comment.id).shouldNotBeNull()
+            reloaded shouldBeEqualTo comment
         }
     }
 
@@ -152,7 +146,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
         withTables(testDB, Comments) {
             val comment1 = Comment.new { content = "댓글 1" }
             val comment2 = Comment.new { content = "댓글 2" }
-            flushCache()
+            entityCache.clear()
 
             comment1 shouldNotBeEqualTo comment2
         }
@@ -166,14 +160,13 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment = Comment.new {
                 content = "수정 없는 댓글"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Comment.findById(comment.id)!!
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
             loaded.flush()
             entityCache.clear()
 
-            val reloaded = Comment.findById(comment.id)!!
+            val reloaded = Comment.findById(comment.id).shouldNotBeNull()
             reloaded.updatedBy.shouldBeNull()
             reloaded.updatedAt.shouldBeNull()
         }

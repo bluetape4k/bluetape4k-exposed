@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.starrocks.insert
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.starrocks.AbstractStarRocksTest
 import io.bluetape4k.exposed.starrocks.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test
  * Insert smoke tests for StarRocks through Exposed.
  */
 class InsertTest: AbstractStarRocksTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `insert event through Exposed`() {

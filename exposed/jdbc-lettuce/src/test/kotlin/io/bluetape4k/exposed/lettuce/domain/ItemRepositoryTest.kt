@@ -1,15 +1,15 @@
 package io.bluetape4k.exposed.lettuce.domain
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
-import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -17,15 +17,17 @@ import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledForJreRange
+import org.junit.jupiter.api.condition.JRE
 import java.math.BigDecimal
 import java.util.*
 
 class ItemRepositoryTest: AbstractJdbcLettuceTest() {
-    companion object: KLoggingChannel()
+
+    companion object: KLogging()
 
     private lateinit var repo: ItemRepository
 
@@ -129,10 +131,9 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
         names.forEach { it shouldBeEqualTo "Contended" }
     }
 
+    @EnabledForJreRange(min = JRE.JAVA_21)
     @Test
     fun `get - StructuredTaskScopeTester 병렬 조회에서도 동일 값을 반환한다`() {
-        assumeTrue(structuredTaskScopeAvailable(), "StructuredTaskScope runtime is not available")
-
         val created = repo.createInDb("Structured", BigDecimal("19.99"))
         repo.clear()
         val names = Collections.synchronizedList(mutableListOf<String>())
@@ -220,13 +221,12 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
             Thread.sleep(100L)
         }
 
-        val dbRow =
-            transaction {
-                ItemTable
-                    .selectAll()
-                    .where { ItemTable.id eq created.id }
-                    .singleOrNull()
-            }
+        val dbRow = transaction {
+            ItemTable
+                .selectAll()
+                .where { ItemTable.id eq created.id }
+                .singleOrNull()
+        }
         dbRow.shouldNotBeNull()
         dbRow[ItemTable.name] shouldBeEqualTo "WBItem"
 
@@ -245,20 +245,14 @@ class ItemRepositoryTest: AbstractJdbcLettuceTest() {
         found.shouldNotBeNull()
         found.name shouldBeEqualTo "CacheOnly"
 
-        val dbRow =
-            transaction {
-                ItemTable
-                    .selectAll()
-                    .where { ItemTable.id eq dto.id }
-                    .singleOrNull()
-            }
+        val dbRow = transaction {
+            ItemTable
+                .selectAll()
+                .where { ItemTable.id eq dto.id }
+                .singleOrNull()
+        }
         dbRow.shouldBeNull()
 
         noneRepo.close()
     }
-
-    private fun structuredTaskScopeAvailable(): Boolean =
-        runCatching {
-            Class.forName("java.util.concurrent.StructuredTaskScope\$ShutdownOnFailure")
-        }.isSuccess
 }

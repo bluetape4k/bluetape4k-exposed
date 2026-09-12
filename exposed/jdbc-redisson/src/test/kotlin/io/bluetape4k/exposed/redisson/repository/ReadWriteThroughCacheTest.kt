@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.UserCacheRepository
@@ -15,9 +15,9 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.redisson.repository.scenarios.ReadThroughScenario
 import io.bluetape4k.exposed.redisson.repository.scenarios.WriteThroughScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -25,32 +25,32 @@ import org.junit.jupiter.api.Nested
 import java.util.*
 
 class ReadWriteThroughCacheTest {
+
     companion object: KLogging()
 
     abstract class AutoIncIdReadWriteThrough:
         AbstractRedissonTest(),
         ReadThroughScenario<Long, UserRecord>,
         WriteThroughScenario<Long, UserRecord> {
+
         override fun withEntityTable(
             testDB: TestDB,
             statement: JdbcTransaction.() -> Unit,
         ) = withUserTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override fun getNonExistentId() = Long.MIN_VALUE
 
@@ -120,26 +120,25 @@ class ReadWriteThroughCacheTest {
         AbstractRedissonTest(),
         ReadThroughScenario<UUID, UserCredentialsRecord>,
         WriteThroughScenario<UUID, UserCredentialsRecord> {
+
         override fun withEntityTable(
             testDB: TestDB,
             statement: JdbcTransaction.() -> Unit,
         ) = withUserCredentialsTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -170,6 +169,7 @@ class ReadWriteThroughCacheTest {
 
     @Nested
     inner class ClientGeneratedIdReadThroughRemoteCacheWithDeleteDB: ClientGeneratedIdReadWriteThrough() {
+
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(deleteFromDBOnInvalidate = true)
 
         override val repository by lazy {

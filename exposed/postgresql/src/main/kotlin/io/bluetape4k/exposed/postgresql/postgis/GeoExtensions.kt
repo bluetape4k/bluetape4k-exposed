@@ -10,8 +10,6 @@ import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
-import org.jetbrains.exposed.v1.core.vendors.currentDialect
 
 /**
  * PostGIS POINT 컬럼을 테이블에 등록한다.
@@ -73,9 +71,9 @@ fun Table.geoGeometry(name: String): Column<Geometry> =
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Point>.stDistance(other: Column<Point>): Expression<Double> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stDistance 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stDistance 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StDistanceExpr(this, other)
 }
 
@@ -90,9 +88,9 @@ fun Column<Point>.stDistance(other: Column<Point>): Expression<Double> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Point>.stDWithin(other: Column<Point>, distance: Double): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stDWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stDWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StDWithinOp(this, other, distance)
 }
 
@@ -106,9 +104,9 @@ fun Column<Point>.stDWithin(other: Column<Point>, distance: Double): Op<Boolean>
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Point>.stWithin(polygon: Column<Polygon>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StWithinOp(this, polygon)
 }
 
@@ -122,9 +120,9 @@ fun Column<Point>.stWithin(polygon: Column<Polygon>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stContains(other: Column<Polygon>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stContains 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stContains 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StContainsPolygonOp(this, other)
 }
 
@@ -138,9 +136,9 @@ fun Column<Polygon>.stContains(other: Column<Polygon>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stContainsPoint(point: Column<Point>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stContainsPoint 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stContainsPoint 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StContainsPointOp(this, point)
 }
 
@@ -156,9 +154,9 @@ fun Column<Polygon>.stContainsPoint(point: Column<Point>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stOverlaps(other: Column<Polygon>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stOverlaps 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stOverlaps 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StOverlapsOp(this, other)
 }
 
@@ -174,9 +172,9 @@ fun Column<Polygon>.stOverlaps(other: Column<Polygon>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stIntersects(other: Column<Polygon>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stIntersects 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stIntersects 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StIntersectsOp(this, other)
 }
 
@@ -190,9 +188,9 @@ fun Column<Polygon>.stIntersects(other: Column<Polygon>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stDisjoint(other: Column<Polygon>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stDisjoint 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stDisjoint 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StDisjointOp(this, other)
 }
 
@@ -205,9 +203,9 @@ fun Column<Polygon>.stDisjoint(other: Column<Polygon>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<Polygon>.stArea(): Expression<Double> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stArea 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stArea 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return StAreaExpr(this)
 }
 
@@ -376,9 +374,9 @@ class StAreaExpr(
  */
 @JvmName("stDistanceGeometry")
 fun Column<Geometry>.stDistance(other: Column<Geometry>): Expression<Double> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stDistance 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stDistance 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return GeoDistanceExpr(this, other)
 }
 
@@ -394,9 +392,9 @@ fun Column<Geometry>.stDistance(other: Column<Geometry>): Expression<Double> {
  */
 @JvmName("stDWithinGeometry")
 fun Column<Geometry>.stDWithin(other: Column<Geometry>, distance: Double): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stDWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stDWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return GeoDWithinOp(this, other, distance)
 }
 
@@ -411,9 +409,9 @@ fun Column<Geometry>.stDWithin(other: Column<Geometry>, distance: Double): Op<Bo
  */
 @JvmName("stIntersectsGeometry")
 fun Column<Geometry>.stIntersects(other: Column<Geometry>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stIntersects 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stIntersects 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return GeoIntersectsOp(this, other)
 }
 
@@ -428,9 +426,9 @@ fun Column<Geometry>.stIntersects(other: Column<Geometry>): Op<Boolean> {
  */
 @JvmName("stContainsGeometry")
 fun Column<Geometry>.stContains(other: Column<Geometry>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stContains 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stContains 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return GeoContainsOp(this, other)
 }
 
@@ -445,9 +443,9 @@ fun Column<Geometry>.stContains(other: Column<Geometry>): Op<Boolean> {
  */
 @JvmName("stWithinGeometry")
 fun Column<Geometry>.stWithin(other: Column<Geometry>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) {
-        "stWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
-    }
+//    check(currentDialect is PostgreSQLDialect) {
+//        "stWithin 는 PostgreSQL(PostGIS) dialect 에서만 지원됩니다."
+//    }
     return GeoWithinOp(this, other)
 }
 

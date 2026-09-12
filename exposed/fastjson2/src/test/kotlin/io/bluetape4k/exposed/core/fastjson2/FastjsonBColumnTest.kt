@@ -1,5 +1,9 @@
 package io.bluetape4k.exposed.core.fastjson2
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.DataHolder
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.User
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.withFastjsonBArrays
@@ -11,16 +15,11 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ComparisonOp
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.IntegerColumnType
-import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.castTo
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
@@ -479,9 +478,6 @@ class FastjsonBColumnTest: AbstractExposedTest() {
         }
 
         withTables(testDB, iterables) {
-            // the logger is left in to test that it does not throw ClassCastException on insertion of iterables
-            addLogger(StdOutSqlLogger)
-
             val user1 = User("A", "Team A")
             val user2 = User("B", "Team B")
             val integerList = listOf(1, 2, 3)

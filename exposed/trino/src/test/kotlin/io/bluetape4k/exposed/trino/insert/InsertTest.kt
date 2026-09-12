@@ -1,16 +1,15 @@
 package io.bluetape4k.exposed.trino.insert
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.trino.AbstractTrinoTest
 import io.bluetape4k.exposed.trino.TrinoBatchInsertOptions
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.exposed.trino.trinoBatchInsert
-import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -90,8 +89,8 @@ class InsertTest: AbstractTrinoTest() {
                 this[Events.createdAt] = Instant.parse("2024-01-01T00:00:00Z")
             }
         }
+        returnedRows.shouldBeEmpty()
 
-        returnedRows shouldHaveSize 0
         val count = transaction(db) {
             Events.selectAll().count()
         }
@@ -116,8 +115,8 @@ class InsertTest: AbstractTrinoTest() {
                 this[Events.createdAt] = Instant.parse("2024-01-01T00:00:00Z")
             }
         }
-
         returnedRows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L)
+
         val count = transaction(db) {
             Events.selectAll().count()
         }
@@ -133,9 +132,9 @@ class InsertTest: AbstractTrinoTest() {
                 invoked = true
             }
         }
-
-        returnedRows shouldHaveSize 0
+        returnedRows.shouldBeEmpty()
         invoked.shouldBeFalse()
+
         val count = transaction(db) {
             Events.selectAll().count()
         }

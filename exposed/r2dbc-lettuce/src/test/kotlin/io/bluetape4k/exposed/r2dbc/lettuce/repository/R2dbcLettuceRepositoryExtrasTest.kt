@@ -1,18 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.repository
 
-import io.bluetape4k.codec.Base58
-import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
-import io.bluetape4k.exposed.r2dbc.lettuce.domain.R2dbcUserLettuceRepository
-import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema
-import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserTable
-import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.withUserTable
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
@@ -20,6 +8,19 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.codec.Base58
+import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
+import io.bluetape4k.exposed.r2dbc.lettuce.domain.R2dbcUserLettuceRepository
+import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema
+import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserTable
+import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.withUserTable
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -107,7 +108,7 @@ class R2dbcLettuceRepositoryExtrasTest: AbstractR2dbcLettuceTest() {
                     sortOrder = SortOrder.ASC,
                 ) { UserTable.firstName eq "NonExistentName_xyz" }
 
-                results shouldHaveSize 0
+                results.shouldBeEmpty()
             }
         }
 

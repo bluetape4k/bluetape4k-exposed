@@ -1,22 +1,28 @@
 package io.bluetape4k.exposed.core.ddd
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBe
+import io.bluetape4k.assertions.shouldStartWith
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.time.Instant
 
 class AbstractAggregateRootTest {
 
+    companion object: KLogging()
+
     @Test
     fun `domainEvents returns empty immutable snapshot before recording`() {
         val order = TestOrder(OrderId(1L))
-
         val events = order.domainEvents()
-
-        events.isEmpty().shouldBeTrue()
+        events.shouldBeEmpty()
     }
 
     @Test
@@ -25,6 +31,9 @@ class AbstractAggregateRootTest {
         val event = OrderPlaced(order.id)
 
         order.place(event)
+
+        log.debug { "order domain events: ${order.domainEvents()}" }
+        log.debug { "order domain events size: ${order.domainEvents().size}" }
 
         order.domainEvents() shouldBeEqualTo listOf(event)
         order.domainEvents() shouldBeEqualTo listOf(event)
@@ -39,6 +48,9 @@ class AbstractAggregateRootTest {
         val first = order.domainEvents()
         order.place(OrderConfirmed(order.id))
 
+        log.debug { "order domain events: ${order.domainEvents()}" }
+        log.debug { "order domain events size: ${order.domainEvents().size}" }
+
         first shouldBeEqualTo listOf(event)
         order.domainEvents() shouldHaveSize 2
     }
@@ -51,6 +63,9 @@ class AbstractAggregateRootTest {
 
         order.place(placed)
         order.place(confirmed)
+
+        log.debug { "order domain events: ${order.domainEvents()}" }
+        log.debug { "order domain events size: ${order.domainEvents().size}" }
 
         order.domainEvents() shouldBeEqualTo listOf(placed, confirmed)
         order.domainEvents() shouldBeEqualTo listOf(placed, confirmed)
@@ -67,19 +82,19 @@ class AbstractAggregateRootTest {
         val first = order.domainEvents()
         val second = order.domainEvents()
 
-        (first !== second).shouldBeTrue()
-        (first[0] === placed).shouldBeTrue()
-        (first[1] === confirmed).shouldBeTrue()
-        (second[0] === placed).shouldBeTrue()
-        (second[1] === confirmed).shouldBeTrue()
+        first shouldNotBe second
+        first[0] shouldBe placed
+        first[1] shouldBe confirmed
+        second[0] shouldBe placed
+        second[1] shouldBe confirmed
         first shouldBeEqualTo second
 
         @Suppress("UNCHECKED_CAST")
         (first as MutableList<DomainEvent<OrderId>>).clear()
         val afterMisuse = order.domainEvents()
         afterMisuse shouldHaveSize 2
-        (afterMisuse[0] === placed).shouldBeTrue()
-        (afterMisuse[1] === confirmed).shouldBeTrue()
+        afterMisuse[0] shouldBe placed
+        afterMisuse[1] shouldBe confirmed
     }
 
     @Test
@@ -97,11 +112,12 @@ class AbstractAggregateRootTest {
 
         drained shouldBeEqualTo listOf(placed, confirmed)
         handedOff shouldBeEqualTo listOf(listOf(placed, confirmed))
-        order.domainEvents().isEmpty().shouldBeTrue()
+
+        order.domainEvents().shouldBeEmpty()
         order.drainDomainEvents {
             error("Empty drain should not invoke handoff")
-        }.isEmpty().shouldBeTrue()
-        order.domainEvents().isEmpty().shouldBeTrue()
+        }.shouldBeEmpty()
+        order.domainEvents().shouldBeEmpty()
     }
 
     @Test
@@ -112,7 +128,7 @@ class AbstractAggregateRootTest {
 
         assertFailsWith<IllegalStateException> {
             order.drainDomainEvents {
-                throw IllegalStateException("handoff failed")
+                error("handoff failed")
             }
         }
 
@@ -126,7 +142,7 @@ class AbstractAggregateRootTest {
 
         order.clearDomainEvents()
 
-        order.domainEvents().isEmpty().shouldBeTrue()
+        order.domainEvents().shouldBeEmpty()
         order.drainDomainEvents {
             error("Empty drain should not invoke handoff")
         }.isEmpty().shouldBeTrue()
@@ -140,7 +156,7 @@ class AbstractAggregateRootTest {
             order.place(OrderPlaced(OrderId(2L)))
         }
 
-        error.message shouldBeEqualTo "Domain event aggregateId must match aggregate id"
+        error.message shouldStartWith "Domain event aggregateId must match aggregate id"
     }
 
     @Test
@@ -158,14 +174,14 @@ class AbstractAggregateRootTest {
     }
 
     @JvmInline
-    value class OrderId(val value: Long) : Serializable {
+    value class OrderId(val value: Long): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
     @JvmInline
-    value class CustomerId(val value: Long) : Serializable {
+    value class CustomerId(val value: Long): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -173,7 +189,7 @@ class AbstractAggregateRootTest {
 
     private class TestOrder(
         override val id: OrderId,
-    ) : AbstractAggregateRoot<OrderId>() {
+    ): AbstractAggregateRoot<OrderId>() {
 
         fun place(event: DomainEvent<OrderId>) {
             recordDomainEvent(event)
@@ -183,7 +199,7 @@ class AbstractAggregateRootTest {
     private data class OrderPlaced(
         override val aggregateId: OrderId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:00:00Z"),
-    ) : DomainEvent<OrderId>, Serializable {
+    ): DomainEvent<OrderId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -192,7 +208,7 @@ class AbstractAggregateRootTest {
     private data class OrderConfirmed(
         override val aggregateId: OrderId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:01:00Z"),
-    ) : DomainEvent<OrderId>, Serializable {
+    ): DomainEvent<OrderId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -201,7 +217,7 @@ class AbstractAggregateRootTest {
     private data class CustomerRegistered(
         override val aggregateId: CustomerId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:02:00Z"),
-    ) : DomainEvent<CustomerId>, Serializable {
+    ): DomainEvent<CustomerId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

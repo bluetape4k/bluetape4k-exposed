@@ -2,9 +2,12 @@ package io.bluetape4k.exposed.bigquery
 
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class BigQueryEmulatorLifecycleTest {
+
+    companion object: KLogging()
 
     @Test
     fun `container reuse is disabled by default`() {

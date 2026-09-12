@@ -1,14 +1,14 @@
 package io.bluetape4k.exposed.redisson.repository
 
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
-import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.redisson.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.redisson.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.redisson.snapshot.longSnapshotIdentifierPolicy
 import io.bluetape4k.exposed.redisson.snapshot.snapshotRedissonCodec
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import io.mockk.every
@@ -39,7 +39,8 @@ import java.util.stream.Stream
 
 class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
-    companion object {
+    companion object: KLogging() {
+
         private const val UNSAFE_NESTED_CODECS_METHOD = "unsafeNestedCodecs"
         private const val SAFE_NESTED_CODECS_METHOD = "safeNestedCodecs"
 
@@ -81,9 +82,11 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
     @Test
     fun `direct codec safety overload rejects binary codecs unless explicitly trusted`() {
         ExposedRedissonCodecSafety.requireSafe(StringCodec(), trustedBinaryCache = false)
+
         assertFailsWith<IllegalArgumentException> {
             ExposedRedissonCodecSafety.requireSafe(RedissonCodecs.Jdk, trustedBinaryCache = false)
         }
+
         ExposedRedissonCodecSafety.requireSafe(RedissonCodecs.Jdk, trustedBinaryCache = true)
     }
 
@@ -104,6 +107,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         assertFailsWith<IllegalArgumentException> {
             ExposedRedissonCodecSafety.requireSafe(snapshotCodec, trustedBinaryCache = false)
         }
+
         ExposedRedissonCodecSafety.requireSafe(snapshotCodec, trustedBinaryCache = true)
     }
 
@@ -125,6 +129,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
     @Test
     fun `delegate traversal fails closed when wrapper depth exceeds its bound`() {
         var codec: Codec = StringCodec()
+
         repeat(65) {
             codec = snapshotRedissonCodec(codec, "depth-v1", longSnapshotIdentifierPolicy())
         }
@@ -140,6 +145,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         val client = mockk<RedissonClient>()
         val options = slot<LocalCachedMapOptions<Long, UserRecord?>>()
         every { client.getLocalCachedMap(capture(options)) } returns mockk<RLocalCachedMap<Long, UserRecord?>>()
+
         val repository = TestJdbcRepository(
             client,
             RedissonCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(name = "snapshot-identity", codec = codec),
@@ -147,7 +153,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
         repository.exposeCacheOnlyMap()
 
-        (options.captured.javaClass.getMethod("getCodec").invoke(options.captured) === codec).shouldBeTrue()
+        options.captured.javaClass.getMethod("getCodec").invoke(options.captured) shouldBe codec
         verify(exactly = 1) { client.getLocalCachedMap(any<LocalCachedMapOptions<Long, UserRecord?>>()) }
     }
 
@@ -164,7 +170,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
 
         repository.exposeCacheOnlyMap()
 
-        (options.captured.javaClass.getMethod("getCodec").invoke(options.captured) === codec).shouldBeTrue()
+        options.captured.javaClass.getMethod("getCodec").invoke(options.captured) shouldBe codec
         verify(exactly = 1) { client.getLocalCachedMap(any<LocalCachedMapOptions<Long, UserRecord?>>()) }
     }
 
@@ -263,7 +269,7 @@ class RedissonRepositoryCodecSafetyTest: AbstractRedissonTest() {
         fun exposeCacheOnlyMap() = cacheOnlyMap
     }
 
-    private class CyclicDelegatingCodec : ExposedRedissonDelegatingCodec {
+    private class CyclicDelegatingCodec: ExposedRedissonDelegatingCodec {
         private val safe = StringCodec()
         override val delegateCodec: Codec get() = this
         override fun getMapValueDecoder(): Decoder<Any> = safe.mapValueDecoder

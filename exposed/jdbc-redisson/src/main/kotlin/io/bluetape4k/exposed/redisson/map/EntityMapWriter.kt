@@ -27,6 +27,7 @@ open class EntityMapWriter<ID: Any, E: Any>(
     private val writeToDB: (map: Map<ID, E>) -> Unit,
     private val deleteFromDB: (ids: Collection<ID>) -> Unit,
 ): MapWriter<ID, E> {
+
     companion object: KLogging()
 
     /**
@@ -34,18 +35,16 @@ open class EntityMapWriter<ID: Any, E: Any>(
      *
      * @param map 캐시에 쓰여진 ID → 엔티티 맵 전체
      */
-    override fun write(map: Map<ID, E>) =
-        transaction {
-            writeToDB(map)
-        }
+    override fun write(map: Map<ID, E>) = transaction {
+        writeToDB(map)
+    }
 
     /**
      * 캐시에서 제거된 키 목록을 DB에 반영합니다.
      *
      * @param keys 캐시에서 제거된 ID 컬렉션
      */
-    override fun delete(keys: Collection<ID>) =
-        transaction {
-            deleteFromDB(keys)
-        }
+    override fun delete(keys: Collection<ID>) = transaction {
+        deleteFromDB(keys)
+    }
 }

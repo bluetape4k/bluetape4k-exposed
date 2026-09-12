@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -18,16 +19,21 @@ import kotlin.reflect.full.declaredMemberProperties
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotLocalFenceRegistryTest {
 
+    companion object: KLogging()
+
     @Test
     fun `local fence exposes no construction state or capability operations`() {
         SnapshotLocalFence::class.isData.shouldBeFalse()
         SnapshotLocalFence::class.constructors.none { it.visibility == KVisibility.PUBLIC }.shouldBeTrue()
+
         SnapshotLocalFence::class.declaredMemberProperties
             .none { it.visibility == KVisibility.PUBLIC }
             .shouldBeTrue()
+
         SnapshotLocalFence::class.declaredMemberFunctions
             .none { it.visibility == KVisibility.PUBLIC }
             .shouldBeTrue()
+
         SnapshotLocalFenceRegistry::class.declaredMemberFunctions
             .filter { it.visibility == KVisibility.PUBLIC }
             .map { it.name }
@@ -54,6 +60,7 @@ class SnapshotLocalFenceRegistryTest {
 
         registry.putIfCurrent(1L, fence) { cached = "fresh" }.shouldBeTrue()
         cached shouldBeEqualTo "fresh"
+
         registry.putIfCurrent(1L, fence) { cached = "stale" }.shouldBeFalse()
         cached shouldBeEqualTo "fresh"
     }
@@ -81,6 +88,7 @@ class SnapshotLocalFenceRegistryTest {
         val copiedFence = copied.localFence ?: error("Expected copied local fence")
         registry.putIfCurrent(copied.id, copiedFence) { cached = copied.id }.shouldBeFalse()
         cached.shouldBeNull()
+
         val originalFence = original.localFence ?: error("Expected original local fence")
         registry.putIfCurrent(original.id, originalFence) { cached = original.id }.shouldBeTrue()
         cached shouldBeEqualTo first
@@ -208,8 +216,9 @@ class SnapshotLocalFenceRegistryTest {
         val release = CountDownLatch(1)
         val unrelatedCompleted = CountDownLatch(1)
         val executor = TrackedExecutor(threadCount = 2)
+
         try {
-            val holding = executor.submit<Boolean> {
+            val holding = executor.submit {
                 registry.putIfCurrent(0, heldFence) {
                     held.countDown()
                     release.await()
@@ -251,9 +260,9 @@ class SnapshotLocalFenceRegistryTest {
         override fun equals(other: Any?): Boolean = other is CollidingId && value == other.value
     }
 
-    private class MutationFailure : RuntimeException()
+    private class MutationFailure: RuntimeException()
 
-    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+    private class TrackedExecutor(threadCount: Int): AutoCloseable {
         private val executor = Executors.newFixedThreadPool(threadCount)
         private val futures = mutableListOf<Future<*>>()
 

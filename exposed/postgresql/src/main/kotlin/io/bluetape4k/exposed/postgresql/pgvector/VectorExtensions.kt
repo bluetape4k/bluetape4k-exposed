@@ -7,8 +7,6 @@ import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
-import org.jetbrains.exposed.v1.core.vendors.currentDialect
 import org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection
 
 /**
@@ -91,7 +89,7 @@ enum class VectorDistanceOperator(val sql: String) {
  * @return 코사인 거리 표현식
  */
 fun Column<FloatArray>.cosineDistance(other: Expression<FloatArray>): VectorDistanceOp {
-    check(currentDialect is PostgreSQLDialect) { "cosineDistance (<=>) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "cosineDistance (<=>) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return VectorDistanceOp(this, other, VectorDistanceOperator.COSINE)
 }
 
@@ -112,7 +110,7 @@ fun Column<FloatArray>.cosineDistance(other: Expression<FloatArray>): VectorDist
  * @return L2 거리 표현식
  */
 fun Column<FloatArray>.l2Distance(other: Expression<FloatArray>): VectorDistanceOp {
-    check(currentDialect is PostgreSQLDialect) { "l2Distance (<->) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "l2Distance (<->) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return VectorDistanceOp(this, other, VectorDistanceOperator.L2)
 }
 
@@ -133,7 +131,7 @@ fun Column<FloatArray>.l2Distance(other: Expression<FloatArray>): VectorDistance
  * @return 내적 거리 표현식
  */
 fun Column<FloatArray>.innerProduct(other: Expression<FloatArray>): VectorDistanceOp {
-    check(currentDialect is PostgreSQLDialect) { "innerProduct (<#>) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "innerProduct (<#>) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return VectorDistanceOp(this, other, VectorDistanceOperator.INNER_PRODUCT)
 }
 

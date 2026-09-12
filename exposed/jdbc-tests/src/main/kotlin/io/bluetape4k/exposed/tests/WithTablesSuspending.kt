@@ -66,7 +66,7 @@ suspend fun <K> withTablesSuspending(
     message = "Use withTablesSuspending() instead.",
     replaceWith = ReplaceWith(
         "withTablesSuspending(testDB, *tables, context = context, " +
-            "configure = configure, dropTables = dropTables, statement = statement)",
+                "configure = configure, dropTables = dropTables, statement = statement)",
         "io.bluetape4k.exposed.tests.withTablesSuspending"
     )
 )

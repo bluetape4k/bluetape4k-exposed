@@ -3,11 +3,11 @@
 
 package io.bluetape4k.exposed.r2dbc.tests
 
-import java.util.concurrent.CancellationException
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import java.util.concurrent.CancellationException
 
 /** enum fixture의 요청 schema를 생성·정리하며 미지원 dialect에서는 본문을 실행하지 않습니다. */
 suspend fun withSchemas(

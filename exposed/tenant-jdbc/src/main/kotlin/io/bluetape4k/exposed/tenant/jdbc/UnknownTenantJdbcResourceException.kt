@@ -6,4 +6,4 @@ package io.bluetape4k.exposed.tenant.jdbc
  * 예외 메시지에는 tenant key를 포함하지 않아 민감한 식별자가 오류 경로에 복제되지
  * 않도록 합니다.
  */
-class UnknownTenantJdbcResourceException : NoSuchElementException("Unknown tenant JDBC resource.")
+class UnknownTenantJdbcResourceException: NoSuchElementException("Unknown tenant JDBC resource.")

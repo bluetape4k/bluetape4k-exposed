@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.sql.DriverManager
 
@@ -8,6 +9,8 @@ import java.sql.DriverManager
  * StarRocks Connector/J metadata smoke tests.
  */
 class StarRocksMetadataTest: AbstractStarRocksTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `DatabaseMetaData discovers fixture table and columns`() {

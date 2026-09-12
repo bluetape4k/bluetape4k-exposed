@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapLoader
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapWriter
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
@@ -68,6 +69,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
     private val valueCodec: RedisCodec<String, E> = ExposedLettuceCodecs.requireExplicit(),
 ): SuspendedJdbcLettuceRepository<ID, E> {
+
     companion object: KLoggingChannel()
 
     init {
@@ -86,14 +88,16 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
 
     // SuspendedJdbcCacheRepository 프로퍼티 구현
     override val cacheName: String get() = config.keyPrefix
+
     override val cacheMode: CacheMode
         get() =
             if (config.nearCacheEnabled) CacheMode.NEAR_CACHE else CacheMode.REMOTE
+
     override val cacheWriteMode: CacheWriteMode
         get() = when (config.writeMode) {
-            WriteMode.NONE          -> CacheWriteMode.READ_ONLY
+            WriteMode.NONE -> CacheWriteMode.READ_ONLY
             WriteMode.WRITE_THROUGH -> CacheWriteMode.WRITE_THROUGH
-            WriteMode.WRITE_BEHIND  -> CacheWriteMode.WRITE_BEHIND
+            WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
         }
 
     /** [config.nearCacheEnabled]가 true일 때 Caffeine 로컬 캐시(front) */
@@ -101,12 +105,11 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         if (config.nearCacheEnabled) {
             LettuceSuspendNearCache(
                 redisClient = client,
-                config =
-                    LettuceNearCacheConfig(
-                        cacheName = config.nearCacheName,
-                        maxLocalSize = config.nearCacheMaxSize,
-                        redisTtl = config.nearCacheTtl
-                    )
+                config = LettuceNearCacheConfig(
+                    cacheName = config.nearCacheName,
+                    maxLocalSize = config.nearCacheMaxSize,
+                    redisTtl = config.nearCacheTtl
+                )
             )
         } else {
             null
@@ -116,24 +119,26 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     override val cache: ExposedLettuceSuspendedLoadedMap<ID, E> by lazy {
         ExposedLettuceSuspendedLoadedMap(
             client = client,
-            loader =
-                SuspendedExposedEntityMapLoader(
-                    table = table,
-                    toEntity = { row -> with(this@AbstractSuspendedJdbcLettuceRepository) { row.toEntity() } }
-                ),
-            writer =
-                SuspendedExposedEntityMapWriter(
-                    table = table,
-                    writeMode = config.writeMode,
-                    updateEntity = { stmt, e ->
-                        with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.updateEntity(e) }
-                    },
-                    insertEntity = { stmt, e ->
-                        with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.insertEntity(e) }
-                    },
-                    retryAttempts = config.writeRetryAttempts,
-                    retryInterval = config.writeRetryInterval
-                ),
+            loader = SuspendedExposedEntityMapLoader(
+                table = table,
+                toEntity = { row ->
+                    with(this@AbstractSuspendedJdbcLettuceRepository) {
+                        row.toEntity()
+                    }
+                }
+            ),
+            writer = SuspendedExposedEntityMapWriter(
+                table = table,
+                writeMode = config.writeMode,
+                updateEntity = { stmt, e ->
+                    with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.updateEntity(e) }
+                },
+                insertEntity = { stmt, e ->
+                    with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.insertEntity(e) }
+                },
+                retryAttempts = config.writeRetryAttempts,
+                retryInterval = config.writeRetryInterval
+            ),
             config = config,
             keySerializer = ::serializeKey,
             valueCodec = valueCodec
@@ -145,14 +150,15 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     @Suppress("DEPRECATION")
-    override suspend fun findByIdFromDb(id: ID): E? =
-        suspendedTransactionAsync(Dispatchers.IO) {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.let { with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() } }
-        }.await()
+    override suspend fun findByIdFromDb(id: ID): E? = suspendedTransactionAsync(Dispatchers.IO) {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.let {
+                with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() }
+            }
+    }.await()
 
     @Suppress("DEPRECATION")
     override suspend fun findAllFromDb(ids: Collection<ID>): List<E> =
@@ -161,7 +167,9 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
             table
                 .selectAll()
                 .where { table.id inList ids }
-                .map { with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() } }
+                .map {
+                    with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() }
+                }
         }.await()
 
     @Suppress("DEPRECATION")
@@ -177,6 +185,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     override suspend fun containsKey(id: ID): Boolean = get(id) != null
 
     override suspend fun get(id: ID): E? {
+        log.debug { "get($id)" }
+
         nearCache?.get(serializeKey(id))?.let { return it }
         val value = cache.get(id) ?: return null
         nearCache?.put(serializeKey(id), value)
@@ -184,6 +194,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     override suspend fun getAll(ids: Collection<ID>): Map<ID, E> {
+        log.debug { "getAll($ids)" }
+
         val nc = nearCache ?: return cache.getAll(ids.toSet())
         val result = mutableMapOf<ID, E>()
         val missedIds = mutableListOf<ID>()
@@ -208,17 +220,21 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         where: () -> Op<Boolean>,
     ): List<E> {
         @Suppress("DEPRECATION")
-        val entities =
-            suspendedTransactionAsync(Dispatchers.IO) {
-                table
-                    .selectAll()
-                    .where(where)
-                    .apply {
-                        orderBy(sortBy, sortOrder)
-                        limit?.let { limit(it) }
-                        offset?.let { offset(it) }
-                    }.map { with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() } }
-            }.await()
+        val entities = suspendedTransactionAsync(Dispatchers.IO) {
+            table
+                .selectAll()
+                .where(where)
+                .apply {
+                    orderBy(sortBy, sortOrder)
+                    limit?.let { limit(it) }
+                    offset?.let { offset(it) }
+                }
+                .map {
+                    with(this@AbstractSuspendedJdbcLettuceRepository) {
+                        it.toEntity()
+                    }
+                }
+        }.await()
 
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
         //      DB에서 가져온 결과를 캐시에 적재해 다음 단일 조회(get/getAll)가 캐시를 히트하게 한다.
@@ -229,9 +245,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn {
+            log.warn(e) {
                 "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
-                    .plus(", errorType=${e::class.simpleName}")
             }
         }
         return entities
@@ -243,8 +258,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
      */
     override fun extractId(entity: E): ID {
         error(
-            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
+            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
         )
     }
 
@@ -252,15 +266,14 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // 쓰기
     // -------------------------------------------------------------------------
 
-    override suspend fun put(
-        id: ID,
-        entity: E,
-    ) {
+    override suspend fun put(id: ID, entity: E) {
+        log.debug { "캐시에 엔티티 저장: operation=put, id=$id" }
         cache.set(id, entity)
         nearCache?.put(serializeKey(id), entity)
     }
 
     override suspend fun putAll(entities: Map<ID, E>, batchSize: Int) {
+        log.debug { "캐시에 엔티티 저장: operation=putAll, batchSize=$batchSize" }
         batchSize.requirePositiveNumber("batchSize")
         cache.putAll(entities, batchSize)
         entities.forEach { (id, entity) -> nearCache?.put(serializeKey(id), entity) }
@@ -271,17 +284,21 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun invalidate(id: ID) {
+        log.debug { "캐시에서 엔티티 무효화: operation=invalidate, id=$id" }
         cache.evict(id)
         nearCache?.remove(serializeKey(id))
     }
 
     override suspend fun invalidateAll(ids: Collection<ID>) {
+        log.debug { "캐시에서 엔티티 무효화: operation=invalidateAll, ids=${ids.joinToString(", ")}" }
         cache.evictAll(ids)
         nearCache?.removeAll(ids.map { serializeKey(it) }.toSet())
     }
 
     override suspend fun invalidateByPattern(patterns: String, count: Int): Long {
         count.requirePositiveNumber("count")
+        log.debug { "캐시에서 패턴에 해당하는 엔티티 무효화: operation=invalidateByPattern, patterns=$patterns, count=$count" }
+
         val deleted = cache.invalidateByPattern(patterns, count.toLong())
         nearCache?.clearAll()
         return deleted
@@ -292,6 +309,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun clear() {
+        log.debug { "캐시를 초기화: operation=clear" }
         nearCache?.clearAll()
         cache.clear()
     }
@@ -304,6 +322,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
      * Virtual Thread에서 호출될 수 있으므로, monitor lock을 사용하지 않는다.
      */
     override fun close() {
+        log.debug { "캐시 리소스를 해제: operation=close" }
         closeNearCacheSafely()
         closeCacheSafely()
     }
@@ -323,7 +342,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn { "nearCache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
+            log.warn(e) { "nearCache 종료 중 오류 발생." }
         }
     }
 
@@ -331,7 +350,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         try {
             closeCacheResource()
         } catch (e: Exception) {
-            log.warn { "cache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
+            log.warn(e) { "cache 종료 중 오류 발생." }
         }
     }
 }

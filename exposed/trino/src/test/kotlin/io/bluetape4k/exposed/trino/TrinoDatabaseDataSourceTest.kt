@@ -1,8 +1,10 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
@@ -17,7 +19,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.SQLException
-import java.util.Properties
+import java.util.*
 import java.util.logging.Logger
 import javax.sql.DataSource
 
@@ -28,6 +30,8 @@ import javax.sql.DataSource
  * - Testcontainers 통합 smoke: 실제 DataSource로 SELECT 1
  */
 class TrinoDatabaseDataSourceTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     private val mockStatement = mockk<PreparedStatement>(relaxed = true)
     private val mockConn = mockk<Connection>(relaxed = true)
@@ -68,7 +72,9 @@ class TrinoDatabaseDataSourceTest: AbstractTrinoTest() {
 
         val db = TrinoDatabase.connect(mockDataSource)
         assertFailsWith<Exception> {
-            transaction(db) { exec("SELECT 1") }
+            transaction(db) {
+                exec("SELECT 1")
+            }
         }
 
         verify { mockConn.close() }
@@ -84,7 +90,9 @@ class TrinoDatabaseDataSourceTest: AbstractTrinoTest() {
 
         val db = TrinoDatabase.connect(mockDataSource)
         assertFailsWith<Exception> {
-            transaction(db) { exec("SELECT 1") }
+            transaction(db) {
+                exec("SELECT 1")
+            }
         }
     }
 
@@ -97,9 +105,11 @@ class TrinoDatabaseDataSourceTest: AbstractTrinoTest() {
         val db = TrinoDatabase.connect(trinoDataSource())
         db.shouldNotBeNull()
         transaction(db) {
-            val result = exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) }
+            val result = exec("SELECT 1") { rs ->
+                rs.next(); rs.getInt(1)
+            }
             result.shouldNotBeNull()
-            (result == 1).shouldBeTrue()
+            result shouldBeEqualTo 1
         }
     }
 

@@ -6,39 +6,41 @@ A module for encrypting and decrypting Exposed column values using [Google Tink]
 
 ## Overview
 
-Tink encryption is reversible with the key; password verification needs one-way hashing.
-For Exposed 1.5.0 `hashed` / `Hashed` contracts, see the
+Tink encryption is reversible with the key; password verification needs one-way hashing. For Exposed 1.5.0 `hashed` / `Hashed` contracts, see the
 [JDBC guide](../jdbc-tests/README.md#exposed-150-one-way-hashing) and
-[R2DBC guide](../r2dbc-tests/README.md#exposed-150-one-way-hashing).
-The upstream `exposed-crypt` dependency is an explicit opt-in and is not added to this module.
+[R2DBC guide](../r2dbc-tests/README.md#exposed-150-one-way-hashing). The upstream `exposed-crypt` dependency is an explicit opt-in and is not added to this module.
 
 `exposed-tink` provides transparent authenticated encryption (AEAD — Authenticated Encryption with Associated Data) of JetBrains Exposed `VARCHAR`, `VARBINARY`, and `BLOB` column values using the Google Tink library.
 
 Google Tink is a modern cryptography library developed by Google, designed to be hard to misuse and to prevent incorrect usage by design. This module supports two encryption modes:
 
 - **AEAD** (non-deterministic): Produces a different ciphertext every time → maximum security
-- **Deterministic AEAD** (deterministic): Same plaintext always produces the same ciphertext → supports equality search and indexing when the database column type supports it
+- **Deterministic
+  AEAD** (deterministic): Same plaintext always produces the same ciphertext → supports equality search and indexing when the database column type supports it
 
 ## Jasypt vs Google Tink Comparison
 
-| Aspect                                | `exposed-jasypt`           | `exposed-tink` (AEAD)               | `exposed-tink` (DAEAD)     |
-|---------------------------------------|----------------------------|-------------------------------------|----------------------------|
-| **Encryption algorithm**              | AES/RC4/3DES (legacy)      | AES-GCM, ChaCha20-Poly1305 (modern) | AES-256-SIV (modern)       |
-| **Deterministic**                     | ✅ (same ciphertext always) | ❌ (different ciphertext each time)  | ✅ (same ciphertext always) |
-| **Authentication (tamper detection)** | ❌                          | ✅ AEAD                              | ✅ AEAD                     |
-| **WHERE condition search**            | ✅                          | ❌                                   | ✅                          |
-| **Indexable**                         | ✅                          | ❌                                   | ✅                          |
-| **Pattern analysis risk**             | ⚠️ Yes                     | ✅ No                                | ⚠️ Yes (deterministic)     |
-| **Standard compliance**               | ⚠️ Legacy approach         | ✅ NIST/IETF standard                | ✅ NIST/IETF standard       |
-| **Google recommended**                | ❌                          | ✅                                   | ✅                          |
+| Aspect                                | `exposed-jasypt`            | `exposed-tink` (AEAD)               | `exposed-tink` (DAEAD)      |
+|---------------------------------------|-----------------------------|-------------------------------------|-----------------------------|
+| **Encryption algorithm**              | AES/RC4/3DES (legacy)       | AES-GCM, ChaCha20-Poly1305 (modern) | AES-256-SIV (modern)        |
+| **Deterministic**                     | ✅ (same ciphertext always) | ❌ (different ciphertext each time) | ✅ (same ciphertext always) |
+| **Authentication (tamper detection)** | ❌                          | ✅ AEAD                             | ✅ AEAD                     |
+| **WHERE condition search**            | ✅                          | ❌                                  | ✅                          |
+| **Indexable**                         | ✅                          | ❌                                  | ✅                          |
+| **Pattern analysis risk**             | ⚠️ Yes                      | ✅ No                               | ⚠️ Yes (deterministic)      |
+| **Standard compliance**               | ⚠️ Legacy approach          | ✅ NIST/IETF standard               | ✅ NIST/IETF standard       |
+| **Google recommended**                | ❌                          | ✅                                  | ✅                          |
 
 ### Why Choose Google Tink
 
-1. **Built-in authentication**: AEAD guarantees data integrity alongside encryption. If a stored ciphertext is tampered with, it is detected immediately during decryption. Jasypt does not provide this.
+1. **Built-in
+   authentication**: AEAD guarantees data integrity alongside encryption. If a stored ciphertext is tampered with, it is detected immediately during decryption. Jasypt does not provide this.
 
-2. **Modern algorithms**: Uses the latest NIST/IETF-recommended algorithms including AES-256-GCM, ChaCha20-Poly1305, and AES-256-SIV.
+2. **Modern
+   algorithms**: Uses the latest NIST/IETF-recommended algorithms including AES-256-GCM, ChaCha20-Poly1305, and AES-256-SIV.
 
-3. **Misuse-resistant design**: The API is designed to prevent weak algorithm choices, making it safe to use even without deep security expertise.
+3. **Misuse-resistant
+   design**: The API is designed to prevent weak algorithm choices, making it safe to use even without deep security expertise.
 
 4. **Two modes**: Choose between AEAD (security-focused) and DAEAD (searchable) based on your requirements.
 
@@ -95,8 +97,7 @@ object Users: IntIdTable("users") {
 }
 ```
 
-Persisted database columns must receive encryptors backed by keysets loaded from durable secret storage. Do not use
-newly generated process-local keysets for data that must survive restarts or run across nodes.
+Persisted database columns must receive encryptors backed by keysets loaded from durable secret storage. Do not use newly generated process-local keysets for data that must survive restarts or run across nodes.
 
 ### 2. Insert — Automatic Encryption
 
@@ -141,9 +142,7 @@ transaction {
 
 ## Associated Data Binding
 
-`tinkAead*` and `tinkDaead*` table extension functions bind ciphertext to associated data by default. The default
-provider uses the stable Exposed table name and column name, so ciphertext copied from one encrypted column or table
-cannot be decrypted through another encrypted column with the same key.
+`tinkAead*` and `tinkDaead*` table extension functions bind ciphertext to associated data by default. The default provider uses the stable Exposed table name and column name, so ciphertext copied from one encrypted column or table cannot be decrypted through another encrypted column with the same key.
 
 ```kotlin
 object Users: IntIdTable("users") {
@@ -166,14 +165,9 @@ object Users: IntIdTable("users") {
 
 For legacy data written without associated data, use `TinkColumnAssociatedDataProvider.Empty` while migrating.
 
-Direct public column-type constructors without `associatedData` are retained only for legacy migration compatibility and
-are deprecated. Prefer the `tinkAead*`/`tinkDaead*` table extension functions, or pass explicit `associatedData` when
-registering `Tink*ColumnType` manually.
+Direct public column-type constructors without `associatedData` are retained only for legacy migration compatibility and are deprecated. Prefer the `tinkAead*`/`tinkDaead*` table extension functions, or pass explicit `associatedData` when registering `Tink*ColumnType` manually.
 
-Row-scoped associated data can bind ciphertext more tightly to a specific row, but it changes the searchable domain.
-DAEAD equality search works only when encryption and query binding use the same associated data. If the associated data
-contains a row id or other per-row value, ordinary `WHERE encrypted_col = value` queries cannot produce one shared
-ciphertext for all candidate rows.
+Row-scoped associated data can bind ciphertext more tightly to a specific row, but it changes the searchable domain. DAEAD equality search works only when encryption and query binding use the same associated data. If the associated data contains a row id or other per-row value, ordinary `WHERE encrypted_col = value` queries cannot produce one shared ciphertext for all candidate rows.
 
 ## Algorithm Selection Guide
 
@@ -281,16 +275,16 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 ## Key Files / Classes
 
-| File                            | Description                                         |
-|---------------------------------|-----------------------------------------------------|
-| `TinkAeadVarCharColumnType.kt`  | AEAD VARCHAR encrypted column type                  |
-| `TinkAeadBinaryColumnType.kt`   | AEAD VARBINARY encrypted column type                |
-| `TinkAeadBlobColumnType.kt`     | AEAD BLOB encrypted column type                     |
-| `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR encrypted column type    |
-| `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY encrypted column type  |
-| `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB encrypted column type       |
-| `TinkColumnAssociatedDataProvider.kt` | Associated data provider contract             |
-| `Tables.kt`                     | Table extension functions (`tinkAeadVarChar`, etc.) |
+| File                                  | Description                                         |
+|---------------------------------------|-----------------------------------------------------|
+| `TinkAeadVarCharColumnType.kt`        | AEAD VARCHAR encrypted column type                  |
+| `TinkAeadBinaryColumnType.kt`         | AEAD VARBINARY encrypted column type                |
+| `TinkAeadBlobColumnType.kt`           | AEAD BLOB encrypted column type                     |
+| `TinkDaeadVarCharColumnType.kt`       | Deterministic AEAD VARCHAR encrypted column type    |
+| `TinkDaeadBinaryColumnType.kt`        | Deterministic AEAD VARBINARY encrypted column type  |
+| `TinkDaeadBlobColumnType.kt`          | Deterministic AEAD BLOB encrypted column type       |
+| `TinkColumnAssociatedDataProvider.kt` | Associated data provider contract                   |
+| `Tables.kt`                           | Table extension functions (`tinkAeadVarChar`, etc.) |
 
 ## Notes
 
@@ -300,14 +294,16 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 2. **Column length**: Data grows after encryption, so set the column length to at least 2x the original maximum length.
 
-3. **Key management**: Lost encryption keys mean lost data. In production, integrate with an external KMS such as Google Cloud KMS or AWS KMS to securely manage keys.
+3. **Key
+   management**: Lost encryption keys mean lost data. In production, integrate with an external KMS such as Google Cloud KMS or AWS KMS to securely manage keys.
 
 4. **Key rotation**: Tink supports key rotation. Regular key rotation strengthens security.
 
-5. **DAEAD pattern exposure**: Deterministic AEAD still maps the same plaintext to the same ciphertext, which can reveal value distribution and patterns. It is suitable for unique values (email, SSN) but use caution with frequently repeated values.
+5. **DAEAD pattern
+   exposure**: Deterministic AEAD still maps the same plaintext to the same ciphertext, which can reveal value distribution and patterns. It is suitable for unique values (email, SSN) but use caution with frequently repeated values.
 
-6. **Associated data domain**: The default associated data binds ciphertext to table and column identity. Changing table
-   or column names changes the cryptographic domain, so plan migrations before renaming encrypted columns.
+6. **Associated data
+   domain**: The default associated data binds ciphertext to table and column identity. Changing table or column names changes the cryptographic domain, so plan migrations before renaming encrypted columns.
 
 ## Testing
 

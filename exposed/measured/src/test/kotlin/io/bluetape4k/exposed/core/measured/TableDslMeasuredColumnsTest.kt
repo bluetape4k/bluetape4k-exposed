@@ -1,8 +1,13 @@
 package io.bluetape4k.exposed.core.measured
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNear
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.measured.Angle
 import io.bluetape4k.measured.Area
 import io.bluetape4k.measured.BinarySize
@@ -30,8 +35,6 @@ import io.bluetape4k.measured.kiloWatts
 import io.bluetape4k.measured.kilograms
 import io.bluetape4k.measured.kilometers2
 import io.bluetape4k.measured.meters
-import io.bluetape4k.assertions.shouldBeNear
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -41,6 +44,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class TableDslMeasuredColumnsTest {
+
+    companion object: KLogging()
 
     private object SampleTable: Table("sample_measured") {
         val lengthCol = length("length")
@@ -74,16 +79,16 @@ class TableDslMeasuredColumnsTest {
         assertMeasureBaseUnit(SampleTable.energyCol.columnType, Energy.joules)
         assertMeasureBaseUnit(SampleTable.powerCol.columnType, Power.watts)
 
-        (SampleTable.tempCol.columnType is TemperatureColumnType).shouldBeTrue()
-        (SampleTable.tempDeltaCol.columnType is TemperatureDeltaColumnType).shouldBeTrue()
+        SampleTable.tempCol.columnType.shouldBeInstanceOf<TemperatureColumnType>()
+        SampleTable.tempDeltaCol.columnType.shouldBeInstanceOf<TemperatureDeltaColumnType>()
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T: Units> assertMeasureBaseUnit(columnType: Any, expected: T) {
-        (columnType is MeasureColumnType<*>).shouldBeTrue()
+        columnType.shouldBeInstanceOf<MeasureColumnType<*>>()
         val typed = columnType as MeasureColumnType<T>
-        val decoded = typed.valueFromDB(1.0)!!
-        (decoded.units == expected).shouldBeTrue()
+        val decoded = typed.valueFromDB(1.0).shouldNotBeNull()
+        decoded.units shouldBeEqualTo expected
     }
 
     @Nested

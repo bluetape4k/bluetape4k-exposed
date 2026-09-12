@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserRedissonRepository
@@ -13,6 +12,7 @@ import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.withUserCredential
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.r2dbc.redisson.repository.scenario.R2dbcWriteBehindScenario
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import kotlinx.coroutines.flow.first

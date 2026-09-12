@@ -12,6 +12,10 @@ data class MovieRecord(
     val producerName: String,
     val releaseDate: String,
 ): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     fun withId(id: Long) = copy(id = id)
 }
 
@@ -24,6 +28,10 @@ data class ActorRecord(
     val lastName: String,
     val birthday: String? = null,
 ): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
     fun withId(id: Long) = copy(id = id)
 }
 
@@ -33,7 +41,11 @@ data class ActorRecord(
 data class MovieActorRecord(
     val movieId: Long,
     val actorId: Long,
-): Serializable
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
 
 
 /**
@@ -42,7 +54,11 @@ data class MovieActorRecord(
 data class MovieActorCountRecord(
     val movieName: String,
     val actorCount: Int,
-): Serializable
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
 
 
 /**
@@ -54,7 +70,11 @@ data class MovieWithActorRecord(
     val releaseDate: String,
     val actors: List<ActorRecord> = emptyList(),
     val id: Long? = null,
-): Serializable
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
 
 
 /**
@@ -63,4 +83,8 @@ data class MovieWithActorRecord(
 data class MovieWithProducingActorRecord(
     val movieName: String,
     val producerActorName: String,
-): Serializable
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}

@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.error
 import io.bluetape4k.logging.warn
-import io.bluetape4k.support.requirePositiveNumber
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.requirePositiveNumber
 import io.lettuce.core.RedisClient
 import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScanCursor
@@ -27,9 +27,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -45,7 +45,8 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     valueCodec: RedisCodec<String, V>,
 ): Closeable {
-    companion object: KLogging() {
+
+    companion object: KLoggingChannel() {
         private const val MAX_DEAD_LETTER_RETRY = 3
     }
 
@@ -92,7 +93,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" }
+            log.warn(e) { "Redis SETEX failed: key=$key" }
         }
         return value
     }
@@ -108,9 +109,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
                 val channel = writeBehindChannel ?: return
                 val result = channel.trySend(Triple(key, value, 0))
                 if (result.isFailure) {
-                    throw IllegalStateException(
-                        "Write-behind channel is full (capacity=${config.writeBehindQueueCapacity})"
-                    )
+                    error("Write-behind channel is full (capacity=${config.writeBehindQueueCapacity})")
                 }
                 asyncCommands.set(redisKey(key), value, SetArgs().ex(ttlSeconds)).await()
             }
@@ -182,9 +181,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn {
-                "Redis MGET failed, loader fallback: requested=${keys.size}, errorType=${e::class.simpleName}"
-            }
+            log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
             null
         }
 
@@ -212,7 +209,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" }
+                    log.warn(e) { "Redis SETEX failed: key=$key" }
                 }
             }
         }
@@ -282,7 +279,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.error { "Dead letter write failed: errorType=${e::class.simpleName}" }
+            log.error(e) { "Dead letter write failed: batch=$batch" }
         }
     }
 
@@ -294,10 +291,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.error {
-                "Write-behind flush failed: entries=${batch.size}, " +
-                    "errorType=${e::class.simpleName}"
-            }
+            log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
             val dropped = mutableMapOf<K, V>()
             entries.forEach { (key, value, retryCount) ->
                 val nextRetryCount = retryCount + 1
@@ -317,13 +311,13 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         try {
             writeBehindJob?.let { job ->
                 runBlocking(Dispatchers.IO) {
-                    withTimeout(config.writeBehindShutdownTimeout.toMillis()) {
+                    withTimeout(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
                         job.join()
                     }
                 }
             }
         } catch (e: Exception) {
-            log.warn { "Write-behind job drain timed out or failed during close(): errorType=${e::class.simpleName}" }
+            log.warn(e) { "Write-behind job drain timed out or failed during close()" }
         } finally {
             ownedJob.cancel()
             if (lazyStrConnection.isInitialized()) lazyStrConnection.value.close()
@@ -336,7 +330,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         writeBehindChannel?.close()
         try {
             writeBehindJob?.let { job ->
-                val drained = withTimeoutOrNull(config.writeBehindShutdownTimeout.toMillis()) {
+                val drained = withTimeoutOrNull(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
                     job.join()
                     true
                 } ?: false
@@ -345,7 +339,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn { "Write-behind job drain failed during suspendClose(): errorType=${e::class.simpleName}" }
+            log.warn(e) { "Write-behind job drain failed during suspendClose()" }
         } finally {
             withContext(NonCancellable) {
                 ownedJob.cancel()

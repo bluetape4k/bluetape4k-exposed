@@ -16,9 +16,11 @@ It maps JTS geometry values to MySQL spatial columns, keeps SRID handling explic
 
 ## Overview
 
-- **Geometry types**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (generic)
+- **Geometry
+  types**: Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection, Geometry (generic)
 - **Coordinate system**: WGS84 (SRID 4326) by default
-- **Spatial functions**: relationship predicates, measurement expressions, metadata expressions, and selected topology helpers
+- **Spatial
+  functions**: relationship predicates, measurement expressions, metadata expressions, and selected topology helpers
 - **MySQL only**: Works exclusively with `MysqlDialect`
 - **Serialization path**:
     - PreparedStatement binding uses MySQL Internal Format (`4-byte SRID LE + WKB`)
@@ -40,7 +42,7 @@ It maps JTS geometry values to MySQL spatial columns, keeps SRID handling explic
 ## Table Extension Functions
 
 ```kotlin
-class Locations : LongIdTable("locations") {
+class Locations: LongIdTable("locations") {
     val name = varchar("name", 255)
     val point = geoPoint("point")                    // POINT
     val line = geoLineString("line")                 // LINESTRING
@@ -53,8 +55,7 @@ class Locations : LongIdTable("locations") {
 }
 ```
 
-All extension functions use SRID 4326 (WGS84) by default. You can specify a different SRID as the second argument.
-The examples below use `Locations` as the already-instantiated table inside a MySQL transaction.
+All extension functions use SRID 4326 (WGS84) by default. You can specify a different SRID as the second argument. The examples below use `Locations` as the already-instantiated table inside a MySQL transaction.
 
 ```kotlin
 val point = geoPoint("location", srid = 3857)  // Web Mercator
@@ -362,8 +363,8 @@ wgs84Point(lng = 37.5665, lat = 126.9780)
 Tests use Testcontainers to automatically start MySQL 8.0.
 
 ```kotlin
-abstract class AbstractMySqlGisTest : AbstractExposedTest() {
-    companion object : KLogging() {
+abstract class AbstractMySqlGisTest: AbstractExposedTest() {
+  companion object: KLogging() {
         @JvmStatic
         val mysqlContainer: MySQL8Server = MySQL8Server.Launcher.mysql
 

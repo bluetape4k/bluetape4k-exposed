@@ -2,16 +2,15 @@
 
 [English](./README.md) | 한국어
 
-Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-through / Write-through / Write-behind 캐시 레포지토리 모듈입니다.
-데이터 접근 작업은 `suspendTransaction`과 suspend 기반 `ExposedR2dbcLettuceSuspendedLoadedMap`을 사용하며, JDBC 레포지토리 경로는 제공하지 않습니다.
+Exposed R2DBC와 Lettuce Redis 캐시를 결합한 코루틴 네이티브 Read-through / Write-through / Write-behind 캐시 레포지토리 모듈입니다. 데이터 접근 작업은 `suspendTransaction`과 suspend 기반 `ExposedR2dbcLettuceSuspendedLoadedMap`을 사용하며, JDBC 레포지토리 경로는 제공하지 않습니다.
 
 ## 개요
 
 `exposed-r2dbc-lettuce`는 다음을 제공합니다:
 
 - **Read-through 캐시**: `findById` 시 캐시 미스이면 R2DBC `suspendTransaction`으로 DB 자동 로드 후 Redis에 캐싱
-- **Write-through / Write-behind**: `save` 시 Redis와 DB를 동시(또는 비동기)로 반영
-- **NearCache 지원**: Caffeine 로컬 캐시(front) + Redis(back) 2-tier 캐시 (옵션)
+- **Write-through / Write-behind**: `save` 시 Redis와 DB를 동시 (또는 비동기)로 반영
+- **NearCache 지원**: Caffeine 로컬 캐시 (front) + Redis (back) 2-tier 캐시 (옵션)
 - **코루틴 레포지토리**: `R2dbcLettuceRepository` / `AbstractR2dbcLettuceRepository`
 - **MapLoader / MapWriter**: repository loaded-map 연동을 위한 R2DBC 기반 구현체
     - `loadAllKeys()`는 기존 `List` API를 유지하며, 지원되는 표준 scalar ID에는 keyset page를 사용하고 custom ID에는 기존 offset fallback을 사용
@@ -88,39 +87,37 @@ suspend fun example(repo: UserR2dbcLettuceRepository) {
 
 ## R2dbcLettuceRepository 주요 메서드
 
-| 메서드                                   | 설명                                           |
-|---------------------------------------|----------------------------------------------|
-| `suspend findById(id)`                | NearCache → Redis → DB 순으로 조회 (Read-through) |
-| `suspend findAll(ids)`                | 다건 조회, 미스 키만 Redis → DB Read-through         |
-| `suspend findAll(limit, offset, ...)` | R2DBC DB 조회 후 결과를 Redis에 적재                  |
-| `suspend findByIdFromDb(id)`          | 캐시 우회, R2DBC `suspendTransaction` 직접 조회      |
-| `suspend findAllFromDb(ids)`          | 캐시 우회, R2DBC 다건 직접 조회                        |
-| `suspend countFromDb()`               | R2DBC DB 전체 레코드 수                            |
-| `suspend save(id, entity)`            | Redis 저장 + WriteMode에 따라 R2DBC DB 반영         |
-| `suspend saveAll(entities)`           | 다건 저장                                        |
-| `suspend delete(id)`                  | Redis + R2DBC DB 동시 삭제                       |
-| `suspend deleteAll(ids)`              | 다건 삭제                                        |
+| 메서드                                         | 설명                                                 |
+|------------------------------------------------|------------------------------------------------------|
+| `suspend findById(id)`                         | NearCache → Redis → DB 순으로 조회 (Read-through)    |
+| `suspend findAll(ids)`                         | 다건 조회, 미스 키만 Redis → DB Read-through         |
+| `suspend findAll(limit, offset, ...)`          | R2DBC DB 조회 후 결과를 Redis에 적재                 |
+| `suspend findByIdFromDb(id)`                   | 캐시 우회, R2DBC `suspendTransaction` 직접 조회      |
+| `suspend findAllFromDb(ids)`                   | 캐시 우회, R2DBC 다건 직접 조회                      |
+| `suspend countFromDb()`                        | R2DBC DB 전체 레코드 수                              |
+| `suspend save(id, entity)`                     | Redis 저장 + WriteMode에 따라 R2DBC DB 반영          |
+| `suspend saveAll(entities)`                    | 다건 저장                                            |
+| `suspend delete(id)`                           | Redis + R2DBC DB 동시 삭제                           |
+| `suspend deleteAll(ids)`                       | 다건 삭제                                            |
 | `suspend invalidateByPattern(patterns, count)` | loaded-map 키 삭제 후 이 레포지토리의 NearCache 갱신 |
-| `suspend clearCache()`                | NearCache + Redis 키 전체 삭제 (DB 영향 없음)         |
+| `suspend clearCache()`                         | NearCache + Redis 키 전체 삭제 (DB 영향 없음)        |
 
 ## LettuceCacheConfig — 쓰기 모드
 
-| WriteMode            | 동작                                  |
-|----------------------|-------------------------------------|
+| WriteMode            | 동작                                        |
+|----------------------|---------------------------------------------|
 | `READ_WRITE_THROUGH` | save 시 Redis + R2DBC DB 동시 반영 (기본값) |
-| `READ_WRITE_BEHIND`  | save 시 Redis 즉시, R2DBC DB는 비동기 반영   |
+| `READ_WRITE_BEHIND`  | save 시 Redis 즉시, R2DBC DB는 비동기 반영  |
 | `READ_ONLY`          | Redis에만 저장, DB 쓰기 없음                |
 
 ## Redis Codec 안전성
 
-Repository 생성자는 값 직렬화를 위한 `RedisCodec<String, E>`를 명시적으로 요구합니다. 기존 Lettuce
-binary loaded-map 기본값은 LZ4/Fory 계열이므로 repository 데이터에는 자동 선택하지 않습니다.
-`ExposedR2dbcLettuceCodecs.jackson3(Entity::class.java)` 또는 검토된 codec을 전달하세요. Fory/Kryo
-계열 binary codec은 Redis 데이터가 완전히 신뢰되고 외부 writer와 공유되지 않는 경우에만 사용하세요.
+Repository 생성자는 값 직렬화를 위한 `RedisCodec<String, E>`를 명시적으로 요구합니다. 기존 Lettuce binary loaded-map 기본값은 LZ4/Fory 계열이므로 repository 데이터에는 자동 선택하지 않습니다.
+`ExposedR2dbcLettuceCodecs.jackson3(Entity::class.java)` 또는 검토된 codec을 전달하세요. Fory/Kryo 계열 binary codec은 Redis 데이터가 완전히 신뢰되고 외부 writer와 공유되지 않는 경우에만 사용하세요.
 
 ## NearCache 설정
 
-`LettuceCacheConfig.nearCacheEnabled = true`로 Caffeine 로컬 캐시(front)를 활성화할 수 있습니다.
+`LettuceCacheConfig.nearCacheEnabled = true`로 Caffeine 로컬 캐시 (front)를 활성화할 수 있습니다.
 
 ```kotlin
 val config = LettuceCacheConfig(
@@ -132,39 +129,33 @@ val config = LettuceCacheConfig(
 )
 ```
 
-NearCache가 활성화되면 조회 순서: **Caffeine(로컬) → Redis → DB**
+NearCache가 활성화되면 조회 순서: **Caffeine (로컬) → Redis → DB**
 
 ## 패턴 무효화와 NearCache
 
-`suspend invalidateByPattern(patterns, count)`의 `patterns`는 레포지토리의 `keyPrefix` 아래에서
-매칭할 패턴입니다. `count`는 Redis에 접근하기 전에 0보다 큰지 검증합니다. 먼저 loaded-map의
-backing 키를 삭제하고, 삭제가 성공하면 NearCache가 활성화된 경우 해당 `nearCacheName` namespace
-(로컬 front와 Redis back)를 비웁니다. 반환값은 backing에서 삭제된 키 수입니다. backing 캐시의
-실패나 코루틴 취소는 호출자에게 전파되며, backing 삭제가 실패하면 NearCache를 비우지 않습니다.
-NearCache는 요청한 패턴만이 아니라 해당 레포지토리 namespace 전체를 비울 수 있지만, 다른
-레포지토리의 namespace는 보존됩니다.
+`suspend invalidateByPattern(patterns, count)`의 `patterns`는 레포지토리의 `keyPrefix` 아래에서 매칭할 패턴입니다. `count`는 Redis에 접근하기 전에 0보다 큰지 검증합니다. 먼저 loaded-map의 backing 키를 삭제하고, 삭제가 성공하면 NearCache가 활성화된 경우 해당 `nearCacheName` namespace (로컬 front와 Redis back)를 비웁니다. 반환값은 backing에서 삭제된 키 수입니다. backing 캐시의 실패나 코루틴 취소는 호출자에게 전파되며, backing 삭제가 실패하면 NearCache를 비우지 않습니다. NearCache는 요청한 패턴만이 아니라 해당 레포지토리 namespace 전체를 비울 수 있지만, 다른 레포지토리의 namespace는 보존됩니다.
 
 ## JDBC 버전과의 차이점
 
-| 항목               | exposed-jdbc-lettuce                               | exposed-r2dbc-lettuce            |
-|------------------|----------------------------------------------------|----------------------------------|
-| DB 드라이버          | JDBC (blocking)                                    | R2DBC (non-blocking)             |
-| 트랜잭션             | `transaction {}` / `suspendedTransactionAsync(IO)` | `suspendTransaction {}`          |
-| `toEntity`       | 일반 함수 (`fun`)                                      | suspend 함수 (`suspend fun`)       |
-| `runBlocking` 사용 | 없음 (`ExposedLettuceSuspendedLoadedMap`)            | 없음 (`ExposedR2dbcLettuceSuspendedLoadedMap`) |
-| 동기 레포지토리         | `JdbcLettuceRepository` 제공                         | 미제공 (suspend only)               |
+| 항목               | exposed-jdbc-lettuce                               | exposed-r2dbc-lettuce                          |
+|--------------------|----------------------------------------------------|------------------------------------------------|
+| DB 드라이버        | JDBC (blocking)                                    | R2DBC (non-blocking)                           |
+| 트랜잭션           | `transaction {}` / `suspendedTransactionAsync(IO)` | `suspendTransaction {}`                        |
+| `toEntity`         | 일반 함수 (`fun`)                                  | suspend 함수 (`suspend fun`)                   |
+| `runBlocking` 사용 | 없음 (`ExposedLettuceSuspendedLoadedMap`)          | 없음 (`ExposedR2dbcLettuceSuspendedLoadedMap`) |
+| 동기 레포지토리    | `JdbcLettuceRepository` 제공                       | 미제공 (suspend only)                          |
 
 ## 주요 파일/클래스 목록
 
-| 파일                                             | 설명                                                                  |
-|------------------------------------------------|---------------------------------------------------------------------|
-| `repository/R2dbcLettuceRepository.kt`         | suspend 캐시 레포지토리 인터페이스                                              |
-| `repository/AbstractR2dbcLettuceRepository.kt` | 추상 구현체 (ExposedR2dbcLettuceSuspendedLoadedMap + NearCache)          |
-| `repository/ExposedR2dbcLettuceCodecs.kt`      | repository Redis 값 codec 명시 헬퍼                                      |
-| `map/ExposedR2dbcLettuceSuspendedLoadedMap.kt` | 호출자가 전달한 값 codec을 쓰는 코루틴 loaded map                        |
+| 파일                                           | 설명                                                                       |
+|------------------------------------------------|----------------------------------------------------------------------------|
+| `repository/R2dbcLettuceRepository.kt`         | suspend 캐시 레포지토리 인터페이스                                         |
+| `repository/AbstractR2dbcLettuceRepository.kt` | 추상 구현체 (ExposedR2dbcLettuceSuspendedLoadedMap + NearCache)            |
+| `repository/ExposedR2dbcLettuceCodecs.kt`      | repository Redis 값 codec 명시 헬퍼                                        |
+| `map/ExposedR2dbcLettuceSuspendedLoadedMap.kt` | 호출자가 전달한 값 codec을 쓰는 코루틴 loaded map                          |
 | `map/R2dbcEntityMapLoader.kt`                  | R2DBC `suspendTransaction` 기반 MapLoader 추상 클래스                      |
 | `map/R2dbcEntityMapWriter.kt`                  | R2DBC `suspendTransaction` + Resilience4j Retry 기반 MapWriter 추상 클래스 |
-| `map/R2dbcExposedEntityMapLoader.kt`           | Exposed R2DBC DSL 기반 MapLoader 구현체                                  |
+| `map/R2dbcExposedEntityMapLoader.kt`           | Exposed R2DBC DSL 기반 MapLoader 구현체                                    |
 | `map/R2dbcExposedEntityMapWriter.kt`           | Exposed R2DBC DSL 기반 MapWriter 구현체 (upsert 전략)                      |
 
 ## 테스트

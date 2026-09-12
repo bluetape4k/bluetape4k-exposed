@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.map
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -9,17 +10,19 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import kotlinx.coroutines.Dispatchers
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -32,14 +35,27 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
+import java.io.Serializable
 import java.util.concurrent.CompletionException
 
 /** [SuspendedExposedEntityMapLoader]의 bounded AsyncIterator 계약을 검증한다. */
 class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
 
-    private data class LoaderEntity(val id: Long, val name: String)
+    companion object: KLoggingChannel()
 
-    private data class ComparableCustomId(val value: String): Comparable<ComparableCustomId> {
+    private data class LoaderEntity(val id: Long, val name: String): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
+        fun withId(newId: Long): LoaderEntity = copy(id = newId)
+    }
+
+    private data class ComparableCustomId(val value: String): Comparable<ComparableCustomId>, Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
         override fun compareTo(other: ComparableCustomId): Int = value.compareTo(other.value)
     }
 
@@ -49,11 +65,10 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
 
     private object MissingLoaderTable: LongIdTable("suspended_redisson_missing_loader_test")
 
-    private fun ResultRow.toLoaderEntity(): LoaderEntity =
-        LoaderEntity(
-            id = this[LoaderTable.id].value,
-            name = this[LoaderTable.name],
-        )
+    private fun ResultRow.toLoaderEntity(): LoaderEntity = LoaderEntity(
+        id = this[LoaderTable.id].value,
+        name = this[LoaderTable.name],
+    )
 
     @Test
     fun `keyset capability는 표준 scalar만 허용하고 custom Comparable ID는 fallback으로 분류한다`() {
@@ -133,7 +148,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             TestDB.H2,
             LoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -198,17 +213,17 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             val exceptionHandler = CoroutineExceptionHandler { _, cause -> observedFatal.complete(cause) }
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
             try {
-                val loader =
-                    SuspendedEntityMapLoader<Long, LoaderEntity>(
-                        loadByIdFromDB = { null },
-                        loadAllIdsFromDB = { throw fatal },
-                        scope = scope,
-                    )
+                val loader = SuspendedEntityMapLoader<Long, LoaderEntity>(
+                    loadByIdFromDB = { null },
+                    loadAllIdsFromDB = { throw fatal },
+                    scope = scope,
+                )
                 val failure = runCatching { loader.loadAllKeys().hasNext().await() }.exceptionOrNull()
                 val cause = (failure as? CompletionException)?.cause ?: failure
                 cause.shouldBeInstanceOf<AssertionError>()
                 cause.message shouldBeEqualTo fatal.message
-                withTimeout(1_000) {
+
+                withTimeout(timeMillis = 1_000) {
                     val observed = observedFatal.await()
                     observed.shouldBeInstanceOf<AssertionError>()
                     observed.message shouldBeEqualTo fatal.message
@@ -246,20 +261,18 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             scope.coroutineContext[Job]?.children?.toList().shouldHaveSize(0)
         }
 
-        val defaultFailure =
-            SuspendedEntityMapLoader<Long, LoaderEntity>(
-                loadByIdFromDB = { null },
-                loadAllIdsFromDB = { error("producer failure") },
-            )
+        val defaultFailure = SuspendedEntityMapLoader<Long, LoaderEntity>(
+            loadByIdFromDB = { null },
+            loadAllIdsFromDB = { error("producer failure") },
+        )
         val defaultException = runCatching { defaultFailure.loadAllKeys().hasNext().await() }.exceptionOrNull()
         val defaultCause = (defaultException as? CompletionException)?.cause ?: defaultException
         defaultCause.shouldBeInstanceOf<IllegalStateException>()
 
-        val defaultSuccess =
-            SuspendedEntityMapLoader<Long, LoaderEntity>(
-                loadByIdFromDB = { null },
-                loadAllIdsFromDB = { channel -> channel.send(7L) },
-            )
+        val defaultSuccess = SuspendedEntityMapLoader<Long, LoaderEntity>(
+            loadByIdFromDB = { null },
+            loadAllIdsFromDB = { channel -> channel.send(7L) },
+        )
         val defaultIterator = defaultSuccess.loadAllKeys()
         defaultIterator.hasNext().await().shouldBeTrue()
         defaultIterator.next().await() shouldBeEqualTo 7L
@@ -281,7 +294,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
                 loadByIdFromDB = { null },
                 loadAllIdsFromDB = {
                     observedMaxAttempts = TransactionManager.currentOrNull()?.maxAttempts ?: -1
-                    withTimeout(1) {
+                    withTimeout(timeMillis = 1) {
                         awaitCancellation()
                     }
                 },
@@ -315,7 +328,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             scope.cancel()
         }
 
-        observedQueryTimeout.shouldBeEqualTo(30)
+        observedQueryTimeout shouldBeEqualTo 30
     }
 
     @Test
@@ -341,8 +354,8 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
             val failure = runCatching { iterator.hasNext().await() }.exceptionOrNull()
             val cause = (failure as? CompletionException)?.cause ?: failure
             cause.shouldBeInstanceOf<CancellationException>()
-            scope.coroutineContext[Job]?.children?.toList()?.forEach { it.join() }
-            scope.coroutineContext[Job]?.children?.toList().shouldHaveSize(0)
+            scope.coroutineContext[Job]?.children?.toList()?.joinAll()
+            scope.coroutineContext[Job]?.children?.toList().shouldBeEmpty()
         }
     }
 }

@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
@@ -15,6 +14,7 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.CredentialR2dbcCaffeineRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map

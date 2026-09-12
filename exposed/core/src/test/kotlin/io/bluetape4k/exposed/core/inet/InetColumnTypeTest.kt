@@ -1,15 +1,15 @@
 package io.bluetape4k.exposed.core.inet
 
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withDb
+import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -96,12 +96,6 @@ class InetColumnTypeTest: AbstractExposedTest() {
             inetType.parameterMarker(addr) shouldBeEqualTo "?::inet"
             cidrType.sqlType() shouldBeEqualTo "CIDR"
             cidrType.parameterMarker("192.168.0.0/24") shouldBeEqualTo "?::cidr"
-        }
-    }
-
-    private fun withDb(testDB: TestDB, block: () -> Unit) {
-        transaction(db = testDB.connect()) {
-            block()
         }
     }
 }

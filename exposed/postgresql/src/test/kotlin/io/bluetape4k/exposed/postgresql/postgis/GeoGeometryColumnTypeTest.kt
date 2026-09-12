@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.postgresql.postgis
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.PostgisServer
@@ -7,12 +14,6 @@ import net.postgis.jdbc.geometry.LineString
 import net.postgis.jdbc.geometry.LinearRing
 import net.postgis.jdbc.geometry.Point
 import net.postgis.jdbc.geometry.Polygon
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldBeLessOrEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -256,7 +257,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val intersectsRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stIntersects(GeometryPairs.geomB) }
                 .toList()
-            intersectsRows shouldHaveSize 0
+            intersectsRows.shouldBeEmpty()
         }
     }
 
@@ -310,7 +311,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val reverseRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomB.stContains(GeometryPairs.geomA) }
                 .toList()
-            reverseRows shouldHaveSize 0
+            reverseRows.shouldBeEmpty()
         }
     }
 
@@ -359,7 +360,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val reverseRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomB.stWithin(GeometryPairs.geomA) }
                 .toList()
-            reverseRows shouldHaveSize 0
+            reverseRows.shouldBeEmpty()
         }
     }
 
@@ -387,7 +388,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val outsideRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stDWithin(GeometryPairs.geomB, 0.29) }
                 .toList()
-            outsideRows shouldHaveSize 0
+            outsideRows.shouldBeEmpty()
         }
     }
 

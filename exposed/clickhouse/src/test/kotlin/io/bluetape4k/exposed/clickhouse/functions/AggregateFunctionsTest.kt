@@ -1,11 +1,13 @@
 package io.bluetape4k.exposed.clickhouse.functions
 
-import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
-import io.bluetape4k.exposed.clickhouse.domain.Events
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
+import io.bluetape4k.exposed.clickhouse.domain.Events
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
@@ -14,21 +16,21 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import io.bluetape4k.assertions.assertFailsWith
 import java.time.Instant
 
 /**
  * ClickHouse Aggregate Functions (argMax, argMin, quantile, uniq, uniqExact) 테스트.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AggregateFunctionsTest : AbstractClickHouseTest() {
+class AggregateFunctionsTest: AbstractClickHouseTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @BeforeEach
     fun setup() {
         transaction(db) {
             SchemaUtils.create(Events)
+
             // 10,000건 삽입: eventId 1~10000, region은 0~9 순환
             Events.batchInsert((1..10_000).toList()) { i ->
                 this[Events.eventId] = i.toLong()
@@ -42,14 +44,21 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
     @AfterEach
     fun teardown() {
         transaction(db) {
-            runCatching { SchemaUtils.drop(Events) }
+            runCatching {
+                SchemaUtils.drop(Events)
+            }
         }
     }
 
     @Test
     fun `quantile level out of range throws IllegalArgumentException`() {
-        assertFailsWith<IllegalArgumentException> { quantile(-0.1, Events.eventId) }
-        assertFailsWith<IllegalArgumentException> { quantile(1.1, Events.eventId) }
+        assertFailsWith<IllegalArgumentException> {
+            quantile(-0.1, Events.eventId)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            quantile(1.1, Events.eventId)
+        }
     }
 
     @Test
@@ -60,7 +69,8 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // 1~10000의 중앙값은 약 5000
-        result!! shouldBeGreaterOrEqualTo 4000.0
+        result.shouldNotBeNull()
+        result shouldBeGreaterOrEqualTo 4000.0
         result shouldBeLessOrEqualTo 6000.0
     }
 
@@ -72,7 +82,8 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // 95th percentile of 1~10000 ≈ 9500
-        result!! shouldBeGreaterOrEqualTo 9000.0
+        result.shouldNotBeNull()
+        result shouldBeGreaterOrEqualTo 9000.0
         result shouldBeLessOrEqualTo 10000.0
     }
 
@@ -84,7 +95,8 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // region은 region_0~region_9 총 10종류 (HyperLogLog 근사이므로 8 이상이면 정상)
-        result!! shouldBeGreaterOrEqualTo 8L
+        result.shouldNotBeNull()
+        result shouldBeGreaterOrEqualTo 8L
     }
 
     @Test
@@ -95,6 +107,7 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // 정확히 10종류
+        result.shouldNotBeNull()
         result shouldBeEqualTo 10L
     }
 
@@ -106,6 +119,7 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // event_id가 최대(10000)인 row의 event_name = "event_10000"
+        result.shouldNotBeNull()
         result shouldBeEqualTo "event_10000"
     }
 
@@ -117,6 +131,7 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         // event_id가 최소(1)인 row의 event_name = "event_1"
+        result.shouldNotBeNull()
         result shouldBeEqualTo "event_1"
     }
 
@@ -128,7 +143,10 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             argMaxExpr.toQueryBuilder(queryBuilder)
             queryBuilder.toString()
         }
-        require(sql.contains("argMax")) { "Expected SQL to contain 'argMax', but was: $sql" }
+
+        require(sql.contains("argMax")) {
+            "Expected SQL to contain 'argMax', but was: $sql"
+        }
     }
 
     @Test
@@ -139,7 +157,10 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             argMinExpr.toQueryBuilder(queryBuilder)
             queryBuilder.toString()
         }
-        require(sql.contains("argMin")) { "Expected SQL to contain 'argMin', but was: $sql" }
+
+        require(sql.contains("argMin")) {
+            "Expected SQL to contain 'argMin', but was: $sql"
+        }
     }
 
     @Test
@@ -150,7 +171,10 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             quantileExpr.toQueryBuilder(queryBuilder)
             queryBuilder.toString()
         }
-        require(sql.contains("quantile(0.95)")) { "Expected SQL to contain 'quantile(0.95)', but was: $sql" }
+
+        require(sql.contains("quantile(0.95)")) {
+            "Expected SQL to contain 'quantile(0.95)', but was: $sql"
+        }
     }
 
     @Test
@@ -161,7 +185,10 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             uniqExpr.toQueryBuilder(queryBuilder)
             queryBuilder.toString()
         }
-        require(sql.contains("uniq(")) { "Expected SQL to contain 'uniq(', but was: $sql" }
+
+        require(sql.contains("uniq(")) {
+            "Expected SQL to contain 'uniq(', but was: $sql"
+        }
     }
 
     @Test
@@ -172,6 +199,9 @@ class AggregateFunctionsTest : AbstractClickHouseTest() {
             uniqExactExpr.toQueryBuilder(queryBuilder)
             queryBuilder.toString()
         }
-        require(sql.contains("uniqExact(")) { "Expected SQL to contain 'uniqExact(', but was: $sql" }
+
+        require(sql.contains("uniqExact(")) {
+            "Expected SQL to contain 'uniqExact(', but was: $sql"
+        }
     }
 }

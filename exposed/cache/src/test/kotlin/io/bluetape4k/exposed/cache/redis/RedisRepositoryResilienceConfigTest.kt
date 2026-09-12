@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.cache.redis
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 import java.time.Duration
 
 /**
@@ -17,7 +18,7 @@ import java.time.Duration
  */
 class RedisRepositoryResilienceConfigTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ----------------------------------------------------------------
     // 기본값 생성
@@ -136,13 +137,8 @@ class RedisRepositoryResilienceConfigTest {
             circuitBreakerEnabled = true,
         )
 
-        val bytes = java.io.ByteArrayOutputStream().use { baos ->
-            java.io.ObjectOutputStream(baos).use { oos -> oos.writeObject(original) }
-            baos.toByteArray()
-        }
-        val restored = java.io.ByteArrayInputStream(bytes).use { bais ->
-            java.io.ObjectInputStream(bais).use { ois -> ois.readObject() as RedisRepositoryResilienceConfig }
-        }
+        val bytes = BinarySerializers.FastFory.serialize(original)
+        val restored = BinarySerializers.FastFory.deserialize<RedisRepositoryResilienceConfig>(bytes)
 
         restored shouldBeEqualTo original
     }
