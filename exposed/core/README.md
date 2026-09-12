@@ -91,11 +91,8 @@ object Orders: IntIdTable("orders") {
 
 #### Kotlin UUID ID table
 
-`KotlinUuidTable` is the bluetape4k adapter for Exposed's `kotlin.uuid.Uuid` identity table. IDs are generated on
-the client immediately before insert. `UuidVersion.V4` is the default; select `UuidVersion.V7` when time-sortable
-UUIDs are required. The table-level version applies only to the `id` column; use Exposed's column-level
-`autoGenerate(UuidVersion.V4)` or `autoGenerate(UuidVersion.V7)` when defining additional Kotlin UUID columns.
-This is separate from `TimebasedUUIDTable`, which uses `java.util.UUID`.
+`KotlinUuidTable` is the bluetape4k adapter for Exposed's `kotlin.uuid.Uuid` identity table. IDs are generated on the client immediately before insert. `UuidVersion.V4` is the default; select `UuidVersion.V7` when time-sortable UUIDs are required. The table-level version applies only to the `id` column; use Exposed's column-level
+`autoGenerate(UuidVersion.V4)` or `autoGenerate(UuidVersion.V7)` when defining additional Kotlin UUID columns. This is separate from `TimebasedUUIDTable`, which uses `java.util.UUID`.
 
 ```kotlin
 import io.bluetape4k.exposed.core.dao.id.KotlinUuidTable
@@ -111,9 +108,7 @@ object EventLinks: Table("event_links") {
 }
 ```
 
-When migrating from `TimebasedUUIDTable`, replace `java.util.UUID` references with `kotlin.uuid.Uuid` only when
-the surrounding API is ready for the type change. Existing Java UUID tables keep their original schema and ABI;
-do not mix the two UUID types in the same entity contract.
+When migrating from `TimebasedUUIDTable`, replace `java.util.UUID` references with `kotlin.uuid.Uuid` only when the surrounding API is ready for the type change. Existing Java UUID tables keep their original schema and ABI; do not mix the two UUID types in the same entity contract.
 
 ### 2. Compressed column types
 
@@ -242,8 +237,7 @@ println("Is last page: ${page.isLast}")
 
 ### 9. ExposedCursorPage (typed cursor results)
 
-`ExposedCursorPage` is the bounded result DTO for forward-only keyset pagination. The cursor is the raw,
-non-null primary-key value from the repository's `IdTable`; it is not an opaque transport token.
+`ExposedCursorPage` is the bounded result DTO for forward-only keyset pagination. The cursor is the raw, non-null primary-key value from the repository's `IdTable`; it is not an opaque transport token.
 
 ```kotlin
 import io.bluetape4k.exposed.core.ExposedCursorPage
@@ -255,52 +249,41 @@ val page = ExposedCursorPage<UserRecord, Long>(
 )
 ```
 
-The JDBC and R2DBC repository extensions use one `SELECT` with `LIMIT pageSize + 1`, do not run a count or
-offset query, and accept `pageSize` from 1 through 10,000. `ASC` variants use a strict `>` boundary and
-`DESC` variants use a strict `<` boundary; the null-placement variants only preserve their direction because
-an `IdTable` primary key is non-null. `hasNext == false` always has a null `nextCursor`.
+The JDBC and R2DBC repository extensions use one `SELECT` with `LIMIT pageSize + 1`, do not run a count or offset query, and accept `pageSize` from 1 through 10,000. `ASC` variants use a strict `>` boundary and
+`DESC` variants use a strict `<` boundary; the null-placement variants only preserve their direction because an `IdTable` primary key is non-null. `hasNext == false` always has a null `nextCursor`.
 
-The caller must encode, sign, scope, and decode the cursor, and must reuse the same sort order and predicate
-for the next request. The API does not promise snapshot isolation, and the default predicate is `Op.TRUE`,
-so soft-deleted rows remain visible unless an active-row predicate is supplied. `Comparable` ID values such
-as `Long`, `Int`, `String`, `UUID`, or Kotlin `Uuid` are supported; `CompositeID` and other non-comparable
-IDs are intentionally outside this extension. Existing offset-based `ExposedPage`/`findPage` APIs remain
-unchanged.
+The caller must encode, sign, scope, and decode the cursor, and must reuse the same sort order and predicate for the next request. The API does not promise snapshot isolation, and the default predicate is `Op.TRUE`, so soft-deleted rows remain visible unless an active-row predicate is supplied. `Comparable` ID values such as `Long`, `Int`, `String`, `UUID`, or Kotlin `Uuid` are supported; `CompositeID` and other non-comparable IDs are intentionally outside this extension. Existing offset-based `ExposedPage`/`findPage` APIs remain unchanged.
 
-`ExposedCursorPage` implements `java.io.Serializable` with an explicit `serialVersionUID = 1L`. Java
-serialization is available only when the concrete `T` values, the `C` cursor, and the runtime content list
-implementation are serializable; the generic bounds intentionally do not enforce that requirement. This
-object serialization contract does not encode, sign, scope, expire, or decode an opaque transport cursor
-token, which remains the caller's responsibility.
+`ExposedCursorPage` implements `java.io.Serializable` with an explicit `serialVersionUID = 1L`. Java serialization is available only when the concrete `T` values, the `C` cursor, and the runtime content list implementation are serializable; the generic bounds intentionally do not enforce that requirement. This object serialization contract does not encode, sign, scope, expire, or decode an opaque transport cursor token, which remains the caller's responsibility.
 
 ## Key Files and Classes
 
-| File                                               | Description                                        |
-|----------------------------------------------------|----------------------------------------------------|
-| `ColumnExtensions.kt`                              | Client-side ID auto-generation extension functions |
-| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID table with V4/V7 generation        |
-| `ExposedColumnSupports.kt`                         | Column type support utilities                      |
-| `ResultRowExtensions.kt`                           | ResultRow processing extensions                    |
-| `BatchInsertOnConflictDoNothing.kt`                | Ignore-duplicate batch insert                      |
-| `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob utility functions                      |
-| `compress/CompressedBinaryColumnType.kt`           | Compressed Binary column type                      |
-| `compress/CompressedBlobColumnType.kt`             | Compressed Blob column type                        |
-| `serializable/BinarySerializedBinaryColumnType.kt` | Serialized Binary column type                      |
-| `serializable/BinarySerializedBlobColumnType.kt`   | Serialized Blob column type                        |
-| `ExposedPage.kt`                                   | Paginated result data class                        |
-| `ExposedCursorPage.kt`                             | Typed keyset/cursor result data class              |
+| File                                               | Description                                                       |
+|----------------------------------------------------|-------------------------------------------------------------------|
+| `ColumnExtensions.kt`                              | Client-side ID auto-generation extension functions                |
+| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID table with V4/V7 generation                      |
+| `ExposedColumnSupports.kt`                         | Column type support utilities                                     |
+| `ResultRowExtensions.kt`                           | ResultRow processing extensions                                   |
+| `BatchInsertOnConflictDoNothing.kt`                | Ignore-duplicate batch insert                                     |
+| `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob utility functions                                     |
+| `compress/CompressedBinaryColumnType.kt`           | Compressed Binary column type                                     |
+| `compress/CompressedBlobColumnType.kt`             | Compressed Blob column type                                       |
+| `serializable/BinarySerializedBinaryColumnType.kt` | Serialized Binary column type                                     |
+| `serializable/BinarySerializedBlobColumnType.kt`   | Serialized Blob column type                                       |
+| `ExposedPage.kt`                                   | Paginated result data class                                       |
+| `ExposedCursorPage.kt`                             | Typed keyset/cursor result data class                             |
 | `HasIdentifier.kt`                                 | Deprecated compatibility interface; prefer `Serializable` records |
-| `dao/id/KsuidTable.kt`                             | KSUID primary key table                            |
-| `dao/id/KsuidMillisTable.kt`                       | KsuidMillis primary key table                      |
-| `dao/id/UlidTable.kt`                              | ULID primary key table                             |
-| `dao/id/SnowflakeIdTable.kt`                       | Snowflake Long primary key table                   |
-| `dao/id/TimebasedUUIDTable.kt`                     | UUIDv7 primary key table                           |
-| `dao/id/TimebasedUUIDBase62Table.kt`               | UUIDv7 Base62-encoded primary key table            |
-| `dao/id/SoftDeletedIdTable.kt`                     | Soft-delete primary key table                      |
-| `inet/InetColumnTypes.kt`                          | IPv4/IPv6 and CIDR column types                    |
-| `inet/InetExtensions.kt`                           | `inetAddress`, `cidr`, `isContainedBy` extensions  |
-| `phone/PhoneNumberColumnType.kt`                   | Phone number column type (E.164 normalization)     |
-| `phone/PhoneNumberExtensions.kt`                   | `phoneNumber`, `phoneNumberString` extensions      |
+| `dao/id/KsuidTable.kt`                             | KSUID primary key table                                           |
+| `dao/id/KsuidMillisTable.kt`                       | KsuidMillis primary key table                                     |
+| `dao/id/UlidTable.kt`                              | ULID primary key table                                            |
+| `dao/id/SnowflakeIdTable.kt`                       | Snowflake Long primary key table                                  |
+| `dao/id/TimebasedUUIDTable.kt`                     | UUIDv7 primary key table                                          |
+| `dao/id/TimebasedUUIDBase62Table.kt`               | UUIDv7 Base62-encoded primary key table                           |
+| `dao/id/SoftDeletedIdTable.kt`                     | Soft-delete primary key table                                     |
+| `inet/InetColumnTypes.kt`                          | IPv4/IPv6 and CIDR column types                                   |
+| `inet/InetExtensions.kt`                           | `inetAddress`, `cidr`, `isContainedBy` extensions                 |
+| `phone/PhoneNumberColumnType.kt`                   | Phone number column type (E.164 normalization)                    |
+| `phone/PhoneNumberExtensions.kt`                   | `phoneNumber`, `phoneNumberString` extensions                     |
 
 ## Auditable (Audit Tracking)
 

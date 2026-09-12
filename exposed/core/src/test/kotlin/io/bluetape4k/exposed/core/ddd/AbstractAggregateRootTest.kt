@@ -174,14 +174,14 @@ class AbstractAggregateRootTest {
     }
 
     @JvmInline
-    value class OrderId(val value: Long) : Serializable {
+    value class OrderId(val value: Long): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
     @JvmInline
-    value class CustomerId(val value: Long) : Serializable {
+    value class CustomerId(val value: Long): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -189,7 +189,7 @@ class AbstractAggregateRootTest {
 
     private class TestOrder(
         override val id: OrderId,
-    ) : AbstractAggregateRoot<OrderId>() {
+    ): AbstractAggregateRoot<OrderId>() {
 
         fun place(event: DomainEvent<OrderId>) {
             recordDomainEvent(event)
@@ -199,7 +199,7 @@ class AbstractAggregateRootTest {
     private data class OrderPlaced(
         override val aggregateId: OrderId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:00:00Z"),
-    ) : DomainEvent<OrderId>, Serializable {
+    ): DomainEvent<OrderId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -208,7 +208,7 @@ class AbstractAggregateRootTest {
     private data class OrderConfirmed(
         override val aggregateId: OrderId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:01:00Z"),
-    ) : DomainEvent<OrderId>, Serializable {
+    ): DomainEvent<OrderId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -217,7 +217,7 @@ class AbstractAggregateRootTest {
     private data class CustomerRegistered(
         override val aggregateId: CustomerId,
         override val occurredAt: Instant = Instant.parse("2026-07-09T00:02:00Z"),
-    ) : DomainEvent<CustomerId>, Serializable {
+    ): DomainEvent<CustomerId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

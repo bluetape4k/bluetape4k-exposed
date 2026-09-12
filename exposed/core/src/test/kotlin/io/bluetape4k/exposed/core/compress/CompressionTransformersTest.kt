@@ -14,7 +14,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * 특정 예외를 던지는 테스트용 Compressor 구현체.
  * CancellationException 재전파 검증에 사용한다.
  */
-private class ThrowingCompressor(private val exception: Exception) : Compressor {
+private class ThrowingCompressor(private val exception: Exception): Compressor {
     override fun compress(plain: ByteArray?): ByteArray = throw exception
     override fun decompress(compressed: ByteArray?): ByteArray = throw exception
 }

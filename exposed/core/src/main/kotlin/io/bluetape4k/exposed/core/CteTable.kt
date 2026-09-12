@@ -8,7 +8,6 @@ import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.appendTo
 import org.jetbrains.exposed.v1.core.transactions.currentTransaction
 
 /**
