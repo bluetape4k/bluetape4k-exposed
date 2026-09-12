@@ -188,7 +188,10 @@ class ClickHouseV2Options(
         retryOnFailure?.let { require(it >= 0) { "retryOnFailure는 음수가 아니어야 합니다: $it" } }
 
         clientName?.let { validateText("clientName", it, allowBlank = true) }
-        sessionDbRoles.forEach { validateText("sessionDbRoles", it, allowBlank = false) }
+        sessionDbRoles.forEach {
+            validateText("sessionDbRoles", it, allowBlank = false)
+            require(',' !in it) { "sessionDbRoles에는 comma를 사용할 수 없습니다." }
+        }
         require(sessionDbRoles.distinct().size == sessionDbRoles.size) { "sessionDbRoles에는 중복 역할을 사용할 수 없습니다." }
         queryId?.let { validateText("queryId", it, allowBlank = false) }
         logComment?.let { validateText("logComment", it, allowBlank = false) }
@@ -425,6 +428,7 @@ private fun validateRawProperties(properties: Map<String, String>) {
     val seenHeaders = mutableSetOf<String>()
     properties.forEach { (key, value) ->
         require(key.isNotBlank()) { "rawProperties key는 공백일 수 없습니다." }
+        require(key.none(Char::isISOControl)) { "rawProperties key에는 제어 문자를 사용할 수 없습니다." }
         require(value.none(Char::isISOControl)) { "rawProperties[$key]에는 제어 문자를 사용할 수 없습니다." }
         require(key !in FORBIDDEN_RAW_KEYS) { "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key" }
         if (key.startsWith(HTTP_HEADER_PREFIX)) {
@@ -436,6 +440,11 @@ private fun validateRawProperties(properties: Map<String, String>) {
             }
             require(seenHeaders.add(normalized.lowercase())) { "중복 custom header입니다: $headerName" }
         } else {
+            if (key.startsWith("clickhouse_setting_")) {
+                require(key.removePrefix("clickhouse_setting_").isNotBlank()) {
+                    "clickhouse_setting_ 뒤에 setting 이름이 필요합니다."
+                }
+            }
             require(key in ALLOWED_RAW_KEYS || key.startsWith("clickhouse_setting_")) {
                 "허용되지 않은 ClickHouse V2 raw property입니다: $key"
             }

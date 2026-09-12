@@ -80,6 +80,19 @@ class ClickHouseV2OptionsTest {
         assertFailsWith<IllegalArgumentException> {
             ClickHouseV2Options(rawProperties = mapOf("password" to "secret"))
         }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_bad\nkey" to "value"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_" to "value"))
+        }
+    }
+
+    @Test
+    fun `session database roles reject comma delimiters`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(sessionDbRoles = listOf("role_a,role_b"))
+        }
     }
 
     @Test
