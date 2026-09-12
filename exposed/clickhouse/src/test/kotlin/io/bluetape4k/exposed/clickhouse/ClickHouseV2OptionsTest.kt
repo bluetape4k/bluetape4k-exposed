@@ -80,6 +80,80 @@ class ClickHouseV2OptionsTest {
         assertFailsWith<IllegalArgumentException> {
             ClickHouseV2Options(rawProperties = mapOf("password" to "secret"))
         }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_bad\nkey" to "value"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_" to "value"))
+        }
+    }
+
+    @Test
+    fun `all collection inputs remain isolated from effective property mapping`() {
+        val roles = mutableListOf("role_a")
+        val serverSettings = mutableMapOf("max_threads" to "4")
+        val customHeaders = mutableMapOf("X-ClickHouse-User-Agent" to "bluetape/865")
+        val rawProperties = mutableMapOf("clickhouse_setting_custom" to "value")
+        val options = ClickHouseV2Options(
+            sessionDbRoles = roles,
+            serverSettings = serverSettings,
+            customHeaders = customHeaders,
+            rawProperties = rawProperties,
+        )
+
+        roles += "role_injected"
+        serverSettings["log_comment"] = "server-injected"
+        customHeaders["X-ClickHouse-User-Agent"] = "mutated"
+        rawProperties["clickhouse_setting_custom"] = "mutated"
+        rawProperties["clickhouse_setting_injected"] = "injected"
+
+        val properties = options.toEffectiveProperties("default", "")
+        properties.getProperty("session_db_roles") shouldBeEqualTo "role_a"
+        properties.getProperty("clickhouse_setting_max_threads") shouldBeEqualTo "4"
+        properties.getProperty("http_header_X-ClickHouse-User-Agent") shouldBeEqualTo "bluetape/865"
+        properties.getProperty("clickhouse_setting_custom") shouldBeEqualTo "value"
+        properties.containsKey("clickhouse_setting_injected").shouldBeFalse()
+        properties.containsKey("clickhouse_setting_log_comment").shouldBeFalse()
+    }
+
+    @Test
+    fun `collection views reject direct mutation`() {
+        val options = ClickHouseV2Options(
+            sessionDbRoles = listOf("role_a"),
+            serverSettings = mapOf("max_threads" to "4"),
+            customHeaders = mapOf("X-ClickHouse-User-Agent" to "bluetape/865"),
+            rawProperties = mapOf("clickhouse_setting_custom" to "value"),
+        )
+
+        assertFailsWith<UnsupportedOperationException> {
+            (options.sessionDbRoles as MutableList<String>).add("role_injected")
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.serverSettings as MutableMap<String, String>)["injected"] = "value"
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.customHeaders as MutableMap<String, String>)["X-ClickHouse-User-Agent"] = "mutated"
+        }
+        assertFailsWith<UnsupportedOperationException> {
+            (options.rawProperties as MutableMap<String, String>)["clickhouse_setting_injected"] = "value"
+        }
+    }
+
+    @Test
+    fun `raw query metadata stays owned by typed options`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("query_id" to "raw-query"))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(rawProperties = mapOf("clickhouse_setting_log_comment" to "raw-comment"))
+        }
+    }
+
+    @Test
+    fun `session database roles reject comma delimiters`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(sessionDbRoles = listOf("role_a,role_b"))
+        }
     }
 
     @Test
@@ -115,6 +189,23 @@ class ClickHouseV2OptionsTest {
                 rawProperties = mapOf("access_token" to "duplicate"),
             )
         }
+    }
+
+    @Test
+    fun `JDBC URL query remains driver owned instead of being copied into properties`() {
+        val options = ClickHouseV2Options(
+            clientName = "typed-client",
+            queryId = "typed-query",
+        )
+
+        val properties = options.toEffectiveProperties(
+            user = "default",
+            password = "",
+            jdbcUrl = "jdbc:clickhouse://localhost:8123/default?client_name=url%2Bclient&query_id=url%2Bquery",
+        )
+
+        properties.getProperty("client_name") shouldBeEqualTo "typed-client"
+        properties.getProperty("query_id") shouldBeEqualTo "typed-query"
     }
 
     @Test
@@ -160,7 +251,29 @@ class ClickHouseV2OptionsTest {
             ),
         )
         options.toEffectiveProperties("default", "").getProperty("proxy_host") shouldBeEqualTo "proxy"
+        options.toEffectiveProperties("default", "").getProperty("proxy_type") shouldBeEqualTo "HTTP"
         options.toEffectiveProperties("default", "").getProperty("trust_store") shouldBeEqualTo "file:/tmp/truststore"
+        options.toEffectiveProperties("default", "").getProperty("ssl") shouldBeEqualTo "true"
+    }
+
+    @Test
+    fun `TLS client certificate authentication is mapped as a strict boolean`() {
+        val properties = ClickHouseV2Options(
+            tls = ClickHouseV2TlsOptions(sslAuthentication = true),
+        ).toEffectiveProperties("default", "")
+
+        properties.getProperty("ssl_authentication") shouldBeEqualTo "true"
+        properties.getProperty("ssl") shouldBeEqualTo "true"
+    }
+
+    @Test
+    fun `typed log comment cannot be shadowed by a server setting`() {
+        assertFailsWith<IllegalArgumentException> {
+            ClickHouseV2Options(
+                logComment = "typed-comment",
+                serverSettings = mapOf("log_comment" to "server-comment"),
+            )
+        }
     }
 
     @Test
@@ -177,6 +290,22 @@ class ClickHouseV2OptionsTest {
         first shouldBeEqualTo second
         first.toString().contains("access-canary").shouldBeFalse()
         first.toString().contains("authentication=AccessToken").shouldBeTrue()
+    }
+
+    @Test
+    fun `options redact opaque query metadata from their string representation`() {
+        val options = ClickHouseV2Options(
+            clientName = "analytics-client",
+            queryId = "query-id-canary",
+            logComment = "log-comment-canary",
+        )
+
+        val rendered = options.toString()
+
+        rendered.contains("query-id-canary").shouldBeFalse()
+        rendered.contains("log-comment-canary").shouldBeFalse()
+        rendered.contains("queryId=***").shouldBeTrue()
+        rendered.contains("logComment=***").shouldBeTrue()
     }
 
     @Test

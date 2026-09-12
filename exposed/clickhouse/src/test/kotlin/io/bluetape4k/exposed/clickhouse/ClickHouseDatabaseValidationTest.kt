@@ -73,6 +73,32 @@ class ClickHouseDatabaseValidationTest {
     }
 
     @Test
+    fun `options jdbc URL rejects authority userinfo without exposing credentials`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            ClickHouseDatabase.connect(
+                jdbcUrl = "jdbc:clickhouse://user:secret-canary@localhost:8123/default",
+                options = ClickHouseV2Options(),
+            )
+        }
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+    }
+
+    @Test
+    fun `options host overload rejects authority userinfo without exposing credentials`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            ClickHouseDatabase.connect(
+                host = "user:secret-canary@localhost",
+                options = ClickHouseV2Options(),
+            )
+        }
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+    }
+
+    @Test
     fun `connection exception preserves only safe JDBC diagnostics`() {
         val original = SQLException("password=secret-canary token=token-canary", "08001", 1001)
         val failure = original.toClickHouseConnectionException(
@@ -85,5 +111,16 @@ class ClickHouseDatabaseValidationTest {
         failure.errorCode shouldBeEqualTo 1001
         failure.cause shouldBeEqualTo null
         failure.suppressed.shouldHaveSize(0)
+    }
+
+    @Test
+    fun `connection exception redacts authority userinfo without a query`() {
+        val original = SQLException("connection failed", "08001", 1001)
+        val failure = original.toClickHouseConnectionException(
+            "jdbc:clickhouse://user:secret-canary@localhost:8123/default",
+        )
+
+        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
+        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
     }
 }

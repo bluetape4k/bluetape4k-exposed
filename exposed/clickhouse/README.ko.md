@@ -67,6 +67,10 @@ password, token, secret, JDBC URL query 값을 redact합니다. options URL에�
 인증 property를 지정하면 선택한 인증 모드를 우회할 수 없도록 거부하며,
 인증 이외의 JDBC URL query property는 driver precedence에 따라 가장 높은
 우선순위를 가집니다.
+`tls`가 있으면 adapter가 driver의 Boolean property `ssl=true`를 설정하고,
+선택한 `sslAuthentication`도 driver의 Boolean property로 전달합니다.
+`user:password@host`처럼 authority userinfo가 포함된 options URL은 연결 전에
+거부하며 오류 경계에는 redacted authority만 남깁니다.
 
 ### ClickHouse JDBC V2 RowBinary 배치 writer
 
@@ -90,7 +94,12 @@ val writer = ClickHouseRowBinaryExecutor(
 
 val result = writer.executeBatch(
     sql = "INSERT INTO events (id, label) VALUES (?, ?)",
-    rows = events.asSequence().map { event -> listOf(event.id, event.label) },
+    rows = events.asSequence().map { event ->
+        ClickHouseRowBinaryRow { statement ->
+            statement.setLong(1, event.id)
+            statement.setString(2, event.label)
+        }
+    }.asIterable(),
 )
 ```
 

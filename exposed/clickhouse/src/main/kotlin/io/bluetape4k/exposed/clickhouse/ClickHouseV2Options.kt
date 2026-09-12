@@ -3,6 +3,9 @@ package io.bluetape4k.exposed.clickhouse
 import io.bluetape4k.AbstractValueObject
 import io.bluetape4k.ToStringBuilder
 import java.time.ZoneId
+import java.util.ArrayList
+import java.util.Collections
+import java.util.LinkedHashMap
 
 /**
  * ClickHouse JDBC V2 인증 방식을 나타냅니다.
@@ -83,6 +86,8 @@ data class ClickHouseV2ProxyOptions(
  * ClickHouse JDBC V2 TLS 설정입니다.
  *
  * 인증서와 키 자체가 아니라 파일 또는 secret-store reference만 받습니다.
+ * 옵션이 존재하면 secure transport를 활성화하며, mTLS client-certificate 인증은
+ * [sslAuthentication] Boolean으로 선택합니다.
  */
 data class ClickHouseV2TlsOptions(
     val trustStore: String? = null,
@@ -92,7 +97,7 @@ data class ClickHouseV2TlsOptions(
     val sslKeyReference: String? = null,
     val sslRootCertReference: String? = null,
     val sslCertReference: String? = null,
-    val sslAuthentication: String? = null,
+    val sslAuthentication: Boolean? = null,
     val sslSocketSni: String? = null,
 ) {
     init {
@@ -106,10 +111,6 @@ data class ClickHouseV2TlsOptions(
         keyStoreType?.let {
             requireNotBlank(it, "keyStoreType")
             require(it.none(Char::isISOControl)) { "keyStoreType에는 제어 문자를 사용할 수 없습니다." }
-        }
-        sslAuthentication?.let {
-            requireNotBlank(it, "sslAuthentication")
-            require(it.none(Char::isISOControl)) { "sslAuthentication에는 제어 문자를 사용할 수 없습니다." }
         }
         sslSocketSni?.let {
             requireNotBlank(it, "sslSocketSni")
@@ -164,16 +165,16 @@ class ClickHouseV2Options(
     rawProperties: Map<String, String> = emptyMap(),
 ): AbstractValueObject() {
     /** 외부 collection 변경과 분리된 immutable session role 목록입니다. */
-    val sessionDbRoles: List<String> = sessionDbRoles.toList()
+    val sessionDbRoles: List<String> = Collections.unmodifiableList(ArrayList(sessionDbRoles))
 
     /** 외부 map 변경과 분리된 immutable server settings입니다. */
-    val serverSettings: Map<String, String> = serverSettings.toMap()
+    val serverSettings: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(serverSettings))
 
     /** 외부 map 변경과 분리된 immutable custom headers입니다. */
-    val customHeaders: Map<String, String> = customHeaders.toMap()
+    val customHeaders: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(customHeaders))
 
     /** 외부 map 변경과 분리된 immutable raw properties입니다. */
-    val rawProperties: Map<String, String> = rawProperties.toMap()
+    val rawProperties: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(rawProperties))
 
     init {
         requirePositive("connectionTimeoutMillis", connectionTimeoutMillis)
@@ -190,7 +191,10 @@ class ClickHouseV2Options(
         retryOnFailure?.let { require(it >= 0) { "retryOnFailure는 음수가 아니어야 합니다: $it" } }
 
         clientName?.let { validateText("clientName", it, allowBlank = true) }
-        sessionDbRoles.forEach { validateText("sessionDbRoles", it, allowBlank = false) }
+        sessionDbRoles.forEach {
+            validateText("sessionDbRoles", it, allowBlank = false)
+            require(',' !in it) { "sessionDbRoles에는 comma를 사용할 수 없습니다." }
+        }
         require(sessionDbRoles.distinct().size == sessionDbRoles.size) { "sessionDbRoles에는 중복 역할을 사용할 수 없습니다." }
         queryId?.let { validateText("queryId", it, allowBlank = false) }
         logComment?.let { validateText("logComment", it, allowBlank = false) }
@@ -207,16 +211,16 @@ class ClickHouseV2Options(
     }
 
     /** 외부 map/list 변경과 분리된 defensive copy를 반환합니다. */
-    val immutableSessionDbRoles: List<String> = sessionDbRoles
+    val immutableSessionDbRoles: List<String> = this.sessionDbRoles
 
     /** 외부 map 변경과 분리된 server settings copy입니다. */
-    val immutableServerSettings: Map<String, String> = serverSettings
+    val immutableServerSettings: Map<String, String> = this.serverSettings
 
     /** 외부 map 변경과 분리된 custom header copy입니다. */
-    val immutableCustomHeaders: Map<String, String> = customHeaders
+    val immutableCustomHeaders: Map<String, String> = this.customHeaders
 
     /** 외부 map 변경과 분리된 raw property copy입니다. */
-    val immutableRawProperties: Map<String, String> = rawProperties
+    val immutableRawProperties: Map<String, String> = this.rawProperties
 
     override fun equalProperties(other: Any): Boolean =
         other is ClickHouseV2Options && equalityComponents() == other.equalityComponents()
@@ -245,8 +249,8 @@ class ClickHouseV2Options(
             .add("clientName", clientName)
             .add("sessionDbRoles", sessionDbRoles)
             .add("sessionTimezone", sessionTimezone)
-            .add("queryId", queryId)
-            .add("logComment", logComment)
+            .add("queryId", queryId?.let { "***" })
+            .add("logComment", logComment?.let { "***" })
             .add("serverSettings", serverSettings.keys)
             .add("proxy", proxy?.copy(password = null))
             .add("tls", tls?.copy(keyStorePassword = null))
@@ -332,6 +336,9 @@ class ClickHouseV2Options(
     }
 
     private fun validateServerSettingCollision(key: String) {
+        require(key != "log_comment" || logComment == null) {
+            "logComment과 serverSettings를 중복 지정할 수 없습니다."
+        }
         require("clickhouse_setting_$key" !in rawProperties) {
             "serverSettings와 raw property를 중복 지정할 수 없습니다: $key"
         }
@@ -345,6 +352,7 @@ private const val MAX_PORT = 65535
 private val PROXY_KEYS = setOf("proxy_type", "proxy_host", "proxy_port", "proxy_user", "proxy_password")
 
 private val TLS_KEYS = setOf(
+    "ssl",
     "trust_store",
     "key_store_type",
     "ssl_key_store",
@@ -360,6 +368,8 @@ private val FORBIDDEN_RAW_KEYS = setOf(
     "user",
     "password",
     "database",
+    "query_id",
+    "clickhouse_setting_log_comment",
     "access_token",
     "bearer_token",
     "http_use_basic_auth",
@@ -423,6 +433,7 @@ private fun validateRawProperties(properties: Map<String, String>) {
     val seenHeaders = mutableSetOf<String>()
     properties.forEach { (key, value) ->
         require(key.isNotBlank()) { "rawProperties key는 공백일 수 없습니다." }
+        require(key.none(Char::isISOControl)) { "rawProperties key에는 제어 문자를 사용할 수 없습니다." }
         require(value.none(Char::isISOControl)) { "rawProperties[$key]에는 제어 문자를 사용할 수 없습니다." }
         require(key !in FORBIDDEN_RAW_KEYS) { "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key" }
         if (key.startsWith(HTTP_HEADER_PREFIX)) {
@@ -434,6 +445,11 @@ private fun validateRawProperties(properties: Map<String, String>) {
             }
             require(seenHeaders.add(normalized.lowercase())) { "중복 custom header입니다: $headerName" }
         } else {
+            if (key.startsWith("clickhouse_setting_")) {
+                require(key.removePrefix("clickhouse_setting_").isNotBlank()) {
+                    "clickhouse_setting_ 뒤에 setting 이름이 필요합니다."
+                }
+            }
             require(key in ALLOWED_RAW_KEYS || key.startsWith("clickhouse_setting_")) {
                 "허용되지 않은 ClickHouse V2 raw property입니다: $key"
             }

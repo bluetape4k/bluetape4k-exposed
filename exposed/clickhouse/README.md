@@ -69,6 +69,10 @@ connection failures redact passwords, tokens, secret values, and JDBC URL
 query values. A JDBC URL query has the driver's highest precedence for
 non-authentication properties; authentication keys in an options URL are
 rejected so they cannot bypass the selected authentication mode.
+When `tls` is present, the adapter sets the driver's Boolean `ssl=true`; the
+optional `sslAuthentication` value is passed as the driver's Boolean property.
+Options URLs with authority userinfo such as `user:password@host` are rejected
+before connection and the redacted authority is used in the error boundary.
 
 ### ClickHouse JDBC V2 RowBinary batch writer
 
@@ -92,7 +96,12 @@ val writer = ClickHouseRowBinaryExecutor(
 
 val result = writer.executeBatch(
     sql = "INSERT INTO events (id, label) VALUES (?, ?)",
-    rows = events.asSequence().map { event -> listOf(event.id, event.label) },
+    rows = events.asSequence().map { event ->
+        ClickHouseRowBinaryRow { statement ->
+            statement.setLong(1, event.id)
+            statement.setString(2, event.label)
+        }
+    }.asIterable(),
 )
 ```
 

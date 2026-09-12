@@ -54,13 +54,14 @@ private fun Properties.applyProxy(proxyOptions: ClickHouseV2ProxyOptions) {
 
 private fun Properties.applyTls(tlsOptions: ClickHouseV2TlsOptions) {
     listOfNotNull(
+        property("ssl", true),
         tlsOptions.trustStore?.let { "trust_store" to it },
         tlsOptions.keyStoreType?.let { "key_store_type" to it },
         tlsOptions.sslKeyStore?.let { "ssl_key_store" to it },
         tlsOptions.sslKeyReference?.let { "ssl_key" to it },
         tlsOptions.sslRootCertReference?.let { "sslrootcert" to it },
         tlsOptions.sslCertReference?.let { "sslcert" to it },
-        tlsOptions.sslAuthentication?.let { "ssl_authentication" to it },
+        property("ssl_authentication", tlsOptions.sslAuthentication),
         tlsOptions.sslSocketSni?.let { "ssl_socket_sni" to it },
     ).forEach { (key, value) -> setProperty(key, value) }
     tlsOptions.keyStorePassword?.let { withSecret("key_store_password", it) }
