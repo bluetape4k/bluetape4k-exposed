@@ -18,6 +18,62 @@ Kotlin/Exposed dialect for ClickHouse JDBC. It keeps Exposed table/query syntax 
 - **Aggregate Functions** — `argMax()`, `argMin()`, `quantile(level)()`, `uniq()`, `uniqExact()`
 - **Coroutine Helpers** — `suspendTransaction {}` runs blocking JDBC work on a caller-selected dispatcher; `queryList {}` collects all results; `queryFlow(query = ..., mapper = ...)` streams mapped rows. The original `queryFlow {}` keeps its materializing behavior.
 
+### ClickHouse JDBC V2 connection options
+
+`ClickHouseV2Options` is an immutable `AbstractValueObject`. It validates the
+ClickHouse JDBC V2 property boundary before a connection is opened and keeps
+collection inputs defensively copied. The options overload is separate from the
+existing `connect` overloads, so existing source and JVM descriptors remain
+available.
+
+```kotlin
+val options = ClickHouseV2Options(
+    connectionTimeoutMillis = 1_500,
+    socketOperationTimeoutMillis = 2_000,
+    connectionPoolEnabled = true,
+    maxOpenConnections = 8,
+    clientName = "analytics-api",
+    customHeaders = mapOf("X-ClickHouse-User-Agent" to "bluetape/analytics"),
+)
+
+val database = ClickHouseDatabase.connect(
+    host = "localhost",
+    port = 8123,
+    database = "analytics",
+    user = "default",
+    password = "",
+    options = options,
+)
+```
+
+The typed fields map to V2 properties such as `connection_timeout`,
+`socket_timeout`, `connection_request_timeout`, `connection_ttl`,
+`http_keep_alive_timeout`, compression/retry settings, `query_id`, and
+`clickhouse_setting_<name>`. Timeout values use milliseconds; `0` is accepted
+only where the driver defines it as its default, while pool limits and buffer
+sizes must be positive.
+
+`authentication` is a one-of value: `Basic`, `AccessToken`, or `BearerToken`.
+Basic authentication uses the `user`/`password` arguments. Token modes require
+the placeholder `user = "default"` and `password = ""`; they emit only the
+token property and `http_use_basic_auth=false`. Do not put credentials or token
+values in `rawProperties` or the JDBC URL query. Unknown raw keys, the
+RowBinary beta key, and duplicate typed/raw keys fail fast. Raw server settings
+are limited to `clickhouse_setting_<name>`, and custom headers are limited to
+`X-ClickHouse-User-Agent`; header values are never logged. `query_id` and
+`clickhouse_setting_log_comment` are owned by the typed `queryId` and
+`logComment` options and are rejected from `rawProperties`.
+
+TLS options enable the driver's secure transport (`ssl=true`) and accept file or
+secret-store references, not certificate/key material. `sslAuthentication` is a
+strict Boolean for mTLS client-certificate authentication.
+`ClickHouseV2SecretProvider` supplies a password just for property conversion;
+the returned `CharArray` is cleared immediately afterwards. `toString()` and
+connection failures redact passwords, tokens, secret values, and JDBC URL
+query values. A JDBC URL query has the driver's highest precedence for
+non-authentication properties; authentication keys in an options URL are
+rejected so they cannot bypass the selected authentication mode.
+
 ## Table option policy
 
 Exposed `1.5.0` does not validate dialect compatibility of generic

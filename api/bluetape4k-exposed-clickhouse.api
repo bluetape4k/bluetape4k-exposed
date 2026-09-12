@@ -1,9 +1,17 @@
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseConnectionException : java/sql/SQLException {
+	public final fun getSanitizedCause ()Ljava/lang/String;
+}
+
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseDatabase : io/bluetape4k/logging/KLogging {
 	public static final field INSTANCE Lio/bluetape4k/exposed/clickhouse/ClickHouseDatabase;
 	public final fun connect (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun connect (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;)Lorg/jetbrains/exposed/v1/jdbc/Database;
 	public final fun connect (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public final fun connect (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;)Lorg/jetbrains/exposed/v1/jdbc/Database;
 	public static synthetic fun connect$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseDatabase;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseDatabase;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
 	public static synthetic fun connect$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseDatabase;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
+	public static synthetic fun connect$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseDatabase;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Options;ILjava/lang/Object;)Lorg/jetbrains/exposed/v1/jdbc/Database;
 	public final fun getDRIVER ()Ljava/lang/String;
 }
 
@@ -35,6 +43,136 @@ public final class io/bluetape4k/exposed/clickhouse/ClickHouseUnsupported {
 	public final fun insertIgnore ()Ljava/lang/Void;
 	public final fun returningClause ()Ljava/lang/Void;
 	public final fun upsert ()Ljava/lang/Void;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication {
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$AccessToken : io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$AccessToken;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$AccessToken;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$AccessToken;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$Basic : io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication {
+	public static final field INSTANCE Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$Basic;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$BearerToken : io/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$BearerToken;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$BearerToken;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication$BearerToken;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy : java/lang/Enum {
+	public static final field FIFO Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;
+	public static final field LIFO Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;
+	public static fun values ()[Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2Options : io/bluetape4k/AbstractValueObject {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Integer;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication;Ljava/lang/String;Ljava/util/List;Ljava/time/ZoneId;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;Ljava/util/Map;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Integer;Ljava/lang/Integer;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication;Ljava/lang/String;Ljava/util/List;Ljava/time/ZoneId;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;Ljava/util/Map;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthentication ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2Authentication;
+	public final fun getClientName ()Ljava/lang/String;
+	public final fun getCompressClientRequest ()Ljava/lang/Boolean;
+	public final fun getCompressServerResponse ()Ljava/lang/Boolean;
+	public final fun getConnectionPoolEnabled ()Ljava/lang/Boolean;
+	public final fun getConnectionRequestTimeoutMillis ()Ljava/lang/Long;
+	public final fun getConnectionReuseStrategy ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ConnectionReuseStrategy;
+	public final fun getConnectionTimeoutMillis ()Ljava/lang/Long;
+	public final fun getConnectionTtlMillis ()Ljava/lang/Long;
+	public final fun getCustomHeaders ()Ljava/util/Map;
+	public final fun getHttpKeepAliveTimeoutMillis ()Ljava/lang/Long;
+	public final fun getImmutableCustomHeaders ()Ljava/util/Map;
+	public final fun getImmutableRawProperties ()Ljava/util/Map;
+	public final fun getImmutableServerSettings ()Ljava/util/Map;
+	public final fun getImmutableSessionDbRoles ()Ljava/util/List;
+	public final fun getLogComment ()Ljava/lang/String;
+	public final fun getLz4UncompressedBufferSize ()Ljava/lang/Integer;
+	public final fun getMaxOpenConnections ()Ljava/lang/Integer;
+	public final fun getProxy ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;
+	public final fun getQueryId ()Ljava/lang/String;
+	public final fun getRawProperties ()Ljava/util/Map;
+	public final fun getRetryOnFailure ()Ljava/lang/Integer;
+	public final fun getServerSettings ()Ljava/util/Map;
+	public final fun getSessionDbRoles ()Ljava/util/List;
+	public final fun getSessionTimezone ()Ljava/time/ZoneId;
+	public final fun getSocketOperationTimeoutMillis ()Ljava/lang/Integer;
+	public final fun getTls ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;
+	public final fun getUseHttpCompression ()Ljava/lang/Boolean;
+	public final fun getUseServerTimeZone ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2ProxyOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPassword ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;
+	public final fun getPort ()I
+	public final fun getType ()Ljava/lang/String;
+	public final fun getUser ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider {
+	public abstract fun resolve ()[C
+}
+
+public final class io/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/Boolean;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;
+	public static synthetic fun copy$default (Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;ILjava/lang/Object;)Lio/bluetape4k/exposed/clickhouse/ClickHouseV2TlsOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKeyStorePassword ()Lio/bluetape4k/exposed/clickhouse/ClickHouseV2SecretProvider;
+	public final fun getKeyStoreType ()Ljava/lang/String;
+	public final fun getSslAuthentication ()Ljava/lang/Boolean;
+	public final fun getSslCertReference ()Ljava/lang/String;
+	public final fun getSslKeyReference ()Ljava/lang/String;
+	public final fun getSslKeyStore ()Ljava/lang/String;
+	public final fun getSslRootCertReference ()Ljava/lang/String;
+	public final fun getSslSocketSni ()Ljava/lang/String;
+	public final fun getTrustStore ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/dialect/ClickHouseDialect : org/jetbrains/exposed/v1/core/vendors/PostgreSQLDialect {
