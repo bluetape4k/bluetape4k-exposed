@@ -36,4 +36,3 @@ P2는 설계의 진행을 막지 않지만, 구현 plan에 정확한 artifact �
 - **SPW-05 PASS**: Markdown 표·코드 블록·체크리스트를 재독했고 P2 조치를 plan으로 이관했다.
 
 **Step 2-R verdict: PASS (P0=0, P1=0).**
-
