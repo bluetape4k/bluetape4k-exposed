@@ -92,6 +92,7 @@ class JdbcSnapshotCacheApiUsageTest {
     }
 
     private data class Payload(val value: String): Serializable
+
     private fun projectFile(relativePath: String): Path {
         val rootCandidate = Path.of(relativePath)
         if (Files.exists(rootCandidate)) return rootCandidate

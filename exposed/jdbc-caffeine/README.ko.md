@@ -4,7 +4,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)](https://central.sonatype.com/artifact/io.github.bluetape4k.exposed/exposed-jdbc-caffeine)
 
-Caffeine 로컬(인프로세스) 캐시를 사용하는 Exposed JDBC 저장소입니다. Redis 의존 없이 `exposed-cache` 인터페이스만 사용합니다.
+Caffeine 로컬 (인프로세스) 캐시를 사용하는 Exposed JDBC 저장소입니다. Redis 의존 없이 `exposed-cache` 인터페이스만 사용합니다.
 
 > **참고**: [exposed-cache — 전체 모듈 생태계 및 인터페이스 계층 구조](../exposed-cache/README.ko.md)
 
@@ -29,34 +29,30 @@ Caffeine 인프로세스 캐시가 JDBC Repository 계약을 감싸는 위치와
 - **Suspend 레포지토리**: `AbstractSuspendedJdbcCaffeineRepository` — 모든 DB 호출이 `suspendedTransactionAsync` 사용
 - **Redis 의존 없음**: 순수 인프로세스 Caffeine, 단일 인스턴스 배포에 적합
 - **AutoIncrement 안전**: Write-Through/Write-Behind 시 AutoInc 테이블 신규 엔티티의 INSERT 건너뜀 (DB가 ID 할당)
-- **Write-behind 범위 제한**: `writeBehindBatchSize`와 `writeBehindQueueCapacity`는 각각 `1..100_000`이고 queue capacity는 batch size 이상이어야 하며, 어기면 설정 시 `IllegalArgumentException`이 발생
-- **안전한 종료**: `close()`는 새 admission을 막고 유한 종료 경계 안에서 publication과 worker drain을 시도한 뒤 cache를 정리합니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있습니다.
+- **Write-behind 범위
+  제한**: `writeBehindBatchSize`와 `writeBehindQueueCapacity`는 각각 `1..100_000`이고 queue capacity는 batch size 이상이어야 하며, 어기면 설정 시 `IllegalArgumentException`이 발생
+- **안전한
+  종료**: `close()`는 새 admission을 막고 유한 종료 경계 안에서 publication과 worker drain을 시도한 뒤 cache를 정리합니다. 시간 초과나 중단이 발생하면 잔여 배치나 failure가 남을 수 있습니다.
 
 <!-- JDBC-SNAPSHOT-CACHE -->
+
 ## 커밋에 맞춰 공개하는 JDBC 스냅샷 캐시 (opt-in)
 
-`JdbcCaffeineSnapshotCache`는 위 Repository 캐시와 별개입니다. 분리된 불변 DTO만 저장하며, 현재
-최상위 `JdbcTransaction`일 때 커밋 뒤 준비한 `CacheSnapshot`을 공개합니다. 기존 Repository 캐시의
-데이터를 옮기지 않습니다. 롤백하면 아무것도 공개하지 않고, 같은 key를 여러 번 바꾸면 마지막 변경만 반영합니다.
-로컬 fence는 더 새로운 로컬 무효화보다 먼저 시작된 fill을 거부합니다.
+`JdbcCaffeineSnapshotCache`는 위 Repository 캐시와 별개입니다. 분리된 불변 DTO만 저장하며, 현재 최상위 `JdbcTransaction`일 때 커밋 뒤 준비한 `CacheSnapshot`을 공개합니다. 기존 Repository 캐시의 데이터를 옮기지 않습니다. 롤백하면 아무것도 공개하지 않고, 같은 key를 여러 번 바꾸면 마지막 변경만 반영합니다. 로컬 fence는 더 새로운 로컬 무효화보다 먼저 시작된 fill을 거부합니다.
 
 DB를 읽기 전에 `lookup`을 호출하세요. 그러면 용량 소진도 DB 작업 전에 확인할 수 있습니다. 반환된
-`SnapshotCacheMiss`는 값 변환이나 준비 작업이 실패한 경우까지 포함해 한 번만 쓸 수 있습니다. `stageSnapshot`은
-현재 최상위 트랜잭션에서 값을 변환하고 중첩 트랜잭션과 savepoint를 쓰는 트랜잭션을 거부합니다. 스냅샷 적재에는
-`maxAttempts = 1`이 필요합니다. 애플리케이션 재시도는 `lookup`, 트랜잭션, DB 읽기 전체를 감싸고, 바깥쪽
-시도마다 새로 `lookup`해야 합니다. `stageInvalidation`도 시도별로 분리되므로 실패한 Exposed 시도에서는 무효화가
-새지 않고, 재시도가 성공한 한 번만 공개됩니다.
+`SnapshotCacheMiss`는 값 변환이나 준비 작업이 실패한 경우까지 포함해 한 번만 쓸 수 있습니다. `stageSnapshot`은 현재 최상위 트랜잭션에서 값을 변환하고 중첩 트랜잭션과 savepoint를 쓰는 트랜잭션을 거부합니다. 스냅샷 적재에는
+`maxAttempts = 1`이 필요합니다. 애플리케이션 재시도는 `lookup`, 트랜잭션, DB 읽기 전체를 감싸고, 바깥쪽 시도마다 새로 `lookup`해야 합니다. `stageInvalidation`도 시도별로 분리되므로 실패한 Exposed 시도에서는 무효화가 새지 않고, 재시도가 성공한 한 번만 공개됩니다.
 
 트랜잭션 후처리는 캐시만 다루며 Repository `put`이나 DB writer를 호출하지 않습니다. 앞서 등록된
-`StatementInterceptor` 후처리가 예외를 던지면 캐시 후처리가 실행되지 않아 이전 캐시 값이 남을 수 있습니다.
-용량이 제한된 `SnapshotCacheFailureBuffer`를 관찰하고, 커밋 뒤 실패를 복구할 outbox나 repair path는
-애플리케이션이 따로 운영해야 합니다. commit-safe가 DB/캐시 원자성이나 장애 후 내구성을 보장하지는 않습니다.
+`StatementInterceptor` 후처리가 예외를 던지면 캐시 후처리가 실행되지 않아 이전 캐시 값이 남을 수 있습니다. 용량이 제한된 `SnapshotCacheFailureBuffer`를 관찰하고, 커밋 뒤 실패를 복구할 outbox나 repair path는 애플리케이션이 따로 운영해야 합니다. commit-safe가 DB/캐시 원자성이나 장애 후 내구성을 보장하지는 않습니다.
 
 ### Canonical JDBC 예제
 
 아래 코드는 English README의 블록과 byte-for-byte로 같으며 source-usage fixture로 실제 컴파일합니다.
 
 <!-- README-CANONICAL-JDBC-BEGIN -->
+
 ```kotlin
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
@@ -105,6 +101,7 @@ fun JdbcTransaction.invalidateOrderSnapshot(id: Long) {
     stageInvalidation(jdbcOrderSnapshotCache, id)
 }
 ```
+
 <!-- README-CANONICAL-JDBC-END -->
 
 ## 사용 예시
@@ -202,15 +199,9 @@ suspend fun example(repo: ActorSuspendedRepository) {
 
 #### Suspend read-through miss 수명주기
 
-캐시 miss가 발생하면 같은 직렬화 키의 동시 호출을 private `Mutex` entry로
-조정합니다. DB 로드가 성공하면 Caffeine을 채우므로 겹친 호출은 캐시 값을
-관찰하고 새 loader를 실행하지 않습니다. 마지막 holder 또는 waiter가 끝나면
-예외와 취소 경로를 포함해 entry를 회수합니다.
+캐시 miss가 발생하면 같은 직렬화 키의 동시 호출을 private `Mutex` entry로 조정합니다. DB 로드가 성공하면 Caffeine을 채우므로 겹친 호출은 캐시 값을 관찰하고 새 loader를 실행하지 않습니다. 마지막 holder 또는 waiter가 끝나면 예외와 취소 경로를 포함해 entry를 회수합니다.
 
-예외, `CancellationException`, `null` 결과는 deferred outcome으로 공유하지
-않습니다. 대기 중인 호출이나 이후 호출은 앞선 시도가 끝난 뒤 순차적으로 재시도할
-수 있습니다. 호출자 취소는 원래 예외를 그대로 다시 던집니다. 조정 registry는
-private 상태이며 크기를 메트릭이나 정책 API로 노출하지 않습니다.
+예외, `CancellationException`, `null` 결과는 deferred outcome으로 공유하지 않습니다. 대기 중인 호출이나 이후 호출은 앞선 시도가 끝난 뒤 순차적으로 재시도할 수 있습니다. 호출자 취소는 원래 예외를 그대로 다시 던집니다. 조정 registry는 private 상태이며 크기를 메트릭이나 정책 API로 노출하지 않습니다.
 
 ### Write-Behind 설정
 

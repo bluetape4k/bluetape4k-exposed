@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val exposedCacheMainClasses = project(":bluetape4k-exposed-cache")

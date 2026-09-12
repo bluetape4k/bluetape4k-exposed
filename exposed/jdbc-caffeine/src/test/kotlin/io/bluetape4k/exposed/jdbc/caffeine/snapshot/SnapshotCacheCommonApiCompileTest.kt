@@ -121,7 +121,7 @@ class SnapshotCacheCommonApiCompileTest {
         missMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" }.shouldBeTrue()
     }
 
-    private class ConsumerBridge : SnapshotTransactionBridge<ConsumerTransaction> {
+    private class ConsumerBridge: SnapshotTransactionBridge<ConsumerTransaction> {
         val interceptors = mutableListOf<StatementInterceptor>()
 
         override fun isRoot(transaction: ConsumerTransaction): Boolean = true
@@ -135,7 +135,7 @@ class SnapshotCacheCommonApiCompileTest {
         }
     }
 
-    private class ConsumerTransaction : Transaction() {
+    private class ConsumerTransaction: Transaction() {
         override val db: DatabaseApi
             get() = error("Database is not used by the compile contract")
         override val transactionManager: TransactionManagerApi
@@ -144,7 +144,7 @@ class SnapshotCacheCommonApiCompileTest {
         override val outerTransaction: Transaction? = null
     }
 
-    private class ConsumerLocalStore : SnapshotCacheStore<Long, Payload> {
+    private class ConsumerLocalStore: SnapshotCacheStore<Long, Payload> {
         override val storeId = SnapshotStoreId("local", "consumer:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "consumer-local:v1"
@@ -168,7 +168,7 @@ class SnapshotCacheCommonApiCompileTest {
         ): SnapshotCacheApplyReport = success(SnapshotCacheOperation.INVALIDATE, ids.size)
     }
 
-    private class ConsumerAsyncStore : AsyncSnapshotInvalidationStore<Long> {
+    private class ConsumerAsyncStore: AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "consumer:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "consumer-remote:v1"

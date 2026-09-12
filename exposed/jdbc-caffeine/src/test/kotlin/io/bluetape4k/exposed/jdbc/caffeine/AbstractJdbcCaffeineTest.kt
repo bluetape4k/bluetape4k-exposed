@@ -25,10 +25,10 @@ abstract class AbstractJdbcCaffeineTest: AbstractExposedTest() {
          */
         @JvmStatic
         fun getEnabledDialects() = when (System.getenv("EXPOSED_TEST_DB")?.uppercase()) {
-            "H2" -> setOf(TestDB.H2_MYSQL)
+            "H2"       -> setOf(TestDB.H2_MYSQL)
             "POSTGRESQL" -> setOf(TestDB.POSTGRESQL)
             "MYSQL_V8" -> setOf(TestDB.MYSQL_V8)
-            else -> setOf(TestDB.H2_MYSQL, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
+            else       -> setOf(TestDB.H2_MYSQL, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
         }
 
         const val ENABLE_DIALECTS_METHOD = "getEnabledDialects"
