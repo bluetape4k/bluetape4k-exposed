@@ -6,12 +6,10 @@ Exposed 컬럼 암복호화를 [Google Tink](https://developers.google.com/tink)
 
 ## 개요
 
-Tink 암호화는 키로 복호화할 수 있지만, 비밀번호 검증에는 단방향 해싱이 필요합니다.
-Exposed 1.5.0의 `hashed` / `Hashed` 사용 계약은
-[JDBC 안내](../jdbc-tests/README.ko.md)와 [R2DBC 안내](../r2dbc-tests/README.ko.md)를 참고하세요.
-upstream `exposed-crypt`는 명시적으로 선택하는 의존성이며 이 모듈에 추가하지 않습니다.
+Tink 암호화는 키로 복호화할 수 있지만, 비밀번호 검증에는 단방향 해싱이 필요합니다. Exposed 1.5.0의 `hashed` / `Hashed` 사용 계약은
+[JDBC 안내](../jdbc-tests/README.ko.md)와 [R2DBC 안내](../r2dbc-tests/README.ko.md)를 참고하세요. upstream `exposed-crypt`는 명시적으로 선택하는 의존성이며 이 모듈에 추가하지 않습니다.
 
-`exposed-tink`는 JetBrains Exposed의 `VARCHAR`, `VARBINARY`, `BLOB` 컬럼 값을 Google Tink 라이브러리의 인증 암호화(AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
+`exposed-tink`는 JetBrains Exposed의 `VARCHAR`, `VARBINARY`, `BLOB` 컬럼 값을 Google Tink 라이브러리의 인증 암호화 (AEAD, Authenticated Encryption with Associated Data)로 저장하는 기능을 제공합니다.
 
 Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로, 오용하기 어렵고 잘못된 사용을 방지하는 설계 철학을 가지고 있습니다. 이 모듈은 두 가지 암호화 방식을 지원합니다:
 
@@ -20,26 +18,26 @@ Google Tink는 Google에서 개발한 현대적인 암호화 라이브러리로,
 
 ## Jasypt vs Google Tink 비교
 
-| 비교 항목             | `exposed-jasypt`  | `exposed-tink` (AEAD)           | `exposed-tink` (DAEAD) |
-|-------------------|-------------------|---------------------------------|------------------------|
-| **암호화 알고리즘**      | AES/RC4/3DES (구형) | AES-GCM, ChaCha20-Poly1305 (현대) | AES-256-SIV (현대)       |
-| **결정적 암호화**       | ✅ (항상 동일한 암호문)    | ❌ (매번 다른 암호문)                   | ✅ (항상 동일한 암호문)         |
-| **인증(Tamper 감지)** | ❌                 | ✅ AEAD                          | ✅ AEAD                 |
-| **WHERE 조건 검색**   | ✅                 | ❌                               | ✅                      |
-| **인덱스 생성**        | ✅                 | ❌                               | ✅                      |
-| **패턴 분석 위험**      | ⚠️ 있음             | ✅ 없음                            | ⚠️ 있음 (결정적이므로)         |
-| **표준 준수**         | ⚠️ 구형 방식          | ✅ NIST/IETF 표준                  | ✅ NIST/IETF 표준         |
-| **Google 권장**     | ❌                 | ✅                               | ✅                      |
+| 비교 항목             | `exposed-jasypt`        | `exposed-tink` (AEAD)             | `exposed-tink` (DAEAD)  |
+|-----------------------|-------------------------|-----------------------------------|-------------------------|
+| **암호화 알고리즘**   | AES/RC4/3DES (구형)     | AES-GCM, ChaCha20-Poly1305 (현대) | AES-256-SIV (현대)      |
+| **결정적 암호화**     | ✅ (항상 동일한 암호문) | ❌ (매번 다른 암호문)             | ✅ (항상 동일한 암호문) |
+| **인증(Tamper 감지)** | ❌                      | ✅ AEAD                           | ✅ AEAD                 |
+| **WHERE 조건 검색**   | ✅                      | ❌                                | ✅                      |
+| **인덱스 생성**       | ✅                      | ❌                                | ✅                      |
+| **패턴 분석 위험**    | ⚠️ 있음                 | ✅ 없음                           | ⚠️ 있음 (결정적이므로)  |
+| **표준 준수**         | ⚠️ 구형 방식            | ✅ NIST/IETF 표준                 | ✅ NIST/IETF 표준       |
+| **Google 권장**       | ❌                      | ✅                                | ✅                      |
 
 ### Google Tink를 선택해야 하는 이유
 
-1. **인증(Authentication) 내장**: AEAD는 암호화와 함께 데이터 무결성을 보장합니다. DB에 저장된 암호문이 조작되면 복호화 시 즉시 감지됩니다. Jasypt는 이 기능이 없습니다.
+1. **인증 (Authentication) 내장**: AEAD는 암호화와 함께 데이터 무결성을 보장합니다. DB에 저장된 암호문이 조작되면 복호화 시 즉시 감지됩니다. Jasypt는 이 기능이 없습니다.
 
 2. **현대적인 알고리즘**: AES-256-GCM, ChaCha20-Poly1305, AES-256-SIV 등 NIST/IETF에서 권장하는 최신 알고리즘을 사용합니다.
 
 3. **오용 방지 설계**: 취약한 알고리즘 선택을 원천 차단하는 API 설계로, 보안 전문가가 아니어도 안전하게 사용할 수 있습니다.
 
-4. **두 가지 모드 지원**: 상황에 맞게 AEAD(보안 중심)와 DAEAD(검색 가능) 중 선택할 수 있습니다.
+4. **두 가지 모드 지원**: 상황에 맞게 AEAD (보안 중심)와 DAEAD (검색 가능) 중 선택할 수 있습니다.
 
 ## 의존성 추가
 
@@ -94,8 +92,7 @@ object Users: IntIdTable("users") {
 }
 ```
 
-DB에 저장되는 암호화 컬럼에는 durable secret 저장소에서 복원한 keyset 기반 encryptor를 넘겨야 합니다. 재시작 후 복호화하거나
-여러 노드에서 같은 데이터를 읽어야 하는 컬럼에 새로 생성한 process-local keyset을 사용하지 마세요.
+DB에 저장되는 암호화 컬럼에는 durable secret 저장소에서 복원한 keyset 기반 encryptor를 넘겨야 합니다. 재시작 후 복호화하거나 여러 노드에서 같은 데이터를 읽어야 하는 컬럼에 새로 생성한 process-local keyset을 사용하지 마세요.
 
 ### 2. 삽입 — 자동 암호화
 
@@ -134,16 +131,14 @@ transaction {
 }
 ```
 
-> **⚠️ 주의**: AEAD(`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`) 컬럼은 비결정적이므로
+> **⚠️ 주의**: AEAD (`tinkAeadVarChar`, `tinkAeadBinary`, `tinkAeadBlob`) 컬럼은 비결정적이므로
 > `WHERE col = value` 형태의 검색이 동작하지 않습니다.
 > 실제로 동일 평문으로 `WHERE col = value`를 만들어도 새 nonce로 다시 암호화되므로 일치하지 않습니다.
 > 검색이 필요한 컬럼에는 반드시 `tinkDaead*` 변형을 사용하세요.
 
 ## Associated Data 바인딩
 
-`tinkAead*`, `tinkDaead*` 테이블 확장 함수는 기본적으로 암호문을 associated data에 바인딩합니다. 기본 provider는
-Exposed의 안정적인 테이블명과 컬럼명을 사용하므로, 같은 키를 쓰더라도 한 암호화 컬럼/테이블의 암호문을 다른 암호화 컬럼에서
-복호화할 수 없습니다.
+`tinkAead*`, `tinkDaead*` 테이블 확장 함수는 기본적으로 암호문을 associated data에 바인딩합니다. 기본 provider는 Exposed의 안정적인 테이블명과 컬럼명을 사용하므로, 같은 키를 쓰더라도 한 암호화 컬럼/테이블의 암호문을 다른 암호화 컬럼에서 복호화할 수 없습니다.
 
 ```kotlin
 object Users: IntIdTable("users") {
@@ -166,12 +161,10 @@ object Users: IntIdTable("users") {
 
 associated data 없이 기록된 기존 데이터를 마이그레이션해야 한다면 `TinkColumnAssociatedDataProvider.Empty`를 사용하세요.
 
-`associatedData`를 받지 않는 public column-type 직접 생성자는 기존 데이터 마이그레이션 호환성을 위해서만 유지되며 deprecated입니다.
-수동으로 `Tink*ColumnType`을 `registerColumn`에 넘겨야 한다면 `associatedData`를 명시하고, 일반 사용에서는
+`associatedData`를 받지 않는 public column-type 직접 생성자는 기존 데이터 마이그레이션 호환성을 위해서만 유지되며 deprecated입니다. 수동으로 `Tink*ColumnType`을 `registerColumn`에 넘겨야 한다면 `associatedData`를 명시하고, 일반 사용에서는
 `tinkAead*`/`tinkDaead*` 테이블 확장 함수를 우선 사용하세요.
 
-row-scoped associated data는 암호문을 특정 row에 더 강하게 묶을 수 있지만, 검색 가능한 도메인이 달라집니다. DAEAD equality 검색은
-암호화와 쿼리 바인딩이 같은 associated data를 사용할 때만 동작합니다. associated data에 row id 같은 row별 값을 넣으면, 일반적인
+row-scoped associated data는 암호문을 특정 row에 더 강하게 묶을 수 있지만, 검색 가능한 도메인이 달라집니다. DAEAD equality 검색은 암호화와 쿼리 바인딩이 같은 associated data를 사용할 때만 동작합니다. associated data에 row id 같은 row별 값을 넣으면, 일반적인
 `WHERE encrypted_col = value` 쿼리에서 모든 후보 row에 대해 하나의 공통 암호문을 만들 수 없습니다.
 
 ## 알고리즘 선택 가이드
@@ -210,20 +203,20 @@ val aes256Siv = TinkDeterministicAead(keysetHandleOf(loadSecret("aes256-siv-keys
 val col5 = tinkDaeadVarChar("col5", 512, aes256Siv)
 ```
 
-| 알고리즘               | 용도        | 특징                       |
-|--------------------|-----------|--------------------------|
-| AES-256-GCM        | **기본 권장** | 빠름, 하드웨어 가속, NIST 표준     |
-| AES-128-GCM        | 성능 중시     | AES-256보다 빠르지만 키 길이 짧음   |
-| ChaCha20-Poly1305  | 모바일/임베디드  | HW 가속 없어도 빠름             |
-| XChaCha20-Poly1305 | 고보안       | 더 큰 nonce, nonce 충돌 위험 ↓ |
-| AES-256-SIV        | 검색 가능 암호화 | 결정적, 인증 포함, 검색 가능        |
+| 알고리즘           | 용도             | 특징                              |
+|--------------------|------------------|-----------------------------------|
+| AES-256-GCM        | **기본 권장**    | 빠름, 하드웨어 가속, NIST 표준    |
+| AES-128-GCM        | 성능 중시        | AES-256보다 빠르지만 키 길이 짧음 |
+| ChaCha20-Poly1305  | 모바일/임베디드  | HW 가속 없어도 빠름               |
+| XChaCha20-Poly1305 | 고보안           | 더 큰 nonce, nonce 충돌 위험 ↓    |
+| AES-256-SIV        | 검색 가능 암호화 | 결정적, 인증 포함, 검색 가능      |
 
 ## 컬럼 길이 안내
 
 암호화 후 원본보다 데이터가 커지므로 충분한 길이를 설정해야 합니다.
 
-| 알고리즘              | 오버헤드                                    | 권장 배수        |
-|-------------------|-----------------------------------------|--------------|
+| 알고리즘          | 오버헤드                                   | 권장 배수         |
+|-------------------|--------------------------------------------|-------------------|
 | AES-GCM           | +28 bytes (12 IV + 16 Tag) + Base64 인코딩 | 원본의 약 1.5~2배 |
 | ChaCha20-Poly1305 | +28 bytes + Base64 인코딩                  | 원본의 약 1.5~2배 |
 | AES-256-SIV       | +16 bytes (Tag) + Base64 인코딩            | 원본의 약 1.5~2배 |
@@ -280,31 +273,34 @@ object SensitiveData: IntIdTable("sensitive_data") {
 
 ## 주요 파일/클래스 목록
 
-| 파일                              | 설명                                     |
-|---------------------------------|----------------------------------------|
-| `TinkAeadVarCharColumnType.kt`  | AEAD VARCHAR 암호화 컬럼 타입                 |
-| `TinkAeadBinaryColumnType.kt`   | AEAD VARBINARY 암호화 컬럼 타입               |
-| `TinkAeadBlobColumnType.kt`     | AEAD BLOB 암호화 컬럼 타입                    |
-| `TinkDaeadVarCharColumnType.kt` | Deterministic AEAD VARCHAR 암호화 컬럼 타입   |
-| `TinkDaeadBinaryColumnType.kt`  | Deterministic AEAD VARBINARY 암호화 컬럼 타입 |
-| `TinkDaeadBlobColumnType.kt`    | Deterministic AEAD BLOB 암호화 컬럼 타입      |
-| `TinkColumnAssociatedDataProvider.kt` | Associated data provider 계약          |
-| `Tables.kt`                     | 테이블 확장 함수 (`tinkAeadVarChar` 등)        |
+| 파일                                  | 설명                                          |
+|---------------------------------------|-----------------------------------------------|
+| `TinkAeadVarCharColumnType.kt`        | AEAD VARCHAR 암호화 컬럼 타입                 |
+| `TinkAeadBinaryColumnType.kt`         | AEAD VARBINARY 암호화 컬럼 타입               |
+| `TinkAeadBlobColumnType.kt`           | AEAD BLOB 암호화 컬럼 타입                    |
+| `TinkDaeadVarCharColumnType.kt`       | Deterministic AEAD VARCHAR 암호화 컬럼 타입   |
+| `TinkDaeadBinaryColumnType.kt`        | Deterministic AEAD VARBINARY 암호화 컬럼 타입 |
+| `TinkDaeadBlobColumnType.kt`          | Deterministic AEAD BLOB 암호화 컬럼 타입      |
+| `TinkColumnAssociatedDataProvider.kt` | Associated data provider 계약                 |
+| `Tables.kt`                           | 테이블 확장 함수 (`tinkAeadVarChar` 등)       |
 
 ## 주의사항
 
-1. **AEAD는 검색 불가**: `tinkAeadVarChar`/`tinkAeadBinary`/`tinkAeadBlob`은 매번 다른 암호문을 생성하므로 `WHERE col = value` 조건 검색이 동작하지 않습니다. 검색이 필요하면
+1. **AEAD는 검색
+   불가**: `tinkAeadVarChar`/`tinkAeadBinary`/`tinkAeadBlob`은 매번 다른 암호문을 생성하므로 `WHERE col = value` 조건 검색이 동작하지 않습니다. 검색이 필요하면
    `tinkDaead*`를 사용하세요.
 
 2. **컬럼 길이**: 암호화 후 데이터가 늘어나므로 원본 최대 길이의 약 2배 이상으로 설정하세요.
 
 3. **키 관리**: 암호화 키를 잃어버리면 데이터를 복호화할 수 없습니다. 운영 환경에서는 Google Cloud KMS, AWS KMS 등 외부 KMS와 연동해 키를 안전하게 관리하세요.
 
-4. **키 교체**: Tink는 키 교체(Key Rotation)를 지원합니다. 정기적인 키 교체로 보안을 강화할 수 있습니다.
+4. **키 교체**: Tink는 키 교체 (Key Rotation)를 지원합니다. 정기적인 키 교체로 보안을 강화할 수 있습니다.
 
-5. **DAEAD의 패턴 노출**: Deterministic AEAD도 동일 평문 → 동일 암호문이므로, 값의 분포/패턴이 노출될 수 있습니다. 유일값(이메일, 주민번호)에는 적합하지만 자주 반복되는 값에는 주의하세요.
+5. **DAEAD의 패턴
+   노출**: Deterministic AEAD도 동일 평문 → 동일 암호문이므로, 값의 분포/패턴이 노출될 수 있습니다. 유일값 (이메일, 주민번호)에는 적합하지만 자주 반복되는 값에는 주의하세요.
 
-6. **Associated data 도메인**: 기본 associated data는 암호문을 테이블/컬럼 식별자에 묶습니다. 테이블명이나 컬럼명을 바꾸면 암호화 도메인도 바뀌므로, 암호화 컬럼 rename 전에는 마이그레이션을 계획하세요.
+6. **Associated data
+   도메인**: 기본 associated data는 암호문을 테이블/컬럼 식별자에 묶습니다. 테이블명이나 컬럼명을 바꾸면 암호화 도메인도 바뀌므로, 암호화 컬럼 rename 전에는 마이그레이션을 계획하세요.
 
 ## 테스트
 
