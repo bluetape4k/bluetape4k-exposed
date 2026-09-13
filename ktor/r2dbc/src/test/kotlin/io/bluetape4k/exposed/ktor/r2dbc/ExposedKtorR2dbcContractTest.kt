@@ -2,13 +2,15 @@ package io.bluetape4k.exposed.ktor.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
+import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
-import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
-import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -19,7 +21,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
@@ -27,11 +29,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.r2dbc.spi.R2dbcException
 import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ExposedKtorR2dbcContractTest : AbstractExposedR2dbcTest() {
+class ExposedKtorR2dbcContractTest: AbstractExposedR2dbcTest() {
 
     @Test
     fun `r2dbc status pages redact database exception details`() = testApplication {
@@ -40,7 +41,7 @@ class ExposedKtorR2dbcContractTest : AbstractExposedR2dbcTest() {
             install(StatusPages) { bluetape4kExposedR2dbcErrors() }
             routing {
                 get("/r2dbc/private") {
-                    throw object : R2dbcException("r2dbc:h2:mem:secret password=top-secret SELECT payments") {}
+                    throw object: R2dbcException("r2dbc:h2:mem:secret password=top-secret SELECT payments") {}
                 }
             }
         }
@@ -48,20 +49,19 @@ class ExposedKtorR2dbcContractTest : AbstractExposedR2dbcTest() {
         val response = client.get("/r2dbc/private")
         response.status shouldBeEqualTo HttpStatusCode.ServiceUnavailable
         val body = response.bodyAsText()
-        body.contains("EXPOSED_DATABASE_UNAVAILABLE").shouldBeTrue()
-        body.contains("top-secret").shouldBeFalse()
-        body.contains("r2dbc:h2").shouldBeFalse()
-        body.contains("/r2dbc/private").shouldBeFalse()
+        body shouldContain "EXPOSED_DATABASE_UNAVAILABLE"
+        body shouldNotContain "top-secret"
+        body shouldNotContain "r2dbc:h2"
+        body shouldNotContain "/r2dbc/private"
     }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `r2dbc probe supports each enabled database`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
-            val database = checkNotNull(testDB.db)
+            val database = testDB.db.shouldNotBeNull()
             val probe = exposedKtorR2dbcReadinessProbe(database, component = "orders")
             probe.probe(5.seconds) shouldBeEqualTo ExposedKtorReadinessOutcome.UP
-            Unit
         }
     }
 
@@ -76,8 +76,10 @@ class ExposedKtorR2dbcContractTest : AbstractExposedR2dbcTest() {
 
         probe.backend shouldBeEqualTo ExposedKtorReadinessBackend.R2DBC
         probe.component shouldBeEqualTo "orders"
-        runBlocking { probe.probe(2.seconds) } shouldBeEqualTo ExposedKtorReadinessOutcome.UP
-        Unit
+
+        runBlocking {
+            probe.probe(2.seconds)
+        } shouldBeEqualTo ExposedKtorReadinessOutcome.UP
     }
 
     @Test

@@ -49,8 +49,11 @@ class ExposedKtorR2dbcMetricFailureTest {
     }
 
     private fun failingRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
-        config().meterFilter(object : MeterFilter {
-            override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
-        })
+        config()
+            .meterFilter(
+                object: MeterFilter {
+                    override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+                }
+            )
     }
 }

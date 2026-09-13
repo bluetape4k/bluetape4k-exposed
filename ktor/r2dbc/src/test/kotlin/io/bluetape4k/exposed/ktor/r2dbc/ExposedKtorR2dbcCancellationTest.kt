@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.ktor.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
@@ -33,9 +34,9 @@ class ExposedKtorR2dbcCancellationTest {
     }
 
     // 추가 상태가 있는 예외로 coroutine stacktrace recovery의 복사와 adapter의 재전파를 구분한다.
-    private class RequestCancellation(val requestId: String) : CancellationException(requestId)
-    private class RequestFailure(val requestId: String) : IllegalArgumentException(requestId)
-    private class RequestError(val requestId: String) : AssertionError(requestId)
+    private class RequestCancellation(requestId: String): CancellationException(requestId)
+    private class RequestFailure(requestId: String): IllegalArgumentException(requestId)
+    private class RequestError(requestId: String): AssertionError(requestId)
 
     @ParameterizedTest
     @MethodSource("databaseAndFailure")
@@ -46,9 +47,10 @@ class ExposedKtorR2dbcCancellationTest {
         val primary = if (fatal) RequestError("transaction failed") else RequestFailure("transaction failed")
         val metricFailure = IllegalStateException("metric recording failed")
         val registry = SimpleMeterRegistry()
-        registry.config().meterFilter(object : MeterFilter {
+        registry.config().meterFilter(object: MeterFilter {
             override fun map(id: Meter.Id): Meter.Id = throw metricFailure
         })
+
         try {
             val failure = assertFailsWith<Throwable> {
                 mockk<ApplicationCall>().exposedR2dbcTransaction(database, registry) {
@@ -59,10 +61,10 @@ class ExposedKtorR2dbcCancellationTest {
             if (fatal) {
                 failure shouldBeEqualTo primary
             } else {
-                failure.javaClass shouldBeEqualTo ExposedKtorTransactionException::class.java
+                failure.shouldBeInstanceOf<ExposedKtorTransactionException>()
                 failure.cause shouldBeEqualTo primary
             }
-            primary.suppressed.toList() shouldHaveSize 1
+            primary.suppressed shouldHaveSize 1
             primary.suppressed.single() shouldBeEqualTo metricFailure
         } finally {
             registry.close()
@@ -81,13 +83,13 @@ class ExposedKtorR2dbcCancellationTest {
         val metricFailure = IllegalStateException("metric recording failed")
         val registry = SimpleMeterRegistry()
         if (failMetrics) {
-            registry.config().meterFilter(object : MeterFilter {
+            registry.config().meterFilter(object: MeterFilter {
                 override fun map(id: Meter.Id): Meter.Id = throw metricFailure
             })
         }
         try {
             // 단계별 barrier가 필요한 단일 취소 시나리오이므로 stress tester 대신 실제 자식 Job을 사용한다.
-            withTimeout(10_000) {
+            withTimeout(timeMillis = 10_000) {
                 coroutineScope {
                     val entered = CompletableDeferred<Unit>()
                     val observed = CompletableDeferred<Throwable>()
@@ -113,7 +115,7 @@ class ExposedKtorR2dbcCancellationTest {
 
                     val failure = observed.await()
                     failure shouldBeEqualTo cancellation
-                    failure.suppressed.toList() shouldHaveSize if (failMetrics) 1 else 0
+                    failure.suppressed shouldHaveSize if (failMetrics) 1 else 0
                     if (failMetrics) {
                         failure.suppressed.single() shouldBeEqualTo metricFailure
                     }

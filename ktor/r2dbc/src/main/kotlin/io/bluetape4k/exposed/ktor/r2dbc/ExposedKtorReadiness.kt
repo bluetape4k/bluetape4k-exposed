@@ -22,7 +22,7 @@ fun exposedKtorR2dbcReadinessProbe(
 private class R2dbcReadinessProbe(
     private val db: R2dbcDatabase,
     override val component: String,
-) : ExposedKtorCooperativeReadinessProbe {
+): ExposedKtorCooperativeReadinessProbe {
     override val backend: ExposedKtorReadinessBackend = ExposedKtorReadinessBackend.R2DBC
 
     @Suppress("TooGenericExceptionCaught")
