@@ -24,9 +24,9 @@ import java.util.concurrent.Executors
 
 class ExposedKtorJdbcMetricFailureTest {
 
-    private class RequestFailure : IllegalArgumentException("transaction failed")
-    private class RequestError : AssertionError("transaction failed")
-    private class RequestCancellation : CancellationException("transaction cancelled")
+    private class RequestFailure: IllegalArgumentException("transaction failed")
+    private class RequestError: AssertionError("transaction failed")
+    private class RequestCancellation: CancellationException("transaction cancelled")
 
     @Test
     fun `success metric failure does not change committed jdbc result`() = runSuspendIO {
@@ -114,7 +114,7 @@ class ExposedKtorJdbcMetricFailureTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val metricFailure = IllegalStateException("metric recording failed")
         val registry = SimpleMeterRegistry()
-        registry.config().meterFilter(object : MeterFilter {
+        registry.config().meterFilter(object: MeterFilter {
             override fun map(id: Meter.Id): Meter.Id = throw metricFailure
         })
 
@@ -128,7 +128,7 @@ class ExposedKtorJdbcMetricFailureTest {
         }
     }
 
-    private object MetricItems : Table("ktor_jdbc_metric_items") {
+    private object MetricItems: Table("ktor_jdbc_metric_items") {
         val value = varchar("value", 64)
     }
 }

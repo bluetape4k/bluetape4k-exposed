@@ -13,13 +13,12 @@ import kotlinx.coroutines.runInterruptible
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.util.concurrent.TimeUnit
 
 /**
  * 호출자가 제공한 dispatcher에서 blocking Exposed JDBC transaction을 실행합니다.
  * dispatcher와 database lifecycle은 호출자가 계속 소유합니다.
  */
-@Suppress("TooGenericExceptionCaught", "ThrowsCount")
+@Suppress("TooGenericExceptionCaught", "ThrowsCount", "UnusedReceiverParameter")
 suspend fun <T> ApplicationCall.exposedJdbcTransaction(
     db: Database,
     blockingDispatcher: CoroutineDispatcher,
@@ -56,7 +55,7 @@ private fun Timer.Sample.stopSuccessfulTransaction(registry: MeterRegistry?) {
     } catch (metricFailure: Exception) {
         TransactionMetricLog.log.warn(metricFailure) {
             "Exposed Ktor transaction metric recording failed after a successful transaction. " +
-                "backend=jdbc, exceptionType=${metricFailure::class.qualifiedName}"
+                    "backend=jdbc, exceptionType=${metricFailure::class.qualifiedName}"
         }
     }
 }
@@ -93,6 +92,6 @@ private fun Timer.Sample.stopTransaction(
     )
 }
 
-private object TransactionMetricLog : KLogging()
+private object TransactionMetricLog: KLogging()
 
 private const val CORE_TRANSACTION_METER_NAME = "bluetape4k.exposed.ktor.core.transaction"
