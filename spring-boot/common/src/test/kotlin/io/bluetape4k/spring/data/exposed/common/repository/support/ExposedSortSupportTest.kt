@@ -1,13 +1,17 @@
 package io.bluetape4k.spring.data.exposed.common.repository.support
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Sort
 
 class ExposedSortSupportTest {
+
+    companion object: KLogging()
 
     private object TestTable: LongIdTable("test_items") {
         val name = varchar("name", 255)
@@ -33,7 +37,7 @@ class ExposedSortSupportTest {
 
     @Test
     fun `unknown and unsorted values produce no order`() {
-        Sort.by(Sort.Direction.DESC, "missing").toExposedOrderBy(TestTable) shouldHaveSize 0
-        Sort.unsorted().toExposedOrderBy(TestTable) shouldHaveSize 0
+        Sort.by(Sort.Direction.DESC, "missing").toExposedOrderBy(TestTable).shouldBeEmpty()
+        Sort.unsorted().toExposedOrderBy(TestTable).shouldBeEmpty()
     }
 }

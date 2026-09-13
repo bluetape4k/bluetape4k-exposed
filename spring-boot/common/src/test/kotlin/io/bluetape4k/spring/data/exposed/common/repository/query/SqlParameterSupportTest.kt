@@ -2,9 +2,12 @@ package io.bluetape4k.spring.data.exposed.common.repository.query
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class SqlParameterSupportTest {
+
+    companion object: KLogging()
 
     @Test
     fun `PostgreSQL JSON 경로 연산자 뒤의 파라미터를 치환한다`() {
@@ -58,7 +61,7 @@ class SqlParameterSupportTest {
     fun `빈 입력과 번호 없는 물음표 및 dollar 식별자는 유지한다`() {
         replaceSqlParameters("") { error("파라미터가 없음") } shouldBeEqualTo ""
         replaceSqlParameters("SELECT ?, name${'$'}tag${'$'}, ?1") { "bound$it" } shouldBeEqualTo
-            "SELECT ?, name${'$'}tag${'$'}, bound1"
+                "SELECT ?, name${'$'}tag${'$'}, bound1"
     }
 
     @Test

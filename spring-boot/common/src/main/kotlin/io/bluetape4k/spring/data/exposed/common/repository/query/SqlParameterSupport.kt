@@ -31,8 +31,8 @@ fun replaceSqlParameters(sql: String, replace: (Int) -> String): String = buildS
 
 private fun String.protectedRegionEnd(index: Int): Int? = when (val char = this[index]) {
     '\'', '"', '`' -> quotedEnd(index, char)
-    '#' -> if (getOrNull(index + 1) == '>') null else lineCommentEnd(index)
-    '$' -> dollarQuotedEnd(index)
+    '#'  -> if (getOrNull(index + 1) == '>') null else lineCommentEnd(index)
+    '$'  -> dollarQuotedEnd(index)
     else -> when {
         startsWith("--", index) -> lineCommentEnd(index)
         startsWith("/*", index) -> blockCommentEnd(index)
@@ -46,8 +46,8 @@ private fun String.quotedEnd(start: Int, quote: Char): Int {
         when {
             this[index] == '\\' && index + 1 < length -> index += 2
             this[index] == quote && getOrNull(index + 1) == quote -> index += 2
-            this[index] == quote -> return index + 1
-            else -> index++
+            this[index] == quote                      -> return index + 1
+            else                                      -> index++
         }
     }
     return length
@@ -64,13 +64,15 @@ private fun String.blockCommentEnd(start: Int): Int {
     var index = start + 2
     while (index < length) {
         when {
-            startsWith("/*", index) -> { depth++; index += 2 }
+            startsWith("/*", index) -> {
+                depth++; index += 2
+            }
             startsWith("*/", index) -> {
                 depth--
                 index += 2
                 if (depth == 0) return index
             }
-            else -> index++
+            else                    -> index++
         }
     }
     return length

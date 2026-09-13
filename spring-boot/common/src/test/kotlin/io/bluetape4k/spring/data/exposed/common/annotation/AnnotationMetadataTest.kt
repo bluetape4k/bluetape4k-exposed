@@ -2,9 +2,12 @@ package io.bluetape4k.spring.data.exposed.common.annotation
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class AnnotationMetadataTest {
+
+    companion object: KLogging()
 
     @Test
     fun `ExposedEntity is runtime visible on an entity class`() {
