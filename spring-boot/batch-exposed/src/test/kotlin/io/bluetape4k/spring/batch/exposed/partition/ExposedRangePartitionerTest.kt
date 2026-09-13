@@ -1,20 +1,23 @@
 package io.bluetape4k.spring.batch.exposed.partition
 
-import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
-import io.bluetape4k.spring.batch.exposed.SourceTable
-import io.bluetape4k.spring.batch.exposed.insertTestData
-import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
+import io.bluetape4k.spring.batch.exposed.SourceTable
+import io.bluetape4k.spring.batch.exposed.insertTestData
 import io.bluetape4k.spring.batch.exposed.support.castToLong
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
-class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
+class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -119,7 +122,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
                 .sortedBy { it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) }
                 .map { context ->
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
-                        context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
+                            context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
 
             ranges shouldBeEqualTo listOf(
@@ -148,7 +151,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
                 .sortedBy { it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) }
                 .map { context ->
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
-                        context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
+                            context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
 
             ranges shouldBeEqualTo listOf(
@@ -176,7 +179,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
                 .sortedBy { it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) }
                 .map { context ->
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
-                        context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
+                            context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
 
             ranges shouldBeEqualTo listOf(-3L to -3L, -2L to -2L, -1L to -1L, 0L to 3L)
@@ -224,7 +227,7 @@ class ExposedRangePartitionerTest : AbstractExposedBatchTest() {
                     .sortedBy { it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) }
                     .map { context ->
                         context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
-                            context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
+                                context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                     }
 
                 ranges shouldBeEqualTo expectedRanges

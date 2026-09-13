@@ -26,22 +26,27 @@ import org.springframework.batch.infrastructure.item.ItemWriter
  * @param table 대상 Exposed [Table]
  * @param upsertBody `batchUpsert` 람다
  */
-class ExposedUpsertItemWriter<T : Any>(
+class ExposedUpsertItemWriter<T: Any>(
     private val table: Table,
     private val upsertBody: BatchUpsertStatement.(T) -> Unit,
-) : ItemWriter<T> {
+): ItemWriter<T> {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     override fun write(chunk: Chunk<out T>) {
         if (chunk.isEmpty) return
 
         val items = chunk.items
 
-        table.batchUpsert(items, shouldReturnGeneratedValues = false) { item ->
+        log.debug { "${items.size}건 batchUpsert 시작... (table=${table.tableName})" }
+
+        table.batchUpsert(
+            data = items,
+            shouldReturnGeneratedValues = false
+        ) { item ->
             upsertBody(item)
         }
 
-        log.debug { "${items.size}건 batchUpsert 완료 (table=${table.tableName})" }
+        log.debug { "${items.size}건 batchUpsert 완료. (table=${table.tableName})" }
     }
 }

@@ -33,24 +33,26 @@ import org.springframework.batch.infrastructure.item.ItemWriter
  * @param keyExtractor T에서 키 값을 추출하는 함수
  * @param updateBody UPDATE SET 람다 (`UpdateStatement` 수신자, `T` 인자)
  */
-class ExposedUpdateItemWriter<T : Any>(
+class ExposedUpdateItemWriter<T: Any>(
     private val table: Table,
     private val keyColumn: ExpressionWithColumnType<Long>,
     private val keyExtractor: (T) -> Long,
     private val updateBody: UpdateStatement.(T) -> Unit,
-) : ItemWriter<T> {
+): ItemWriter<T> {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     override fun write(chunk: Chunk<out T>) {
         if (chunk.isEmpty) return
 
+        log.debug { "${chunk.items.size}건 update 시작... (table=${table.tableName})" }
+
         chunk.items.forEach { item ->
-            table.update({ keyColumn eq keyExtractor(item) }) { stmt ->
+            table.update(where = { keyColumn eq keyExtractor(item) }) { stmt ->
                 stmt.updateBody(item)
             }
         }
 
-        log.debug { "${chunk.items.size}건 update 완료 (table=${table.tableName})" }
+        log.debug { "${chunk.items.size}건 update 완료. (table=${table.tableName})" }
     }
 }

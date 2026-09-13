@@ -3,10 +3,12 @@ package io.bluetape4k.spring.batch.exposed.config
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.core.task.SyncTaskExecutor
@@ -17,6 +19,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ExposedBatchAutoConfigurationTest {
+
+    companion object: KLogging()
 
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedBatchAutoConfiguration::class.java))
@@ -30,7 +34,7 @@ class ExposedBatchAutoConfigurationTest {
                 "bluetape4k.batch.executor.await-termination-seconds=5",
             )
             .run { context ->
-                val executor = context.getBean("batchPartitionTaskExecutor", SimpleAsyncTaskExecutor::class.java)
+                val executor = context.getBean<SimpleAsyncTaskExecutor>("batchPartitionTaskExecutor")
 
                 executor.concurrencyLimit shouldBeEqualTo 7
                 ReflectionTestUtils.getField(executor, "taskTerminationTimeout") shouldBeEqualTo 5_000L

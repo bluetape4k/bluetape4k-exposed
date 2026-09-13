@@ -62,13 +62,13 @@ class ExposedRangePartitioner(
         table.select(minExpr, maxExpr).single()
             .let { it[minExpr] to it[maxExpr] }
     },
-) : Partitioner {
+): Partitioner {
 
     init {
         gridSize.requirePositiveNumber("gridSize")
     }
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         /** ExecutionContext에 저장되는 파티션 시작 ID 키 */
         const val PARTITION_MIN_ID = "minId"
 
@@ -103,7 +103,9 @@ class ExposedRangePartitioner(
                     // table.id.min()/.max()는 CAST 없이 직접 MIN(id)/MAX(id)를 생성 — 모든 DB 호환
                     val minExpr = table.id.min()
                     val maxExpr = table.id.max()
-                    table.select(minExpr, maxExpr).single()
+
+                    table.select(minExpr, maxExpr)
+                        .single()
                         .let { row -> row[minExpr]?.value to row[maxExpr]?.value }
                 },
             )
@@ -116,10 +118,12 @@ class ExposedRangePartitioner(
         val (min, max) = transaction(database) { selectMinMax() }
 
         if (min == null || max == null) {
-            return mapOf("partition-0" to ExecutionContext().apply {
-                putLong(PARTITION_MIN_ID, 0L)
-                putLong(PARTITION_MAX_ID, -1L)
-            })
+            return mapOf(
+                "partition-0" to ExecutionContext().apply {
+                    putLong(PARTITION_MIN_ID, 0L)
+                    putLong(PARTITION_MAX_ID, -1L)
+                }
+            )
         }
 
         require(min <= max) { "min[$min] must not be greater than max[$max]." }
@@ -135,6 +139,7 @@ class ExposedRangePartitioner(
             val partMinId = minValue
                 .add(rangeSize.multiply(BigInteger.valueOf(i.toLong())))
                 .longValueExact()
+
             val partMaxId = if (i == safeGridSize - 1) {
                 max
             } else {

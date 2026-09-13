@@ -2,11 +2,12 @@ package io.bluetape4k.spring.batch.exposed.reader
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
@@ -24,9 +25,9 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.batch.infrastructure.item.ExecutionContext
 
-class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
+class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
 
-    private object DuplicateKeySourceTable : LongIdTable("duplicate_key_source") {
+    private object DuplicateKeySourceTable: LongIdTable("duplicate_key_source") {
         val groupKey = long("group_key")
         val name = varchar("name", 32)
 
@@ -35,7 +36,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
         }
     }
 
-    private class SelectLog : SqlLogger {
+    private class SelectLog: SqlLogger {
         val entries = mutableListOf<String>()
 
         override fun log(context: StatementContext, transaction: Transaction) {
@@ -125,7 +126,7 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
             }
 
             error.message shouldBeEqualTo
-                "Keyset column must be strictly unique; use forColumnWithEntityIdTieBreaker for duplicate keys"
+                    "Keyset column must be strictly unique; use forColumnWithEntityIdTieBreaker for duplicate keys"
             reader.close()
         }
     }
@@ -187,12 +188,14 @@ class ExposedKeysetItemReaderTest : AbstractExposedBatchTest() {
             val sql = selectLog.entries.single().lowercase()
             val orderBy = sql.substringAfter(" order by ")
             val groupKeyIndex = orderBy.indexOf("group_key")
-            (groupKeyIndex >= 0).shouldBeTrue()
+            groupKeyIndex shouldBeGreaterOrEqualTo 0
+
             orderBy.indexOf("id").let { idIndex ->
                 (idIndex >= 0).shouldBeTrue()
                 (groupKeyIndex < idIndex).shouldBeTrue()
             }
-            sql.contains(" offset ").shouldBeFalse()
+            sql shouldNotContain " offset "
+
             reader.close()
         }
     }

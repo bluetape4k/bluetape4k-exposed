@@ -2,11 +2,11 @@ package io.bluetape4k.spring.batch.exposed.dsl
 
 import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
 import org.springframework.batch.core.job.Job
-import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.job.builder.JobBuilder
 import org.springframework.batch.core.job.builder.SimpleJobBuilder
 import org.springframework.batch.core.partition.PartitionHandler
 import org.springframework.batch.core.repository.JobRepository
+import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
 
 /**

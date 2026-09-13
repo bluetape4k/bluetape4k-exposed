@@ -19,7 +19,7 @@ import org.jetbrains.exposed.v1.core.vendors.currentDialect
  */
 internal class MySQLCompatLongColumnType(
     private val delegate: LongColumnType = LongColumnType(),
-) : IColumnType<Long> by delegate {
+): IColumnType<Long> by delegate {
 
     override fun sqlType(): String =
         if (currentDialect is MysqlDialect) "SIGNED" else "BIGINT"

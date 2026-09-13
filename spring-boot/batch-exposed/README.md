@@ -4,9 +4,7 @@ English | [한국어](./README.ko.md)
 
 **Spring Batch + Exposed Integration for Spring Boot**
 
-A high-performance batch processing module that integrates Spring Batch with JetBrains Exposed.
-Provides keyset-based pagination readers, efficient Exposed-backed writers, range partitioners
-for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
+A high-performance batch processing module that integrates Spring Batch with JetBrains Exposed. Provides keyset-based pagination readers, efficient Exposed-backed writers, range partitioners for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 
 ## Integration Map
 
@@ -23,8 +21,7 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
   - Persists `lastKey` in `ExecutionContext` for restart support
   - Thread-safe with `reentrantLock().withLock { ... }` in `read()` (Virtual Thread-friendly)
   - Factory: `forEntityId(table, pageSize, rowMapper, database)`
-  - The primary constructor requires a strictly unique column that remains stable during traversal;
-    detected duplicates fail instead of silently dropping rows
+  - The primary constructor requires a strictly unique column that remains stable during traversal; detected duplicates fail instead of silently dropping rows
   - For duplicate `Long` values, `forColumnWithEntityIdTieBreaker(...)` uses `(column, table.id)`
     as a composite cursor and persists both `lastKey` and `lastTieBreaker`
   - A `(column, id)` index is recommended for the composite path; callers keep both values immutable
@@ -44,7 +41,9 @@ for VirtualThread parallel execution, and Spring Boot Auto-Configuration.
 - **`ExposedBatchAutoConfiguration`** — Spring Boot Auto-Configuration
   - Registers `batchPartitionTaskExecutor` (configurable `TaskExecutor`)
 
-- **`virtualThreadPartitionTaskExecutor(concurrencyLimit)`** — Helper to create a VirtualThread `TaskExecutor` with concurrency limit
+-
+
+**`virtualThreadPartitionTaskExecutor(concurrencyLimit)`** — Helper to create a VirtualThread `TaskExecutor` with concurrency limit
 
 - **`partitionedBatchJob` DSL** — Kotlin DSL for building partitioned `Job`
 
@@ -136,8 +135,7 @@ class MigrationJobConfig(
 
 ### Opting into multi-row VALUES
 
-The existing `ExposedItemWriter(table) { ... }` constructor retains driver-level batching.
-Select the Exposed 1.5.0 multi-row VALUES path explicitly:
+The existing `ExposedItemWriter(table) { ... }` constructor retains driver-level batching. Select the Exposed 1.5.0 multi-row VALUES path explicitly:
 
 ```kotlin
 val writer = ExposedItemWriter<TargetRecord>(
@@ -150,28 +148,19 @@ val writer = ExposedItemWriter<TargetRecord>(
 ```
 
 - The default is `false`; existing positional/trailing-lambda calls and the JVM constructor remain compatible.
-- Before invoking the binder or executing SQL, `true` validates `chunk rows × all table columns`.
-  The estimated limit is 65,535 parameters (32,766 for SQLite). Oversized chunks throw
+- Before invoking the binder or executing SQL, `true` validates `chunk rows × all table columns`. The estimated limit is 65,535 parameters (32,766 for SQLite). Oversized chunks throw
   `IllegalArgumentException` without automatic splitting. This estimate does not guarantee every driver's actual bind limit.
-- Empty chunks are no-ops even without a transaction. Binding preserves input order and supports nullable values.
-  Query ordering still requires an explicit `ORDER BY`.
+- Empty chunks are no-ops even without a transaction. Binding preserves input order and supports nullable values. Query ordering still requires an explicit `ORDER BY`.
 - Generated keys are neither requested nor returned (`shouldReturnGeneratedValues = false`). There is no ignore-duplicates option.
-- The writer neither opens nor commits a transaction. In a chunk step using `SpringTransactionManager`,
-  a propagated failure rolls back the current chunk while previously committed chunks remain intact.
-  Swallowing exceptions or changing skip/retry policies changes behavior according to the application's policy.
-- New integration coverage targets H2/PostgreSQL JDBC. The new MySQL/Oracle/SQLite paths are unverified;
-  check Exposed and driver dialect support and limits before using them.
-- Test SQL counts refer to Exposed `StatementContext` entries. They distinguish multi-row VALUES SQL from
-  row-wise batch SQL, but do not establish fewer network round trips or higher throughput.
+- The writer neither opens nor commits a transaction. In a chunk step using `SpringTransactionManager`, a propagated failure rolls back the current chunk while previously committed chunks remain intact. Swallowing exceptions or changing skip/retry policies changes behavior according to the application's policy.
+- New integration coverage targets H2/PostgreSQL JDBC. The new MySQL/Oracle/SQLite paths are unverified; check Exposed and driver dialect support and limits before using them.
+- Test SQL counts refer to Exposed `StatementContext` entries. They distinguish multi-row VALUES SQL from row-wise batch SQL, but do not establish fewer network round trips or higher throughput.
 
 ### Restart Support
 
-When the same job parameters are launched again after a failure, Spring Batch
-restores each worker `ExecutionContext`. `ExposedKeysetItemReader` then resumes
-from the saved cursor inside that partition range. `forEntityId` keeps the existing
+When the same job parameters are launched again after a failure, Spring Batch restores each worker `ExecutionContext`. `ExposedKeysetItemReader` then resumes from the saved cursor inside that partition range. `forEntityId` keeps the existing
 `lastKey` checkpoint, while `forColumnWithEntityIdTieBreaker` stores both `lastKey`
-and `lastTieBreaker`. A legacy single-column checkpoint has no tie-breaker, so a
-reader migrated to the composite factory fails explicitly instead of guessing a position.
+and `lastTieBreaker`. A legacy single-column checkpoint has no tie-breaker, so a reader migrated to the composite factory fails explicitly instead of guessing a position.
 
 ```kotlin
 // First run: fails after some chunks

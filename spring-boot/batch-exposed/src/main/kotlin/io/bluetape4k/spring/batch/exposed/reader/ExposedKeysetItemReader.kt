@@ -45,7 +45,7 @@ import org.springframework.beans.factory.InitializingBean
  * @param keyExtractor [ResultRow]에서 keyset 컬럼 Long 값 추출
  * @param additionalCondition 추가 WHERE 조건 람다 (null이면 조건 없음)
  */
-open class ExposedKeysetItemReader<T : Any>(
+open class ExposedKeysetItemReader<T: Any>(
     private val database: Database? = null,
     private val pageSize: Int = 500,
     private val column: ExpressionWithColumnType<Long>,
@@ -53,9 +53,9 @@ open class ExposedKeysetItemReader<T : Any>(
     private val rowMapper: (ResultRow) -> T,
     private val keyExtractor: (ResultRow) -> Long = { it[column] },
     private val additionalCondition: (() -> Op<Boolean>)? = null,
-) : ItemStreamReader<T>, InitializingBean {
+): ItemStreamReader<T>, InitializingBean {
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         private const val LAST_KEY = "lastKey"
         private const val LAST_TIE_BREAKER = "lastTieBreaker"
         private const val NON_UNIQUE_KEY_MESSAGE =
@@ -67,7 +67,7 @@ open class ExposedKeysetItemReader<T : Any>(
          * - `column`: `table.id.castTo<Long>(LongColumnType())`으로 Long 변환 — WHERE/ORDER BY에서 Long 비교 사용
          * - `keyExtractor`: `it[table.id].value`로 EntityID에서 Long 추출 (selectAll 결과에서 원본 id 컬럼 사용)
          */
-        fun <T : Any> forEntityId(
+        fun <T: Any> forEntityId(
             table: IdTable<Long>,
             pageSize: Int = 500,
             rowMapper: (ResultRow) -> T,
@@ -96,7 +96,7 @@ open class ExposedKeysetItemReader<T : Any>(
          * 기존 single-column checkpoint에는 tie-breaker가 없으므로 이 factory로 전환한 reader는
          * 해당 checkpoint를 이어서 읽지 않고 명시적으로 실패합니다.
          */
-        fun <T : Any> forColumnWithEntityIdTieBreaker(
+        fun <T: Any> forColumnWithEntityIdTieBreaker(
             table: LongIdTable,
             column: ExpressionWithColumnType<Long>,
             pageSize: Int = 500,
@@ -127,7 +127,7 @@ open class ExposedKeysetItemReader<T : Any>(
         val extractor: (ResultRow) -> Long,
     )
 
-    private data class BufferedItem<T : Any>(
+    private data class BufferedItem<T: Any>(
         val key: Long,
         val tieBreaker: Long?,
         val item: T,
@@ -139,7 +139,7 @@ open class ExposedKeysetItemReader<T : Any>(
     ) {
         fun isBefore(other: CursorPosition): Boolean =
             key < other.key ||
-                (key == other.key && tieBreaker != null && other.tieBreaker != null && tieBreaker < other.tieBreaker)
+                    (key == other.key && tieBreaker != null && other.tieBreaker != null && tieBreaker < other.tieBreaker)
     }
 
     private var minId: Long = 0L
@@ -147,6 +147,7 @@ open class ExposedKeysetItemReader<T : Any>(
     private var lastKey: Long = 0L
     private var lastTieBreaker: Long = Long.MIN_VALUE
     private var tieBreaker: EntityIdTieBreaker? = null
+
     // cursor와 item을 함께 보관해 실제 소비 시점에 checkpoint를 갱신합니다.
     private val buffer: MutableList<BufferedItem<T>> = mutableListOf()
     private var bufferIndex: Int = 0
@@ -171,6 +172,7 @@ open class ExposedKeysetItemReader<T : Any>(
         } else {
             minId - 1
         }
+        log.debug { "${table.tableName}에서 $minId 부터 $maxId 까지 읽을 예정. lastKey=$lastKey" }
 
         lastTieBreaker = tieBreaker?.let {
             check(!executionContext.containsKey(LAST_KEY) || executionContext.containsKey(LAST_TIE_BREAKER)) {
@@ -226,7 +228,7 @@ open class ExposedKeysetItemReader<T : Any>(
         transaction(database) {
             val cursorCondition = tieBreaker?.let { currentTieBreaker ->
                 (column greater lastKey) or
-                    ((column eq lastKey) and currentTieBreaker.boundary(lastTieBreaker))
+                        ((column eq lastKey) and currentTieBreaker.boundary(lastTieBreaker))
             } ?: (column greater lastKey)
             var condition: Op<Boolean> = cursorCondition and (column lessEq maxId)
             additionalCondition?.let { addCond ->
@@ -256,8 +258,6 @@ open class ExposedKeysetItemReader<T : Any>(
             )
         }
 
-        log.debug {
-            "${buffer.size}건 읽음 (table=${table.tableName}, lastKey=$lastKey, lastTieBreaker=$lastTieBreaker)"
-        }
+        log.debug { "${buffer.size}건 읽음 (table=${table.tableName}, lastKey=$lastKey, lastTieBreaker=$lastTieBreaker)" }
     }
 }

@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.batch.exposed.integration
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.info
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchJobTest
@@ -13,7 +14,6 @@ import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
 import io.bluetape4k.spring.batch.exposed.reader.ExposedKeysetItemReader
 import io.bluetape4k.spring.batch.exposed.support.virtualThreadPartitionTaskExecutor
 import io.bluetape4k.spring.batch.exposed.writer.ExposedItemWriter
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
@@ -24,10 +24,10 @@ import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.configuration.annotation.StepScope
 import org.springframework.batch.core.job.Job
 import org.springframework.batch.core.job.parameters.JobParametersBuilder
-import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.launch.JobOperator
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler
 import org.springframework.batch.core.repository.JobRepository
+import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
@@ -54,9 +54,9 @@ import kotlin.system.measureTimeMillis
  */
 @Tag("benchmark")
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class PartitionComparisonBenchmarkTest : AbstractExposedBatchJobTest() {
+class PartitionComparisonBenchmarkTest: AbstractExposedBatchJobTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @TestConfiguration
     class JobConfig(
@@ -120,7 +120,7 @@ class PartitionComparisonBenchmarkTest : AbstractExposedBatchJobTest() {
 
         @Bean(name = ["cmpSeqPartitionHandler"])
         fun seqPartitionHandler(): TaskExecutorPartitionHandler = TaskExecutorPartitionHandler().apply {
-            setStep(workerStep())
+            step = workerStep()
             setTaskExecutor(virtualThreadPartitionTaskExecutor(concurrencyLimit = 1))
             gridSize = 1
         }
@@ -204,13 +204,16 @@ class PartitionComparisonBenchmarkTest : AbstractExposedBatchJobTest() {
         }
     }
 
-    @Autowired @Qualifier("cmpSeqJobOperatorTestUtils")
+    @Autowired
+    @Qualifier("cmpSeqJobOperatorTestUtils")
     private lateinit var seqUtils: JobOperatorTestUtils
 
-    @Autowired @Qualifier("cmpPar4JobOperatorTestUtils")
+    @Autowired
+    @Qualifier("cmpPar4JobOperatorTestUtils")
     private lateinit var par4Utils: JobOperatorTestUtils
 
-    @Autowired @Qualifier("cmpPar8JobOperatorTestUtils")
+    @Autowired
+    @Qualifier("cmpPar8JobOperatorTestUtils")
     private lateinit var par8Utils: JobOperatorTestUtils
 
     @Test

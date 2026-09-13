@@ -11,7 +11,7 @@ import java.io.Serializable
 /**
  * 테스트용 Source 테이블 정의.
  */
-object SourceTable : LongIdTable("source_data") {
+object SourceTable: LongIdTable("source_data") {
     val name = varchar("name", 255)
     val value = integer("value")
     val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
@@ -21,7 +21,7 @@ object SourceTable : LongIdTable("source_data") {
  * 테스트용 Target 테이블 정의.
  * sourceName을 PK로 사용하여 batchUpsert가 ON CONFLICT(source_name) 으로 동작하도록 함.
  */
-object TargetTable : Table("target_data") {
+object TargetTable: Table("target_data") {
     val sourceName = varchar("source_name", 255)
     val transformedValue = integer("transformed_value")
     override val primaryKey = PrimaryKey(sourceName)
@@ -34,7 +34,7 @@ data class SourceRecord(
     val id: Long = 0L,
     val name: String,
     val value: Int,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID = 1L
     }
@@ -46,7 +46,7 @@ data class SourceRecord(
 data class TargetRecord(
     val sourceName: String,
     val transformedValue: Int,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID = 1L
     }
@@ -59,7 +59,10 @@ data class TargetRecord(
  */
 fun insertTestData(count: Int) {
     transaction {
-        SourceTable.batchInsert((1..count).toList(), shouldReturnGeneratedValues = false) { i ->
+        SourceTable.batchInsert(
+            data = (1..count).toList(),
+            shouldReturnGeneratedValues = false
+        ) { i ->
             this[SourceTable.name] = "item-$i"
             this[SourceTable.value] = i
         }
