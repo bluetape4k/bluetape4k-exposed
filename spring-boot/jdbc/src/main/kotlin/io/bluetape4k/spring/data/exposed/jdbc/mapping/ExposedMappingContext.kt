@@ -26,7 +26,7 @@ class ExposedMappingContext:
             .filter { descriptor ->
                 table.columns.any { column ->
                     column.name == descriptor.name ||
-                        column.name.equals(toSnakeCase(descriptor.name), ignoreCase = true)
+                            column.name.equals(toSnakeCase(descriptor.name), ignoreCase = true)
                 }
             }
             .map { descriptor -> Property.of(typeInformation, descriptor) }

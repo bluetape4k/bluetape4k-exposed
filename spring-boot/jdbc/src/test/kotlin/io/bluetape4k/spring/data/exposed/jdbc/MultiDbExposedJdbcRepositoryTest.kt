@@ -1,5 +1,10 @@
 package io.bluetape4k.spring.data.exposed.jdbc
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -8,16 +13,11 @@ import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.SimpleExposedJdbcRepository
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.dao.LongEntityClass
 import org.jetbrains.exposed.v1.jdbc.Query
@@ -59,8 +59,16 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `findAll returns all entities`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 25 }
+            UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 25
+            }
             repo.findAll() shouldHaveSize 2
         }
     }
@@ -70,7 +78,11 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `count and existsById`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val user = UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
+            val user = UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
             repo.count() shouldBeEqualTo 1L
             repo.existsById(user.id.value).shouldBeTrue()
             repo.existsById(-1L).shouldBeFalse()
@@ -82,7 +94,11 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `deleteById removes entity`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val user = UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
+            val user = UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
             repo.deleteById(user.id.value)
             repo.findById(user.id.value).isPresent.shouldBeFalse()
         }
@@ -93,8 +109,16 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `deleteAll removes all entities`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 25 }
+            UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 25
+            }
             repo.deleteAll()
             repo.count() shouldBeEqualTo 0L
         }
@@ -105,9 +129,21 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `findAllById returns matching entities`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val alice = UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            val bob = UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 25 }
-            UserEntity.new { name = "Charlie"; email = "charlie@example.com"; age = 35 }
+            val alice = UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            val bob = UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 25
+            }
+            UserEntity.new {
+                name = "Charlie"
+                email = "charlie@example.com"
+                age = 35
+            }
 
             val found = repo.findAllById(listOf(alice.id.value, bob.id.value))
             found shouldHaveSize 2
@@ -120,9 +156,21 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `deleteAllById removes specified entities`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val alice = UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            val bob = UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 25 }
-            UserEntity.new { name = "Charlie"; email = "charlie@example.com"; age = 35 }
+            val alice = UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            val bob = UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 25
+            }
+            UserEntity.new {
+                name = "Charlie"
+                email = "charlie@example.com"
+                age = 35
+            }
 
             repo.deleteAllById(listOf(alice.id.value, bob.id.value))
             repo.count() shouldBeEqualTo 1L
@@ -150,7 +198,11 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
         withTables(testDB, Users) {
             val repo = createRepo()
             repeat(5) { i ->
-                UserEntity.new { name = "User$i"; email = "user$i@example.com"; age = 20 + i }
+                UserEntity.new {
+                    name = "User$i"
+                    email = "user$i@example.com"
+                    age = 20 + i
+                }
             }
 
             val page = repo.findAll(PageRequest.of(0, 3))
@@ -164,8 +216,17 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `findAll with DSL op filters correctly`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 17 }
+
+            UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 17
+            }
 
             val adults = repo.findAll { Users.age greaterEq 18 }
             adults shouldHaveSize 1
@@ -178,8 +239,17 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `count and exists with DSL op`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
-            UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 17 }
+
+            UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
+            UserEntity.new {
+                name = "Bob"
+                email = "bob@example.com"
+                age = 17
+            }
 
             repo.count { Users.age greaterEq 18 } shouldBeEqualTo 1L
             repo.exists { Users.name eq "Alice" }.shouldBeTrue()
@@ -192,7 +262,11 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
     fun `extractId returns value for existing entity`(testDB: TestDB) {
         withTables(testDB, Users) {
             val repo = createRepo()
-            val user = UserEntity.new { name = "Alice"; email = "alice@example.com"; age = 30 }
+            val user = UserEntity.new {
+                name = "Alice"
+                email = "alice@example.com"
+                age = 30
+            }
             val id = repo.extractId(user)
             id.shouldNotBeNull()
             id shouldBeEqualTo user.id.value
@@ -208,6 +282,7 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             UserEntity.new { name = "Axxlice"; email = "wildcard@example.com"; age = 31 }
             UserEntity.new { name = "Bob"; email = "bob@example.com"; age = 20 }
             UserEntity.new { name = "Charlie"; email = "charlie@example.com"; age = 40 }
+
             val literalPercent = UserEntity.find { Users.email eq "literal@example.com" }.single()
 
             val all = Example.of(
@@ -218,7 +293,10 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             addLogger(recordSql(statements))
 
             val names = repo.findBy(all) {
-                it.`as`(UserNameDto::class.java).sortBy(Sort.by("name")).limit(2).all()
+                it.`as`(UserNameDto::class.java)
+                    .sortBy(Sort.by("name"))
+                    .limit(2)
+                    .all()
             }
             names.map { it.name } shouldBeEqualTo listOf("A%lice", "Axxlice")
             selectStatements(statements) shouldHaveSize 1
@@ -246,8 +324,13 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             val streamingRepo = SimpleExposedJdbcRepository(
                 ExposedEntityInformationImpl(UserEntity::class.java, capturingEntityClass),
             )
-            streamingRepo.findBy(all) { it.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream() }
-                .use { rows -> rows.findFirst().orElseThrow().name shouldBeEqualTo "A%lice" }
+            streamingRepo.findBy(all) {
+                it.`as`(UserNameView::class.java)
+                    .sortBy(Sort.by("name"))
+                    .stream()
+            }.use { rows ->
+                rows.findFirst().orElseThrow().name shouldBeEqualTo "A%lice"
+            }
             capturedQueries.last().fetchSize shouldBeEqualTo 100
             repo.count() shouldBeEqualTo 4L
         }

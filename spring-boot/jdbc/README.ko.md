@@ -4,9 +4,7 @@
 
 **Exposed DAO Entity 기반 Spring Data JDBC Repository (Spring Boot 4.x / Spring 7)**
 
-Exposed DAO 엔티티를 Spring Data Repository처럼 다루기 위한 JDBC 브리지입니다.
-Spring Boot 자동 구성, Spring Data repository factory, Exposed transaction,
-method-name query parsing을 하나의 repository 모델로 연결합니다.
+Exposed DAO 엔티티를 Spring Data Repository처럼 다루기 위한 JDBC 브리지입니다. Spring Boot 자동 구성, Spring Data repository factory, Exposed transaction, method-name query parsing을 하나의 repository 모델로 연결합니다.
 
 ## Repository Wiring
 
@@ -97,27 +95,22 @@ spring.data.exposed-jdbc.repositories.base-packages=com.example.repository
 ### 5. Actuator Cache Health
 
 Spring Boot Actuator와 `bluetape4k-exposed-jdbc-caffeine`이 classpath에 있으면
-`exposedJdbcCacheHealthIndicator`가 자동 등록됩니다. 이 indicator는 Caffeine
-write-through/write-behind 상태를 Boot health detail로 노출합니다: cache mode,
-queue depth, `workerState`, 마지막 flush error.
-호환되는 JDBC Caffeine repository bean이 없으면 indicator를 등록하지 않으므로
+`exposedJdbcCacheHealthIndicator`가 자동 등록됩니다. 이 indicator는 Caffeine write-through/write-behind 상태를 Boot health detail로 노출합니다: cache mode, queue depth, `workerState`, 마지막 flush error. 호환되는 JDBC Caffeine repository bean이 없으면 indicator를 등록하지 않으므로
 `repositoryCount=0`인 선택적 `UP` component를 만들지 않습니다.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-| Report | Actuator status |
-|---|---|
-| Flush error가 없고 `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
-| Flush error가 없고 `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
-| Flush error 또는 `workerState=FAILED` | `DOWN` |
+| Report                                         | Actuator status |
+|------------------------------------------------|-----------------|
+| Flush error가 없고 `workerState=NOT_APPLICABLE | IDLE            |RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING       | STOPPED`        | `OUT_OF_SERVICE` |
+| Flush error 또는 `workerState=FAILED`          | `DOWN`          |
 
-비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 indicator를
-자동으로 찾습니다. Ktor는 자동으로 찾지 않습니다. 애플리케이션이
+비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 indicator를 자동으로 찾습니다. Ktor는 자동으로 찾지 않습니다. 애플리케이션이
 `ExposedKtorCacheContributor`를 명시적으로 만들며, Ktor는 `DRAINING`, `FAILED`,
-`STOPPED`를 redacted detail의 readiness `DOWN`으로 매핑합니다. Actuator management
-endpoint 접근 정책과 Ktor route 보안 정책은 별도로 관리하세요.
+`STOPPED`를 redacted detail의 readiness `DOWN`으로 매핑합니다. Actuator management endpoint 접근 정책과 Ktor route 보안 정책은 별도로 관리하세요.
 
 ## 사용 예시
 
@@ -151,23 +144,16 @@ interface UserRepository : ExposedJdbcRepository<User, Long> {
 ```
 
 <!-- jdbc-fluent-query:START -->
+
 ### Query by Example과 FluentQuery
 
 <!-- contract-key:attached-probe -->
-현재 transaction에서 조회한 영속 `Entity`로 `Example`을 만드세요. 신규, detached,
-다른 transaction 또는 다른 thread의 probe는 property 접근이나 SQL 실행 전에
-거부됩니다. `ExampleMatcher`는 flat property, `matchingAll`/`matchingAny`, ignored
-path, null 포함, exact, containing, starting, ending, property transformer를
-지원합니다. Nested path, regular expression, case-insensitive matching, 지원하지
-않는 string matcher는 fail-fast로 거부합니다.
+현재 transaction에서 조회한 영속 `Entity`로 `Example`을 만드세요. 신규, detached, 다른 transaction 또는 다른 thread의 probe는 property 접근이나 SQL 실행 전에 거부됩니다. `ExampleMatcher`는 flat property, `matchingAll`/`matchingAny`, ignored path, null 포함, exact, containing, starting, ending, property transformer를 지원합니다. Nested path, regular expression, case-insensitive matching, 지원하지 않는 string matcher는 fail-fast로 거부합니다.
 
 <!-- contract-key:closed-projection -->
-Closed getter interface, Kotlin data class, Java record를 `as`로 지정할 수 있습니다.
-비어 있지 않은 `project` 목록은 projection의 필수 input과 정확히 일치해야 하며,
-빈 목록은 필수 input 자동 선택으로 복귀합니다. Projection, `sortBy`, 양수 limit,
+Closed getter interface, Kotlin data class, Java record를 `as`로 지정할 수 있습니다. 비어 있지 않은 `project` 목록은 projection의 필수 input과 정확히 일치해야 하며, 빈 목록은 필수 input 자동 선택으로 복귀합니다. Projection, `sortBy`, 양수 limit,
 `Pageable`은 SQL로 pushdown되며 `firstValue`, `oneValue`, `all`, `page`, `count`,
-`exists`는 Spring Data cardinality semantics를 유지합니다. 반복 sort는 append하고,
-paged query는 `Pageable`의 sort를 사용합니다.
+`exists`는 Spring Data cardinality semantics를 유지합니다. 반복 sort는 append하고, paged query는 `Pageable`의 sort를 사용합니다.
 
 ```kotlin
 interface UserNameView {
@@ -216,36 +202,21 @@ List<UserNameRecord> records = userRepository.findBy(example,
 ```
 
 <!-- contract-key:open-projection-rejected -->
-`@Value` 또는 다른 `SpEL` expression을 사용하는 open interface는 거부합니다.
-계산형 projection expression은 deterministic selected-column query로 변환할 수
-없습니다.
+`@Value` 또는 다른 `SpEL` expression을 사용하는 open interface는 거부합니다. 계산형 projection expression은 deterministic selected-column query로 변환할 수 없습니다.
 
 <!-- contract-key:first-one-all-page-count-exists -->
 최대 한 행을 허용할 때는 `firstValue`, 여러 행이면
-`IncorrectResultSizeDataAccessException`을 발생시켜야 할 때는 `oneValue`를
-사용합니다. `count`와 `exists`는 projection, sort, fluent limit를 무시합니다.
-Custom `EntityClass.searchQuery` override는 root-table filter만 추가할 수 있습니다.
-Join, grouping, distinct, custom order, offset, limit, locking shape는 SQL 실행 전에
-거부합니다.
+`IncorrectResultSizeDataAccessException`을 발생시켜야 할 때는 `oneValue`를 사용합니다. `count`와 `exists`는 projection, sort, fluent limit를 무시합니다. Custom `EntityClass.searchQuery` override는 root-table filter만 추가할 수 있습니다. Join, grouping, distinct, custom order, offset, limit, locking shape는 SQL 실행 전에 거부합니다.
 
 <!-- contract-key:cursor-outer-transaction -->
-`stream`은 cursor-backed single-use result입니다. Factory-created repository는
-caller-owned outer `@Transactional` boundary에 참여해야 합니다. 직접 생성한
-`SimpleExposedJdbcRepository`는 caller-owned `transaction {}` 안에서 호출해야
-합니다. Positive `DatabaseConfig.defaultFetchSize`가 설정되어 있으면 그 값을
-사용하고, 그렇지 않으면 bounded fetch size `100`을 적용합니다. PostgreSQL의
-cursor fetch에는 active transaction이 필요하며, MySQL Connector/J의 server-side
-cursor fetch에는 JDBC URL의 `useCursorFetch=true`도 필요합니다.
+`stream`은 cursor-backed single-use result입니다. Factory-created repository는 caller-owned outer `@Transactional` boundary에 참여해야 합니다. 직접 생성한
+`SimpleExposedJdbcRepository`는 caller-owned `transaction {}` 안에서 호출해야 합니다. Positive `DatabaseConfig.defaultFetchSize`가 설정되어 있으면 그 값을 사용하고, 그렇지 않으면 bounded fetch size `100`을 적용합니다. PostgreSQL의 cursor fetch에는 active transaction이 필요하며, MySQL Connector/J의 server-side cursor fetch에는 JDBC URL의 `useCursorFetch=true`도 필요합니다.
 
 <!-- contract-key:cursor-same-thread -->
-Cursor는 같은 thread와 같은 Exposed transaction에서 소비하세요. Cursor가 열린
-동안 nested repository 또는 Exposed SQL을 실행하지 말고, 다음 statement 전에
-모두 소비하거나 닫으세요.
+Cursor는 같은 thread와 같은 Exposed transaction에서 소비하세요. Cursor가 열린 동안 nested repository 또는 Exposed SQL을 실행하지 말고, 다음 statement 전에 모두 소비하거나 닫으세요.
 
 <!-- contract-key:cursor-explicit-close -->
-Cursor는 항상 `use` 또는 Java try-with-resources로 명시적으로 닫으세요.
-Driver cleanup 실패는 `DataAccessResourceFailureException`으로 노출되므로,
-이 예외가 발생하면 현재 transaction을 종료하세요.
+Cursor는 항상 `use` 또는 Java try-with-resources로 명시적으로 닫으세요. Driver cleanup 실패는 `DataAccessResourceFailureException`으로 노출되므로, 이 예외가 발생하면 현재 transaction을 종료하세요.
 
 ```kotlin
 @Transactional(readOnly = true)
@@ -258,8 +229,7 @@ fun consumeNames(example: Example<User>) {
 }
 ```
 
-공개 API 경계는 [repository contract](./src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository.kt)를
-참고하세요.
+공개 API 경계는 [repository contract](./src/main/kotlin/io/bluetape4k/spring/data/exposed/jdbc/repository/ExposedJdbcRepository.kt)를 참고하세요.
 <!-- jdbc-fluent-query:END -->
 
 ### Service 사용
@@ -372,15 +342,12 @@ dependencies {
 주의: `dependencyManagement` 플러그인은 Kotlin Gradle Plugin과 호환성 문제가 있으므로 `platform()`을 사용합니다.
 
 <a id="transaction-aware-domain-events"></a>
+
 ## 트랜잭션 인식 도메인 이벤트
 
 ![트랜잭션 인식 애그리거트 도메인 이벤트 시퀀스](../../docs/images/readme-diagrams/spring-boot-exposed-jdbc-domain-event-sequence-01.png)
 
-`ExposedAggregateEventPublisher`는 repository 저장 직후 command transaction이 아직 활성 상태일 때, 깊게 불변인
-event 객체를 담은 독립적인 read-only 목록을 Spring에 전달합니다. JDBC starter는 `AggregateRoot`, Spring application
-event 및 transaction synchronization API가 classpath에 있고, 여러 manager 중 하나의 `@Primary`를 포함해
-정확히 하나의 `PlatformTransactionManager`를 선택할 수 있으며, 애플리케이션이 publisher bean을 직접
-선언하지 않았을 때 이를 자동 구성합니다.
+`ExposedAggregateEventPublisher`는 repository 저장 직후 command transaction이 아직 활성 상태일 때, 깊게 불변인 event 객체를 담은 독립적인 read-only 목록을 Spring에 전달합니다. JDBC starter는 `AggregateRoot`, Spring application event 및 transaction synchronization API가 classpath에 있고, 여러 manager 중 하나의 `@Primary`를 포함해 정확히 하나의 `PlatformTransactionManager`를 선택할 수 있으며, 애플리케이션이 publisher bean을 직접 선언하지 않았을 때 이를 자동 구성합니다.
 
 같은 command transaction 안에서 aggregate의 마지막 연산으로 `publishAfterSave`를 정확히 한 번 호출합니다.
 
@@ -391,40 +358,24 @@ transactionTemplate.executeWithoutResult {
 }
 ```
 
-Event가 없는 aggregate는 transaction 없이도 no-op입니다. Event가 있는 aggregate는 활성 Spring transaction
-synchronization과 실제 활성 transaction이 모두 필요합니다. Spring handoff는 즉시 일어나므로 synchronous
-listener는 호출자 안에서 실행되고, 기본 `@TransactionalEventListener` 및 Spring Modulith listener는
+Event가 없는 aggregate는 transaction 없이도 no-op입니다. Event가 있는 aggregate는 활성 Spring transaction synchronization과 실제 활성 transaction이 모두 필요합니다. Spring handoff는 즉시 일어나므로 synchronous listener는 호출자 안에서 실행되고, 기본 `@TransactionalEventListener` 및 Spring Modulith listener는
 `AFTER_COMMIT`에서 실행됩니다. Commit 완료 시 등록된 aggregate buffer를 비우고, 전체 rollback과
-`STATUS_UNKNOWN`에서는 보존합니다. Publication 실패, 중복 등록, snapshot 변경은 호출자가 최초 예외를 잡아도
-transaction을 poison 처리합니다. 따라서 synchronous listener는 command 실패 경계에 참여하며, irreversible
-side effect는 별도로 중복 방지해야 합니다.
+`STATUS_UNKNOWN`에서는 보존합니다. Publication 실패, 중복 등록, snapshot 변경은 호출자가 최초 예외를 잡아도 transaction을 poison 처리합니다. 따라서 synchronous listener는 command 실패 경계에 참여하며, irreversible side effect는 별도로 중복 방지해야 합니다.
 
-중복 등록은 동일 transaction에서 같은 aggregate 객체를 다시 등록하는 경우를 뜻합니다. Aggregate ID가 같아도
-객체가 다르거나 이후 transaction에서 다시 등록하면 publisher가 중복을 제거하지 않으므로, 이 경우에는
-애플리케이션 수준의 멱등성으로 처리해야 합니다.
+중복 등록은 동일 transaction에서 같은 aggregate 객체를 다시 등록하는 경우를 뜻합니다. Aggregate ID가 같아도 객체가 다르거나 이후 transaction에서 다시 등록하면 publisher가 중복을 제거하지 않으므로, 이 경우에는 애플리케이션 수준의 멱등성으로 처리해야 합니다.
 
-Event와 전체 payload graph는 깊은 불변이어야 하며 호출자는 안정된 event 객체 reference를 유지해야 합니다.
-Publisher는 identity 검증을 위해 원래 snapshot을 보관하며 event를 복사하거나 직렬화하지 않습니다. Handoff
-이후 event를 추가, 제거, 재정렬, 교체하지 마세요. Aggregate마다 마지막에 한 번만 호출해야 합니다.
-`PROPAGATION_NESTED` savepoint와 겹치는 `REQUIRES_NEW` transaction에서 같은 instance를 재사용하는 방식은
-지원하지 않습니다. Suspend된 `REQUIRES_NEW` transaction에서 서로 다른 aggregate instance는 격리됩니다.
-Commit 이후 database에 쓰는 listener는 `REQUIRES_NEW` transaction을 열어야 합니다.
+Event와 전체 payload graph는 깊은 불변이어야 하며 호출자는 안정된 event 객체 reference를 유지해야 합니다. Publisher는 identity 검증을 위해 원래 snapshot을 보관하며 event를 복사하거나 직렬화하지 않습니다. Handoff 이후 event를 추가, 제거, 재정렬, 교체하지 마세요. Aggregate마다 마지막에 한 번만 호출해야 합니다.
+`PROPAGATION_NESTED` savepoint와 겹치는 `REQUIRES_NEW` transaction에서 같은 instance를 재사용하는 방식은 지원하지 않습니다. Suspend된 `REQUIRES_NEW` transaction에서 서로 다른 aggregate instance는 격리됩니다. Commit 이후 database에 쓰는 listener는 `REQUIRES_NEW` transaction을 열어야 합니다.
 
-Publisher는 plain Spring Boot infrastructure이며 Spring Modulith는 선택 사항입니다. Modulith가 있으면 publication
-저장과 listener replay를 제공할 수 있지만, 이 bridge는 outbox도 exactly-once delivery도 아닙니다. Consumer는
-idempotent해야 합니다. 이 publisher는 Spring의 동기 JDBC transaction synchronization을 사용하므로 R2DBC는
-의도적으로 제외합니다. Audit history, snapshot persistence, JaVers commit semantics는 publisher의 금지된
-dependency이며, 필요한 연결은 애플리케이션 소유 listener 또는 service에서 구성해야 합니다.
+Publisher는 plain Spring Boot infrastructure이며 Spring Modulith는 선택 사항입니다. Modulith가 있으면 publication 저장과 listener replay를 제공할 수 있지만, 이 bridge는 outbox도 exactly-once delivery도 아닙니다. Consumer는 idempotent해야 합니다. 이 publisher는 Spring의 동기 JDBC transaction synchronization을 사용하므로 R2DBC는 의도적으로 제외합니다. Audit history, snapshot persistence, JaVers commit semantics는 publisher의 금지된 dependency이며, 필요한 연결은 애플리케이션 소유 listener 또는 service에서 구성해야 합니다.
 
 ### 여러 Transaction Manager
 
 자동 구성은 Spring의 single-candidate 규칙을 따릅니다. Manager가 하나이거나 여러 manager 중 정확히 하나가
-`@Primary`이면 bean이 활성화됩니다. Publisher 자체는 manager를 선택하거나 보관하지 않습니다. 모호한
-애플리케이션은 publisher를 명시적으로 선언하고 repository, command transaction, event handoff를 의도한 manager에
-맞춰야 합니다. `transactionManagerRef`가 repository manager를 선택하고, command boundary도 다음 컴파일된 예제와
-같이 동일한 manager를 선택해야 합니다.
+`@Primary`이면 bean이 활성화됩니다. Publisher 자체는 manager를 선택하거나 보관하지 않습니다. 모호한 애플리케이션은 publisher를 명시적으로 선언하고 repository, command transaction, event handoff를 의도한 manager에 맞춰야 합니다. `transactionManagerRef`가 repository manager를 선택하고, command boundary도 다음 컴파일된 예제와 같이 동일한 manager를 선택해야 합니다.
 
 <!-- issue-323-multi-manager:start -->
+
 ```kotlin
 @Configuration(proxyBeanMethods = false)
 @EnableExposedJdbcRepositories(
@@ -457,18 +408,21 @@ class OrderCommandService(
     }
 }
 ```
+
 <!-- issue-323-multi-manager:end -->
 
 ### 결과 및 재시도 판단
 
 <!-- issue-323-outcome-table:start -->
-| 결과 | 영속 상태 | Buffer | Command 재시도 |
-|---|---|---|---|
-| 활성 transaction 없음 또는 동일 transaction 전제 위반 | 불확정 | 보존 | 자동 재시도 금지, 먼저 대조 |
-| 전체 rollback 또는 poison된 handoff | Rollback | 보존 | 새 transaction에서만 허용, 동기 부수 효과는 중복 실행 방지가 필요할 수 있음 |
-| Commit된 listener 실패 | Commit | 비움 | Command 재시도 금지, listener retry/replay 사용 |
-| Commit된 cleanup 실패 | Commit | 남아 있을 수 있음 | 재시도 금지, aggregate instance 폐기 |
-| `STATUS_UNKNOWN` | 불확정 | 보존 | 자동 재시도 금지, 먼저 대조 |
+
+| 결과                                                  | 영속 상태 | Buffer            | Command 재시도                                                              |
+|-------------------------------------------------------|-----------|-------------------|-----------------------------------------------------------------------------|
+| 활성 transaction 없음 또는 동일 transaction 전제 위반 | 불확정    | 보존              | 자동 재시도 금지, 먼저 대조                                                 |
+| 전체 rollback 또는 poison된 handoff                   | Rollback  | 보존              | 새 transaction에서만 허용, 동기 부수 효과는 중복 실행 방지가 필요할 수 있음 |
+| Commit된 listener 실패                                | Commit    | 비움              | Command 재시도 금지, listener retry/replay 사용                             |
+| Commit된 cleanup 실패                                 | Commit    | 남아 있을 수 있음 | 재시도 금지, aggregate instance 폐기                                        |
+| `STATUS_UNKNOWN`                                      | 불확정    | 보존              | 자동 재시도 금지, 먼저 대조                                                 |
+
 <!-- issue-323-outcome-table:end -->
 
 완료 단계에서는 민감 정보를 제거한 완료 이상 로그 두 종류를 기록합니다. Commit된 persistence 이후 buffer를 비우지 못하면
@@ -478,40 +432,46 @@ class OrderCommandService(
 
 <!-- issue-323-reconciliation:start -->
 <!-- issue-323-reconciliation:state=present-present;action=listener-recovery;command-retry=false -->
+
 - Persistence 있음 + publication 있음: command를 replay하지 말고 Modulith replay 또는 listener recovery를 사용합니다.
+
 <!-- issue-323-reconciliation:state=present-absent;action=idempotent-repair;command-retry=false -->
+
 - Persistence 있음 + publication 없음: command를 replay하지 말고 persisted state에서 애플리케이션 소유 idempotent repair를 실행합니다.
+
 <!-- issue-323-reconciliation:state=absent-absent;action=fresh-command-after-side-effect-check;command-retry=conditional -->
+
 - Persistence 없음 + publication 없음: irreversible synchronous side effect가 없음을 확인한 뒤 새 command로만 재시도합니다.
+
 <!-- issue-323-reconciliation:state=absent-present;action=quarantine-and-compensate;command-retry=false -->
+
 - Persistence 없음 + publication 있음: invariant 위반을 격리하고 수동 보상하며 어느 경로도 replay하지 않습니다.
+
 <!-- issue-323-reconciliation:end -->
 
 ### 프로덕션 롤아웃 체크리스트
 
-Canary 전에 애플리케이션 소유자를 지정해야 합니다. 앞서 설명한 두 가지 이상 범주에 대한 alert를 설정하고, 허용 목록에 포함된
-correlation field를 하나 이상 전파해야 합니다. Audit record나 trace로 persistence key를 조회할 수 있어야 하며,
-데이터베이스 읽기 권한과 publication 읽기 권한도 준비합니다. Canary는 영속 aggregate 1건, 내구 발행 1건,
-listener side effect 1건, 이상 범주 로그 0건을 증명해야 합니다.
+Canary 전에 애플리케이션 소유자를 지정해야 합니다. 앞서 설명한 두 가지 이상 범주에 대한 alert를 설정하고, 허용 목록에 포함된 correlation field를 하나 이상 전파해야 합니다. Audit record나 trace로 persistence key를 조회할 수 있어야 하며, 데이터베이스 읽기 권한과 publication 읽기 권한도 준비합니다. Canary는 영속 aggregate 1건, 내구 발행 1건, listener side effect 1건, 이상 범주 로그 0건을 증명해야 합니다.
 
 <!-- issue-323-rollout:01-stop -->
+
 1. Canary 또는 anomaly alert가 실패하면 롤아웃을 중지합니다.
+
 <!-- issue-323-rollout:02-preserve -->
+
 2. 상태를 변경하기 전에 로그, aggregate record, publication row, listener evidence를 보존합니다.
+
 <!-- issue-323-rollout:03-reconcile-repair -->
+
 3. 위 네 상태를 대조하고 canary를 idempotent하게 복구합니다.
+
 <!-- issue-323-rollout:04-binary-rollback-version-defect-only -->
+
 4. 증거 보존과 복구가 끝난 뒤 확인된 version defect에만 전체 바이너리 롤백을 사용합니다.
 
-허용 목록의 correlation field가 없으면 영향 시간 구간을 격리하고 애플리케이션 감사 record를 사용하며 자동 복구를 금지합니다.
-Migration은 replacement-only입니다. 같은 변경에서 수동 event loop와 수동 buffer clear를 제거하고 두
-경로를 함께 실행하지 마세요. 바이너리 롤백은 command retry가 아니며, 증거를 보존하고 persistence/publication 상태를
-대조 및 복구하기 전에 시작하면 안 됩니다.
+허용 목록의 correlation field가 없으면 영향 시간 구간을 격리하고 애플리케이션 감사 record를 사용하며 자동 복구를 금지합니다. Migration은 replacement-only입니다. 같은 변경에서 수동 event loop와 수동 buffer clear를 제거하고 두 경로를 함께 실행하지 마세요. 바이너리 롤백은 command retry가 아니며, 증거를 보존하고 persistence/publication 상태를 대조 및 복구하기 전에 시작하면 안 됩니다.
 
-Modulith publication store를 보안 및 개인정보 경계로 취급하세요. 최소 권한 데이터베이스 접근 제어, 애플리케이션
-infrastructure가 허용하는 저장 데이터 암호화와 전송 데이터 암호화, 무결성 보호, 명시적 보존/삭제 정책,
-페이로드 최소화를 적용합니다. 저장된 이벤트 클래스 이름은 노출되는 schema metadata이므로 package 이름과 migration 계획을
-검토해야 합니다. 이 통제 때문에 publisher가 audit history, snapshot persistence, JaVers commit에 의존해서는 안 됩니다.
+Modulith publication store를 보안 및 개인정보 경계로 취급하세요. 최소 권한 데이터베이스 접근 제어, 애플리케이션 infrastructure가 허용하는 저장 데이터 암호화와 전송 데이터 암호화, 무결성 보호, 명시적 보존/삭제 정책, 페이로드 최소화를 적용합니다. 저장된 이벤트 클래스 이름은 노출되는 schema metadata이므로 package 이름과 migration 계획을 검토해야 합니다. 이 통제 때문에 publisher가 audit history, snapshot persistence, JaVers commit에 의존해서는 안 됩니다.
 
 ## 주의사항
 
@@ -548,11 +508,7 @@ fun createUser(name: String, email: String): User {
 
 ### @Query 플레이스홀더
 
-엔티티 쿼리는 사용자 정의 ID 이름을 포함하여 매핑된 ID 이름과 일치하는 결과
-컬럼을 정확히 하나 노출해야 합니다(대소문자 무시). `SELECT *`와 위치에 관계없는
-명시적 ID를 지원하며 alias도 매핑된 ID 이름을 유지해야 합니다. ID가 없거나
-중복되거나 NULL이거나 타입이 맞지 않으면 첫 컬럼으로 대체하지 않고 실패합니다.
-결과가 비어 있어도 ID 라벨 누락은 거부합니다.
+엔티티 쿼리는 사용자 정의 ID 이름을 포함하여 매핑된 ID 이름과 일치하는 결과 컬럼을 정확히 하나 노출해야 합니다 (대소문자 무시). `SELECT *`와 위치에 관계없는 명시적 ID를 지원하며 alias도 매핑된 ID 이름을 유지해야 합니다. ID가 없거나 중복되거나 NULL이거나 타입이 맞지 않으면 첫 컬럼으로 대체하지 않고 실패합니다. 결과가 비어 있어도 ID 라벨 누락은 거부합니다.
 
 - `?1`, `?2`, ... : 메서드 파라미터 순서 (1-indexed)
 - SQL 코드 영역만 바인딩하며 문자열·인용 식별자·주석·PostgreSQL dollar-quoted 문자열 안의 `?N`은 보존합니다.

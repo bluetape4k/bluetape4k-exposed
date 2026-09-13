@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("plugin.spring")
 }

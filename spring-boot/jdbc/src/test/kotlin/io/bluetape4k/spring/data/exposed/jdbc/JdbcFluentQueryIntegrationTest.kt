@@ -1,20 +1,25 @@
 package io.bluetape4k.spring.data.exposed.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContainIgnoringCase
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.SimpleExposedJdbcRepository
+import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.Op
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.dao.LongEntityClass
@@ -36,6 +41,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
+
+    companion object: KLogging()
 
     @Autowired
     private lateinit var factoryRepository: UserJdbcRepository
@@ -67,7 +74,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             records.map { it.name() } shouldBeEqualTo listOf("Alice", "Bob", "Charlie")
             statements shouldHaveSize 3
             statements.forEach { sql ->
-                sql.contains("name", ignoreCase = true).shouldBeTrue()
+                sql shouldContainIgnoringCase "name"
                 sql.contains("email", ignoreCase = true).shouldBeFalse()
                 sql.contains("age", ignoreCase = true).shouldBeFalse()
             }
@@ -90,7 +97,9 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             repository.findBy(example) { it.limit(1).exists() }.shouldBeTrue()
 
             val page = repository.findBy(example) {
-                it.sortBy(Sort.by("name")).page(PageRequest.of(1, 2, Sort.by(Sort.Direction.DESC, "age")))
+                it
+                    .sortBy(Sort.by("name"))
+                    .page(PageRequest.of(1, 2, Sort.by(Sort.Direction.DESC, "age")))
             }
             page.content.map { it.age } shouldBeEqualTo listOf(20)
             page.totalElements shouldBeEqualTo 3L
@@ -140,7 +149,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
 
             val result = repository.findBy(example) { it.oneValue() }
 
-            (result === probe).shouldBeTrue()
+            result shouldBe probe
         }
     }
 
@@ -169,7 +178,10 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                 query.count()
             }
         }
-        assertFailsWith<InvalidDataAccessApiUsageException> { escapedOutsideTransaction.all() }
+
+        assertFailsWith<InvalidDataAccessApiUsageException> {
+            escapedOutsideTransaction.all()
+        }
     }
 
     @Test
@@ -182,14 +194,14 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
 
             repository.findBy(example) { it.firstValue() }
             selectStatements(statements) shouldHaveSize 1
-            selectStatements(statements).single().contains("limit", ignoreCase = true).shouldBeTrue()
+            selectStatements(statements).single() shouldContainIgnoringCase "limit"
 
             statements.clear()
             assertFailsWith<IncorrectResultSizeDataAccessException> {
                 repository.findBy(example) { it.oneValue() }
             }
             selectStatements(statements) shouldHaveSize 1
-            selectStatements(statements).single().contains("limit", ignoreCase = true).shouldBeTrue()
+            selectStatements(statements).single() shouldContainIgnoringCase "limit"
         }
     }
 
@@ -246,15 +258,21 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
 
             assertFailsWith<InvalidDataAccessApiUsageException> {
                 repository.findBy(example) {
-                    it.`as`(UserNameView::class.java).project(mutableListOf("email")).all()
+                    it.`as`(UserNameView::class.java)
+                        .project(mutableListOf("email"))
+                        .all()
                 }
             }
             assertFailsWith<InvalidDataAccessApiUsageException> {
-                repository.findBy(example) { it.sortBy(Sort.by(Sort.Order.asc("missing"))).all() }
+                repository.findBy(example) {
+                    it.sortBy(Sort.by(Sort.Order.asc("missing")))
+                        .all()
+                }
             }
             assertFailsWith<InvalidDataAccessApiUsageException> {
                 repository.findBy(example) {
-                    it.sortBy(Sort.by(Sort.Order.asc("name").ignoreCase())).all()
+                    it.sortBy(Sort.by(Sort.Order.asc("name").ignoreCase()))
+                        .all()
                 }
             }
             assertFailsWith<UnsupportedOperationException> {
@@ -271,7 +289,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             }
 
             transformerCalls.get() shouldBeEqualTo 0
-            selectStatements(statements) shouldHaveSize 0
+            selectStatements(statements).shouldBeEmpty()
         }
     }
 
@@ -297,7 +315,9 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
         seedUsers()
 
         factoryRepository.findBy(allUsersExample()) {
-            it.`as`(UserNameView::class.java).sortBy(Sort.by("name")).stream()
+            it.`as`(UserNameView::class.java)
+                .sortBy(Sort.by("name"))
+                .stream()
         }.use { rows ->
             rows.map { it.name }.toList() shouldBeEqualTo listOf("Alice", "Bob", "Charlie")
         }
@@ -342,9 +362,11 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                     },
             )
             statements.clear()
+
             val shapingEntityClass = object: LongEntityClass<UserEntity>(Users) {
                 override fun searchQuery(op: Op<Boolean>): Query = super.searchQuery(op).orderBy(Users.name)
             }
+
             assertFailsWith<UnsupportedOperationException> {
                 customRepository(shapingEntityClass).findBy(shapingExample) { it.all() }
             }
@@ -353,11 +375,12 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                 override fun searchQuery(op: Op<Boolean>): Query =
                     super.searchQuery(op).adjustSelect { select(Users.name) }
             }
+
             assertFailsWith<UnsupportedOperationException> {
                 customRepository(partialSelectionEntityClass).findBy(shapingExample) { it.all() }
             }
             transformerCalls.get() shouldBeEqualTo 0
-            selectStatements(statements) shouldHaveSize 0
+            selectStatements(statements).shouldBeEmpty()
         }
     }
 
@@ -369,12 +392,15 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             CountingNameDto.instances.set(0)
 
             val stream = repository.findBy(allUsersExample()) {
-                it.`as`(CountingNameDto::class.java).sortBy(Sort.by("name")).stream()
+                it.`as`(CountingNameDto::class.java)
+                    .sortBy(Sort.by("name"))
+                    .stream()
             }
             CountingNameDto.instances.get() shouldBeEqualTo 0
 
             stream.use { rows ->
                 val iterator = rows.iterator()
+
                 iterator.next().name shouldBeEqualTo "Alice"
                 CountingNameDto.instances.get() shouldBeEqualTo 1
                 iterator.asSequence().toList() shouldHaveSize 2
@@ -395,8 +421,12 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             }
 
             customRepository(capturingEntityClass)
-                .findBy(allUsersExample()) { it.sortBy(Sort.by("name")).stream() }
-                .use { rows -> rows.findFirst().orElseThrow().name shouldBeEqualTo "Alice" }
+                .findBy(allUsersExample()) {
+                    it.sortBy(Sort.by("name")).stream()
+                }
+                .use { rows ->
+                    rows.findFirst().orElseThrow().name shouldBeEqualTo "Alice"
+                }
 
             capturedQueries.last().fetchSize shouldBeEqualTo 100
         }
@@ -408,7 +438,9 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             seedUsers()
             val stream = repository.findBy(allUsersExample()) { it.stream() }
 
-            assertFailsWith<InvalidDataAccessApiUsageException> { repository.count() }
+            assertFailsWith<InvalidDataAccessApiUsageException> {
+                repository.count()
+            }
 
             stream.close()
             repository.count() shouldBeEqualTo 3L
@@ -421,20 +453,26 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             seedUsers()
             repository.findBy(allUsersExample()) { it.stream() }
         }
-        assertFailsWith<InvalidDataAccessApiUsageException> { escaped.findFirst() }
+        assertFailsWith<InvalidDataAccessApiUsageException> {
+            escaped.findFirst()
+        }
 
-        val outsideTransactionExample = transaction { allUsersExample() }
+        val outsideTransactionExample = transaction {
+            allUsersExample()
+        }
         assertFailsWith<InvalidDataAccessApiUsageException> {
             repository.findBy(outsideTransactionExample) { it.stream() }
         }
 
         transaction {
-            val stream = repository.findBy(allUsersExample()) { it.stream() }
+            val stream = repository.findBy(allUsersExample()) {
+                it.stream()
+            }
             Executors.newSingleThreadExecutor().use { executor ->
                 val failure = executor.submit<Throwable?> {
                     runCatching { stream.findFirst() }.exceptionOrNull()
                 }.get()
-                (failure is InvalidDataAccessApiUsageException).shouldBeTrue()
+                failure.shouldBeInstanceOf<InvalidDataAccessApiUsageException>()
             }
         }
     }

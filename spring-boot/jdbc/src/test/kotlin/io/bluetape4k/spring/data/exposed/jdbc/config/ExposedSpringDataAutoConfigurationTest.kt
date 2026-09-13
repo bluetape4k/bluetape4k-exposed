@@ -1,10 +1,10 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.repository.config.EnableExposedJdbcRepositories
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.Test
@@ -21,7 +21,7 @@ import javax.sql.DataSource
 @SpringBootTest(classes = [ExposedSpringDataAutoConfigurationTest.TestConfig::class])
 class ExposedSpringDataAutoConfigurationTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @Configuration
     @EnableAutoConfiguration(

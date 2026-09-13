@@ -1,12 +1,13 @@
 package io.bluetape4k.spring.data.exposed.jdbc
 
-import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
-import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
-import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
+import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
+import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -18,12 +19,16 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class QueryByExampleTestJdbc: AbstractExposedJdbcRepositoryTest() {
 
+    companion object: KLogging()
+
     @Autowired
     private lateinit var userJdbcRepository: UserJdbcRepository
 
     @AfterEach
     fun tearDown() {
-        transaction { Users.deleteAll() }
+        transaction {
+            Users.deleteAll()
+        }
     }
 
     @Test

@@ -2,13 +2,13 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.Query
-import io.bluetape4k.spring.data.exposed.common.annotation.Query as CommonQuery
 import org.springframework.data.projection.ProjectionFactory
 import org.springframework.data.repository.core.RepositoryMetadata
 import org.springframework.data.repository.query.Parameters
 import org.springframework.data.repository.query.ParametersSource
 import org.springframework.data.repository.query.QueryMethod
 import java.lang.reflect.Method
+import io.bluetape4k.spring.data.exposed.common.annotation.Query as CommonQuery
 
 /**
  * Exposed Repository 메서드에 대한 메타데이터를 표현합니다.
@@ -37,22 +37,22 @@ class ExposedQueryMethod(
     private val commonQueryAnnotation: CommonQuery? = method.getAnnotation(CommonQuery::class.java)
 
     /**
-     * @Query 어노테이션이 존재하는지 여부
+     * `@Query` 어노테이션이 존재하는지 여부
      */
     val isAnnotatedQuery: Boolean get() = legacyQueryAnnotation != null || commonQueryAnnotation != null
 
     /**
-     * @Query 어노테이션의 SQL 문자열 (없으면 null)
+     * `@Query` 어노테이션의 SQL 문자열 (없으면 null)
      */
     fun getAnnotatedQuery(): String? = queryText
 
     /**
-     * @Query 어노테이션의 count 쿼리 문자열 (없으면 null)
+     * `@Query` 어노테이션의 count 쿼리 문자열 (없으면 null)
      */
     fun getCountQuery(): String? = countQueryText
 
     private val queryText: String? get() = legacyQueryAnnotation?.value ?: commonQueryAnnotation?.value
+
     private val countQueryText: String?
-        get() = (legacyQueryAnnotation?.countQuery ?: commonQueryAnnotation?.countQuery)
-            ?.takeIf { it.isNotBlank() }
+        get() = (legacyQueryAnnotation?.countQuery ?: commonQueryAnnotation?.countQuery)?.takeIf { it.isNotBlank() }
 }

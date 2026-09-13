@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.LikePattern
@@ -17,7 +18,7 @@ import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import java.lang.reflect.Method
-import java.util.Optional
+import java.util.*
 
 internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
     private val persistentEntity: ExposedPersistentEntity<E>,
@@ -70,7 +71,7 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
         if (matcher.isIgnoreCaseEnabled) {
             throw UnsupportedOperationException(
                 "Ignore-case QBE matching is not supported by JDBC FluentQuery; " +
-                    "use case-sensitive DEFAULT, EXACT, CONTAINING, STARTING, or ENDING matching.",
+                        "use case-sensitive DEFAULT, EXACT, CONTAINING, STARTING, or ENDING matching.",
             )
         }
 
@@ -93,6 +94,7 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
             val stringMatcher = preparedMatcher?.stringMatcher ?: matcher.defaultStringMatcher
             val ignored = property.logicalName in ignoredLogicalNames
             if (!ignored) validateStringMatcher(property, stringMatcher)
+
             PreparedProperty(
                 property = property,
                 ignored = ignored,
@@ -109,7 +111,7 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
             if (specifier.ignoreCase == true) {
                 throw UnsupportedOperationException(
                     "Ignore-case QBE matching is not supported for property " +
-                        "'${safeDiagnosticValue(specifier.path)}'; use a case-sensitive matcher.",
+                            "'${safeDiagnosticValue(specifier.path)}'; use a case-sensitive matcher.",
                 )
             }
             val stringMatcher = specifier.stringMatcher ?: matcher.defaultStringMatcher
@@ -119,9 +121,7 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
                 PreparedMatcher(stringMatcher) { value -> specifier.transformValue(value) },
             )
             if (previous != null) {
-                throw InvalidDataAccessApiUsageException(
-                    "QBE matcher defines the same property more than once through aliases.",
-                )
+                throw InvalidDataAccessApiUsageException("QBE matcher defines the same property more than once through aliases.")
             }
         }
         return matcherByLogicalName
@@ -134,16 +134,16 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
         val effective = stringMatcher ?: ExampleMatcher.StringMatcher.DEFAULT
         val propertyName = safeDiagnosticValue(property.logicalName)
         val failureMessage = when {
-            effective == ExampleMatcher.StringMatcher.REGEX ->
+            effective == ExampleMatcher.StringMatcher.REGEX                                 ->
                 "Regex QBE matching is not supported for property '$propertyName'; " +
-                    "use DEFAULT, EXACT, CONTAINING, STARTING, or ENDING."
-            effective !in SUPPORTED_STRING_MATCHERS ->
+                        "use DEFAULT, EXACT, CONTAINING, STARTING, or ENDING."
+            effective !in SUPPORTED_STRING_MATCHERS                                         ->
                 "QBE string matcher '$effective' is not supported for property '$propertyName'; " +
-                    "use DEFAULT, EXACT, CONTAINING, STARTING, or ENDING."
+                        "use DEFAULT, EXACT, CONTAINING, STARTING, or ENDING."
             effective !in EXACT_STRING_MATCHERS && property.valueType != String::class.java ->
                 "QBE string matcher '$effective' requires a String property '$propertyName'; " +
-                    "use DEFAULT or EXACT for non-String properties."
-            else -> null
+                        "use DEFAULT or EXACT for non-String properties."
+            else                                                                            -> null
         }
         if (failureMessage != null) throw UnsupportedOperationException(failureMessage)
     }
@@ -187,14 +187,14 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
         val pattern = when (stringMatcher) {
             ExampleMatcher.StringMatcher.CONTAINING -> LikePattern("%${literal.pattern}%", literal.escapeChar)
             ExampleMatcher.StringMatcher.STARTING -> LikePattern("${literal.pattern}%", literal.escapeChar)
-            ExampleMatcher.StringMatcher.ENDING -> LikePattern("%${literal.pattern}", literal.escapeChar)
-            else -> error("Unsupported matcher reached condition compilation: $stringMatcher")
+            ExampleMatcher.StringMatcher.ENDING   -> LikePattern("%${literal.pattern}", literal.escapeChar)
+            else                                  -> error("Unsupported matcher reached condition compilation: $stringMatcher")
         }
         @Suppress("UNCHECKED_CAST")
         return (property.column as Column<String?>).like(pattern)
     }
 
-    companion object {
+    companion object: KLogging() {
         /**
          * probe getter가 던진 내부 예외와 message를 caller 진단 경계 밖으로 노출하지 않습니다.
          */

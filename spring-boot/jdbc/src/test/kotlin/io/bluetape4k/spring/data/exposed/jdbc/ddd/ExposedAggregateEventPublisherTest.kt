@@ -3,28 +3,32 @@ package io.bluetape4k.spring.data.exposed.jdbc.ddd
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
-import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
-import io.bluetape4k.exposed.core.ddd.AggregateRoot
-import io.bluetape4k.exposed.core.ddd.DomainEvent
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBe
+import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
+import io.bluetape4k.exposed.core.ddd.DomainEvent
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import org.springframework.core.Ordered
-import org.springframework.context.ApplicationEventPublisher
+import org.springframework.beans.factory.getBean
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.queryForList
+import org.springframework.jdbc.core.queryForObject
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
@@ -44,13 +48,17 @@ import javax.sql.DataSource
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedAggregateEventPublisherTest {
 
+    companion object: KLogging()
+
     private val dataSource: EmbeddedDatabase = EmbeddedDatabaseBuilder()
         .generateUniqueName(true)
         .setType(EmbeddedDatabaseType.H2)
         .build()
-    private val transactionManager: PlatformTransactionManager =
-        DataSourceTransactionManager(dataSource)
+
+    private val transactionManager: PlatformTransactionManager = DataSourceTransactionManager(dataSource)
+
     private val transactionTemplate = TransactionTemplate(transactionManager)
+
     private val jdbcTemplate = JdbcTemplate(dataSource).also {
         it.execute("CREATE TABLE DOMAIN_EVENT_TEST (ID BIGINT PRIMARY KEY)")
     }
@@ -74,7 +82,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `empty aggregate is a no-op outside a transaction`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { error("must not publish") })
+        val publisher = ExposedAggregateEventPublisher { error("must not publish") }
 
         publisher.publishAfterSave(TestAggregate(TestId(1L)))
     }
@@ -82,7 +90,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `commit publishes in order and clears after completion`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val aggregate = TestAggregate(TestId(1L)).apply {
             record(1)
             record(2)
@@ -95,14 +103,14 @@ class ExposedAggregateEventPublisherTest {
             aggregate.domainEvents() shouldHaveSize 2
         }
 
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST", Long::class.java) shouldBeEqualTo 1L
-        aggregate.domainEvents().isEmpty().shouldBeTrue()
+        jdbcTemplate.queryForObject<Long>("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST") shouldBeEqualTo 1L
+        aggregate.domainEvents().shouldBeEmpty()
     }
 
     @Test
     fun `rollback preserves events and rolls back persistence`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val aggregate = TestAggregate(TestId(2L)).apply { record(1) }
 
         transactionTemplate.executeWithoutResult { status ->
@@ -112,13 +120,13 @@ class ExposedAggregateEventPublisherTest {
         }
 
         published shouldHaveSize 1
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST", Long::class.java) shouldBeEqualTo 0L
+        jdbcTemplate.queryForObject<Long>("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST") shouldBeEqualTo 0L
         aggregate.domainEvents() shouldHaveSize 1
     }
 
     @Test
     fun `event-bearing aggregate requires synchronization and an actual transaction`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(3L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -130,7 +138,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `synchronization without an actual transaction is rejected`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(4L)).apply { record(1) }
 
         TransactionSynchronizationManager.initSynchronization()
@@ -148,8 +156,8 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `after commit listener runs only after a committed transaction returns`() {
         AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { context ->
-            val transactionTemplate = context.getBean(TransactionTemplate::class.java)
-            val listener = context.getBean(AfterCommitListener::class.java)
+            val transactionTemplate = context.getBean<TransactionTemplate>()
+            val listener = context.getBean<AfterCommitListener>()
             val publisher = ExposedAggregateEventPublisher(context)
             val aggregate = TestAggregate(TestId(5L)).apply { record(1) }
 
@@ -160,25 +168,25 @@ class ExposedAggregateEventPublisherTest {
             }
 
             listener.events.map(TestEvent::sequence) shouldBeEqualTo listOf(1)
-            aggregate.domainEvents().isEmpty().shouldBeTrue()
+            aggregate.domainEvents().shouldBeEmpty()
         }
     }
 
     @Test
     fun `after commit listener does not run for a rolled back transaction`() {
         AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { context ->
-            val transactionTemplate = context.getBean(TransactionTemplate::class.java)
-            val listener = context.getBean(AfterCommitListener::class.java)
+            val transactionTemplate = context.getBean<TransactionTemplate>()
+            val listener = context.getBean<AfterCommitListener>()
             val publisher = ExposedAggregateEventPublisher(context)
             val aggregate = TestAggregate(TestId(6L)).apply { record(1) }
 
             transactionTemplate.executeWithoutResult { status ->
                 publisher.publishAfterSave(aggregate)
-                listener.events shouldHaveSize 0
+                listener.events.shouldBeEmpty()
                 status.setRollbackOnly()
             }
 
-            listener.events shouldHaveSize 0
+            listener.events.shouldBeEmpty()
             aggregate.domainEvents() shouldHaveSize 1
         }
     }
@@ -186,7 +194,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `duplicate registration poisons commit without a second snapshot or publication`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val aggregate = CountingAggregate(TestId(7L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -203,13 +211,13 @@ class ExposedAggregateEventPublisherTest {
 
         published.map(TestEvent::sequence) shouldBeEqualTo listOf(1)
         aggregate.domainEvents() shouldHaveSize 1
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST", Long::class.java) shouldBeEqualTo 0L
+        jdbcTemplate.queryForObject<Long>("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST") shouldBeEqualTo 0L
     }
 
     @Test
     fun `separate aggregate instances with the same id are independent registrations`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val first = TestAggregate(TestId(89L)).apply { record(1) }
         val second = TestAggregate(TestId(89L)).apply { record(2) }
 
@@ -225,7 +233,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `clearing after registration is rejected before the empty no-op`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(8L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -241,7 +249,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `draining after registration is rejected before the empty no-op`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(81L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -257,7 +265,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `recording after registration rejects commit and preserves the buffer`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(9L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -269,12 +277,12 @@ class ExposedAggregateEventPublisherTest {
         }
 
         aggregate.domainEvents().map { (it as TestEvent).sequence } shouldBeEqualTo listOf(1, 2)
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST", Long::class.java) shouldBeEqualTo 0L
+        jdbcTemplate.queryForObject<Long>("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST") shouldBeEqualTo 0L
     }
 
     @Test
     fun `same size replacement after registration is rejected by event identity`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(84L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -292,7 +300,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `lower ordered synchronization mutation is rejected before commit`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = TestAggregate(TestId(85L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -300,7 +308,7 @@ class ExposedAggregateEventPublisherTest {
                 jdbcTemplate.update("INSERT INTO DOMAIN_EVENT_TEST(ID) VALUES (?)", aggregate.id.value)
                 publisher.publishAfterSave(aggregate)
                 TransactionSynchronizationManager.registerSynchronization(
-                    object : TransactionSynchronization {
+                    object: TransactionSynchronization {
                         override fun getOrder(): Int = Ordered.LOWEST_PRECEDENCE - 1
 
                         override fun beforeCommit(readOnly: Boolean) {
@@ -318,7 +326,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `caught publication exception still poisons commit and rethrows the same object`() {
         val failure = IllegalArgumentException("sensitive-publisher-message")
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { throw failure })
+        val publisher = ExposedAggregateEventPublisher { throw failure }
         val aggregate = TestAggregate(TestId(10L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -334,13 +342,13 @@ class ExposedAggregateEventPublisherTest {
         }
 
         aggregate.domainEvents() shouldHaveSize 1
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST", Long::class.java) shouldBeEqualTo 0L
+        jdbcTemplate.queryForObject<Long>("SELECT COUNT(*) FROM DOMAIN_EVENT_TEST") shouldBeEqualTo 0L
     }
 
     @Test
     fun `caught publication error still poisons commit and rethrows the same object`() {
         val failure = AssertionError("sensitive-error-message")
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { throw failure })
+        val publisher = ExposedAggregateEventPublisher { throw failure }
         val aggregate = TestAggregate(TestId(11L)).apply { record(1) }
 
         assertFailsWith<IllegalStateException> {
@@ -363,11 +371,11 @@ class ExposedAggregateEventPublisherTest {
     fun `partial synchronous handoff remains observable but cannot commit`() {
         val published = mutableListOf<TestEvent>()
         val failure = IllegalStateException("second event failed")
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { event ->
+        val publisher = ExposedAggregateEventPublisher { event ->
             val testEvent = event as TestEvent
             if (testEvent.sequence == 2) throw failure
             published += testEvent
-        })
+        }
         val aggregate = TestAggregate(TestId(12L)).apply {
             record(1)
             record(2)
@@ -394,10 +402,10 @@ class ExposedAggregateEventPublisherTest {
         val callbacks = AtomicInteger()
         lateinit var publisher: ExposedAggregateEventPublisher
         val aggregate = TestAggregate(TestId(13L)).apply { record(1) }
-        publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {
+        publisher = ExposedAggregateEventPublisher {
             callbacks.incrementAndGet()
             publisher.publishAfterSave(aggregate)
-        })
+        }
 
         assertFailsWith<IllegalStateException> {
             transactionTemplate.executeWithoutResult {
@@ -416,11 +424,12 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `throwing after commit listener does not retry a committed command`() {
         AnnotationConfigApplicationContext(ListenerTestConfiguration::class.java).use { context ->
-            val transactionTemplate = context.getBean(TransactionTemplate::class.java)
-            val jdbcTemplate = JdbcTemplate(context.getBean(DataSource::class.java)).also {
-                it.execute("CREATE TABLE AFTER_COMMIT_COMMAND_TEST (ID BIGINT PRIMARY KEY)")
-            }
-            val listener = context.getBean(AfterCommitListener::class.java)
+            val transactionTemplate = context.getBean<TransactionTemplate>()
+            val jdbcTemplate = JdbcTemplate(context.getBean<DataSource>())
+                .also {
+                    it.execute("CREATE TABLE AFTER_COMMIT_COMMAND_TEST (ID BIGINT PRIMARY KEY)")
+                }
+            val listener = context.getBean<AfterCommitListener>()
             val publisher = ExposedAggregateEventPublisher(context)
             val aggregate = TestAggregate(TestId(82L)).apply { record(1) }
             val commandCalls = AtomicInteger()
@@ -430,14 +439,15 @@ class ExposedAggregateEventPublisherTest {
                 commandCalls.incrementAndGet()
                 jdbcTemplate.update("INSERT INTO AFTER_COMMIT_COMMAND_TEST(ID) VALUES (?)", aggregate.id.value)
                 publisher.publishAfterSave(aggregate)
-                listener.events shouldHaveSize 0
+                listener.events.shouldBeEmpty()
             }
 
             commandCalls.get() shouldBeEqualTo 1
-            jdbcTemplate.queryForObject(
+
+            jdbcTemplate.queryForObject<Long>(
                 "SELECT COUNT(*) FROM AFTER_COMMIT_COMMAND_TEST",
-                Long::class.java,
             ) shouldBeEqualTo 1L
+
             listener.events shouldHaveSize 1
             aggregate.domainEvents().shouldBeEmpty()
         }
@@ -447,7 +457,7 @@ class ExposedAggregateEventPublisherTest {
     fun `one publisher synchronization is reused for multiple aggregates`() {
         val callbacks = mutableListOf<String>()
         val sentinels = (1..3).map { index ->
-            object : TransactionSynchronization {
+            object: TransactionSynchronization {
                 override fun getOrder(): Int = index * 100
 
                 override fun beforeCommit(readOnly: Boolean) {
@@ -459,7 +469,7 @@ class ExposedAggregateEventPublisherTest {
                 }
             }
         }
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val first = CountingAggregate(TestId(14L)).apply { record(1) }
         val second = CountingAggregate(TestId(15L)).apply { record(2) }
 
@@ -483,7 +493,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `publisher retains the exact aggregate snapshot object`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val aggregate = CountingAggregate(TestId(16L)).apply { record(1) }
 
         transactionTemplate.executeWithoutResult { status ->
@@ -491,7 +501,8 @@ class ExposedAggregateEventPublisherTest {
             val synchronization = TransactionSynchronizationManager.getSynchronizations()
                 .filterIsInstance<AggregateEventTransactionSynchronization>()
                 .single()
-            (synchronization.retainedSnapshotForTest(aggregate) === aggregate.lastSnapshot).shouldBeTrue()
+
+            synchronization.retainedSnapshotForTest(aggregate) shouldBe aggregate.lastSnapshot
             status.setRollbackOnly()
         }
     }
@@ -499,7 +510,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `a committed transaction does not retain duplicate identity on the next transaction`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val aggregate = TestAggregate(TestId(17L)).apply { record(1) }
 
         transactionTemplate.executeWithoutResult { publisher.publishAfterSave(aggregate) }
@@ -513,7 +524,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `a rolled back transaction can register the retained buffer in the next transaction`() {
         val published = mutableListOf<TestEvent>()
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+        val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
         val aggregate = TestAggregate(TestId(18L)).apply { record(1) }
 
         transactionTemplate.executeWithoutResult { status ->
@@ -528,7 +539,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `requires new commit is isolated from outer rollback`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val outer = TestAggregate(TestId(19L)).apply { record(1) }
         val inner = TestAggregate(TestId(20L)).apply { record(2) }
         val requiresNew = TransactionTemplate(transactionManager).apply {
@@ -547,7 +558,7 @@ class ExposedAggregateEventPublisherTest {
                 innerSynchronization = currentPublisherSynchronization()
                 (innerSynchronization !== outerSynchronization).shouldBeTrue()
             }
-            (currentPublisherSynchronization() === outerSynchronization).shouldBeTrue()
+            currentPublisherSynchronization() shouldBe outerSynchronization
             outer.domainEvents() shouldHaveSize 1
             inner.domainEvents().shouldBeEmpty()
             outerStatus.setRollbackOnly()
@@ -560,7 +571,7 @@ class ExposedAggregateEventPublisherTest {
 
     @Test
     fun `requires new rollback is isolated from outer commit`() {
-        val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+        val publisher = ExposedAggregateEventPublisher {}
         val outer = TestAggregate(TestId(21L)).apply { record(1) }
         val inner = TestAggregate(TestId(22L)).apply { record(2) }
         val requiresNew = TransactionTemplate(transactionManager).apply {
@@ -575,10 +586,11 @@ class ExposedAggregateEventPublisherTest {
             requiresNew.executeWithoutResult { innerStatus ->
                 jdbcTemplate.update("INSERT INTO DOMAIN_EVENT_TEST(ID) VALUES (?)", inner.id.value)
                 publisher.publishAfterSave(inner)
-                (currentPublisherSynchronization() !== outerSynchronization).shouldBeTrue()
+
+                currentPublisherSynchronization() shouldNotBe outerSynchronization
                 innerStatus.setRollbackOnly()
             }
-            (currentPublisherSynchronization() === outerSynchronization).shouldBeTrue()
+            currentPublisherSynchronization() shouldBe outerSynchronization
             inner.domainEvents() shouldHaveSize 1
         }
 
@@ -590,7 +602,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `committed clear failure does not prevent other aggregates from clearing`() {
         withPublisherLogs { logs ->
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val publisher = ExposedAggregateEventPublisher {}
             val failing = FailingClearAggregate(TestId(23L)).apply { record(1) }
             val normal = TestAggregate(TestId(24L)).apply { record(2) }
 
@@ -602,12 +614,12 @@ class ExposedAggregateEventPublisherTest {
             failing.domainEvents() shouldHaveSize 1
             normal.domainEvents().shouldBeEmpty()
             logs.map(ILoggingEvent::getFormattedMessage) shouldBeEqualTo listOf("aggregate-event-cleanup-failed")
+
             val event = logs.single()
             assertSanitizedLog(event, "aggregate-event-cleanup-failed")
-            event.mdcPropertyMap["aggregateType"] shouldBeEqualTo requireNotNull(
-                FailingClearAggregate::class.qualifiedName
-            )
-            event.mdcPropertyMap["eventType"] shouldBeEqualTo requireNotNull(TestEvent::class.qualifiedName)
+
+            event.mdcPropertyMap["aggregateType"] shouldBeEqualTo FailingClearAggregate::class.qualifiedName
+            event.mdcPropertyMap["eventType"] shouldBeEqualTo TestEvent::class.qualifiedName
             event.mdcPropertyMap["eventCount"] shouldBeEqualTo "1"
         }
     }
@@ -615,8 +627,8 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `fatal committed clear error is not swallowed`() {
         withPublisherLogs { logs ->
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
-            val aggregate = object : TestAggregate(TestId(88L)) {
+            val publisher = ExposedAggregateEventPublisher {}
+            val aggregate = object: TestAggregate(TestId(88L)) {
                 override fun clearDomainEvents() {
                     throw AssertionError("fatal-clear-error")
                 }
@@ -638,7 +650,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `rollback emits no completion anomaly`() {
         withPublisherLogs { logs ->
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val publisher = ExposedAggregateEventPublisher {}
             val aggregate = TestAggregate(TestId(86L)).apply { record(1) }
 
             transactionTemplate.executeWithoutResult { status ->
@@ -656,7 +668,7 @@ class ExposedAggregateEventPublisherTest {
         withPublisherLogs { logs ->
             MDC.put("traceId", "trace-123")
             MDC.put("secret", "must-not-leak")
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val publisher = ExposedAggregateEventPublisher {}
             val first = TestAggregate(TestId(25L)).apply { record(1) }
             val second = TestAggregate(TestId(26L)).apply { record(2) }
 
@@ -686,7 +698,7 @@ class ExposedAggregateEventPublisherTest {
     fun `unknown completion discards registration ownership for the next transaction`() {
         withPublisherLogs { logs ->
             val published = mutableListOf<TestEvent>()
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher { published += it as TestEvent })
+            val publisher = ExposedAggregateEventPublisher { published += it as TestEvent }
             val aggregate = TestAggregate(TestId(87L)).apply { record(1) }
 
             transactionTemplate.executeWithoutResult { status ->
@@ -726,7 +738,7 @@ class ExposedAggregateEventPublisherTest {
         withPublisherLogs { logs ->
             accepted.forEach(MDC::put)
             rejected.forEachIndexed { index, value -> MDC.put("unsafe$index", value) }
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val publisher = ExposedAggregateEventPublisher {}
             val aggregate = TestAggregate(TestId(27L)).apply { record(1) }
 
             transactionTemplate.executeWithoutResult { status ->
@@ -766,7 +778,7 @@ class ExposedAggregateEventPublisherTest {
             rejected.forEachIndexed { index, value ->
                 MDC.clear()
                 MDC.put("traceId", value)
-                val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+                val publisher = ExposedAggregateEventPublisher {}
                 val aggregate = TestAggregate(TestId(100L + index)).apply { record(1) }
                 transactionTemplate.executeWithoutResult { status ->
                     publisher.publishAfterSave(aggregate)
@@ -783,7 +795,7 @@ class ExposedAggregateEventPublisherTest {
     @Test
     fun `anomaly event types preserve recording order and remove duplicates`() {
         withPublisherLogs { logs ->
-            val publisher = ExposedAggregateEventPublisher(ApplicationEventPublisher {})
+            val publisher = ExposedAggregateEventPublisher {}
             val aggregate = TestAggregate(TestId(83L)).apply {
                 record(1)
                 recordOther(2)
@@ -810,7 +822,7 @@ class ExposedAggregateEventPublisherTest {
             .single()
 
     private fun storedIds(): List<Long> =
-        jdbcTemplate.queryForList("SELECT ID FROM DOMAIN_EVENT_TEST ORDER BY ID", Long::class.java).filterNotNull()
+        jdbcTemplate.queryForList<Long>("SELECT ID FROM DOMAIN_EVENT_TEST ORDER BY ID").filterNotNull()
 
     private fun withPublisherLogs(block: (MutableList<ILoggingEvent>) -> Unit) {
         val logger = LoggerFactory.getLogger(ExposedAggregateEventPublisher::class.java) as Logger
@@ -849,7 +861,7 @@ class ExposedAggregateEventPublisherTest {
     }
 
     @JvmInline
-    value class TestId(val value: Long) : Serializable {
+    value class TestId(val value: Long): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -859,7 +871,7 @@ class ExposedAggregateEventPublisherTest {
         override val aggregateId: TestId,
         val sequence: Int,
         override val occurredAt: Instant = Instant.parse("2026-07-11T00:00:00Z"),
-    ) : DomainEvent<TestId>, Serializable {
+    ): DomainEvent<TestId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -869,7 +881,7 @@ class ExposedAggregateEventPublisherTest {
         override val aggregateId: TestId,
         val sequence: Int,
         override val occurredAt: Instant = Instant.parse("2026-07-11T00:00:00Z"),
-    ) : DomainEvent<TestId>, Serializable {
+    ): DomainEvent<TestId>, Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
@@ -877,7 +889,7 @@ class ExposedAggregateEventPublisherTest {
 
     open class TestAggregate(
         override val id: TestId,
-    ) : AbstractAggregateRoot<TestId>() {
+    ): AbstractAggregateRoot<TestId>() {
         fun record(sequence: Int): TestEvent =
             TestEvent(id, sequence).also(::recordDomainEvent)
 
@@ -885,7 +897,7 @@ class ExposedAggregateEventPublisherTest {
             OtherTestEvent(id, sequence).also(::recordDomainEvent)
     }
 
-    class CountingAggregate(id: TestId) : TestAggregate(id) {
+    class CountingAggregate(id: TestId): TestAggregate(id) {
         var domainEventCalls: Int = 0
             private set
         var lastSnapshot: List<DomainEvent<TestId>>? = null
@@ -898,7 +910,7 @@ class ExposedAggregateEventPublisherTest {
             }
     }
 
-    class FailingClearAggregate(id: TestId) : TestAggregate(id) {
+    class FailingClearAggregate(id: TestId): TestAggregate(id) {
         override fun clearDomainEvents() {
             error("sensitive-clear-message")
         }

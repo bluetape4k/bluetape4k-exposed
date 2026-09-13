@@ -1,5 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
@@ -10,7 +12,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class JdbcFluentQueryScope private constructor(
     private val transactionIdentity: Any,
     private val ownerThreadId: Long,
-) : AutoCloseable {
+): AutoCloseable {
+
+    companion object: KLogging() {
+        fun open(transactionIdentity: Any): JdbcFluentQueryScope =
+            JdbcFluentQueryScope(transactionIdentity, Thread.currentThread().threadId())
+    }
 
     private val active = AtomicBoolean(true)
 
@@ -22,18 +29,14 @@ internal class JdbcFluentQueryScope private constructor(
                 "FluentQuery must be used on the callback owner thread."
             currentTransactionIdentity !== transactionIdentity ->
                 "FluentQuery must use the Exposed transaction captured by findBy."
-            else -> null
+            else          -> null
         }
+        log.debug { "failureMessage: $failureMessage" }
         if (failureMessage != null) throw InvalidDataAccessApiUsageException(failureMessage)
     }
 
     override fun close() {
         active.set(false)
-    }
-
-    companion object {
-        fun open(transactionIdentity: Any): JdbcFluentQueryScope =
-            JdbcFluentQueryScope(transactionIdentity, Thread.currentThread().threadId())
     }
 }
 
@@ -49,6 +52,26 @@ internal class JdbcFluentQueryPlan<E: Any> internal constructor(
     val persistentEntity: ExposedPersistentEntity<*>,
     val scope: JdbcFluentQueryScope,
 ) {
+    companion object: KLogging() {
+        fun <E: Any> create(
+            example: Example<E>,
+            domainType: Class<E>,
+            projectionFactory: ProjectionFactory,
+            persistentEntity: ExposedPersistentEntity<*>,
+            scope: JdbcFluentQueryScope,
+        ): JdbcFluentQueryPlan<E> = JdbcFluentQueryPlan(
+            example = example,
+            domainType = domainType,
+            resultType = domainType,
+            explicitProperties = emptySet(),
+            propertiesSpecified = false,
+            sort = Sort.unsorted(),
+            limit = 0,
+            projectionFactory = projectionFactory,
+            persistentEntity = persistentEntity,
+            scope = scope,
+        )
+    }
 
     val hasLimit: Boolean get() = limit > 0
 
@@ -99,25 +122,4 @@ internal class JdbcFluentQueryPlan<E: Any> internal constructor(
         persistentEntity = persistentEntity,
         scope = scope,
     )
-
-    companion object {
-        fun <E: Any> create(
-            example: Example<E>,
-            domainType: Class<E>,
-            projectionFactory: ProjectionFactory,
-            persistentEntity: ExposedPersistentEntity<*>,
-            scope: JdbcFluentQueryScope,
-        ): JdbcFluentQueryPlan<E> = JdbcFluentQueryPlan(
-            example = example,
-            domainType = domainType,
-            resultType = domainType,
-            explicitProperties = emptySet(),
-            propertiesSpecified = false,
-            sort = Sort.unsorted(),
-            limit = 0,
-            projectionFactory = projectionFactory,
-            persistentEntity = persistentEntity,
-            scope = scope,
-        )
-    }
 }

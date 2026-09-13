@@ -108,23 +108,25 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
             return rawId as ID
         }
         return when (idType) {
-            Long::class.java   -> if (rawId is Number) rawId.toLong() as ID
-                else throw IllegalStateException(
-                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Long"
-                )
-            Int::class.java    -> if (rawId is Number) rawId.toInt() as ID
-                else throw IllegalStateException(
-                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Int"
-                )
-            Short::class.java  -> if (rawId is Number) rawId.toShort() as ID
-                else throw IllegalStateException(
-                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Short"
-                )
+            Long::class.java  ->
+                if (rawId is Number) rawId.toLong() as ID
+                else error("Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Long")
+
+            Int::class.java   ->
+                if (rawId is Number) rawId.toInt() as ID
+                else error("Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Int")
+
+            Short::class.java ->
+                if (rawId is Number) rawId.toShort() as ID
+                else error("Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to Short")
+
             String::class.java -> rawId.toString() as ID
-            else               -> throw IllegalStateException(
-                "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to entity id type " +
-                    "${idType.simpleName}. Add a coercion rule in DeclaredExposedQuery.coerceIdValue()."
-            )
+
+            else              ->
+                error(
+                    "Cannot coerce id value '$rawId' (${rawId::class.java.simpleName}) to entity id type " +
+                            "${idType.simpleName}. Add a coercion rule in DeclaredExposedQuery.coerceIdValue()."
+                )
         }
     }
 }

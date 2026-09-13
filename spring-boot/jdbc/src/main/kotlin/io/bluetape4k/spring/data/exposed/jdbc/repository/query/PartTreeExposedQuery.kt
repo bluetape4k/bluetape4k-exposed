@@ -1,10 +1,10 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import io.bluetape4k.spring.data.exposed.common.repository.query.ExposedQueryCreator
 import io.bluetape4k.spring.data.exposed.common.repository.query.ParameterMetadataProvider
 import io.bluetape4k.spring.data.exposed.common.repository.support.toExposedOrderBy
+import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.EntityClass
@@ -61,18 +61,20 @@ class PartTreeExposedQuery<E: Entity<ID>, ID: Any>(
             partTree.isLimiting        -> executeLimiting(op, partTree.maxResults, sort)
             isPageQuery()              -> executePageQuery(op, pageable, sort)
             isSliceQuery()             -> executeSliceQuery(op, pageable, sort)
-            isSingleResult()           -> entityClass.find { op }.let { query ->
-                if (sort.isSorted) {
-                    query.orderBy(*sort.toExposedOrderBy(entityInformation.table))
+            isSingleResult()           ->
+                entityClass.find { op }.let { query ->
+                    if (sort.isSorted) {
+                        query.orderBy(*sort.toExposedOrderBy(entityInformation.table))
+                    }
+                    query.firstOrNull()
                 }
-                query.firstOrNull()
-            }
-            else                       -> entityClass.find { op }.let { query ->
-                if (sort.isSorted) {
-                    query.orderBy(*sort.toExposedOrderBy(entityInformation.table))
+            else                       ->
+                entityClass.find { op }.let { query ->
+                    if (sort.isSorted) {
+                        query.orderBy(*sort.toExposedOrderBy(entityInformation.table))
+                    }
+                    query.toList()
                 }
-                query.toList()
-            }
         }
     }
 

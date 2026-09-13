@@ -2,25 +2,30 @@ package io.bluetape4k.spring.data.exposed.jdbc.config
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.jdbc.caffeine.repository.JdbcCaffeineRepository
+import io.bluetape4k.logging.KLogging
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.health.contributor.Health
 import org.springframework.boot.health.contributor.HealthIndicator
 import org.springframework.boot.health.contributor.Status
 import org.springframework.boot.test.context.FilteredClassLoader
-import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import java.io.Serializable
 
 class ExposedJdbcCacheHealthAutoConfigurationTest {
+
+    companion object: KLogging()
 
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedJdbcCacheHealthAutoConfiguration::class.java))
@@ -30,11 +35,8 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(HealthyRepositoryConfiguration::class.java)
             .run { context ->
-                val health = requireNotNull(
-                    context.getBean("exposedJdbcCacheHealthIndicator", HealthIndicator::class.java)
-                        .health()
-                )
-
+                val health =
+                    context.getBean<HealthIndicator>("exposedJdbcCacheHealthIndicator").health().shouldNotBeNull()
                 health.status shouldBeEqualTo Status.UP
                 health.details["repositoryCount"] shouldBeEqualTo 1
             }
@@ -121,7 +123,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
 
                 health.status shouldBeEqualTo expectedStatus
                 health.details["error"] shouldBeEqualTo
-                    if (left.lastFlushError != null || right.lastFlushError != null) failure.toString() else null
+                        if (left.lastFlushError != null || right.lastFlushError != null) failure.toString() else null
             }
         }
     }
@@ -158,8 +160,10 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         )
 
         health.details["repositoryCount"] shouldBeEqualTo 2
+
         @Suppress("UNCHECKED_CAST")
         val reports = health.details["reports"] as List<Map<String, Any?>>
+
         reports[0] shouldBeEqualTo mapOf(
             "mode" to "WRITE_BEHIND",
             "queueDepth" to 13,

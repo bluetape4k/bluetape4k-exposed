@@ -1,7 +1,10 @@
 package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
@@ -14,6 +17,8 @@ import java.lang.reflect.Modifier
 
 class ExposedJdbcRepositoryAbiCompatibilityTest {
 
+    companion object: KLogging()
+
     @Test
     fun `Kotlin consumer keeps the public one argument repository constructor`() {
         val entityInformation: ExposedEntityInformation<UserEntity, Long> =
@@ -22,8 +27,8 @@ class ExposedJdbcRepositoryAbiCompatibilityTest {
         val repository = ExposedJdbcRepositoryKotlinConsumerFixture.createRepository(entityInformation)
         val factory = ExposedJdbcRepositoryKotlinConsumerFixture.createFactory()
 
-        repository.javaClass shouldBeEqualTo SimpleExposedJdbcRepository::class.java
-        factory.javaClass shouldBeEqualTo ExposedJdbcRepositoryFactory::class.java
+        repository.shouldBeInstanceOf<SimpleExposedJdbcRepository<*, *>>()
+        factory.shouldBeInstanceOf<ExposedJdbcRepositoryFactory>()
     }
 
     @Test
@@ -45,7 +50,8 @@ class ExposedJdbcRepositoryAbiCompatibilityTest {
             addAll(publicAbiOf(SimpleExposedJdbcRepository::class.java))
         }.joinToString("\n")
 
-        val expected = checkNotNull(javaClass.getResource("/abi/simple-exposed-jdbc-repository-public.txt"))
+        val expected = javaClass.getResource("/abi/simple-exposed-jdbc-repository-public.txt")
+            .shouldNotBeNull()
             .readText()
             .trimEnd()
 
@@ -64,22 +70,22 @@ class ExposedJdbcRepositoryAbiCompatibilityTest {
 
     private fun Executable.jvmDescriptor(): String =
         parameterTypes.joinToString(separator = "", prefix = "(", postfix = ")") { it.jvmDescriptor() } +
-            if (this is Method) returnType.jvmDescriptor() else "V"
+                if (this is Method) returnType.jvmDescriptor() else "V"
 
     private fun Class<*>.jvmDescriptor(): String = when {
         isPrimitive -> when (this) {
-            Void.TYPE -> "V"
+            Void.TYPE                       -> "V"
             Boolean::class.javaPrimitiveType -> "Z"
-            Byte::class.javaPrimitiveType -> "B"
-            Char::class.javaPrimitiveType -> "C"
-            Short::class.javaPrimitiveType -> "S"
-            Int::class.javaPrimitiveType -> "I"
-            Long::class.javaPrimitiveType -> "J"
-            Float::class.javaPrimitiveType -> "F"
+            Byte::class.javaPrimitiveType   -> "B"
+            Char::class.javaPrimitiveType   -> "C"
+            Short::class.javaPrimitiveType  -> "S"
+            Int::class.javaPrimitiveType    -> "I"
+            Long::class.javaPrimitiveType   -> "J"
+            Float::class.javaPrimitiveType  -> "F"
             Double::class.javaPrimitiveType -> "D"
-            else -> error("지원하지 않는 primitive type: $name")
+            else                            -> error("지원하지 않는 primitive type: $name")
         }
-        isArray -> name.replace('.', '/')
-        else -> "L${name.replace('.', '/')};"
+        isArray     -> name.replace('.', '/')
+        else        -> "L${name.replace('.', '/')};"
     }
 }

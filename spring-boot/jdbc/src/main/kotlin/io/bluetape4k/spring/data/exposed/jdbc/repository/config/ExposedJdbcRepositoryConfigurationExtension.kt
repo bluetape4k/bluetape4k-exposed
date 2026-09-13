@@ -1,12 +1,12 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.config
 
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
-import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity as CommonExposedEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedJdbcRepositoryFactoryBean
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport
+import io.bluetape4k.spring.data.exposed.common.annotation.ExposedEntity as CommonExposedEntity
 
 /**
  * Exposed Spring Data 모듈 설정 확장입니다.

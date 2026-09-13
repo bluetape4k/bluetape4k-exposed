@@ -66,6 +66,4 @@ class ExposedEntityInformationImpl<E: Entity<ID>, ID: Any>(
         }
         error("Cannot resolve ID type for ${clazz.name}. Ensure Entity<ID> generic parameter is declared explicitly.")
     }
-
-
 }

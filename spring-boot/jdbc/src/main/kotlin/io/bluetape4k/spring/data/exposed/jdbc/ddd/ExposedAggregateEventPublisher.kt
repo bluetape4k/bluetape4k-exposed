@@ -1,13 +1,14 @@
 package io.bluetape4k.spring.data.exposed.jdbc.ddd
 
 import io.bluetape4k.exposed.core.ddd.AggregateRoot
+import io.bluetape4k.logging.KLogging
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.Ordered
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import java.util.IdentityHashMap
+import java.util.*
 
 private val logger = LoggerFactory.getLogger(ExposedAggregateEventPublisher::class.java)
 private val correlationKeys = listOf("traceId", "spanId", "requestId")
@@ -43,12 +44,14 @@ class ExposedAggregateEventPublisher(
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
+    companion object: KLogging()
+
     /**
      * [aggregate]의 현재 event snapshot을 Spring에 전달하고 transaction 완료 시까지 유지합니다.
      *
      * @throws IllegalStateException transaction 또는 aggregate lifecycle 계약을 위반한 경우
      */
-    fun <ID : Any> publishAfterSave(aggregate: AggregateRoot<ID>) {
+    fun <ID: Any> publishAfterSave(aggregate: AggregateRoot<ID>) {
         val currentSynchronization = currentSynchronization()
         currentSynchronization?.rejectReserved(aggregate)
 
@@ -89,7 +92,9 @@ class ExposedAggregateEventPublisher(
 
 internal class AggregateEventTransactionSynchronization(
     internal val owner: ExposedAggregateEventPublisher,
-) : TransactionSynchronization {
+): TransactionSynchronization {
+
+    companion object: KLogging()
 
     private val registrations = IdentityHashMap<AggregateRoot<*>, Registration>()
     private var poison: IllegalStateException? = null

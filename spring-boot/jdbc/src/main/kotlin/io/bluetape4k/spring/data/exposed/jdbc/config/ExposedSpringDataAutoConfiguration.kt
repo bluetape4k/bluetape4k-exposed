@@ -1,6 +1,5 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
-import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext as CommonExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.mapping.ExposedMappingContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.dao.EntityClass
@@ -13,6 +12,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.PlatformTransactionManager
 import javax.sql.DataSource
+import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext as CommonExposedMappingContext
 
 /**
  * Spring Data Exposed 자동 설정입니다.

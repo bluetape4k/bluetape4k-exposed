@@ -40,29 +40,26 @@ class ExposedQueryLookupStrategy(
 
         @Suppress("UNCHECKED_CAST")
         val entityInformation =
-            ExposedEntityInformationImpl(
-                metadata.domainType as Class<Entity<Any>>,
-            )
+            ExposedEntityInformationImpl(metadata.domainType as Class<Entity<Any>>)
 
         return when (key) {
-            QueryLookupStrategy.Key.USE_DECLARED_QUERY -> {
+            QueryLookupStrategy.Key.USE_DECLARED_QUERY  -> {
                 require(queryMethod.isAnnotatedQuery) {
                     "No @Query annotation found on method '${method.name}'"
                 }
                 DeclaredExposedQuery(queryMethod, entityInformation)
             }
 
-            QueryLookupStrategy.Key.CREATE             -> {
+            QueryLookupStrategy.Key.CREATE              ->
                 PartTreeExposedQuery(queryMethod, entityInformation)
-            }
 
-            QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND -> {
+
+            QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND ->
                 if (queryMethod.isAnnotatedQuery) {
                     DeclaredExposedQuery(queryMethod, entityInformation)
                 } else {
                     PartTreeExposedQuery(queryMethod, entityInformation)
                 }
-            }
         }
     }
 }

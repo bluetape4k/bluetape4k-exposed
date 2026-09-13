@@ -61,7 +61,7 @@ interface UserJdbcRepository: ExposedJdbcRepository<UserEntity, Long> {
 
     @Query(
         "SELECT candidate.id FROM $USERS_TABLE_NAME source " +
-            "LEFT JOIN $USERS_TABLE_NAME candidate ON 1 = 0 WHERE source.email = ?1"
+                "LEFT JOIN $USERS_TABLE_NAME candidate ON 1 = 0 WHERE source.email = ?1"
     )
     fun findWithNullIdNative(email: String): List<UserEntity>
 
