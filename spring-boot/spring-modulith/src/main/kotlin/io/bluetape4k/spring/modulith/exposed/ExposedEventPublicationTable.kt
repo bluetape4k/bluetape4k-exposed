@@ -13,7 +13,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class ExposedEventPublicationTable(
     tableName: String = DEFAULT_TABLE_NAME,
-) : Table(tableName) {
+): Table(tableName) {
 
     val id = uuid("ID")
     val listenerId = text("LISTENER_ID")

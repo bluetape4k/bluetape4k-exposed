@@ -3,18 +3,18 @@ package io.bluetape4k.spring.modulith.exposed
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -39,19 +40,18 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import java.io.Serializable
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@OptIn(ExperimentalUuidApi::class)
-class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
+class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
 
-    companion object {
+    companion object: KLogging() {
 
         private const val OUTSTANDING_LISTENER_ID =
             "io.bluetape4k.spring.modulith.exposed.outstanding-test-listener"
@@ -85,7 +85,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `publishes completes and queries failed events in update mode`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             repository.shouldNotBeNull()
 
             val created = targetEventPublicationOf(
@@ -139,7 +139,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `findFailedPublications - 무제한 sentinel은 유지하고 안전하지 않은 상한은 거부한다`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
+
             val failedPublication = targetEventPublicationOf(
                 TestEvent("failed-limit-${testDB.name.lowercase()}"),
                 publicationTargetIdentifierOf("listener.failed.limit"),
@@ -152,6 +153,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             repository.findFailedPublications(
                 EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(-1L),
             ).map { it.identifier } shouldBeEqualTo listOf(failedPublication.identifier)
+
             repository.findFailedPublications(
                 EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(Int.MAX_VALUE.toLong()),
             ).map { it.identifier } shouldBeEqualTo listOf(failedPublication.identifier)
@@ -195,7 +197,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `delete completion mode removes completed publications`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.DELETE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val publication = targetEventPublicationOf(
                 TestEvent("delete"),
                 publicationTargetIdentifierOf("listener.delete"),
@@ -215,7 +217,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `archive completion mode moves completed publications to archive table`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.ARCHIVE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val publication = targetEventPublicationOf(
                 TestEvent("archive"),
                 publicationTargetIdentifierOf("listener.archive"),
@@ -239,7 +241,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("dialectCompletionModes")
     fun `duplicate identifier completion is idempotent`(testDB: TestDB, completionMode: CompletionMode) {
         withApplicationContext(testDB, completionMode) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val publication = targetEventPublicationOf(
                 TestEvent("duplicate-identifier-${completionMode.name.lowercase()}"),
                 publicationTargetIdentifierOf("listener.duplicate.identifier"),
@@ -260,7 +262,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                     repository.findCompletedPublications().shouldBeEmpty()
 
                 CompletionMode.ARCHIVE,
-                CompletionMode.UPDATE -> {
+                CompletionMode.UPDATE,
+                    -> {
                     val completed = repository.findCompletedPublications().single()
                     completed.identifier shouldBeEqualTo publication.identifier
                     completed.status shouldBeEqualTo Status.COMPLETED
@@ -277,7 +280,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         completionMode: CompletionMode,
     ) {
         withApplicationContext(testDB, completionMode) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val event = TestEvent("shared-event")
             val targetIdentifier = publicationTargetIdentifierOf("listener.shared")
             val first = targetEventPublicationOf(
@@ -306,14 +309,13 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                     repository.findCompletedPublications().shouldBeEmpty()
 
                 CompletionMode.ARCHIVE,
-                CompletionMode.UPDATE -> {
+                CompletionMode.UPDATE,
+                    -> {
                     val completed = repository.findCompletedPublications()
                     completed shouldHaveSize 2
-                    completed.map { it.identifier }
-                        .toSet() shouldBeEqualTo setOf(first.identifier, second.identifier)
+                    completed.map { it.identifier }.toSet() shouldBeEqualTo setOf(first.identifier, second.identifier)
                     completed.map { it.status }.toSet() shouldBeEqualTo setOf(Status.COMPLETED)
-                    completed.map { it.completionDate.orElseThrow() }
-                        .toSet() shouldBeEqualTo setOf(firstCompletionDate)
+                    completed.map { it.completionDate.orElseThrow() }.toSet() shouldBeEqualTo setOf(firstCompletionDate)
                 }
             }
         }
@@ -326,7 +328,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         completionMode: CompletionMode,
     ) {
         withApplicationContext(testDB, completionMode) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val publication = targetEventPublicationOf(
                 TestEvent("resubmission-${completionMode.name.lowercase()}"),
                 publicationTargetIdentifierOf("listener.resubmission"),
@@ -352,7 +354,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `resubmitted publication increments attempts and can be found by event and target`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
             val event = TestEvent("resubmit")
             val targetIdentifier = publicationTargetIdentifierOf("listener.resubmit")
             val publication = targetEventPublicationOf(
@@ -393,7 +395,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         republishedEvents.clear()
 
         withApplicationContext(testDB, completionMode, tableName = tableName) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
 
             context.publishEvent(outstandingEvent)
             context.publishEvent(completedEvent)
@@ -415,7 +417,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             tableName = tableName,
             republishOutstandingOnRestart = true,
         ) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
 
             awaitCondition { republishedEvents == listOf(outstandingEvent.value) }
             republishedEvents shouldBeEqualTo listOf(outstandingEvent.value)
@@ -443,8 +445,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         failReplayAfterSideEffect.set(true)
 
         withApplicationContext(testDB, completionMode, tableName = tableName) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
-            val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
+            val txManager = context.getBean<PlatformTransactionManager>("springTransactionManager")
 
             TransactionTemplate(txManager).executeWithoutResult {
                 context.publishEvent(event)
@@ -467,7 +469,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             tableName = tableName,
             republishOutstandingOnRestart = true,
         ) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
 
             awaitCondition { replayDeliveryIds.size == 2 }
             awaitCondition { repository.findIncompletePublications().isEmpty() }
@@ -480,7 +482,8 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                     repository.findCompletedPublications().shouldBeEmpty()
 
                 CompletionMode.ARCHIVE,
-                CompletionMode.UPDATE -> {
+                CompletionMode.UPDATE,
+                    -> {
                     val completed = repository.findCompletedPublications().single()
                     completed.event shouldBeEqualTo event
                     completed.status shouldBeEqualTo Status.COMPLETED
@@ -493,27 +496,28 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `publications with unloadable event classes remain visible and fail on event access`(testDB: TestDB) {
         withApplicationContext(testDB, CompletionMode.UPDATE) { context ->
-            val repository = context.getBean(EventPublicationRepository::class.java)
-            val table = context.getBean("eventPublicationTable", ExposedEventPublicationTable::class.java)
-            val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
+            val repository = context.getBean<EventPublicationRepository>()
+            val table = context.getBean<ExposedEventPublicationTable>("eventPublicationTable")
+            val txManager = context.getBean<PlatformTransactionManager>("springTransactionManager")
             val missingEventType = "com.example.missing.LegacyEvent"
             val publishedId = nextJavaUuid()
             val failedId = nextJavaUuid()
 
-            TransactionTemplate(txManager).executeWithoutResult {
-                table.insertUnknownPublication(
-                    id = publishedId,
-                    eventType = missingEventType,
-                    listenerId = "listener.unloadable.published",
-                    status = Status.PUBLISHED,
-                )
-                table.insertUnknownPublication(
-                    id = failedId,
-                    eventType = missingEventType,
-                    listenerId = "listener.unloadable.failed",
-                    status = Status.FAILED,
-                )
-            }
+            TransactionTemplate(txManager)
+                .executeWithoutResult {
+                    table.insertUnknownPublication(
+                        id = publishedId,
+                        eventType = missingEventType,
+                        listenerId = "listener.unloadable.published",
+                        status = Status.PUBLISHED,
+                    )
+                    table.insertUnknownPublication(
+                        id = failedId,
+                        eventType = missingEventType,
+                        listenerId = "listener.unloadable.failed",
+                        status = Status.FAILED,
+                    )
+                }
 
             val incomplete = repository.findIncompletePublications()
             incomplete.map { it.identifier }.toSet() shouldBeEqualTo setOf(publishedId, failedId)
@@ -524,6 +528,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
             assertFailsWith<UnloadableEventPublicationException> {
                 incomplete.single { it.identifier == publishedId }.event
             }
+
             assertFailsWith<UnloadableEventPublicationException> {
                 failed.event
             }
@@ -622,7 +627,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
         }
     }
 
-    data class TestEvent(val value: String) : Serializable {
+    data class TestEvent(val value: String): Serializable {
         companion object {
             private const val serialVersionUID: Long = 7240327694587830410L
         }
@@ -631,7 +636,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     data class ReplayBoundaryEvent(
         val eventId: String,
         val value: String,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID: Long = -508289256945556177L
         }
@@ -660,16 +665,16 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
     private fun nextJavaUuid(): UUID =
         BluetapeUuid.V7.nextId()
 
-    class TestEventSerializer : EventSerializer {
+    class TestEventSerializer: EventSerializer {
         override fun serialize(event: Any): Any =
             when (event) {
                 is ReplayBoundaryEvent -> event.eventId + REPLAY_EVENT_SEPARATOR + event.value
                 is TestEvent -> event.value
-                else -> error("Unsupported test event type: ${event.javaClass.name}")
+                else         -> error("Unsupported test event type: ${event.javaClass.name}")
             }
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> deserialize(serialized: Any, type: Class<T>): T {
+        override fun <T: Any> deserialize(serialized: Any, type: Class<T>): T {
             val event = when (type) {
                 ReplayBoundaryEvent::class.java -> {
                     val (eventId, value) = serialized.toString().split(REPLAY_EVENT_SEPARATOR, limit = 2)
@@ -677,7 +682,7 @@ class ExposedEventPublicationRepositoryTest : AbstractExposedTest() {
                 }
 
                 TestEvent::class.java -> TestEvent(serialized.toString())
-                else -> error("Unsupported test event type: ${type.name}")
+                else                  -> error("Unsupported test event type: ${type.name}")
             }
             return event as T
         }

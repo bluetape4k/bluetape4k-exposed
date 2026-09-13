@@ -4,10 +4,7 @@ package io.bluetape4k.spring.modulith.exposed
 
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
-import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.isNotNull
@@ -15,12 +12,15 @@ import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.plus
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.update
 import org.springframework.beans.factory.BeanClassLoaderAware
 import org.springframework.modulith.events.EventPublication.Status
@@ -32,8 +32,7 @@ import org.springframework.modulith.events.support.CompletionMode
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.ClassUtils
 import java.time.Instant
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -42,7 +41,7 @@ class UnloadableEventPublicationException(
     val eventType: String,
     val listenerId: String,
     cause: Throwable,
-) : IllegalStateException(
+): IllegalStateException(
     "Event publication $identifier for listener '$listenerId' references unloadable event type '$eventType'. " +
             "Keep the event class on the classpath or migrate/delete the publication row explicitly.",
     cause,
@@ -62,7 +61,7 @@ class ExposedEventPublicationRepository(
     private val archiveTable: ExposedEventPublicationTable,
     private val serializer: EventSerializer,
     private val completionMode: CompletionMode = CompletionMode.UPDATE,
-) : EventPublicationRepository, BeanClassLoaderAware {
+): EventPublicationRepository, BeanClassLoaderAware {
 
     private var classLoader: ClassLoader? = Thread.currentThread().contextClassLoader
 
@@ -317,7 +316,11 @@ class ExposedEventPublicationRepository(
             ?.let { row -> insertArchive(row, completionDate) }
     }
 
-    private fun copyToArchive(identifier: PublicationTargetIdentifier, serializedEvent: String, completionDate: Instant) {
+    private fun copyToArchive(
+        identifier: PublicationTargetIdentifier,
+        serializedEvent: String,
+        completionDate: Instant,
+    ) {
         table.selectAll()
             .where { (table.listenerId eq identifier.value) and (table.serializedEvent eq serializedEvent) }
             .forEach { row -> insertArchive(row, completionDate) }
@@ -425,7 +428,7 @@ class ExposedEventPublicationRepository(
         private var status: Status?,
         private val lastResubmissionDate: Instant?,
         private val completionAttempts: Int,
-    ) : TargetEventPublication {
+    ): TargetEventPublication {
 
         private val eventValue: Any by lazy(eventSupplier)
 

@@ -81,7 +81,7 @@ data class ExposedModulithObservabilityProperties(
      * 모든 Exposed Spring Modulith 저장소 메트릭에 추가할 낮은 카디널리티 태그입니다.
      */
     val tags: Map<String, String> = emptyMap(),
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = -8966263482426221897L
     }

@@ -4,6 +4,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.modulith.exposed.ExposedEventPublicationRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -58,6 +60,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
         registry.publicationGauge("completed") shouldBeEqualTo 1.0
         registry.publicationGauge("failed") shouldBeEqualTo 1.0
         registry.publicationGauge("unloadable") shouldBeEqualTo 1.0
+
         verify(exactly = 1) {
             repository.countIncompletePublications()
             repository.countCompletedPublications()
@@ -85,11 +88,12 @@ class ExposedModulithObservabilityAutoConfigurationTest {
         )
 
         registry.publicationGauge("incomplete").isNaN().shouldBeTrue()
-        requireNotNull(
-            registry.find(ExposedEventPublicationMetrics.ERROR_METER_NAME)
-                .tag("state", "incomplete")
-                .counter()
-        ).count() shouldBeEqualTo 1.0
+
+        registry.find(ExposedEventPublicationMetrics.ERROR_METER_NAME)
+            .tag("state", "incomplete")
+            .counter()
+            .shouldNotBeNull()
+            .count() shouldBeEqualTo 1.0
     }
 
     @Test
@@ -103,10 +107,15 @@ class ExposedModulithObservabilityAutoConfigurationTest {
                     meter.id.tags.associate { tag -> tag.key to tag.value }
                 }
 
-                tagMaps.map { it.keys }.toSet() shouldBeEqualTo
-                    setOf(setOf("completion.mode", "state"))
-                tagMaps.flatMap { it.values }.toSet() shouldBeEqualTo
-                    setOf("update", "incomplete", "completed", "failed", "unloadable")
+                tagMaps.map { it.keys }.toSet() shouldBeEqualTo setOf(setOf("completion.mode", "state"))
+
+                tagMaps.flatMap { it.values }.toSet() shouldBeEqualTo setOf(
+                    "update",
+                    "incomplete",
+                    "completed",
+                    "failed",
+                    "unloadable"
+                )
             }
     }
 
@@ -174,14 +183,14 @@ class ExposedModulithObservabilityAutoConfigurationTest {
             .run { context ->
                 val registry = context.getBean(MeterRegistry::class.java)
 
-                requireNotNull(
-                    registry.find(ExposedEventPublicationMetrics.METER_NAME)
-                        .tag("state", "incomplete")
-                        .tag("completion.mode", "update")
-                        .tag("application", "orders")
-                        .tag("environment", "test")
-                        .gauge()
-                ).value() shouldBeEqualTo 2.0
+                registry.find(ExposedEventPublicationMetrics.METER_NAME)
+                    .tag("state", "incomplete")
+                    .tag("completion.mode", "update")
+                    .tag("application", "orders")
+                    .tag("environment", "test")
+                    .gauge()
+                    .shouldNotBeNull()
+                    .value() shouldBeEqualTo 2.0
             }
     }
 
@@ -189,39 +198,35 @@ class ExposedModulithObservabilityAutoConfigurationTest {
     class MeteredRepositoryConfiguration {
 
         @Bean
-        fun meterRegistry(): MeterRegistry =
-            SimpleMeterRegistry()
+        fun meterRegistry(): MeterRegistry = SimpleMeterRegistry()
 
         @Bean
-        fun exposedEventPublicationRepository(): ExposedEventPublicationRepository =
-            meteredRepository()
+        fun exposedEventPublicationRepository(): ExposedEventPublicationRepository = meteredRepository()
     }
 
     @TestConfiguration(proxyBeanMethods = false)
     class RepositoryOnlyConfiguration {
 
         @Bean
-        fun exposedEventPublicationRepository(): ExposedEventPublicationRepository =
-            meteredRepository()
+        fun exposedEventPublicationRepository(): ExposedEventPublicationRepository = meteredRepository()
     }
 
     @TestConfiguration(proxyBeanMethods = false)
     class MeterRegistryOnlyConfiguration {
 
         @Bean
-        fun meterRegistry(): MeterRegistry =
-            SimpleMeterRegistry()
+        fun meterRegistry(): MeterRegistry = SimpleMeterRegistry()
     }
 
     private fun MeterRegistry.publicationGauge(state: String): Double =
-        requireNotNull(
-            find(ExposedEventPublicationMetrics.METER_NAME)
-                .tag("state", state)
-                .tag("completion.mode", "update")
-                .gauge()
-        ).value()
+        find(ExposedEventPublicationMetrics.METER_NAME)
+            .tag("state", state)
+            .tag("completion.mode", "update")
+            .gauge()
+            .shouldNotBeNull()
+            .value()
 
-    companion object {
+    companion object: KLogging() {
 
         private fun meteredRepository(): ExposedEventPublicationRepository {
             return mockk(relaxed = true) {
@@ -235,5 +240,5 @@ class ExposedModulithObservabilityAutoConfigurationTest {
 
 }
 
-private inline fun <reified T : Any> ApplicationContextRunner.withUserConfiguration(): ApplicationContextRunner =
+private inline fun <reified T: Any> ApplicationContextRunner.withUserConfiguration(): ApplicationContextRunner =
     withUserConfiguration(T::class.java)
