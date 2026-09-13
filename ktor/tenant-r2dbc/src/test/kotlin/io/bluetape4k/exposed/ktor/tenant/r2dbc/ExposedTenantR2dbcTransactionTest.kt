@@ -2,8 +2,10 @@ package io.bluetape4k.exposed.ktor.tenant.r2dbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
 import io.bluetape4k.ktor.tenant.KtorTenantContext
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.tenant.MissingTenantContextException
 import io.bluetape4k.tenant.TenantId
 import io.ktor.client.request.get
@@ -33,8 +35,13 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.milliseconds
 
 class ExposedTenantR2dbcTransactionTest {
+
+    private companion object: KLogging() {
+        val DATABASE_ID = AtomicLong()
+    }
 
     @Test
     fun `tenant transaction keeps committed result when success metric fails`() = testApplication {
@@ -61,7 +68,7 @@ class ExposedTenantR2dbcTransactionTest {
             val count = suspendTransaction(database) {
                 exec("SELECT COUNT(*) FROM tenant_marker") { row ->
                     (row.get(0) as Number).toLong()
-                }!!.single()
+                }.shouldNotBeNull().single()
             }
             count shouldBeEqualTo 2L
         } finally {
@@ -185,10 +192,10 @@ class ExposedTenantR2dbcTransactionTest {
                         databaseResolver = databases::getValue,
                         meterRegistry = meterRegistry,
                     ) {
-                        delay(20)
+                        delay(20.milliseconds)
                         checkNotNull(exec("SELECT marker FROM tenant_marker") { row ->
                             row.get(0, String::class.java)
-                        }!!.single())
+                        }.shouldNotBeNull().single())
                     }
                     call.respondText(result)
                 }
@@ -219,6 +226,7 @@ class ExposedTenantR2dbcTransactionTest {
         val transactionStarted = CompletableDeferred<Unit>()
         val transactionCompleted = CompletableDeferred<Unit>()
         val requestJob = CompletableDeferred<Job>()
+
         application {
             routing {
                 get("/cancel/{id}") {
@@ -246,7 +254,7 @@ class ExposedTenantR2dbcTransactionTest {
                     ) {
                         checkNotNull(exec("SELECT marker FROM tenant_marker") { row ->
                             row.get(0, String::class.java)
-                        }!!.single())
+                        }.shouldNotBeNull().single())
                     }
                     call.respondText(marker)
                 }
@@ -255,11 +263,11 @@ class ExposedTenantR2dbcTransactionTest {
 
         coroutineScope {
             val request = async { client.get("/cancel/a") }
-            withTimeout(5_000) { transactionStarted.await() }
-            val serverRequest = withTimeout(5_000) { requestJob.await() }
+            withTimeout(5_000.milliseconds) { transactionStarted.await() }
+            val serverRequest = withTimeout(5_000.milliseconds) { requestJob.await() }
             serverRequest.cancelAndJoin()
             serverRequest.isCancelled.shouldBeTrue()
-            withTimeout(5_000) { transactionCompleted.await() }
+            withTimeout(5_000.milliseconds) { transactionCompleted.await() }
             request.cancelAndJoin()
         }
 
@@ -275,6 +283,7 @@ class ExposedTenantR2dbcTransactionTest {
             .tag("outcome", "cancelled")
             .timer()
             .count() shouldBeEqualTo 1L
+
         meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
             .tag("backend", "r2dbc")
             .tag("outcome", "success")
@@ -310,12 +319,8 @@ class ExposedTenantR2dbcTransactionTest {
     }
 
     private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
-        config().meterFilter(object : MeterFilter {
+        config().meterFilter(object: MeterFilter {
             override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
         })
-    }
-
-    private companion object {
-        val DATABASE_ID = AtomicLong()
     }
 }
