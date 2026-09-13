@@ -1,24 +1,25 @@
 package io.bluetape4k.exposed.ktor
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.codec.Base58
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
+import io.bluetape4k.logging.KLogging
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -46,6 +47,8 @@ import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedKtorTransactionsTest {
+
+    companion object: KLogging()
 
     @Test
     fun `jdbc transaction helper uses caller supplied dispatcher and commits`() = testApplication {
@@ -209,7 +212,7 @@ class ExposedKtorTransactionsTest {
     }
 
     @Test
-    fun `jdbc readiness timeout overrides database default and truncates subsecond duration`() = runBlocking {
+    fun `jdbc readiness timeout overrides database default and truncates subsecond duration`() = runSuspendIO {
         val observedQueryTimeout = AtomicInteger()
         val h2 = org.h2.jdbcx.JdbcDataSource().apply {
             setURL("jdbc:h2:mem:ktor-jdbc-timeout-precedence;DB_CLOSE_DELAY=-1")
@@ -243,12 +246,10 @@ class ExposedKtorTransactionsTest {
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
         }
-
-        Unit
     }
 
     @Test
-    fun `r2dbc readiness keeps caller database default timeout without adapter override`() = runBlocking {
+    fun `r2dbc readiness keeps caller database default timeout without adapter override`() = runSuspendIO {
         val database = R2dbcDatabase.connect(
             databaseConfig = R2dbcDatabaseConfig {
                 setUrl("r2dbc:h2:mem:///ktor-r2dbc-timeout-readiness;DB_CLOSE_DELAY=-1;")
@@ -265,12 +266,11 @@ class ExposedKtorTransactionsTest {
 
         val source = healthRoutesSource()
         val start = source.indexOf("internal suspend fun probeR2dbcReadiness")
-        (start >= 0).shouldBeTrue()
-        val body = source.substring(start)
-        ("suspendTransaction(db = db)" in body).shouldBeTrue()
-        ("queryTimeout =" in body).shouldBeFalse()
+        start shouldBeGreaterOrEqualTo 0
 
-        Unit
+        val body = source.substring(start)
+        body shouldContain "suspendTransaction(db = db)"
+        body shouldNotContain "queryTimeout ="
     }
 
     private fun healthRoutesSource(): String {
@@ -295,13 +295,13 @@ class ExposedKtorTransactionsTest {
             when (result) {
                 is PreparedStatement -> result.recordQueryTimeout(observedQueryTimeout, PreparedStatement::class.java)
                 is Statement -> result.recordQueryTimeout(observedQueryTimeout, Statement::class.java)
-                else -> result
+                else         -> result
             }
         } as Connection
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Statement> T.recordQueryTimeout(
+    private fun <T: Statement> T.recordQueryTimeout(
         observedQueryTimeout: AtomicInteger,
         type: Class<T>,
     ): T {

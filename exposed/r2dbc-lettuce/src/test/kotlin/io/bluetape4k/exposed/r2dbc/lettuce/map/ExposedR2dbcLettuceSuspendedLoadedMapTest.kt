@@ -1,20 +1,21 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
+import io.bluetape4k.junit5.awaitility.untilSuspending
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.codec.StringCodec
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import org.awaitility.kotlin.await
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -147,6 +148,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
         val attemptedBatches = CopyOnWriteArrayList<Set<String>>()
         val secondAttemptStarted = CompletableDeferred<Unit>()
         val freshEntryRetried = CompletableDeferred<Unit>()
+
         val writer =
             object: SuspendedMapWriter<String, String> {
                 override suspend fun write(map: Map<String, String>) {
@@ -155,7 +157,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
                         1 -> error("planned first write failure")
                         2 -> {
                             secondAttemptStarted.complete(Unit)
-                            delay(100)
+                            delay(timeMillis = 100)
                             error("planned second write failure")
                         }
                         3 -> error("planned mixed batch write failure")
@@ -175,16 +177,21 @@ class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
 
         try {
             map.set("retried", "old")
-            secondAttemptStarted.await()
-            delay(200)
-            map.set("fresh", "new")
+            await
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .untilSuspending { secondAttemptStarted.isCompleted }
 
-            withTimeout(5_000) { freshEntryRetried.await() }
+            map.set("fresh", "new")
+            await
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .untilSuspending { freshEntryRetried.isCompleted }
 
             attemptedBatches shouldHaveSize 4
             attemptedBatches[2] shouldBeEqualTo setOf("retried", "fresh")
             attemptedBatches[3] shouldBeEqualTo setOf("fresh")
-            attemptedBatches[3].contains("retried").shouldBeFalse()
+            attemptedBatches[3] shouldNotContain "retried"
         } finally {
             map.suspendClose()
         }

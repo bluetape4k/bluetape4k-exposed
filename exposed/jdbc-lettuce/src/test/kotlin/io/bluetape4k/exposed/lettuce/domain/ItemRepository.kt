@@ -44,14 +44,13 @@ class ItemRepository(
     fun createInDb(
         name: String,
         price: BigDecimal,
-    ): ItemDto =
-        transaction {
-            val id =
-                ItemTable
-                    .insertAndGetId {
-                        it[ItemTable.name] = name
-                        it[ItemTable.price] = price
-                    }.value
-            ItemDto(id, name, price)
-        }
+    ): ItemDto = transaction {
+        val id =
+            ItemTable
+                .insertAndGetId {
+                    it[ItemTable.name] = name
+                    it[ItemTable.price] = price
+                }.value
+        ItemDto(id, name, price)
+    }
 }

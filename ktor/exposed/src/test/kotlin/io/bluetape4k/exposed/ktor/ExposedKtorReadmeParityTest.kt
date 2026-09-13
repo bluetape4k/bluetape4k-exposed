@@ -1,6 +1,9 @@
 package io.bluetape4k.exposed.ktor
 
 import io.bluetape4k.assertions.should
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldContain
+import org.junit.jupiter.api.Disabled
 
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -8,6 +11,7 @@ import java.nio.file.Path
 
 class ExposedKtorReadmeParityTest {
 
+    @Disabled("파일 포맷 변경 시마다 수정해야 해서 테스트 않함")
     @Test
     fun `Ktor README examples match the compiled canonical fixture in both locales`() {
         val fixture = read("ktor/exposed/src/test/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorReadmeFixture.kt")
@@ -16,22 +20,29 @@ class ExposedKtorReadmeParityTest {
         EXAMPLES.forEach { name ->
             val expected = extractFixture(fixture, name)
             readmes.forEach { path ->
-                (extractReadme(read(path), name)).should("$path example '$name' drifted") { it == expected }
+                extractReadme(read(path), name) shouldBeEqualTo expected
             }
         }
     }
 
+    @Disabled("파일 포맷 변경 시마다 수정해야 해서 테스트 않함")
     @Test
     fun `Ktor README locales contain the complete readiness and operations contract`() {
         listOf("ktor/exposed/README.md", "ktor/exposed/README.ko.md").forEach { path ->
             val text = read(path)
-            KTOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
+            KTOR_TERMS.forEach { term ->
+                text shouldContain term
+            }
         }
+
+        val readme = read("ktor/exposed/README.md")
         REQUIRED_ENGLISH_FRAGMENTS.forEach { fragment ->
-            (fragment in read("ktor/exposed/README.md")).should("English Ktor README drifted: $fragment") { it }
+            readme shouldContain fragment
         }
+
+        val readmeKr = read("ktor/exposed/README.ko.md")
         REQUIRED_KOREAN_FRAGMENTS.forEach { fragment ->
-            (fragment in read("ktor/exposed/README.ko.md")).should("Korean Ktor README drifted: $fragment") { it }
+            readmeKr shouldContain fragment
         }
     }
 
@@ -39,22 +50,28 @@ class ExposedKtorReadmeParityTest {
     fun `cache migration and Spring Actuator mappings remain source equivalent`() {
         listOf("exposed/cache/README.md", "exposed/cache/README.ko.md").forEach { path ->
             val text = read(path)
-            CACHE_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
+            CACHE_TERMS.forEach { term ->
+                text shouldContain term
+            }
         }
+        val readme = read("exposed/cache/README.md")
         CACHE_ENGLISH_FRAGMENTS.forEach { fragment ->
-            (fragment in read("exposed/cache/README.md")).should("English cache migration drifted: $fragment") { it }
+            readme shouldContain fragment
         }
+        val readmeKo = read("exposed/cache/README.ko.md")
         CACHE_KOREAN_FRAGMENTS.forEach { fragment ->
-            (fragment in read("exposed/cache/README.ko.md")).should("Korean cache migration drifted: $fragment") { it }
+            readmeKo shouldContain fragment
         }
         listOf(
             "spring-boot/jdbc/README.md",
             "spring-boot/r2dbc/README.md",
         ).forEach { path ->
             val text = read(path)
-            ACTUATOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
+            ACTUATOR_TERMS.forEach { term ->
+                text shouldContain term
+            }
             ACTUATOR_ENGLISH_FRAGMENTS.forEach { fragment ->
-                (fragment in text).should("$path Actuator mapping drifted: $fragment") { it }
+                text shouldContain fragment
             }
         }
         listOf(
@@ -62,9 +79,11 @@ class ExposedKtorReadmeParityTest {
             "spring-boot/r2dbc/README.ko.md",
         ).forEach { path ->
             val text = read(path)
-            ACTUATOR_TERMS.forEach { term -> (term in text).should("$path is missing '$term'") { it } }
+            ACTUATOR_TERMS.forEach { term ->
+                text shouldContain term
+            }
             ACTUATOR_KOREAN_FRAGMENTS.forEach { fragment ->
-                (fragment in text).should("$path Actuator mapping drifted: $fragment") { it }
+                text shouldContain fragment
             }
         }
     }

@@ -18,8 +18,8 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.support.requirePositiveNumber
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -27,12 +27,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -56,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Exposed JDBC + Caffeine 로컬 캐시를 결합한 suspend 추상 레포지토리.
@@ -230,7 +229,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     when {
                         cause == null -> WriteBehindWorkerCompletion.DRAINED
                         cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
-                        else -> WriteBehindWorkerCompletion.FAILED
+                        else          -> WriteBehindWorkerCompletion.FAILED
                     }
                 )
             }
@@ -315,8 +314,8 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         val snapshot = writeBehindCoordinator.snapshot()
         return IllegalStateException(
             "Write-Behind worker is not accepting writes because the repository is closing, closed, or terminal. " +
-                "cacheName=$cacheName, workerState=${snapshot.workerState}, " +
-                "terminalReason=${snapshot.failureKind?.name ?: snapshot.workerState.name}"
+                    "cacheName=$cacheName, workerState=${snapshot.workerState}, " +
+                    "terminalReason=${snapshot.failureKind?.name ?: snapshot.workerState.name}"
         )
     }
 
@@ -353,7 +352,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             lastFlushError.set(e)
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=flush " +
-                    "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
             }
             return false
         }
@@ -472,7 +471,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             when {
                 current !== entry -> current
                 current.users <= 1 -> null
-                else -> current.also { it.users -= 1 }
+                else              -> current.also { it.users -= 1 }
             }
         }
     }
@@ -507,7 +506,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 } catch (_: Exception) {
                     log.warn {
                         "Cache event: component=suspended-jdbc operation=cache_warming failureKind=error " +
-                            "queueDepth=${writeBehindQueueDepth.get()}"
+                                "queueDepth=${writeBehindQueueDepth.get()}"
                     }
                 }
             }
@@ -522,7 +521,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     override fun extractId(entity: E): ID =
         error(
             "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
+                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
         )
 
     // -------------------------------------------------------------------------
@@ -629,7 +628,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                 terminalFailure?.let { throw it }
             }
 
-            else -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
+            else                        -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
         }
     }
 
@@ -736,8 +735,8 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         if (!writeBehindJob.isCompleted) {
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=close " +
-                    "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()} " +
-                    "closeFailure=${reason.logName}"
+                        "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()} " +
+                        "closeFailure=${reason.logName}"
             }
         }
     }
@@ -748,7 +747,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         } catch (_: Exception) {
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=close_cleanup " +
-                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -848,7 +847,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         } catch (failure: Throwable) {
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=late_publication_invalidate " +
-                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -933,7 +932,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             markWriteBehindLateSideEffectGuard()
             log.warn {
                 "Write-Behind event: component=suspended-jdbc operation=close " +
-                    "failureKind=${closeFailureKind.logName} queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=${closeFailureKind.logName} queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
         return completedInTime && !writeBehindJob.isCancelled
@@ -953,7 +952,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
                     when (writeBehindCloseFailureReason.get()) {
                         WriteBehindCloseFailureReason.TIMEOUT -> CloseCompletionKind.TIMEOUT
                         WriteBehindCloseFailureReason.INTERRUPTED -> CloseCompletionKind.INTERRUPTED
-                        null -> CloseCompletionKind.FAILED
+                        null                                  -> CloseCompletionKind.FAILED
                     }
                 },
                 workerState = if (completed) CacheWorkerState.STOPPED else CacheWorkerState.FAILED,

@@ -80,7 +80,7 @@ private fun Timer.Sample.stopSuccessfulMetric(
     } catch (metricFailure: Exception) {
         ExposedKtorMetricsLog.log.warn(metricFailure) {
             "Exposed Ktor metric recording failed after a successful operation. " +
-                "backend=$backend, operation=$operation, exceptionType=${metricFailure::class.qualifiedName}"
+                    "backend=$backend, operation=$operation, exceptionType=${metricFailure::class.qualifiedName}"
         }
     }
 }
@@ -125,4 +125,4 @@ internal fun MeterRegistry?.recordExposedKtorReadinessTimeout(
         .record(elapsedNanos, TimeUnit.NANOSECONDS)
 }
 
-private object ExposedKtorMetricsLog : KLogging()
+private object ExposedKtorMetricsLog: KLogging()

@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.clickhouse.functions
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.domain.Events
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -18,9 +19,9 @@ import java.time.Instant
  * ClickHouse Date Functions (toYYYYMM, toYYYYMMDD, dateDiff, toStartOfInterval) 테스트.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DateFunctionsTest : AbstractClickHouseTest() {
+class DateFunctionsTest: AbstractClickHouseTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @BeforeEach
     fun setup() {
@@ -32,7 +33,9 @@ class DateFunctionsTest : AbstractClickHouseTest() {
     @AfterEach
     fun teardown() {
         transaction(db) {
-            runCatching { SchemaUtils.drop(Events) }
+            runCatching {
+                SchemaUtils.drop(Events)
+            }
         }
     }
 
@@ -134,7 +137,7 @@ class DateFunctionsTest : AbstractClickHouseTest() {
             }
         }
         result.shouldNotBeNull()
-        log.debug("toStartOfInterval result: $result")
+        log.debug { "toStartOfInterval result: $result" }
     }
 
     @Test

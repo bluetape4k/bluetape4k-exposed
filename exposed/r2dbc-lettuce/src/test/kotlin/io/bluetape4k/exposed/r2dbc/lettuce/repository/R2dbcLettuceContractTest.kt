@@ -67,6 +67,7 @@ class R2dbcLettuceContractTest: AbstractExposedR2dbcTest() {
             updateCount++
             this[UserTable.firstName] = entity.firstName
         }
+
         override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
             this[UserTable.firstName] = entity.firstName
         }

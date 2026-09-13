@@ -138,12 +138,12 @@ class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
                 )
 
                 writer.write(mapOf(1L to "in-flight"))
-                withTimeout(5_000) { started.await() }
+                withTimeout(timeMillis = 5_000) { started.await() }
 
                 writer.closeAndJoin()
 
-                withTimeout(5_000) { cancelled.await() }
-                withTimeout(5_000) { completed.await() }
+                withTimeout(timeMillis = 5_000) { cancelled.await() }
+                withTimeout(timeMillis = 5_000) { completed.await() }
             } finally {
                 scope.cancel()
             }

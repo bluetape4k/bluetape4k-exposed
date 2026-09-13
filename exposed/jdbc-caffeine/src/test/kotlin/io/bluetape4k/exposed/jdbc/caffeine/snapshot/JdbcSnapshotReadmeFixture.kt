@@ -5,17 +5,20 @@ import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
-import io.bluetape4k.exposed.jdbc.caffeine.snapshot.JdbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.jdbc.caffeine.snapshot.jdbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.jdbc.caffeine.snapshot.stageInvalidation
 import io.bluetape4k.exposed.jdbc.caffeine.snapshot.stageSnapshot
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import java.io.Serializable
 
-data class JdbcOrderRow(val id: Long, val description: String)
+data class JdbcOrderRow(val id: Long, val description: String): Serializable {
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
-data class JdbcOrderSnapshot(val id: Long, val description: String) : Serializable {
-    private companion object {
+data class JdbcOrderSnapshot(val id: Long, val description: String): Serializable {
+    companion object {
         private const val serialVersionUID: Long = 1L
     }
 }

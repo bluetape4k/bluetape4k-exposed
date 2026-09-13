@@ -1,7 +1,11 @@
 package io.bluetape4k.exposed.cache
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.exposed.cache.internal.MAX_WRITE_BEHIND_QUEUE_CAPACITY
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireGt
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 import java.time.Duration
 
@@ -45,34 +49,36 @@ open class LocalCacheConfig(
     val writeMode: CacheWriteMode = CacheWriteMode.READ_ONLY,
     val writeBehindBatchSize: Int = 100,
     val writeBehindQueueCapacity: Int = 10_000,
-) : Serializable {
+): Serializable {
 
     init {
         // keyPrefix가 공백이면 캐시 키 네임스페이스 충돌로 서로 다른 저장소 데이터가 덮어써진다.
-        require(keyPrefix.isNotBlank()) { "keyPrefix must not be blank." }
+        keyPrefix.requireNotBlank("keyPrefix")
+
         // maximumSize가 0 이하면 캐시가 비활성화 상태와 동일하거나 구현체에 따라 OOM을 유발할 수 있다.
-        require(maximumSize > 0) { "maximumSize[$maximumSize] must be positive." }
+        maximumSize.requirePositiveNumber("maximumSize")
+
         // expireAfterWrite가 0 이하면 저장 직후 즉시 만료되어 캐시 효과가 없다.
-        require(expireAfterWrite > Duration.ZERO) { "expireAfterWrite[$expireAfterWrite] must be positive." }
+        expireAfterWrite.requireGt(Duration.ZERO, "expireAfterWrite")
+
         // expireAfterAccess가 설정된 경우에도 0 이하 값은 즉시 만료를 의미한다.
         expireAfterAccess?.let {
-            require(it > Duration.ZERO) { "expireAfterAccess[$it] must be positive when set." }
+            it.requireGt(Duration.ZERO, "expireAfterAccess")
         }
+
         // batch와 queue 모두 canonical finite bound 안에 있어야 unbounded waiter와
         // 정수 overflow가 admission 경계를 우회하지 않는다.
-        require(writeBehindBatchSize in 1..MAX_WRITE_BEHIND_QUEUE_CAPACITY) {
-            "writeBehindBatchSize[$writeBehindBatchSize] must be in 1..$MAX_WRITE_BEHIND_QUEUE_CAPACITY."
-        }
-        require(writeBehindQueueCapacity in 1..MAX_WRITE_BEHIND_QUEUE_CAPACITY) {
-            "writeBehindQueueCapacity[$writeBehindQueueCapacity] must be in 1..$MAX_WRITE_BEHIND_QUEUE_CAPACITY."
-        }
+        writeBehindBatchSize.requireInRange(1, MAX_WRITE_BEHIND_QUEUE_CAPACITY, "writeBehindBatchSize")
+
         // writeBehindQueueCapacity가 writeBehindBatchSize보다 작으면 큐가 즉시 포화된다.
-        require(writeBehindQueueCapacity >= writeBehindBatchSize) {
-            "writeBehindQueueCapacity[$writeBehindQueueCapacity] must be >= writeBehindBatchSize[$writeBehindBatchSize]."
-        }
+        writeBehindQueueCapacity.requireInRange(
+            writeBehindBatchSize,
+            MAX_WRITE_BEHIND_QUEUE_CAPACITY,
+            "writeBehindQueueCapacity"
+        )
     }
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
 
         /**

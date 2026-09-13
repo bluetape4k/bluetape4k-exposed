@@ -5,7 +5,7 @@ package io.bluetape4k.exposed.tenant.jdbc
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.h2.jdbcx.JdbcDataSource
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
@@ -55,7 +55,7 @@ class TrackingDataSource(
     private val delegate: HikariDataSource,
     private val events: MutableList<String>,
     private val name: String,
-) : DataSource by delegate, AutoCloseable {
+): DataSource by delegate, AutoCloseable {
     val closeCalls = AtomicInteger()
 
     override fun close() {
@@ -66,7 +66,7 @@ class TrackingDataSource(
     }
 }
 
-fun <K : Any> registryOf(vararg tenants: K): TenantJdbcResourceRegistry<K> =
+fun <K: Any> registryOf(vararg tenants: K): TenantJdbcResourceRegistry<K> =
     TenantJdbcResourceRegistry.create(
         tenants = tenants.asList(),
         dataSourceFactory = { tenant -> dataSource("registry-${tenant.hashCode()}-${UUID.randomUUID()}") },

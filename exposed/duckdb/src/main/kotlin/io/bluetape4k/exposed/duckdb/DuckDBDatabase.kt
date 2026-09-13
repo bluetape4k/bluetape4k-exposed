@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.duckdb
 
-import io.bluetape4k.exposed.duckdb.DuckDBDatabase.file
 import io.bluetape4k.exposed.duckdb.dialect.DuckDBDialect
 import io.bluetape4k.exposed.duckdb.dialect.DuckDBDialectMetadata
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requireNotBlank
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -64,7 +64,7 @@ object DuckDBDatabase: KLogging() {
         Database.registerJdbcDriver("jdbc:duckdb", DRIVER, DuckDBDialect.dialectName)
         DatabaseApi.registerDialect(DuckDBDialect.dialectName) { DuckDBDialect() }
         Database.registerDialectMetadata(DuckDBDialect.dialectName) { DuckDBDialectMetadata() }
-        log.debug("DuckDB dialect registered: ${DuckDBDialect.dialectName}")
+        log.debug { "DuckDB dialect registered: ${DuckDBDialect.dialectName}" }
     }
 
     /**

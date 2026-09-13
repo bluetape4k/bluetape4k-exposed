@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.SuspendedUserCacheRepository
@@ -15,9 +15,9 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.withSuspendedUserTable
 import io.bluetape4k.exposed.redisson.repository.scenarios.SuspendedReadThroughScenario
 import io.bluetape4k.exposed.redisson.repository.scenarios.SuspendedWriteThroughScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
@@ -27,6 +27,7 @@ import kotlin.coroutines.CoroutineContext
 
 @Suppress("DEPRECATION")
 class SuspendedReadWriteThroughCacheTest {
+
     companion object: KLoggingChannel()
 
     abstract class SuspendedAutoIncIdReadWriteThrough:
@@ -41,21 +42,19 @@ class SuspendedReadWriteThroughCacheTest {
             withSuspendedUserTable(testDB, context, statement)
         }
 
-        override suspend fun getExistingId(): Long =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): Long = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<Long> =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override suspend fun getExistingIds(): List<Long> = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -74,6 +73,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedAutoIncIdReadWriteThroughRemoteCache: SuspendedAutoIncIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "suspended:read-write-through:remote:users")
 
@@ -87,6 +87,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedAutoIncIdReadWriteThroughRemoteCacheWithDeleteDB: SuspendedAutoIncIdReadWriteThrough() {
+
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
             name = "suspended:read-write-through:remote:delete-db:users",
             deleteFromDBOnInvalidate = true
@@ -102,6 +103,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedAutoIncIdReadWriteThroughNearCache: SuspendedAutoIncIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(name = "suspended:read-write-through:near:users")
 
@@ -115,6 +117,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedAutoIncIdReadWriteThroughNearCacheWithDeleteDB: SuspendedAutoIncIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(
                 name = "suspended:read-write-through:near:delete-db:users",
@@ -133,6 +136,7 @@ class SuspendedReadWriteThroughCacheTest {
         AbstractRedissonTest(),
         SuspendedReadThroughScenario<UUID, UserCredentialsRecord>,
         SuspendedWriteThroughScenario<UUID, UserCredentialsRecord> {
+
         override suspend fun withSuspendedEntityTable(
             testDB: TestDB,
             context: CoroutineContext,
@@ -141,20 +145,18 @@ class SuspendedReadWriteThroughCacheTest {
             withSuspendedUserCredentialsTable(testDB, context, statement)
         }
 
-        override suspend fun getExistingId() =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId() = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds() =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override suspend fun getExistingIds() = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -173,6 +175,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedClientGeneratedIdReadThroughRemoteCache: SuspendedClientGeneratedIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "suspended:read-through:remote:user-credentials")
 
@@ -187,6 +190,7 @@ class SuspendedReadWriteThroughCacheTest {
     @Nested
     inner class SuspendedClientGeneratedIdReadThroughRemoteCacheWithDeleteDB:
         SuspendedClientGeneratedIdReadWriteThrough() {
+
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
             name = "suspended:read-through:remote:delete-db:user-credentials",
             deleteFromDBOnInvalidate = true
@@ -202,6 +206,7 @@ class SuspendedReadWriteThroughCacheTest {
 
     @Nested
     inner class SuspendedClientGeneratedIdReadThroughNearCache: SuspendedClientGeneratedIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(name = "suspended:read-through:near:user-credentials")
 
@@ -216,6 +221,7 @@ class SuspendedReadWriteThroughCacheTest {
     @Nested
     inner class SuspendedClientGeneratedIdReadThroughNearCacheWithDeleteDB:
         SuspendedClientGeneratedIdReadWriteThrough() {
+
         override val cacheConfig =
             RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(
                 name = "suspended:read-through:near:delete-db:user-credentials",

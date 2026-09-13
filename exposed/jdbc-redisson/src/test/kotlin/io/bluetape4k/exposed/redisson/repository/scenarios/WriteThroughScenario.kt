@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.redisson.repository.scenarios
 
-import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Assumptions
@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 interface WriteThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenario<ID, E> {
+
     companion object: KLogging()
 
     fun createNewEntity(): E
@@ -80,10 +81,10 @@ interface WriteThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScena
             entitiesFromCacheMap.values.forEach { entity ->
                 assertSameEntityWithoutUpdatedAt(
                     entity,
-                    updatedEntities.find {
-                        repository.extractId(it) ==
-                                repository.extractId(entity)
-                    }!!
+                    updatedEntities
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
                 )
             }
 
@@ -94,9 +95,10 @@ interface WriteThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScena
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutUpdatedAt(
                     entity,
-                    entitiesFromCacheMap.values.find {
-                        repository.extractId(it) == repository.extractId(entity)
-                    }!!
+                    entitiesFromCacheMap.values
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
                 )
             }
         }
@@ -120,27 +122,30 @@ interface WriteThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScena
 
             val entitiesFromCacheMap = repository.getAll(ids)
             entitiesFromCacheMap.shouldNotBeNull()
-            entitiesFromCacheMap.values.forEach { entity ->
-                assertSameEntityWithoutUpdatedAt(
-                    entity,
-                    updatedEntities.find {
-                        repository.extractId(it) ==
-                                repository.extractId(entity)
-                    }!!
-                )
-            }
+            entitiesFromCacheMap.values
+                .forEach { entity ->
+                    assertSameEntityWithoutUpdatedAt(
+                        entity,
+                        updatedEntities
+                            .find {
+                                repository.extractId(it) == repository.extractId(entity)
+                            }.shouldNotBeNull()
+                    )
+                }
 
             val entitiesFromDB = repository.findAllFromDb(ids)
             entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
 
-            entitiesFromDB.forEach { entity ->
-                assertSameEntityWithoutUpdatedAt(
-                    entity,
-                    entitiesFromCacheMap.values.find {
-                        repository.extractId(it) == repository.extractId(entity)
-                    }!!
-                )
-            }
+            entitiesFromDB
+                .forEach { entity ->
+                    assertSameEntityWithoutUpdatedAt(
+                        entity,
+                        entitiesFromCacheMap.values
+                            .find {
+                                repository.extractId(it) == repository.extractId(entity)
+                            }.shouldNotBeNull()
+                    )
+                }
         }
     }
 

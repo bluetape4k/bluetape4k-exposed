@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -7,9 +8,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -48,7 +49,8 @@ class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
     private val toEntity: suspend ResultRow.() -> E,
     private val batchSize: Int = DEFAULT_BATCH_SIZE,
 ): R2dbcEntityMapLoader<ID, E>() {
-    companion object {
+
+    companion object: KLoggingChannel() {
         private const val DEFAULT_BATCH_SIZE = 1000
     }
 
@@ -166,14 +168,15 @@ private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
 @JvmSynthetic
 internal fun Any.isKeysetScalar(): Boolean =
     this is Comparable<*> &&
-        when (this) {
-            is Byte, is Short, is Int, is Long, is Float, is Double,
-            is UByte, is UShort, is UInt, is ULong,
-            is java.math.BigDecimal, is java.math.BigInteger,
-            is String, is Char, is java.util.UUID,
-            is java.sql.Date, is java.sql.Time, is java.sql.Timestamp -> true
-            else -> javaClass.name.startsWith("java.time.")
-        }
+            when (this) {
+                is Byte, is Short, is Int, is Long, is Float, is Double,
+                is UByte, is UShort, is UInt, is ULong,
+                is java.math.BigDecimal, is java.math.BigInteger,
+                is String, is Char, is java.util.UUID,
+                is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
+                     -> true
+                else -> javaClass.name.startsWith("java.time.")
+            }
 
 @Suppress("UNCHECKED_CAST")
 private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =

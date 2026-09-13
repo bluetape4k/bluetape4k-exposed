@@ -22,11 +22,14 @@ import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransact
  * @param E 엔티티 타입
  */
 abstract class SuspendedEntityMapLoader<ID: Any, E: Any>: SuspendedMapLoader<ID, E> {
-    @Suppress("DEPRECATION")
-    override suspend fun load(key: ID): E? = suspendedTransactionAsync(Dispatchers.IO) { loadById(key) }.await()
 
     @Suppress("DEPRECATION")
-    override suspend fun loadAllKeys(): List<ID> = suspendedTransactionAsync(Dispatchers.IO) { loadAllIds() }.await()
+    override suspend fun load(key: ID): E? =
+        suspendedTransactionAsync(Dispatchers.IO) { loadById(key) }.await()
+
+    @Suppress("DEPRECATION")
+    override suspend fun loadAllKeys(): List<ID> =
+        suspendedTransactionAsync(Dispatchers.IO) { loadAllIds() }.await()
 
     /**
      * 주어진 [id]에 해당하는 엔티티를 DB에서 로드한다.

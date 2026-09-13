@@ -12,9 +12,7 @@ import io.bluetape4k.exposed.clickhouse.types.chNullable
  * created_at은 ClickHouse DateTime64(3, 'UTC') Nullable 타입으로 정의.
  * Exposed 표준 timestamp()는 ClickHouse DateTime(초 단위)로 매핑되어 밀리초 이하 정밀도가 손실됨.
  */
-object Events: ClickHouseTable(
-    name = "events",
-) {
+object Events: ClickHouseTable(name = "events") {
     val eventId = long("event_id")
     val eventName = varchar("event_name", 255)
     val region = varchar("region", 50)

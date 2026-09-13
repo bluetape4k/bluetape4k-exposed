@@ -1,16 +1,19 @@
 package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
@@ -29,6 +32,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
+    companion object: KLogging()
+
     private object EnumerationTable: LongIdTable("jdbc_parallel_key_enumeration") {
         val name = varchar("name", 64)
     }
@@ -44,18 +49,18 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
         first.generation shouldNotBeEqualTo second.generation
         first.clearConnection(secondRegistration).shouldBeFalse()
-        (first.currentConnection(first.generation) === firstConnection).shouldBeTrue()
-        (second.currentConnection(second.generation) === secondConnection).shouldBeTrue()
+        first.currentConnection(first.generation) shouldBe firstConnection
+        second.currentConnection(second.generation) shouldBe secondConnection
 
         first.clearConnection(firstRegistration).shouldBeTrue()
-        first.currentConnection(first.generation) shouldBeEqualTo null
+        first.currentConnection(first.generation).shouldBeNull()
 
         val firstStatement = unusedPreparedStatement()
         val secondStatement = unusedPreparedStatement()
         val firstStatementRegistration = first.registerStatement(firstStatement)
         first.registerStatement(secondStatement)
 
-        (first.currentStatement(first.generation) === secondStatement).shouldBeTrue()
+        first.currentStatement(first.generation) shouldBe secondStatement
         first.clearStatement(firstStatementRegistration).shouldBeFalse()
         first.clearStatement(firstStatement).shouldBeFalse()
         first.clearStatement(secondStatement).shouldBeTrue()
@@ -75,17 +80,17 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             ) { _, _, handle ->
                 handleRef.set(handle)
                 val observer =
-                    object : StatementInterceptor {
+                    object: StatementInterceptor {
                         override fun afterStatementPrepared(
                             transaction: Transaction,
                             preparedStatement: PreparedStatementApi,
                         ) {
                             observed.set(
                                 handle.currentConnection(handle.generation) != null &&
-                                    (
-                                        handle.currentStatement(handle.generation) ===
-                                            preparedStatement as? JdbcPreparedStatementApi
-                                    ),
+                                        (
+                                                handle.currentStatement(handle.generation) ===
+                                                        preparedStatement as? JdbcPreparedStatementApi
+                                                ),
                             )
                         }
 
@@ -109,8 +114,8 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
             observed.get().shouldBeTrue()
             val handle = requireNotNull(handleRef.get())
-            (handle.currentConnection(handle.generation) == null).shouldBeTrue()
-            (handle.currentStatement(handle.generation) == null).shouldBeTrue()
+            handle.currentConnection(handle.generation).shouldBeNull()
+            handle.currentStatement(handle.generation).shouldBeNull()
         }
     }
 
@@ -152,7 +157,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 )
 
             ids shouldBeEqualTo listOf(1L, 3L, 4L, 5L, 6L)
-            (ids.size == ids.distinct().size).shouldBeTrue()
+            ids.size shouldBeEqualTo ids.distinct().size
         }
     }
 

@@ -1,5 +1,9 @@
 package io.bluetape4k.exposed.dao
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.exposed.shared.entities.BlogSchema.Post
 import io.bluetape4k.exposed.shared.entities.BlogSchema.PostDetail
 import io.bluetape4k.exposed.shared.entities.BlogSchema.blogTables
@@ -10,11 +14,8 @@ import io.bluetape4k.exposed.shared.entities.BoardSchema.Posts
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContain
 import org.jetbrains.exposed.v1.dao.entityCache
 import org.jetbrains.exposed.v1.dao.flushCache
 import org.junit.jupiter.params.ParameterizedTest
@@ -22,6 +23,9 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 
 class EntityExtensionsTest: AbstractExposedTest() {
+
+    companion object: KLogging()
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `DAO 방식으로 Post 생성하기`(testDB: TestDB) {
@@ -41,7 +45,6 @@ class EntityExtensionsTest: AbstractExposedTest() {
             log.debug { "PostDetail=$postDetail" }
 
             flushCache()
-            entityCache.clear()
 
             val loadedPost = Post.findById(post.id)!!
 

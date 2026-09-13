@@ -10,7 +10,6 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.update
 import java.util.*
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
@@ -20,10 +19,6 @@ import kotlin.uuid.Uuid
  * 논리적으로 삭제/복원하는 연산을 추가로 제공합니다.
  * 부모 인터페이스의 [findAll] 등은 `isDeleted` 필터를 적용하지 않으므로
  * soft delete 필터가 필요한 경우 [findActive] 또는 [findDeleted]를 사용하세요.
- *
- * @param ID 기본키 타입
- * @param T [SoftDeletedIdTable] 구현체
- * @param E 엔티티 타입
  *
  * ## 사용 예
  *
@@ -55,6 +50,10 @@ import kotlin.uuid.Uuid
  *     val actives = repo.findActive().toList()  // isDeleted = false 인 엔티티만 조회
  * }
  * ```
+ *
+ * @param ID 기본키 타입
+ * @param T [SoftDeletedIdTable] 구현체
+ * @param E 엔티티 타입
  */
 interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>: R2dbcRepository<ID, E> {
     override val table: T
@@ -196,7 +195,6 @@ interface LongSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Long>>: S
  * @param T [SoftDeletedIdTable]<Uuid> 구현체
  * @param E 엔티티 타입
  */
-@OptIn(ExperimentalUuidApi::class)
 interface KotlinUuidSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<Uuid>>:
     SoftDeletedR2dbcRepository<Uuid, E, T>
 
@@ -222,7 +220,6 @@ interface JavaUuidSoftDeletedR2dbcRepository<E: Any, T: SoftDeletedIdTable<UUID>
     message = "Use KotlinUuidSoftDeletedR2dbcRepository instead.",
     replaceWith = ReplaceWith("KotlinUuidSoftDeletedR2dbcRepository<E, T>"),
 )
-@OptIn(ExperimentalUuidApi::class)
 typealias UuidSoftDeletedR2dbcRepository<E, T> = KotlinUuidSoftDeletedR2dbcRepository<E, T>
 
 /**

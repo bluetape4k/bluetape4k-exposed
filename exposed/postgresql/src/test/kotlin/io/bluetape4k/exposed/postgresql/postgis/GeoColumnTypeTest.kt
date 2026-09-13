@@ -1,5 +1,13 @@
 package io.bluetape4k.exposed.postgresql.postgis
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.PostgisServer
@@ -7,12 +15,6 @@ import net.postgis.jdbc.PGgeometry
 import net.postgis.jdbc.geometry.LinearRing
 import net.postgis.jdbc.geometry.Point
 import net.postgis.jdbc.geometry.Polygon
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeLessOrEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -24,7 +26,6 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * PostGIS 컬럼 타입 및 공간 함수 통합 테스트.
@@ -315,7 +316,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
                 .map { it[Regions.name] }
 
             withinResults shouldHaveSize 1
-            withinResults.contains("서울").shouldBeTrue()
+            withinResults shouldContain "서울"
         }
     }
 
@@ -352,7 +353,11 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val seoul = rectanglePolygon(minLng = 126.7, minLat = 37.4, maxLng = 127.2, maxLat = 37.7)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "경기-서울"; it[zoneA] = gyeonggi; it[zoneB] = seoul }
+            PolygonZones.insert {
+                it[name] = "경기-서울"
+                it[zoneA] = gyeonggi
+                it[zoneB] = seoul
+            }
 
             // 경기도가 서울을 포함
             val containsRows = PolygonZones.selectAll()
@@ -364,7 +369,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             val notContainsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneB.stContains(PolygonZones.zoneA) }
                 .toList()
-            notContainsRows shouldHaveSize 0
+            notContainsRows.shouldBeEmpty()
         }
     }
 
@@ -376,7 +381,11 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val metro = rectanglePolygon(minLng = 126.0, minLat = 36.5, maxLng = 128.0, maxLat = 38.5)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "한반도-수도권"; it[zoneA] = korea; it[zoneB] = metro }
+            PolygonZones.insert {
+                it[name] = "한반도-수도권"
+                it[zoneA] = korea
+                it[zoneB] = metro
+            }
 
             // 한반도가 수도권을 포함 (ST_Contains)
             val containsResult = PolygonZones.selectAll()
@@ -401,9 +410,21 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val gu = rectanglePolygon(minLng = 126.8, minLat = 37.4, maxLng = 127.0, maxLat = 37.6)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "국가-광역시"; it[zoneA] = nation; it[zoneB] = city }
-            PolygonZones.insert { it[name] = "광역시-구"; it[zoneA] = city; it[zoneB] = gu }
-            PolygonZones.insert { it[name] = "국가-구"; it[zoneA] = nation; it[zoneB] = gu }
+            PolygonZones.insert {
+                it[name] = "국가-광역시"
+                it[zoneA] = nation
+                it[zoneB] = city
+            }
+            PolygonZones.insert {
+                it[name] = "광역시-구"
+                it[zoneA] = city
+                it[zoneB] = gu
+            }
+            PolygonZones.insert {
+                it[name] = "국가-구"
+                it[zoneA] = nation
+                it[zoneB] = gu
+            }
 
             // 국가→광역시, 광역시→구, 국가→구 모두 포함 관계 성립
             val containsCount = PolygonZones.selectAll()
@@ -431,7 +452,11 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val right = rectanglePolygon(minLng = 126.5, minLat = 37.0, maxLng = 127.5, maxLat = 38.0)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "겹침"; it[zoneA] = left; it[zoneB] = right }
+            PolygonZones.insert {
+                it[name] = "겹침"
+                it[zoneA] = left
+                it[zoneB] = right
+            }
 
             val overlapsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stOverlaps(PolygonZones.zoneB) }
@@ -442,7 +467,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             val containsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stContains(PolygonZones.zoneB) }
                 .toList()
-            containsRows shouldHaveSize 0
+            containsRows.shouldBeEmpty()
         }
     }
 
@@ -453,7 +478,11 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val inner = rectanglePolygon(minLng = 126.5, minLat = 37.5, maxLng = 127.5, maxLat = 38.5)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "완전포함"; it[zoneA] = outer; it[zoneB] = inner }
+            PolygonZones.insert {
+                it[name] = "완전포함"
+                it[zoneA] = outer
+                it[zoneB] = inner
+            }
 
             // ST_Contains = true (포함 관계)
             val containsRows = PolygonZones.selectAll()
@@ -465,7 +494,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             val overlapsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stOverlaps(PolygonZones.zoneB) }
                 .toList()
-            overlapsRows shouldHaveSize 0
+            overlapsRows.shouldBeEmpty()
         }
     }
 
@@ -481,13 +510,17 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val busanArea = rectanglePolygon(minLng = 128.9, minLat = 35.0, maxLng = 129.3, maxLat = 35.4)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "서울-부산"; it[zoneA] = seoulArea; it[zoneB] = busanArea }
+            PolygonZones.insert {
+                it[name] = "서울-부산"
+                it[zoneA] = seoulArea
+                it[zoneB] = busanArea
+            }
 
             // 분리된 폴리곤은 교차하지 않음
             val intersectsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stIntersects(PolygonZones.zoneB) }
                 .toList()
-            intersectsRows shouldHaveSize 0
+            intersectsRows.shouldBeEmpty()
 
             // ST_Disjoint = true (완전 분리)
             val disjointRows = PolygonZones.selectAll()
@@ -503,7 +536,11 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val bArea = rectanglePolygon(minLng = 126.5, minLat = 37.5, maxLng = 127.5, maxLat = 38.5)
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "겹침"; it[zoneA] = aArea; it[zoneB] = bArea }
+            PolygonZones.insert {
+                it[name] = "겹침"
+                it[zoneA] = aArea
+                it[zoneB] = bArea
+            }
 
             val intersectsRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stIntersects(PolygonZones.zoneB) }
@@ -514,7 +551,7 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             val disjointRows = PolygonZones.selectAll()
                 .where { PolygonZones.zoneA.stDisjoint(PolygonZones.zoneB) }
                 .toList()
-            disjointRows shouldHaveSize 0
+            disjointRows.shouldBeEmpty()
         }
     }
 
@@ -526,9 +563,21 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val apart = rectanglePolygon(minLng = 130.0, minLat = 35.0, maxLng = 131.0, maxLat = 36.0)  // 완전 분리
 
         withGeoTables(PolygonZones) {
-            PolygonZones.insert { it[name] = "포함"; it[zoneA] = base; it[zoneB] = inside }
-            PolygonZones.insert { it[name] = "겹침"; it[zoneA] = base; it[zoneB] = overlap }
-            PolygonZones.insert { it[name] = "분리"; it[zoneA] = base; it[zoneB] = apart }
+            PolygonZones.insert {
+                it[name] = "포함"
+                it[zoneA] = base
+                it[zoneB] = inside
+            }
+            PolygonZones.insert {
+                it[name] = "겹침"
+                it[zoneA] = base
+                it[zoneB] = overlap
+            }
+            PolygonZones.insert {
+                it[name] = "분리"
+                it[zoneA] = base
+                it[zoneB] = apart
+            }
 
             // base가 완전히 포함하는 것: inside만
             val containsNames = PolygonZones.selectAll()
@@ -556,8 +605,8 @@ class GeoColumnTypeTest: AbstractExposedTest() {
                 .where { PolygonZones.zoneA.stIntersects(PolygonZones.zoneB) }
                 .map { it[PolygonZones.name] }
             intersectsNames shouldHaveSize 2
-            intersectsNames.contains("포함").shouldBeTrue()
-            intersectsNames.contains("겹침").shouldBeTrue()
+            intersectsNames shouldContain "포함"
+            intersectsNames shouldContain "겹침"
         }
     }
 
@@ -594,13 +643,21 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         val small = rectanglePolygon(minLng = 126.0, minLat = 37.0, maxLng = 127.0, maxLat = 38.0)
 
         withGeoTables(Regions) {
-            Regions.insert { it[name] = "large"; it[point] = point(127.0, 38.0); it[area] = large }
-            Regions.insert { it[name] = "small"; it[point] = point(126.5, 37.5); it[area] = small }
+            Regions.insert {
+                it[name] = "large"
+                it[point] = point(127.0, 38.0)
+                it[area] = large
+            }
+            Regions.insert {
+                it[name] = "small"
+                it[point] = point(126.5, 37.5)
+                it[area] = small
+            }
 
             val areaExpr = Regions.area.stArea()
-            val areaByName = Regions.select(Regions.name, areaExpr).associate {
-                it[Regions.name] to it[areaExpr]
-            }
+            val areaByName = Regions
+                .select(Regions.name, areaExpr)
+                .associate { it[Regions.name] to it[areaExpr] }
 
             areaByName["large"].shouldNotBeNull()
             areaByName["small"].shouldNotBeNull()
@@ -622,8 +679,16 @@ class GeoColumnTypeTest: AbstractExposedTest() {
             val seoulCenter = point(126.9780, 37.5665)   // 서울 시청 -- 영역 내
             val busanCenter = point(129.0756, 35.1796)   // 부산 시청 -- 영역 외
 
-            Regions.insert { it[name] = "서울 중심"; it[point] = seoulCenter; it[area] = seoulArea }
-            Regions.insert { it[name] = "부산 중심"; it[point] = busanCenter; it[area] = seoulArea }
+            Regions.insert {
+                it[name] = "서울 중심"
+                it[point] = seoulCenter
+                it[area] = seoulArea
+            }
+            Regions.insert {
+                it[name] = "부산 중심"
+                it[point] = busanCenter
+                it[area] = seoulArea
+            }
 
             // 폴리곤이 포인트를 포함하는 경우만 조회 (ST_Contains(polygon, point))
             val containedNames = Regions.selectAll()
@@ -643,9 +708,21 @@ class GeoColumnTypeTest: AbstractExposedTest() {
 
         // 행정구역 테이블 (area만 사용, point는 중심점)
         withGeoTables(Regions) {
-            Regions.insert { it[name] = "서울"; it[point] = point(126.9780, 37.5665); it[area] = seoulArea }
-            Regions.insert { it[name] = "부산"; it[point] = point(129.0756, 35.1796); it[area] = busanArea }
-            Regions.insert { it[name] = "인천"; it[point] = point(126.7052, 37.4563); it[area] = incheonArea }
+            Regions.insert {
+                it[name] = "서울"
+                it[point] = point(126.9780, 37.5665)
+                it[area] = seoulArea
+            }
+            Regions.insert {
+                it[name] = "부산"
+                it[point] = point(129.0756, 35.1796)
+                it[area] = busanArea
+            }
+            Regions.insert {
+                it[name] = "인천"
+                it[point] = point(126.7052, 37.4563)
+                it[area] = incheonArea
+            }
 
             // 각 행정구역 중심점이 자기 영역 안에 있는지 확인
             val ownAreaNames = Regions.selectAll()
@@ -654,9 +731,9 @@ class GeoColumnTypeTest: AbstractExposedTest() {
 
             // 서울/부산/인천 중심점이 각자의 영역 안에 있어야 함
             ownAreaNames shouldHaveSize 3
-            ownAreaNames.contains("서울").shouldBeTrue()
-            ownAreaNames.contains("부산").shouldBeTrue()
-            ownAreaNames.contains("인천").shouldBeTrue()
+            ownAreaNames shouldContain "서울"
+            ownAreaNames shouldContain "부산"
+            ownAreaNames shouldContain "인천"
         }
     }
 }

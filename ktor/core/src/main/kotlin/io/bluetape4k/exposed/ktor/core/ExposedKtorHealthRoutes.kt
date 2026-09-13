@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.ktor.core
 
 import io.bluetape4k.ktor.core.HealthResponse
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -117,7 +116,7 @@ internal suspend fun evaluateExposedKtorReadiness(
         val outcome = when {
             deadlineExpired -> ExposedKtorReadinessOutcome.TIMEOUT
             result is ProbeAttempt.OuterTimeout -> ExposedKtorReadinessOutcome.TIMEOUT
-            else -> (result as ProbeAttempt.Value).value
+            else            -> (result as ProbeAttempt.Value).value
         }
         details[probe.component] = outcome.name
         binding.record(outcome.metricValue, elapsed)
@@ -132,7 +131,7 @@ private fun elapsedNanos(clock: ReadinessClock, startedNanos: Long): Long {
 
 private val ExposedKtorReadinessOutcome.metricValue: String
     get() = when (this) {
-        ExposedKtorReadinessOutcome.UP -> "success"
+        ExposedKtorReadinessOutcome.UP   -> "success"
         ExposedKtorReadinessOutcome.DOWN -> "error"
         ExposedKtorReadinessOutcome.TIMEOUT -> "timeout"
     }

@@ -24,38 +24,34 @@ The sequence view follows the real message order: read-through hit and miss bran
 - **No JDBC dependency**: Pure R2DBC with `exposed-cache` interfaces only
 - **Caffeine AsyncCache**: Non-blocking cache backed by `CompletableFuture`
 - **Coroutine-native**: All DB operations use `suspendTransaction`
-- **Bounded write-behind**: `writeBehindBatchSize` and `writeBehindQueueCapacity` each accept `1..100_000`; queue capacity must be greater than or equal to batch size, otherwise `IllegalArgumentException` is thrown during configuration
-- **Graceful shutdown**: `close()` stops new admissions, attempts publication and worker drain within a finite shutdown boundary, then cleans up the cache; timeout or interruption can leave a residual batch or failure
+- **Bounded
+  write-behind**: `writeBehindBatchSize` and `writeBehindQueueCapacity` each accept `1..100_000`; queue capacity must be greater than or equal to batch size, otherwise `IllegalArgumentException` is thrown during configuration
+- **Graceful
+  shutdown**: `close()` stops new admissions, attempts publication and worker drain within a finite shutdown boundary, then cleans up the cache; timeout or interruption can leave a residual batch or failure
 
 <!-- R2DBC-SNAPSHOT-CACHE -->
+
 ## Commit-safe R2DBC snapshot cache (opt-in)
 
-`R2dbcCaffeineSnapshotCache` is an opt-in cache-only facade, separate from the repository cache above. It accepts
-detached immutable DTOs and publishes a staged `CacheSnapshot` only after the current root `R2dbcTransaction` commits.
-Rollback discards staged work, last mutation wins for a repeated key, and a process-local fence rejects a late fill
-after a newer local mutation. Existing repository caches are not migrated.
+`R2dbcCaffeineSnapshotCache` is an opt-in cache-only facade, separate from the repository cache above. It accepts detached immutable DTOs and publishes a staged `CacheSnapshot` only after the current root `R2dbcTransaction` commits. Rollback discards staged work, last mutation wins for a repeated key, and a process-local fence rejects a late fill after a newer local mutation. Existing repository caches are not migrated.
 
 Perform `lookup` before the database read so outstanding-miss capacity fails before R2DBC work. The returned
-`SnapshotCacheMiss` is one-shot even when mapping or staging fails. `stageSnapshot` maps inside the current root
-transaction and rejects nested/savepoint transactions. Snapshot fill requires `maxAttempts = 1`; application retry must
-wrap the complete lookup + `suspendTransaction` + database-read sequence and obtain a fresh lookup each time.
+`SnapshotCacheMiss` is one-shot even when mapping or staging fails. `stageSnapshot` maps inside the current root transaction and rejects nested/savepoint transactions. Snapshot fill requires `maxAttempts = 1`; application retry must wrap the complete lookup + `suspendTransaction` + database-read sequence and obtain a fresh lookup each time.
 `stageInvalidation` remains attempt-local and publishes once after the successful retry.
 
-Post-transaction callbacks are non-suspending, cache-only, and perform no database writes. An earlier failing callback
-can prevent publication and leave a stale value. Observe the bounded `SnapshotCacheFailureBuffer` and keep an
-application-owned outbox or repair path. Commit-safe is not database/cache atomicity or crash durability.
+Post-transaction callbacks are non-suspending, cache-only, and perform no database writes. An earlier failing callback can prevent publication and leave a stale value. Observe the bounded `SnapshotCacheFailureBuffer` and keep an application-owned outbox or repair path. Commit-safe is not database/cache atomicity or crash durability.
 
 ### Canonical R2DBC example
 
 The English and Korean blocks below are byte-for-byte equal to a compiled source-usage fixture.
 
 <!-- README-CANONICAL-R2DBC-BEGIN -->
+
 ```kotlin
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
-import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.R2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.r2dbcCaffeineSnapshotCache
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageInvalidation
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.stageSnapshot
@@ -95,6 +91,7 @@ fun R2dbcTransaction.invalidateOrderSnapshot(id: Long) {
     stageInvalidation(r2dbcOrderSnapshotCache, id)
 }
 ```
+
 <!-- README-CANONICAL-R2DBC-END -->
 
 ## Usage
@@ -137,12 +134,12 @@ behindRepo.put(1L, updatedActor)  // returns immediately
 
 ## Dependencies
 
-| Dependency | Purpose |
-|---|---|
-| `exposed-r2dbc` | Exposed R2DBC transaction support |
-| `exposed-cache` | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
-| `bluetape4k-coroutines` | Coroutines utilities |
-| `com.github.ben-manes.caffeine:caffeine` | In-process async cache |
+| Dependency                               | Purpose                                                 |
+|------------------------------------------|---------------------------------------------------------|
+| `exposed-r2dbc`                          | Exposed R2DBC transaction support                       |
+| `exposed-cache`                          | `R2dbcCacheRepository`, `LocalCacheConfig`, `CacheMode` |
+| `bluetape4k-coroutines`                  | Coroutines utilities                                    |
+| `com.github.ben-manes.caffeine:caffeine` | In-process async cache                                  |
 
 ```kotlin
 dependencies {

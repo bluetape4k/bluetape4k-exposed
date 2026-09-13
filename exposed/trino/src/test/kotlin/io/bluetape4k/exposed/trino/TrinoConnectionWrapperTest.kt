@@ -1,14 +1,15 @@
 package io.bluetape4k.exposed.trino
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
@@ -16,6 +17,8 @@ import java.sql.PreparedStatement
 import java.sql.Statement
 
 class TrinoConnectionWrapperTest {
+
+    companion object: KLogging()
 
     private val mockStatement = mockk<PreparedStatement>(relaxed = true)
     private val mockConn = mockk<Connection>(relaxed = true)

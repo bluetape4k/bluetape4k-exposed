@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.ktor.core
 
+import io.bluetape4k.support.requireLe
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requireNotEmpty
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
@@ -31,7 +34,7 @@ interface ExposedKtorReadinessProbe {
 }
 
 /** 호출자 소유의 cancellation-cooperative readiness 계약을 선언하는 marker입니다. */
-interface ExposedKtorCooperativeReadinessProbe : ExposedKtorReadinessProbe
+interface ExposedKtorCooperativeReadinessProbe: ExposedKtorReadinessProbe
 
 /** 등록 시 상태를 고정해 mutable probe metadata가 tag를 바꾸지 못하게 합니다. */
 internal data class RegisteredProbe(
@@ -41,8 +44,8 @@ internal data class RegisteredProbe(
 )
 
 internal sealed interface ProbeAttempt<out T> {
-    data class Value<T>(val value: T) : ProbeAttempt<T>
-    data object OuterTimeout : ProbeAttempt<Nothing>
+    data class Value<T>(val value: T): ProbeAttempt<T>
+    data object OuterTimeout: ProbeAttempt<Nothing>
 }
 
 /** 결정적인 route 계약 테스트에 사용하는 monotonic clock seam입니다. */
@@ -60,10 +63,8 @@ private val COMPONENT_PATTERN = Regex("[a-z][a-z0-9_.-]{0,62}")
 internal fun validateReadinessProbes(
     probes: List<ExposedKtorReadinessProbe>,
 ): List<RegisteredProbe> {
-    require(probes.isNotEmpty()) { "Readiness probes must not be empty." }
-    require(probes.size <= MAX_READINESS_PROBES) {
-        "Readiness probes must contain at most $MAX_READINESS_PROBES entries."
-    }
+    probes.requireNotEmpty("probes")
+    probes.size.requireLe(MAX_READINESS_PROBES, "probes.size")
 
     val components = HashSet<String>(probes.size)
     return probes.mapIndexed { index, probe ->
@@ -90,15 +91,13 @@ internal fun validateReadinessComponent(component: String, index: Int? = null) {
 }
 
 internal fun Duration.requireFinitePositive(parameterName: String): Duration {
-    require(parameterName.isNotBlank()) { "parameterName must not be blank." }
-    require(isFinite() && isPositive()) {
-        "$parameterName must be finite and positive."
-    }
+    parameterName.requireNotBlank("parameterName")
+    require(isFinite() && isPositive()) { "$parameterName must be finite and positive." }
     return this
 }
 
 internal fun String.requireLiteralExposedKtorPath(parameterName: String): String {
-    require(parameterName.isNotBlank()) { "parameterName must not be blank." }
+    parameterName.requireNotBlank("parameterName")
     require(isNotEmpty() && startsWith("/")) {
         "$parameterName must be an absolute path."
     }

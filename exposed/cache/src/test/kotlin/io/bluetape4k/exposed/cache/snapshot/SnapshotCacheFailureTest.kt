@@ -2,12 +2,18 @@ package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class SnapshotCacheFailureTest {
+
+    companion object: KLogging() {
+        private val STORE_ID = SnapshotStoreId("local", "orders:v1")
+    }
 
     @Test
     fun `bounded buffer preserves FIFO order and counts dropped failures`() {
@@ -34,7 +40,7 @@ class SnapshotCacheFailureTest {
         var observed = 0
 
         val result = buffer.drainTo(
-            observer = SnapshotCacheFailureObserver {
+            observer = {
                 observed++
                 if (observed == 2) throw ObserverFailure("secret-observer-message")
             },
@@ -56,7 +62,7 @@ class SnapshotCacheFailureTest {
         buffer.recordFailure(failure(SnapshotCacheOutcome.FAILED, 1))
 
         assertFailsWith<ObserverFatalError> {
-            buffer.drainTo(SnapshotCacheFailureObserver { throw ObserverFatalError() })
+            buffer.drainTo({ throw ObserverFatalError() })
         }
 
         buffer.size shouldBeEqualTo 0
@@ -82,7 +88,7 @@ class SnapshotCacheFailureTest {
         rendered shouldNotContain "password=secret"
         failure.javaClass.declaredFields
             .map { it.type }
-            .any(Throwable::class.java::isAssignableFrom) shouldBeEqualTo false
+            .any(Throwable::class.java::isAssignableFrom).shouldBeFalse()
     }
 
     @Test
@@ -91,15 +97,15 @@ class SnapshotCacheFailureTest {
             storeId = STORE_ID,
             operation = SnapshotCacheOperation.INVALIDATE,
             affectedCount = 1,
-            exception = 사용자예외(),
+            exception = CustomException(),
         )
         val buffer = snapshotCacheFailureBuffer(1)
         buffer.recordFailure(failure)
 
-        val drained = buffer.drainTo(SnapshotCacheFailureObserver { throw 사용자예외() })
+        val drained = buffer.drainTo({ throw CustomException() })
 
-        failure.exceptionType shouldBeEqualTo 사용자예외::class.java.name
-        drained.observerExceptionType shouldBeEqualTo 사용자예외::class.java.name
+        failure.exceptionType shouldBeEqualTo CustomException::class.java.name
+        drained.observerExceptionType shouldBeEqualTo CustomException::class.java.name
         drained.observerFailedCount shouldBeEqualTo 1
     }
 
@@ -155,7 +161,7 @@ class SnapshotCacheFailureTest {
     fun `buffer and count inputs are validated`() {
         assertFailsWith<IllegalArgumentException> { snapshotCacheFailureBuffer(0) }
         assertFailsWith<IllegalArgumentException> {
-            snapshotCacheFailureBuffer(1).drainTo(SnapshotCacheFailureObserver {}, -1)
+            snapshotCacheFailureBuffer(1).drainTo({}, -1)
         }
         assertFailsWith<IllegalArgumentException> {
             SnapshotCacheFailure(STORE_ID, SnapshotCacheOperation.PUT, SnapshotCacheOutcome.FAILED, -1)
@@ -188,15 +194,12 @@ class SnapshotCacheFailureTest {
             exceptionType = if (outcome == SnapshotCacheOutcome.FAILED) MaliciousFailure::class.java.name else null,
         )
 
-    private class ObserverFailure(message: String) : RuntimeException(message)
+    private class ObserverFailure(message: String): RuntimeException(message)
 
-    private class MaliciousFailure(message: String) : RuntimeException(message)
+    private class MaliciousFailure(message: String): RuntimeException(message)
 
-    private class ObserverFatalError : Error()
+    private class ObserverFatalError: Error()
 
-    private class 사용자예외 : RuntimeException()
+    private class CustomException: RuntimeException()
 
-    companion object {
-        private val STORE_ID = SnapshotStoreId("local", "orders:v1")
-    }
 }

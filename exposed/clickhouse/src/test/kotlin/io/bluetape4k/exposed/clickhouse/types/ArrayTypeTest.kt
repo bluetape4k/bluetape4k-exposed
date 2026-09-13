@@ -1,12 +1,13 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.ClickHouseTable
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -69,9 +70,10 @@ class ArrayTypeTest: AbstractClickHouseTest() {
                 }
 
                 val rows = ArrTable.selectAll().orderBy(ArrTable.id).toList()
+
                 rows shouldHaveSize 3
-                rows[0][ArrTable.tags] shouldBeEqualTo emptyList()
-                rows[0][ArrTable.nums] shouldBeEqualTo emptyList()
+                rows[0][ArrTable.tags].shouldBeEmpty()
+                rows[0][ArrTable.nums].shouldBeEmpty()
                 rows[1][ArrTable.tags] shouldBeEqualTo listOf("single")
                 rows[1][ArrTable.nums] shouldBeEqualTo listOf(42)
                 rows[2][ArrTable.tags] shouldBeEqualTo listOf("alpha", "beta", "gamma")

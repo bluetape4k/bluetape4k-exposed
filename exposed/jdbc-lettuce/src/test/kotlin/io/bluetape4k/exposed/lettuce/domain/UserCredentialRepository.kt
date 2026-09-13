@@ -59,38 +59,35 @@ class UserCredentialRepository(
     override fun extractId(entity: UserCredentialsRecord): UUID = entity.id
 
     /** DB에 직접 row를 삽입하고 UserCredentialsRecord를 반환한다 (테스트 편의용). */
-    fun createInDb(record: UserCredentialsRecord): UserCredentialsRecord =
-        transaction {
-            UserCredentialsTable.insertAndGetId {
-                it[UserCredentialsTable.id] = record.id
-                it[UserCredentialsTable.loginId] = record.loginId
-                it[UserCredentialsTable.email] = record.email
-                it[UserCredentialsTable.lastLoginAt] = record.lastLoginAt
-            }
-            record
+    fun createInDb(record: UserCredentialsRecord): UserCredentialsRecord = transaction {
+        UserCredentialsTable.insertAndGetId {
+            it[UserCredentialsTable.id] = record.id
+            it[UserCredentialsTable.loginId] = record.loginId
+            it[UserCredentialsTable.email] = record.email
+            it[UserCredentialsTable.lastLoginAt] = record.lastLoginAt
         }
+        record
+    }
 
     /** DB에서 직접 조회한다 (캐시를 거치지 않음, 테스트 검증용). */
-    fun findFromDb(id: UUID): UserCredentialsRecord? =
-        transaction {
-            UserCredentialsTable
-                .selectAll()
-                .where { UserCredentialsTable.id eq id }
-                .singleOrNull()
-                ?.let {
-                    UserCredentialsRecord(
-                        id = it[UserCredentialsTable.id].value,
-                        loginId = it[UserCredentialsTable.loginId],
-                        email = it[UserCredentialsTable.email],
-                        lastLoginAt = it[UserCredentialsTable.lastLoginAt],
-                        createdAt = it[UserCredentialsTable.createdAt]
-                    )
-                }
-        }
+    fun findFromDb(id: UUID): UserCredentialsRecord? = transaction {
+        UserCredentialsTable
+            .selectAll()
+            .where { UserCredentialsTable.id eq id }
+            .singleOrNull()
+            ?.let {
+                UserCredentialsRecord(
+                    id = it[UserCredentialsTable.id].value,
+                    loginId = it[UserCredentialsTable.loginId],
+                    email = it[UserCredentialsTable.email],
+                    lastLoginAt = it[UserCredentialsTable.lastLoginAt],
+                    createdAt = it[UserCredentialsTable.createdAt]
+                )
+            }
+    }
 
     /** DB의 전체 레코드 수를 반환한다 (테스트 검증용). */
-    override fun countFromDb(): Long =
-        transaction {
-            UserCredentialsTable.selectAll().count()
-        }
+    override fun countFromDb(): Long = transaction {
+        UserCredentialsTable.selectAll().count()
+    }
 }

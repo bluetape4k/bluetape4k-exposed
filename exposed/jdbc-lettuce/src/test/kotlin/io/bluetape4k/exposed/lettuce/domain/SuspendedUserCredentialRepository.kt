@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserCredentialsRecord
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserCredentialsTable
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
 import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,9 @@ class SuspendedUserCredentialRepository(
     config,
     ExposedLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
 ) {
+
+    companion object: KLoggingChannel()
+
     override val table: IdTable<UUID> = UserCredentialsTable
 
     override fun ResultRow.toEntity(): UserCredentialsRecord =
@@ -58,33 +62,31 @@ class SuspendedUserCredentialRepository(
     override fun extractId(entity: UserCredentialsRecord): UUID = entity.id
 
     /** DB에 직접 row를 삽입하고 UserCredentialsRecord를 반환한다 (테스트 편의용). */
-    fun createInDb(record: UserCredentialsRecord): UserCredentialsRecord =
-        transaction {
-            UserCredentialsTable.insertAndGetId {
-                it[UserCredentialsTable.id] = record.id
-                it[UserCredentialsTable.loginId] = record.loginId
-                it[UserCredentialsTable.email] = record.email
-                it[UserCredentialsTable.lastLoginAt] = record.lastLoginAt
-            }
-            record
+    fun createInDb(record: UserCredentialsRecord): UserCredentialsRecord = transaction {
+        UserCredentialsTable.insertAndGetId {
+            it[UserCredentialsTable.id] = record.id
+            it[UserCredentialsTable.loginId] = record.loginId
+            it[UserCredentialsTable.email] = record.email
+            it[UserCredentialsTable.lastLoginAt] = record.lastLoginAt
         }
+        record
+    }
 
     /** DB에서 직접 조회한다 (캐시를 거치지 않음, 테스트 검증용). */
     @Suppress("DEPRECATION")
-    suspend fun findFromDb(id: UUID): UserCredentialsRecord? =
-        suspendedTransactionAsync(Dispatchers.IO) {
-            UserCredentialsTable
-                .selectAll()
-                .where { UserCredentialsTable.id eq id }
-                .singleOrNull()
-                ?.let {
-                    UserCredentialsRecord(
-                        id = it[UserCredentialsTable.id].value,
-                        loginId = it[UserCredentialsTable.loginId],
-                        email = it[UserCredentialsTable.email],
-                        lastLoginAt = it[UserCredentialsTable.lastLoginAt],
-                        createdAt = it[UserCredentialsTable.createdAt]
-                    )
-                }
-        }.await()
+    suspend fun findFromDb(id: UUID): UserCredentialsRecord? = suspendedTransactionAsync(Dispatchers.IO) {
+        UserCredentialsTable
+            .selectAll()
+            .where { UserCredentialsTable.id eq id }
+            .singleOrNull()
+            ?.let {
+                UserCredentialsRecord(
+                    id = it[UserCredentialsTable.id].value,
+                    loginId = it[UserCredentialsTable.loginId],
+                    email = it[UserCredentialsTable.email],
+                    lastLoginAt = it[UserCredentialsTable.lastLoginAt],
+                    createdAt = it[UserCredentialsTable.createdAt]
+                )
+            }
+    }.await()
 }

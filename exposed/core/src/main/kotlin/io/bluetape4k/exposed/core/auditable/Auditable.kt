@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core.auditable
 
+import java.io.Serializable
 import java.time.Instant
 
 /**
@@ -25,7 +26,7 @@ import java.time.Instant
  * }
  * ```
  */
-interface Auditable {
+interface Auditable: Serializable {
 
     /**
      * 레코드를 생성한 사용자명입니다.

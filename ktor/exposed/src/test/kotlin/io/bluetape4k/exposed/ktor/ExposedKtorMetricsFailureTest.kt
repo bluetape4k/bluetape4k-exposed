@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.ktor
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import io.ktor.server.application.ApplicationCall
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.config.MeterFilter
@@ -21,6 +22,8 @@ import java.util.concurrent.Executors
 @Suppress("DEPRECATION")
 class ExposedKtorMetricsFailureTest {
 
+    companion object: KLogging()
+
     @Test
     fun `compatibility public transaction keeps committed result when success metric fails`() = runSuspendIO {
         val database = Database.connect(
@@ -32,12 +35,14 @@ class ExposedKtorMetricsFailureTest {
         val executor = Executors.newSingleThreadExecutor()
         val dispatcher = executor.asCoroutineDispatcher()
         val registry = SimpleMeterRegistry()
-        registry.config().meterFilter(object : MeterFilter {
+        registry.config().meterFilter(object: MeterFilter {
             override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
         })
 
         try {
-            transaction(database) { SchemaUtils.create(CompatibilityMetricItems) }
+            transaction(database) {
+                SchemaUtils.create(CompatibilityMetricItems)
+            }
 
             val result = mockk<ApplicationCall>().exposedJdbcTransaction(database, dispatcher, registry) {
                 CompatibilityMetricItems.insert { it[value] = "committed" }
@@ -56,7 +61,7 @@ class ExposedKtorMetricsFailureTest {
         }
     }
 
-    private object CompatibilityMetricItems : Table("ktor_compat_metric_items") {
+    private object CompatibilityMetricItems: Table("ktor_compat_metric_items") {
         val value = varchar("value", 64)
     }
 }

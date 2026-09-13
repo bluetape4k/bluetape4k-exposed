@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.r2dbc
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.junit.jupiter.api.Test
 
 class QueryExtensionsTest {
@@ -34,7 +35,7 @@ class QueryExtensionsTest {
     @Test
     fun `sorted는 빈 Flow에서 빈 리스트를 반환한다`() = runSuspendIO {
         val result = emptyFlow<Int>().sorted()
-        result shouldBeEqualTo emptyList()
+        result.shouldBeEmpty()
     }
 
     @Test
@@ -52,7 +53,7 @@ class QueryExtensionsTest {
     @Test
     fun `distinct는 빈 Flow에서 빈 리스트를 반환한다`() = runSuspendIO {
         val result = emptyFlow<Int>().distinct()
-        result shouldBeEqualTo emptyList()
+        result.shouldBeEmpty()
     }
 
     @Test

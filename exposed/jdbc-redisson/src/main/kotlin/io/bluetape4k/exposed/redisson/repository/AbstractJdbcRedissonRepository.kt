@@ -115,20 +115,17 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      */
     protected val mapWriter: EntityMapWriter<ID, E>? by lazy {
         when (config.cacheMode) {
-            RedissonCacheConfig.CacheMode.READ_ONLY  -> {
-                null
-            }
-            RedissonCacheConfig.CacheMode.READ_WRITE -> {
-                ExposedEntityMapWriter(
-                    entityTable = table,
-                    updateBody = { stmt, entity -> with(this@AbstractJdbcRedissonRepository) { stmt.updateEntity(entity) } },
-                    batchInsertBody = { entity ->
-                        val stmt = this; with(this@AbstractJdbcRedissonRepository) { stmt.insertEntity(entity) }
-                    },
-                    deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate, // 캐시 invalidated 시 DB에서도 삭제할 것인지 여부
-                    writeMode = config.writeMode // Write Through 모드
-                )
-            }
+            RedissonCacheConfig.CacheMode.READ_ONLY  -> null
+
+            RedissonCacheConfig.CacheMode.READ_WRITE -> ExposedEntityMapWriter(
+                entityTable = table,
+                updateBody = { stmt, entity -> with(this@AbstractJdbcRedissonRepository) { stmt.updateEntity(entity) } },
+                batchInsertBody = { entity ->
+                    val stmt = this; with(this@AbstractJdbcRedissonRepository) { stmt.insertEntity(entity) }
+                },
+                deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate, // 캐시 invalidated 시 DB에서도 삭제할 것인지 여부
+                writeMode = config.writeMode // Write Through 모드
+            )
         }
     }
 
@@ -172,50 +169,54 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * Near Cache(로컬 캐시)가 활성화된 [RLocalCachedMap]을 생성합니다.
      * Read-Only 모드에서는 loader만, Read-Write 모드에서는 loader + writer를 설정합니다.
      */
-    protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> = localCachedMap(cacheName, redissonClient) {
-        log.info { "RLocalCacheMap 를 생성합니다." }
-        if (config.isReadOnly) {
-            loader(mapLoader)
-        } else {
-            loader(mapLoader)
-            mapWriter.requireNotNull("mapWriter")
-            writer(mapWriter)
-            writeMode(config.writeMode)
-        }
+    protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> =
+        localCachedMap(cacheName, redissonClient) {
+            log.info { "RLocalCacheMap 를 생성합니다." }
 
-        codec(config.codec)
-        syncStrategy(config.nearCacheSyncStrategy)
-        writeRetryAttempts(config.writeRetryAttempts)
-        writeRetryInterval(config.writeRetryInterval)
-        timeToLive(config.ttl)
-        if (config.nearCacheMaxIdleTime > Duration.ZERO) {
-            maxIdle(config.nearCacheMaxIdleTime)
+            if (config.isReadOnly) {
+                loader(mapLoader)
+            } else {
+                loader(mapLoader)
+                mapWriter.requireNotNull("mapWriter")
+                writer(mapWriter)
+                writeMode(config.writeMode)
+            }
+
+            codec(config.codec)
+            syncStrategy(config.nearCacheSyncStrategy)
+            writeRetryAttempts(config.writeRetryAttempts)
+            writeRetryInterval(config.writeRetryInterval)
+            timeToLive(config.ttl)
+            if (config.nearCacheMaxIdleTime > Duration.ZERO) {
+                maxIdle(config.nearCacheMaxIdleTime)
+            }
         }
-    }
 
     /**
      * 원격 캐시 [RMapCache]를 생성합니다.
      * Read-Only 모드에서는 loader만, Read-Write 모드에서는 loader + writer를 설정합니다.
      * [RedissonCacheConfig.nearCacheMaxSize]가 0보다 크면 LRU 방식으로 최대 크기를 제한합니다.
      */
-    protected fun createMapCache(): RMapCache<ID, E?> = mapCache(cacheName, redissonClient) {
-        log.info { "RMapCache 를 생성합니다." }
-        if (config.isReadOnly) {
-            loader(mapLoader)
-        } else {
-            loader(mapLoader)
-            mapWriter.requireNotNull("mapWriter")
-            writer(mapWriter)
-            writeMode(config.writeMode)
+    protected fun createMapCache(): RMapCache<ID, E?> =
+        mapCache(cacheName, redissonClient) {
+            log.info { "RMapCache 를 생성합니다." }
+
+            if (config.isReadOnly) {
+                loader(mapLoader)
+            } else {
+                loader(mapLoader)
+                mapWriter.requireNotNull("mapWriter")
+                writer(mapWriter)
+                writeMode(config.writeMode)
+            }
+            codec(config.codec)
+            writeRetryAttempts(config.writeRetryAttempts)
+            writeRetryInterval(config.writeRetryInterval)
+        }.apply {
+            if (config.nearCacheMaxSize > 0) {
+                setMaxSize(config.nearCacheMaxSize, EvictionMode.LRU)
+            }
         }
-        codec(config.codec)
-        writeRetryAttempts(config.writeRetryAttempts)
-        writeRetryInterval(config.writeRetryInterval)
-    }.apply {
-        if (config.nearCacheMaxSize > 0) {
-            setMaxSize(config.nearCacheMaxSize, EvictionMode.LRU)
-        }
-    }
 
     /**
      * writer가 연결된 Redisson map을 통해 여러 엔티티를 upsert합니다.
@@ -314,14 +315,13 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * @param id 엔티티 식별자
      * @return 엔티티 또는 null
      */
-    override fun findByIdFromDb(id: ID): E? =
-        transaction {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.toEntity()
-        }
+    override fun findByIdFromDb(id: ID): E? = transaction {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.toEntity()
+    }
 
     /**
      * DB에서 직접 여러 엔티티를 조회합니다 (캐시 우회).
@@ -329,23 +329,21 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * @param ids 엔티티 식별자 컬렉션
      * @return 엔티티 리스트
      */
-    override fun findAllFromDb(ids: Collection<ID>): List<E> =
-        transaction {
-            table
-                .selectAll()
-                .where { table.id inList ids }
-                .map { it.toEntity() }
-        }
+    override fun findAllFromDb(ids: Collection<ID>): List<E> = transaction {
+        table
+            .selectAll()
+            .where { table.id inList ids }
+            .map { it.toEntity() }
+    }
 
     /**
      * DB에서 전체 레코드 수를 조회합니다 (캐시 우회).
      *
      * @return 전체 레코드 수
      */
-    override fun countFromDb(): Long =
-        transaction {
-            table.selectAll().count()
-        }
+    override fun countFromDb(): Long = transaction {
+        table.selectAll().count()
+    }
 
     /**
      * DB에서 조건에 맞는 엔티티 목록을 조회하고, 조회된 엔티티들을 캐시에 저장합니다.
@@ -364,17 +362,16 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
     ): List<E> {
-        val entities =
-            transaction {
-                table
-                    .selectAll()
-                    .where(where)
-                    .apply {
-                        orderBy(sortBy, sortOrder)
-                        limit?.run { limit(limit) }
-                        offset?.run { offset(offset) }
-                    }.map { it.toEntity() }
-            }
+        val entities = transaction {
+            table
+                .selectAll()
+                .where(where)
+                .apply {
+                    orderBy(sortBy, sortOrder)
+                    limit?.run { limit(limit) }
+                    offset?.run { offset(offset) }
+                }.map { it.toEntity() }
+        }
 
         if (entities.isNotEmpty()) {
             log.debug { "DB에서 엔티티를 조회했습니다. count=${entities.size}" }
@@ -389,9 +386,8 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
      * @param ids 조회할 엔티티의 ID 목록
      * @return ID를 키, 엔티티를 값으로 하는 맵
      */
-    override fun getAll(
-        ids: Collection<ID>,
-    ): Map<ID, E> = getAll(ids, DEFAULT_BATCH_SIZE)
+    override fun getAll(ids: Collection<ID>): Map<ID, E> =
+        getAll(ids, DEFAULT_BATCH_SIZE)
 
     /**
      * 주어진 ID 목록을 batchSize 단위로 나누어 캐시에서 엔티티를 조회합니다.
@@ -409,11 +405,13 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
         if (ids.isEmpty()) return emptyMap()
         val chunkedIds = ids.chunked(batchSize)
 
-        return chunkedIds.flatMap { chunk ->
-            log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
-            @Suppress("UNCHECKED_CAST")
-            cache.getAll(chunk.toSet()).entries
-                .mapNotNull { (key, value) -> value?.let { key to it } }
-        }.toMap()
+        return chunkedIds
+            .flatMap { chunk ->
+                log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
+                @Suppress("UNCHECKED_CAST")
+                cache.getAll(chunk.toSet()).entries
+                    .mapNotNull { (key, value) -> value?.let { key to it } }
+            }
+            .toMap()
     }
 }

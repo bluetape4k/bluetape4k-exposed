@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cockroachdb
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -11,6 +12,7 @@ import io.bluetape4k.jdbc.hikari.hikariDataSourceOf
 import io.bluetape4k.jdbc.sql.runQuery
 import io.bluetape4k.jdbc.sql.withConnect
 import io.bluetape4k.jdbc.sql.withStatement
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.CockroachServer
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
@@ -27,6 +29,8 @@ import org.junit.jupiter.api.Test
  */
 class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
 
+    companion object: KLogging()
+
     @Test
     fun `compatibility matrix marks accepted and deferred DDL boundaries`() {
         val supported = listOf(
@@ -40,12 +44,16 @@ class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
         supported.all {
             CockroachDbCompatibility.requireFeature(it).status == CockroachDbCompatibilityStatus.Supported
         }.shouldBeTrue()
+
         CockroachDbCompatibility.requireFeature(CockroachDbCompatibility.CREATE_DOMAIN).status shouldBeEqualTo
                 CockroachDbCompatibilityStatus.Deferred
+
         CockroachDbCompatibility.requireFeature(CockroachDbCompatibility.RANGE_TYPES).status shouldBeEqualTo
                 CockroachDbCompatibilityStatus.Deferred
+
         CockroachDbCompatibility.requireFeature(CockroachDbCompatibility.MIGRATION_DIFF).status shouldBeEqualTo
                 CockroachDbCompatibilityStatus.Deferred
+
         CockroachDbCompatibility.requireFeature(CockroachDbCompatibility.CUSTOM_DIALECT).status shouldBeEqualTo
                 CockroachDbCompatibilityStatus.OutOfScope
     }
@@ -96,7 +104,7 @@ class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
                     rs.getLong(1)
                 }
 
-                (id > 0L).shouldBeTrue()
+                id shouldBeGreaterThan 0L
             }
         }
 

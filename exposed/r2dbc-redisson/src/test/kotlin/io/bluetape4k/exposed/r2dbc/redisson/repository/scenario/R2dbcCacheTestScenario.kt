@@ -20,7 +20,7 @@ interface R2dbcCacheTestScenario<ID: Any, E: java.io.Serializable> {
      */
     val cacheConfig: RedissonCacheConfig
 
-     /**
+    /**
      * 테스트에 사용할 캐시 저장소
      */
     val repository: R2dbcRedissonRepository<ID, E>

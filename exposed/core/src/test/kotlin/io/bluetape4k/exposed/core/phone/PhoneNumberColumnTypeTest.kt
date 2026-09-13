@@ -1,24 +1,19 @@
 package io.bluetape4k.exposed.core.phone
 
 import com.google.i18n.phonenumbers.PhoneNumberUtil
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
-
-object ContactTable: LongIdTable("phone_contacts") {
-    val phone = phoneNumber("phone")
-    val phoneStr = phoneNumberString("phone_str")
-}
 
 /**
  * PhoneNumberColumnType 통합 테스트.
@@ -28,6 +23,11 @@ object ContactTable: LongIdTable("phone_contacts") {
 class PhoneNumberColumnTypeTest: AbstractExposedTest() {
 
     companion object: KLogging()
+
+    object ContactTable: LongIdTable("phone_contacts") {
+        val phone = phoneNumber("phone")
+        val phoneStr = phoneNumberString("phone_str")
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)

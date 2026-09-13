@@ -22,8 +22,6 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.dao.LongEntity
 import org.jetbrains.exposed.v1.dao.LongEntityClass
-import org.jetbrains.exposed.v1.dao.entityCache
-import org.jetbrains.exposed.v1.dao.flushCache
 import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -37,6 +35,7 @@ import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 object UserSchema: KLogging() {
+
     private val faker = Fakers.faker
 
     /**
@@ -65,15 +64,12 @@ object UserSchema: KLogging() {
         var updatedAt by UserTable.updatedAt
 
         override fun equals(other: Any?): Boolean = idEquals(other)
-
         override fun hashCode(): Int = idHashCode()
-
-        override fun toString(): String =
-            entityToStringBuilder()
-                .add("firstName", firstName)
-                .add("lastName", lastName)
-                .add("email", email)
-                .toString()
+        override fun toString(): String = entityToStringBuilder()
+            .add("firstName", firstName)
+            .add("lastName", lastName)
+            .add("email", email)
+            .toString()
     }
 
     data class UserRecord(
@@ -84,39 +80,39 @@ object UserSchema: KLogging() {
         val createdAt: Instant = Instant.now(),
         val updatedAt: Instant? = null,
     ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
         fun withId(id: Long) = copy(id = id)
     }
 
-    fun ResultRow.toUserRecord(): UserRecord =
-        UserRecord(
-            id = this[UserTable.id].value,
-            firstName = this[UserTable.firstName],
-            lastName = this[UserTable.lastName],
-            email = this[UserTable.email],
-            createdAt = this[UserTable.createdAt],
-            updatedAt = this[UserTable.updatedAt]
-        )
+    fun ResultRow.toUserRecord(): UserRecord = UserRecord(
+        id = this[UserTable.id].value,
+        firstName = this[UserTable.firstName],
+        lastName = this[UserTable.lastName],
+        email = this[UserTable.email],
+        createdAt = this[UserTable.createdAt],
+        updatedAt = this[UserTable.updatedAt]
+    )
 
-    fun UserEntity.toUserRecord(): UserRecord =
-        UserRecord(
-            id = this.id.value,
-            firstName = this.firstName,
-            lastName = this.lastName,
-            email = this.email,
-            createdAt = this.createdAt,
-            updatedAt = this.updatedAt
-        )
-
+    fun UserEntity.toUserRecord(): UserRecord = UserRecord(
+        id = this.id.value,
+        firstName = this.firstName,
+        lastName = this.lastName,
+        email = this.email,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
+    )
 
     private val lastUserId = atomic(1000L)
 
-    fun newUserRecord(): UserRecord =
-        UserRecord(
-            id = lastUserId.getAndIncrement(),
-            firstName = faker.name().firstName(),
-            lastName = faker.name().lastName(),
-            email = Base58.randomString(4) + "." + faker.internet().emailAddress()
-        )
+    fun newUserRecord(): UserRecord = UserRecord(
+        id = lastUserId.getAndIncrement(),
+        firstName = faker.name().firstName(),
+        lastName = faker.name().lastName(),
+        email = Base58.randomString(4) + "." + faker.internet().emailAddress()
+    )
 
     fun findUserById(id: Long): UserRecord? =
         UserTable
@@ -146,7 +142,6 @@ object UserSchema: KLogging() {
                 email = faker.internet().safeEmailAddress()
             }
 
-            flushCache()
             commit()
 
             statement()
@@ -175,13 +170,11 @@ object UserSchema: KLogging() {
                 email = faker.internet().safeEmailAddress()
             }
 
-            flushCache()
             commit()
 
             statement()
         }
     }
-
 
     /**
      * Client 에서 ID 값을 설정하는 [TimebasedUUIDBase62Table]을 구현한 `IdTable<String>` 테이블입니다.
@@ -209,14 +202,11 @@ object UserSchema: KLogging() {
         var updatedAt by UserCredentialsTable.updatedAt
 
         override fun equals(other: Any?): Boolean = idEquals(other)
-
         override fun hashCode(): Int = idHashCode()
-
-        override fun toString(): String =
-            entityToStringBuilder()
-                .add("loginId", loginId)
-                .add("email", email)
-                .toString()
+        override fun toString(): String = entityToStringBuilder()
+            .add("loginId", loginId)
+            .add("email", email)
+            .toString()
     }
 
     data class UserCredentialsRecord(
@@ -260,8 +250,6 @@ object UserSchema: KLogging() {
                 it[UserCredentialsTable.email] = faker.internet().safeEmailAddress()
                 it[UserCredentialsTable.lastLoginAt] = LocalDateTime.now().minusDays(200).toInstant()
             }
-            flushCache()
-            entityCache.clear()
             commit()
 
             statement()
@@ -291,8 +279,6 @@ object UserSchema: KLogging() {
                 it[UserCredentialsTable.lastLoginAt] = LocalDateTime.now().minusDays(200).toInstant()
             }
 
-            flushCache()
-            entityCache.clear()
             commit()
 
             statement()

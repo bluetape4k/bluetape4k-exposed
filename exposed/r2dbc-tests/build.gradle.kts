@@ -1,4 +1,3 @@
-
 val supportedMigrationDriftDatabases = setOf("H2", "POSTGRESQL", "MYSQL_V8")
 val migrationDriftDatabase = providers.environmentVariable("EXPOSED_TEST_DB")
     .map {

@@ -3,17 +3,25 @@ package io.bluetape4k.exposed.core.fastjson2
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
-import io.r2dbc.spi.Readable
-import org.junit.jupiter.api.Test
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.r2dbc.spi.Readable
+import org.junit.jupiter.api.Test
+import java.io.Serializable
 
 class ReadableExtensionsTest {
 
-    private data class Payload(val name: String, val age: Int)
+    companion object: KLogging()
+
+    private data class Payload(val name: String, val age: Int): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private class FakeReadable(
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
@@ -113,7 +121,8 @@ class ReadableExtensionsTest {
             valuesByIndex = mapOf(1 to objectText, 2 to arrayText),
         )
 
-        readable.getFastjsonObject(1).getJSONObject("user").getString("name") shouldBeEqualTo "tester"
+        readable.getFastjsonObject(1).getJSONObject("user")
+            .getString("name") shouldBeEqualTo "tester"
         readable.getFastjsonArray(2) shouldHaveSize 3
     }
 
@@ -230,7 +239,9 @@ class ReadableExtensionsTest {
         val jsonText = """{"user":{"name":"tester"}}"""
         val readable = FakeReadable(valuesByName = mapOf("payload" to jsonText))
 
-        readable.getFastjsonObject("payload").getJSONObject("user").getString("name") shouldBeEqualTo "tester"
+        readable.getFastjsonObject("payload")
+            .getJSONObject("user")
+            .getString("name") shouldBeEqualTo "tester"
     }
 
     @Test

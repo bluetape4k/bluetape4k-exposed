@@ -7,10 +7,10 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
 import io.bluetape4k.support.requirePositiveNumber
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -64,7 +64,6 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
         var hasMore = true
 
         try {
-
             while (hasMore) {
                 val cursor = lastId
                 val query = entityTable.select(entityTable.id).orderBy(entityTable.id, SortOrder.ASC)
@@ -102,7 +101,7 @@ open class ExposedEntityMapLoader<ID: Any, E: Any>(
             log.debug { "DB에서 모든 ID 로딩 완료. 로딩된 id 수=${loadedIds.size}" }
             loadedIds
         } catch (cause: Throwable) {
-            log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+            log.error(cause) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
             throw cause
         }
     }

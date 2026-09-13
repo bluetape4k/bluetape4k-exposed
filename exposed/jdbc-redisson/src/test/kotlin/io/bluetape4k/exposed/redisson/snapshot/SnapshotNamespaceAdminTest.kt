@@ -2,12 +2,16 @@
 
 package io.bluetape4k.exposed.redisson.snapshot
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
@@ -18,13 +22,13 @@ import org.redisson.client.RedisTimeoutException
 import org.redisson.client.codec.StringCodec
 import org.redisson.config.Config
 import org.redisson.config.NameMapper
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.Method
-import java.lang.reflect.Proxy
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -56,21 +60,21 @@ class SnapshotNamespaceAdminTest {
                 assertFailsWith<IllegalArgumentException> {
                     operation(admin.client, invalid, FINGERPRINT, Duration.ofSeconds(2))
                 }
-                admin.events shouldBeEqualTo emptyList()
+                admin.events.shouldBeEmpty()
             }
             invalidFingerprints.forEach { invalid ->
                 val admin = RecordingAdmin()
                 assertFailsWith<IllegalArgumentException> {
                     operation(admin.client, NAMESPACE, invalid, Duration.ofSeconds(2))
                 }
-                admin.events shouldBeEqualTo emptyList()
+                admin.events.shouldBeEmpty()
             }
             invalidTimeouts.forEach { invalid ->
                 val admin = RecordingAdmin()
                 assertFailsWith<IllegalArgumentException> {
                     operation(admin.client, NAMESPACE, FINGERPRINT, invalid)
                 }
-                admin.events shouldBeEqualTo emptyList()
+                admin.events.shouldBeEmpty()
             }
         }
     }
@@ -85,7 +89,7 @@ class SnapshotNamespaceAdminTest {
         }
 
         thrown.message.orEmpty().shouldNotContain(invalid)
-        admin.events shouldBeEqualTo emptyList()
+        admin.events.shouldBeEmpty()
     }
 
     @Test
@@ -104,7 +108,7 @@ class SnapshotNamespaceAdminTest {
 
     @Test
     fun `non round tripping name mapper fails before script and map access`() {
-        val mapper = object : NameMapper {
+        val mapper = object: NameMapper {
             override fun map(name: String): String = "prefix:$name"
             override fun unmap(name: String): String = name.removePrefix("prefix:")
         }
@@ -116,13 +120,13 @@ class SnapshotNamespaceAdminTest {
             verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
         }
 
-        admin.events shouldBeEqualTo emptyList()
+        admin.events.shouldBeEmpty()
     }
 
     @Test
     fun `empty or malformed first mapped hash tag fails before script and map access`() {
         listOf("{}foo{later}", "{unterminated").forEach { mappedNamespace ->
-            val mapper = object : NameMapper {
+            val mapper = object: NameMapper {
                 override fun map(name: String): String = mappedNamespace
                 override fun unmap(name: String): String = name
             }
@@ -132,13 +136,13 @@ class SnapshotNamespaceAdminTest {
                 verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
             }
 
-            admin.events shouldBeEqualTo emptyList()
+            admin.events.shouldBeEmpty()
         }
     }
 
     @Test
     fun `stray closing brace in mapped namespace fails before script and map access`() {
-        val mapper = object : NameMapper {
+        val mapper = object: NameMapper {
             override fun map(name: String): String = if (name == NAMESPACE) "prefix}suffix" else name
             override fun unmap(name: String): String = name
         }
@@ -150,7 +154,7 @@ class SnapshotNamespaceAdminTest {
             verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
         }
 
-        admin.events shouldBeEqualTo emptyList()
+        admin.events.shouldBeEmpty()
     }
 
     @Test
@@ -200,7 +204,7 @@ class SnapshotNamespaceAdminTest {
 
     @Test
     fun `hash tagged name mapper keeps marker and map in one slot with namespace unique markers`() {
-        val mapper = object : NameMapper {
+        val mapper = object: NameMapper {
             override fun map(name: String): String = "{tenant}:$name"
             override fun unmap(name: String): String = name.removePrefix("{tenant}:")
         }
@@ -214,7 +218,7 @@ class SnapshotNamespaceAdminTest {
         val customerKeys = customers.scriptCalls.single().keys.map { mapper.map(it as String) }
         ordersKeys.map(::redisSlotTag).distinct() shouldBeEqualTo listOf("tenant")
         customerKeys.map(::redisSlotTag).distinct() shouldBeEqualTo listOf("tenant")
-        (ordersKeys.first() != customerKeys.first()).shouldBeTrue()
+        ordersKeys.first() shouldNotBeEqualTo customerKeys.first()
         ordersKeys.first() shouldBeEqualTo snapshotNamespaceMarkerKey(mapper.map(NAMESPACE))
     }
 
@@ -229,7 +233,7 @@ class SnapshotNamespaceAdminTest {
                 verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
             }
 
-            (thrown === interruption).shouldBeTrue()
+            thrown shouldBe interruption
             Thread.currentThread().isInterrupted.shouldBeTrue()
             admin.cancelCalls.shouldBeFalse()
             admin.destroyCount shouldBeEqualTo 0
@@ -551,7 +555,7 @@ class SnapshotNamespaceAdminTest {
         failed.exceptionType shouldBeEqualTo exception.javaClass.name
         exceptionAdmin.destroyCount shouldBeEqualTo 1
         exceptionAdmin.events.last() shouldBeEqualTo "destroy"
-        (thrown === error).shouldBeTrue()
+        thrown shouldBe error
         errorAdmin.destroyCount shouldBeEqualTo 1
         errorAdmin.events.last() shouldBeEqualTo "destroy"
     }
@@ -570,9 +574,9 @@ class SnapshotNamespaceAdminTest {
             clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
         }
 
-        (thrown === primary).shouldBeTrue()
+        thrown shouldBe primary
         thrown.suppressed.size shouldBeEqualTo 1
-        (thrown.suppressed.single() === destroyFailure).shouldBeTrue()
+        thrown.suppressed.single() shouldBe destroyFailure
         admin.destroyCount shouldBeEqualTo 1
         admin.cancelCalls.shouldBeFalse()
     }
@@ -593,7 +597,7 @@ class SnapshotNamespaceAdminTest {
                 clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
             }
 
-            (thrown === interruption).shouldBeTrue()
+            thrown shouldBe interruption
             Thread.currentThread().isInterrupted.shouldBeTrue()
             admin.destroyCount shouldBeEqualTo 1
             admin.events.last() shouldBeEqualTo "destroy"
@@ -638,8 +642,8 @@ class SnapshotNamespaceAdminTest {
             markerPresent = true,
             exceptionType = RedisTimeoutException::class.java.name,
         )
-        result.toString().shouldNotContain("endpoint")
-        result.toString().shouldNotContain("credential")
+        result.toString() shouldNotContain "endpoint"
+        result.toString() shouldNotContain "credential"
     }
 
     @Test
@@ -670,8 +674,8 @@ class SnapshotNamespaceAdminTest {
 
                 result.outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.FAILED
                 result.exceptionType shouldBeEqualTo failure.javaClass.name
-                result.toString().shouldNotContain("secret")
-                result.toString().shouldNotContain("redis://")
+                result.toString() shouldNotContain "secret"
+                result.toString() shouldNotContain "redis://"
             }
     }
 
@@ -684,7 +688,7 @@ class SnapshotNamespaceAdminTest {
             clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
         }
 
-        (thrown === fatal).shouldBeTrue()
+        thrown shouldBe fatal
     }
 
     @Test
@@ -699,7 +703,7 @@ class SnapshotNamespaceAdminTest {
             clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT)
         }
 
-        (thrown === fatal).shouldBeTrue()
+        thrown shouldBe fatal
         admin.events shouldBeEqualTo listOf("script", "wait:script-1", "map-access")
     }
 
@@ -747,25 +751,25 @@ class SnapshotNamespaceAdminTest {
     fun `admin KDoc requires quiescence scoped ACL network isolation and no request-facing exposure`() {
         val source = Files.readString(adminSource())
 
-        source.shouldContain("quiesce")
-        source.shouldContain("dedicated namespace-scoped Redis ACL")
-        source.shouldContain("marker and map inspection and unlink")
-        source.shouldContain("local-cache clear scoped pub/sub")
-        source.shouldContain("\${namespace}:clear:*")
-        source.shouldContain("semaphore keys and channels")
-        source.shouldContain("deny global keyevent subscription")
-        source.shouldNotContain("limited to inspecting and unlinking")
-        source.shouldContain("network isolation")
-        source.shouldContain("must never be exposed through request-facing")
-        source.shouldContain("accident guard, not authorization")
+        source shouldContain "quiesce"
+        source shouldContain "dedicated namespace-scoped Redis ACL"
+        source shouldContain "marker and map inspection and unlink"
+        source shouldContain "local-cache clear scoped pub/sub"
+        source shouldContain "\${namespace}:clear:*"
+        source shouldContain "semaphore keys and channels"
+        source shouldContain "deny global keyevent subscription"
+        source shouldNotContain "limited to inspecting and unlinking"
+        source shouldContain "network isolation"
+        source shouldContain "must never be exposed through request-facing"
+        source shouldContain "accident guard, not authorization"
     }
 
     private fun describe(outcome: SnapshotNamespaceCleanupOutcome): String = when (outcome) {
-        SnapshotNamespaceCleanupOutcome.COMPLETED -> "completed"
+        SnapshotNamespaceCleanupOutcome.COMPLETED        -> "completed"
         SnapshotNamespaceCleanupOutcome.ALREADY_COMPLETE -> "already-complete"
-        SnapshotNamespaceCleanupOutcome.MARKER_RETAINED -> "marker-retained"
+        SnapshotNamespaceCleanupOutcome.MARKER_RETAINED  -> "marker-retained"
         SnapshotNamespaceCleanupOutcome.TIMED_OUT_ACCEPTED_UNKNOWN -> "timed-out-accepted-unknown"
-        SnapshotNamespaceCleanupOutcome.FAILED -> "failed"
+        SnapshotNamespaceCleanupOutcome.FAILED           -> "failed"
     }
 
     private fun adminSource(): Path {
@@ -778,7 +782,7 @@ class SnapshotNamespaceAdminTest {
 
     private fun Any.option(name: String): Any? = javaClass.getMethod(name).invoke(this)
 
-    private companion object {
+    private companion object: KLogging() {
         const val NAMESPACE = "orders-snapshot:v1"
         const val FINGERPRINT = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         const val MARKER_ABSENT = 0L
@@ -794,17 +798,17 @@ class SnapshotNamespaceAdminTest {
 }
 
 private sealed interface FutureBehavior {
-    data class Value(val value: Any?) : FutureBehavior
-    data class Failure(val failure: Throwable) : FutureBehavior
-    data class Interrupted(val interruption: InterruptedException) : FutureBehavior
-    data object Never : FutureBehavior
+    data class Value(val value: Any?): FutureBehavior
+    data class Failure(val failure: Throwable): FutureBehavior
+    data class Interrupted(val interruption: InterruptedException): FutureBehavior
+    data object Never: FutureBehavior
 }
 
 private sealed interface MapBehavior {
     val label: String
 
-    data class Future(override val label: String, val behavior: FutureBehavior) : MapBehavior
-    data class Throws(override val label: String, val failure: Throwable) : MapBehavior
+    data class Future(override val label: String, val behavior: FutureBehavior): MapBehavior
+    data class Throws(override val label: String, val failure: Throwable): MapBehavior
 }
 
 private data class ScriptCall(
@@ -846,7 +850,7 @@ private class RecordingAdmin(nameMapper: NameMapper = NameMapper.direct()) {
                 localCachedMapOptions += args.single() as LocalCachedMapOptions<*, *>
                 map
             }
-            else -> defaultValue(method.returnType)
+            else        -> defaultValue(method.returnType)
         }
     }
 
@@ -932,45 +936,45 @@ private class RecordingAdmin(nameMapper: NameMapper = NameMapper.direct()) {
                 destroyCount += 1
                 destroyFailure?.let { throw it }
             }
-            else -> defaultValue(method.returnType)
+            else      -> defaultValue(method.returnType)
         }
     }
 
     private fun future(label: String, behavior: FutureBehavior): RFuture<Any?> = proxy { method, args ->
         when (method.name) {
-            "get" -> {
+            "get"                 -> {
                 if (args.size != 2) throw AssertionError("Unbounded Future.get() is forbidden.")
                 val timeout = args[0] as Long
                 val unit = args[1] as TimeUnit
                 events += "wait:$label"
                 waitNanos += unit.toNanos(timeout)
                 when (behavior) {
-                    is FutureBehavior.Value -> behavior.value
+                    is FutureBehavior.Value   -> behavior.value
                     is FutureBehavior.Failure -> throw ExecutionException(behavior.failure)
                     is FutureBehavior.Interrupted -> throw behavior.interruption
-                    FutureBehavior.Never -> throw TimeoutException("never completes")
+                    FutureBehavior.Never      -> throw TimeoutException("never completes")
                 }
             }
-            "cancel" -> {
+            "cancel"              -> {
                 cancelCalls = true
                 false
             }
-            "isDone" -> behavior !is FutureBehavior.Never
-            "isCancelled" -> false
+            "isDone"              -> behavior !is FutureBehavior.Never
+            "isCancelled"         -> false
             "toCompletableFuture" -> when (behavior) {
-                is FutureBehavior.Value -> CompletableFuture.completedFuture(behavior.value)
+                is FutureBehavior.Value   -> CompletableFuture.completedFuture(behavior.value)
                 is FutureBehavior.Failure -> CompletableFuture.failedFuture(behavior.failure)
                 is FutureBehavior.Interrupted -> CompletableFuture.failedFuture(behavior.interruption)
-                FutureBehavior.Never -> CompletableFuture<Any?>()
+                FutureBehavior.Never      -> CompletableFuture<Any?>()
             }
-            else -> defaultValue(method.returnType)
+            else                  -> defaultValue(method.returnType)
         }
     }
 }
 
 private fun redisSlotTag(key: String): String = Regex("\\{([^{}]+)}").find(key)?.groupValues?.get(1) ?: key
 
-private inline fun <reified T : Any> proxy(
+private inline fun <reified T: Any> proxy(
     crossinline invocation: (Method, List<Any?>) -> Any?,
 ): T = Proxy.newProxyInstance(
     T::class.java.classLoader,
@@ -979,24 +983,24 @@ private inline fun <reified T : Any> proxy(
         when (method.name) {
             "toString" -> "${T::class.simpleName}Proxy"
             "hashCode" -> System.identityHashCode(proxy)
-            "equals" -> proxy === arguments?.singleOrNull()
-            else -> invocation(method, arguments?.toList().orEmpty())
+            "equals" -> proxy shouldBe arguments?.singleOrNull()
+            else     -> invocation(method, arguments?.toList().orEmpty())
         }
     },
 ) as T
 
 private fun defaultValue(type: Class<*>): Any? = when (type) {
     java.lang.Boolean.TYPE -> false
-    java.lang.Byte.TYPE -> 0.toByte()
-    java.lang.Short.TYPE -> 0.toShort()
+    java.lang.Byte.TYPE    -> 0.toByte()
+    java.lang.Short.TYPE   -> 0.toShort()
     java.lang.Integer.TYPE -> 0
-    java.lang.Long.TYPE -> 0L
-    java.lang.Float.TYPE -> 0F
-    java.lang.Double.TYPE -> 0.0
+    java.lang.Long.TYPE    -> 0L
+    java.lang.Float.TYPE   -> 0F
+    java.lang.Double.TYPE  -> 0.0
     java.lang.Character.TYPE -> '\u0000'
-    else -> null
+    else                   -> null
 }
 
-private class AclFailure(message: String) : RuntimeException(message)
-private class ConnectionFailure(message: String) : RuntimeException(message)
-private class FatalAdminError : Error()
+private class AclFailure(message: String): RuntimeException(message)
+private class ConnectionFailure(message: String): RuntimeException(message)
+private class FatalAdminError: Error()

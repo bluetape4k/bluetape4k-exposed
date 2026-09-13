@@ -95,22 +95,22 @@ val query2 = Users.selectAll()
 ## Jackson 2 vs Jackson 3
 
 | 특징      | Jackson 2               | Jackson 3       |
-|---------|-------------------------|-----------------|
-| 패키지     | `com.fasterxml.jackson` | `tools.jackson` |
+|-----------|-------------------------|-----------------|
+| 패키지    | `com.fasterxml.jackson` | `tools.jackson` |
 | Java 버전 | Java 8+                 | Java 17+        |
-| 성능      | 좋음                      | 개선됨             |
-| 권장      | 안정적                     | 최신 프로젝트         |
+| 성능      | 좋음                    | 개선됨          |
+| 권장      | 안정적                  | 최신 프로젝트   |
 
 ## 주요 파일/클래스 목록
 
-| 파일                       | 설명                     |
-|--------------------------|------------------------|
-| `JacksonColumnType.kt`   | JSON 컬럼 타입 (문자열 기반)    |
-| `JacksonBColumnType.kt`  | JSONB 컬럼 타입 (이진 포맷)    |
-| `JacksonSerializer.kt`   | Jackson3 Serializer 구성 |
-| `JsonFunctions.kt`       | JSON 함수 확장             |
-| `JsonConditions.kt`      | JSON 조건식 확장            |
-| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장   |
+| 파일                     | 설명                         |
+|--------------------------|------------------------------|
+| `JacksonColumnType.kt`   | JSON 컬럼 타입 (문자열 기반) |
+| `JacksonBColumnType.kt`  | JSONB 컬럼 타입 (이진 포맷)  |
+| `JacksonSerializer.kt`   | Jackson3 Serializer 구성     |
+| `JsonFunctions.kt`       | JSON 함수 확장               |
+| `JsonConditions.kt`      | JSON 조건식 확장             |
+| `ResultRowExtensions.kt` | ResultRow JSON 읽기 확장     |
 
 ## 테스트
 

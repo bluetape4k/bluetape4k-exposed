@@ -28,6 +28,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 abstract class EntityMapWriter<ID: Any, E: Any>(
     retryConfig: RetryConfig = RetryConfig.ofDefaults(),
 ): MapWriter<ID, E> {
+
     private val retry = Retry.of("exposed-lettuce-writer", retryConfig)
 
     override fun write(map: Map<ID, E>) = Retry.decorateRunnable(retry) { transaction { writeEntities(map) } }.run()

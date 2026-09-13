@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.lettuce.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.SuspendedUserCredentialRepository
@@ -14,6 +13,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.withSuspendedUserCredenti
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.withSuspendedUserTable
 import io.bluetape4k.exposed.lettuce.repository.scenarios.SuspendedWriteBehindScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
@@ -52,21 +52,19 @@ class SuspendedWriteBehindCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserTable(testDB, context, statement)
 
-        override suspend fun getExistingId(): Long =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): Long = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<Long> =
-            newSuspendedTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override suspend fun getExistingIds(): List<Long> = newSuspendedTransaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -107,6 +105,7 @@ class SuspendedWriteBehindCacheTest {
     abstract class ClientGenIdSuspendedWriteBehind:
         AbstractJdbcLettuceTest(),
         SuspendedWriteBehindScenario<UUID, UserCredentialsRecord> {
+
         companion object: KLoggingChannel()
 
         override suspend fun withSuspendedEntityTable(
@@ -115,21 +114,19 @@ class SuspendedWriteBehindCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserCredentialsTable(testDB, context, statement)
 
-        override suspend fun getExistingId(): UUID =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): UUID = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<UUID> =
-            newSuspendedTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override suspend fun getExistingIds(): List<UUID> = newSuspendedTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -147,7 +144,9 @@ class SuspendedWriteBehindCacheTest {
             writeBehindBatchSize = 50,
             keyPrefix = "jdbc-swb-client-remote"
         )
-        override val repository by lazy { SuspendedUserCredentialRepository(redisClient, config) }
+        override val repository by lazy {
+            SuspendedUserCredentialRepository(redisClient, config)
+        }
     }
 
     @Nested
@@ -160,6 +159,8 @@ class SuspendedWriteBehindCacheTest {
             nearCacheEnabled = true,
             nearCacheName = "jdbc-lettuce-cred-swb-near"
         )
-        override val repository by lazy { SuspendedUserCredentialRepository(redisClient, config) }
+        override val repository by lazy {
+            SuspendedUserCredentialRepository(redisClient, config)
+        }
     }
 }

@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.R2dbcUserCredentialLettuceRepository
@@ -14,6 +13,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.withUserCredentials
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios.R2dbcLettuceReadThroughScenario
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import kotlinx.coroutines.flow.first

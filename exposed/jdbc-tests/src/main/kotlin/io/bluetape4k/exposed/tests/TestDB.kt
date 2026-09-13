@@ -9,11 +9,9 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.Connection
 import kotlin.reflect.full.declaredMemberProperties
 
-
 /**
  * Exposed 기능을 테스트하기 위한 대상 DB 들의 목록과 정보들을 제공합니다.
  */
-
 enum class TestDB(
     val connection: () -> String,
     val driver: String,

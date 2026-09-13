@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -23,6 +24,8 @@ import org.redisson.api.RMap
 import java.io.Serializable
 
 class JdbcRedissonRepositoryDefaultMethodTest {
+
+    companion object: KLogging()
 
     private val cache = mockk<RMap<Long, ProbeEntity?>>(relaxed = true)
     private val repository = ProbeJdbcRedissonRepository(cache)
@@ -134,7 +137,13 @@ class JdbcRedissonRepositoryDefaultMethodTest {
     private data class ProbeEntity(
         val id: Long,
         val name: String,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     private object ProbeTable: LongIdTable("redisson_repository_probe")
 

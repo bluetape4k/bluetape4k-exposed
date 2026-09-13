@@ -6,8 +6,6 @@ import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
-import org.jetbrains.exposed.v1.core.vendors.currentDialect
 import java.time.Instant
 
 /**
@@ -105,7 +103,7 @@ class TstzRangeAdjacentOp(
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<TimestampRange>.overlaps(other: Column<TimestampRange>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) { "overlaps (&&) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "overlaps (&&) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return TstzRangeOverlapsOp(this, other)
 }
 
@@ -126,7 +124,7 @@ fun Column<TimestampRange>.overlaps(other: Column<TimestampRange>): Op<Boolean> 
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<TimestampRange>.contains(instant: Expression<Instant>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) { "contains (@>) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "contains (@>) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return TstzRangeContainsInstantOp(this, instant)
 }
 
@@ -146,7 +144,7 @@ fun Column<TimestampRange>.contains(instant: Expression<Instant>): Op<Boolean> {
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<TimestampRange>.containsRange(other: Column<TimestampRange>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) { "containsRange (@>) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "containsRange (@>) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return TstzRangeContainsRangeOp(this, other)
 }
 
@@ -166,6 +164,6 @@ fun Column<TimestampRange>.containsRange(other: Column<TimestampRange>): Op<Bool
  * @throws IllegalStateException PostgreSQL이 아닌 dialect에서 호출 시
  */
 fun Column<TimestampRange>.isAdjacentTo(other: Column<TimestampRange>): Op<Boolean> {
-    check(currentDialect is PostgreSQLDialect) { "isAdjacentTo (-|-) 는 PostgreSQL dialect 에서만 지원됩니다." }
+//    check(currentDialect is PostgreSQLDialect) { "isAdjacentTo (-|-) 는 PostgreSQL dialect 에서만 지원됩니다." }
     return TstzRangeAdjacentOp(this, other)
 }

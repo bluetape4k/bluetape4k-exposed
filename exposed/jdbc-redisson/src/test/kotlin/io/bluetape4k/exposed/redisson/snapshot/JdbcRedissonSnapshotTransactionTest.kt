@@ -3,10 +3,12 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
 import io.bluetape4k.exposed.cache.snapshot.ClaimedSnapshotMiss
@@ -26,6 +28,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotTransactionBridge
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.stageInvalidationMutation
 import io.bluetape4k.exposed.cache.snapshot.stageSnapshotMutation
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -45,8 +48,10 @@ import java.lang.reflect.Proxy
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.collections.ArrayDeque
 
 class JdbcRedissonSnapshotTransactionTest {
+
 
     @Test
     fun `source usage compiles and exposes only the exact transaction invalidation extension`() {
@@ -78,7 +83,7 @@ class JdbcRedissonSnapshotTransactionTest {
         transaction(database()) {
             maxAttempts = 1
             stageInvalidation(fixture.invalidator, 1L)
-            fixture.map.submittedIds.shouldBeEqualTo(emptyList())
+            fixture.map.submittedIds.shouldBeEmpty()
         }
 
         fixture.map.submittedIds shouldBeEqualTo listOf(listOf(1L))
@@ -97,8 +102,8 @@ class JdbcRedissonSnapshotTransactionTest {
             }
         }
 
-        fixture.map.submittedIds.shouldBeEqualTo(emptyList())
-        fixture.map.invokedMethods.shouldBeEqualTo(emptyList())
+        fixture.map.submittedIds.shouldBeEmpty()
+        fixture.map.invokedMethods.shouldBeEmpty()
     }
 
     @Test
@@ -114,7 +119,7 @@ class JdbcRedissonSnapshotTransactionTest {
         assertFailsWith<IllegalStateException> {
             captured.stageInvalidation(fixture.invalidator, 1L)
         }
-        fixture.map.submittedIds.shouldBeEqualTo(emptyList())
+        fixture.map.submittedIds.shouldBeEmpty()
     }
 
     @Test
@@ -135,7 +140,7 @@ class JdbcRedissonSnapshotTransactionTest {
             }
         }
 
-        fixture.map.submittedIds.shouldBeEqualTo(emptyList())
+        fixture.map.submittedIds.shouldBeEmpty()
     }
 
     @Test
@@ -241,7 +246,8 @@ class JdbcRedissonSnapshotTransactionTest {
         val neverMap = RecordingLocalMap<Long>("never", events).thenReturn(rFuture(CompletableFuture()))
         val rejectedMap = RecordingLocalMap<Long>("rejected", events)
         val laterMap = RecordingLocalMap<Long>("later", events)
-        val failed = testInvalidator("failed:v1", failureMap, sharedClient, quotaRegistry, failedBuffer, events, "failed")
+        val failed =
+            testInvalidator("failed:v1", failureMap, sharedClient, quotaRegistry, failedBuffer, events, "failed")
         val pending = testInvalidator("never:v1", neverMap, sharedClient, quotaRegistry, neverBuffer, events, "never")
         val rejected = testInvalidator(
             "rejected:v1",
@@ -292,7 +298,7 @@ class JdbcRedissonSnapshotTransactionTest {
             "local:put:20",
         )
         failureMap.submittedIds shouldBeEqualTo listOf(listOf(1L), listOf(2L), listOf(3L))
-        rejectedMap.submittedIds.shouldBeEqualTo(emptyList())
+        rejectedMap.submittedIds.shouldBeEmpty()
         laterMap.submittedIds shouldBeEqualTo listOf(listOf(6L))
         pending.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 1, 8, 8, 1, true)
         val failedEvent = failedBuffer.poll().shouldNotBeNull()
@@ -354,11 +360,11 @@ class JdbcRedissonSnapshotTransactionTest {
             }
         }
 
-        (thrown === fatalError).shouldBeTrue()
+        thrown shouldBe fatalError
         events shouldBeEqualTo listOf("fatal:verify:1", "fatal:submit:1")
         fatal.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 0, 8, 0, 0, false)
         fatalBuffer.size shouldBeEqualTo 0
-        laterMap.submittedIds.shouldBeEqualTo(emptyList())
+        laterMap.submittedIds.shouldBeEmpty()
         laterBuffer.size shouldBeEqualTo 0
         local.failureBuffer.size shouldBeEqualTo 0
     }
@@ -420,8 +426,8 @@ class JdbcRedissonSnapshotTransactionTest {
             1,
             SubmissionFailure::class.java.name,
         )
-        failure.toString().contains("99").shouldBeFalse()
-        failure.toString().contains("secret.example").shouldBeFalse()
+        failure.toString() shouldNotContain "99"
+        failure.toString() shouldNotContain "secret.example"
         buffer.size shouldBeEqualTo 0
     }
 
@@ -456,8 +462,8 @@ class JdbcRedissonSnapshotTransactionTest {
             },
         )
 
-        (observedThread.get() === caller).shouldBeTrue()
-        observedFailure.get().shouldNotBeNull().storeId shouldBeEqualTo SnapshotStoreId("redisson-jdbc", "drain:v1")
+        observedThread.get() shouldBe caller
+        observedFailure.get()?.storeId shouldBeEqualTo SnapshotStoreId("redisson-jdbc", "drain:v1")
         result.deliveredCount shouldBeEqualTo 0
         result.observerFailedCount shouldBeEqualTo 1
         result.remainingCount shouldBeEqualTo 0
@@ -555,7 +561,7 @@ class JdbcRedissonSnapshotTransactionTest {
 
     private class RecordingSnapshotStore(
         private val events: MutableList<String>,
-    ) : SnapshotCacheStore<Long, Payload> {
+    ): SnapshotCacheStore<Long, Payload> {
         override val storeId: SnapshotStoreId = SnapshotStoreId("local-test", "local:v1")
         override val storeInstanceToken: Any = this
         override val compatibilityFingerprint: String = "local-payload-v1"
@@ -589,7 +595,7 @@ class JdbcRedissonSnapshotTransactionTest {
         }
     }
 
-    private object TestJdbcBridge : SnapshotTransactionBridge<JdbcTransaction> {
+    private object TestJdbcBridge: SnapshotTransactionBridge<JdbcTransaction> {
         override fun isRoot(transaction: JdbcTransaction): Boolean = transaction.outerTransaction == null
 
         override fun isCurrent(transaction: JdbcTransaction): Boolean =
@@ -616,10 +622,10 @@ class JdbcRedissonSnapshotTransactionTest {
                     options += args.orEmpty().single()
                     localCacheMap
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
-                "hashCode" -> System.identityHashCode(instance)
-                "toString" -> "RecordingRedissonClient"
-                else -> error("Unexpected RedissonClient call: ${method.name}")
+                "equals"    -> instance shouldBe args.orEmpty().singleOrNull()
+                "hashCode"  -> System.identityHashCode(instance)
+                "toString"  -> "RecordingRedissonClient"
+                else        -> error("Unexpected RedissonClient call: ${method.name}")
             }
         } as RedissonClient
 
@@ -629,10 +635,10 @@ class JdbcRedissonSnapshotTransactionTest {
         ) { instance, method, args ->
             when (method.name) {
                 "evalAsync" -> markerFuture
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance shouldBe args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingMarkerScript"
-                else -> error("Unexpected RScript call: ${method.name}")
+                else       -> error("Unexpected RScript call: ${method.name}")
             }
         } as RScript
 
@@ -642,15 +648,15 @@ class JdbcRedissonSnapshotTransactionTest {
             arrayOf(RFuture::class.java),
         ) { instance, method, args ->
             when (method.name) {
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals" -> instance shouldBe args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "ExactMarkerFuture"
-                else -> method.invoke(CompletableFuture.completedFuture(listOf(1L, 0L)), *args.orEmpty())
+                else     -> method.invoke(CompletableFuture.completedFuture(listOf(1L, 0L)), *args.orEmpty())
             }
         } as RFuture<List<Long>>
     }
 
-    private class RecordingLocalMap<ID : Any>(
+    private class RecordingLocalMap<ID: Any>(
         private val label: String? = null,
         private val events: MutableList<String>? = null,
     ) {
@@ -671,10 +677,10 @@ class JdbcRedissonSnapshotTransactionTest {
                     label?.let { events?.add("$it:submit:${ids.joinToString()}") }
                     if (behaviors.isEmpty()) completedRFuture(1L) else behaviors.removeFirst()()
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance shouldBe args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "RecordingLocalMap"
-                else -> error("Non-invalidation Redisson map command invoked: ${method.name}")
+                else       -> error("Non-invalidation Redisson map command invoked: ${method.name}")
             }
         } as RLocalCachedMap<ID, Any?>
 
@@ -687,18 +693,18 @@ class JdbcRedissonSnapshotTransactionTest {
         }
     }
 
-    private data class Payload(val value: String = "value") : Serializable {
+    private data class Payload(val value: String = "value"): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }
     }
 
-    private class RollbackMarker : RuntimeException()
-    private class SubmissionFailure(message: String? = null) : RuntimeException(message)
-    private class ObserverFailure(message: String) : RuntimeException(message)
-    private class FatalSubmissionError(message: String) : Error(message)
+    private class RollbackMarker: RuntimeException()
+    private class SubmissionFailure(message: String? = null): RuntimeException(message)
+    private class ObserverFailure(message: String): RuntimeException(message)
+    private class FatalSubmissionError(message: String): Error(message)
 
-    private companion object {
+    private companion object: KLogging() {
         @Suppress("UNCHECKED_CAST")
         fun rFuture(
             delegate: CompletableFuture<Long>,
@@ -718,10 +724,10 @@ class JdbcRedissonSnapshotTransactionTest {
                         }
                         proxy
                     }
-                    "equals" -> instance === args.orEmpty().singleOrNull()
+                    "equals"   -> instance shouldBe args.orEmpty().singleOrNull()
                     "hashCode" -> System.identityHashCode(instance)
                     "toString" -> "RFutureProxy"
-                    else -> method.invoke(delegate, *args.orEmpty())
+                    else       -> method.invoke(delegate, *args.orEmpty())
                 }
             } as RFuture<Long>
             return proxy
@@ -738,10 +744,10 @@ class JdbcRedissonSnapshotTransactionTest {
                     callback.accept(value, null)
                     instance
                 }
-                "equals" -> instance === args.orEmpty().singleOrNull()
+                "equals"   -> instance shouldBe args.orEmpty().singleOrNull()
                 "hashCode" -> System.identityHashCode(instance)
                 "toString" -> "CompletedRFuture"
-                else -> method.invoke(CompletableFuture.completedFuture(value), *args.orEmpty())
+                else       -> method.invoke(CompletableFuture.completedFuture(value), *args.orEmpty())
             }
         } as RFuture<Long>
     }

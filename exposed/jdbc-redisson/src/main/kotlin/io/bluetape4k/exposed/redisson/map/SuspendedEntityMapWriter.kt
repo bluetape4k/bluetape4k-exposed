@@ -41,6 +41,7 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
     private val deleteFromDb: suspend (keys: Collection<ID>) -> Unit,
     private val scope: CoroutineScope = defaultMapWriterCoroutineScope,
 ): MapWriterAsync<ID, E> {
+
     companion object: KLoggingChannel() {
         protected val defaultMapWriterCoroutineScope = CoroutineScope(Dispatchers.IO) + CoroutineName("DB-Writer")
     }
@@ -55,24 +56,22 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
      * @param map 캐시에 쓰여진 ID → 엔티티 맵 전체
      * @return DB 반영 완료를 알리는 [CompletionStage]
      */
-    override fun write(map: Map<ID, E>): CompletionStage<Void> =
-        scope
-            .async {
-                withContext(scope.coroutineContext) {
-                    suspendTransaction {
-                        try {
-                            writeToDb(map)
-                        } catch (e: CancellationException) {
-                            // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
-                            throw e
-                        } catch (e: Throwable) {
-                            log.error { "DB에 Write 중 오류 발생: errorType=${e::class.simpleName}" }
-                            throw e
-                        }
-                    }
+    override fun write(map: Map<ID, E>): CompletionStage<Void> = scope.async {
+        withContext(scope.coroutineContext) {
+            suspendTransaction {
+                try {
+                    writeToDb(map)
+                } catch (e: CancellationException) {
+                    // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
+                    throw e
+                } catch (e: Throwable) {
+                    log.error(e) { "DB에 Write 중 오류 발생." }
+                    throw e
                 }
-                null
-            }.asCompletableFuture()
+            }
+        }
+        null
+    }.asCompletableFuture()
 
     /**
      * 캐시에서 제거된 키 목록을 코루틴 트랜잭션으로 DB에 비동기 반영합니다.
@@ -84,23 +83,21 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
      * @param ids 캐시에서 제거된 ID 컬렉션
      * @return DB 반영 완료를 알리는 [CompletionStage]
      */
-    override fun delete(ids: Collection<ID>): CompletionStage<Void> =
-        scope
-            .async {
-                withContext(scope.coroutineContext) {
-                    suspendTransaction {
-                        try {
-                            log.debug { "캐시 변경 사항을 DB에 반영합니다... count=${ids.size}" }
-                            deleteFromDb(ids)
-                        } catch (e: CancellationException) {
-                            // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
-                            throw e
-                        } catch (e: Throwable) {
-                            log.error { "DB에서 삭제 중 오류 발생: errorType=${e::class.simpleName}" }
-                            throw e
-                        }
-                    }
+    override fun delete(ids: Collection<ID>): CompletionStage<Void> = scope.async {
+        withContext(scope.coroutineContext) {
+            suspendTransaction {
+                try {
+                    log.debug { "캐시 변경 사항을 DB에 반영합니다... count=${ids.size}" }
+                    deleteFromDb(ids)
+                } catch (e: CancellationException) {
+                    // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
+                    throw e
+                } catch (e: Throwable) {
+                    log.error(e) { "DB에서 삭제 중 오류 발생." }
+                    throw e
                 }
-                null
-            }.asCompletableFuture()
+            }
+        }
+        null
+    }.asCompletableFuture()
 }

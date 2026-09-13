@@ -18,6 +18,7 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.bigquery.domain.Events
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -35,6 +36,12 @@ import kotlin.time.Duration.Companion.seconds
  * Unit tests for BigQuery query-job continuation without real BigQuery credentials.
  */
 class BigQueryQueryContinuationUnitTest {
+
+    private companion object: KLogging() {
+        private const val PROJECT_ID = "proj"
+        private const val DATASET_ID = "ds"
+        private const val JOB_ID = "job-1"
+    }
 
     private val bigquery = mockk<Bigquery>()
     private val jobs = mockk<Jobs>()
@@ -141,24 +148,25 @@ class BigQueryQueryContinuationUnitTest {
     }
 
     @Test
-    fun `toList and toFlow surface continuation page errors as BigQueryQueryException`() = runTest(timeout = 30.seconds) {
-        givenQueryPages(
-            initial = queryResponse(jobComplete = false, pageToken = "page-1"),
-            continuations = listOf(pageError("backendError"), pageError("backendError")),
-        )
+    fun `toList and toFlow surface continuation page errors as BigQueryQueryException`() =
+        runTest(timeout = 30.seconds) {
+            givenQueryPages(
+                initial = queryResponse(jobComplete = false, pageToken = "page-1"),
+                continuations = listOf(pageError("backendError"), pageError("backendError")),
+            )
 
-        val listError = assertFailsWith<BigQueryQueryException> {
-            executor().toList()
+            val listError = assertFailsWith<BigQueryQueryException> {
+                executor().toList()
+            }
+            val flowError = coInvoking {
+                executor().toFlow().toList()
+            } shouldThrow BigQueryQueryException::class
+
+            listError.message.shouldNotBeNull() shouldContain "reasons=internalError"
+            flowError.message.shouldNotBeNull() shouldContain "reasons=internalError"
+            listError.message.orEmpty() shouldNotContain "backendError"
+            flowError.message.orEmpty() shouldNotContain "backendError"
         }
-        val flowError = coInvoking {
-            executor().toFlow().toList()
-        } shouldThrow BigQueryQueryException::class
-
-        listError.message.shouldNotBeNull() shouldContain "reasons=internalError"
-        flowError.message.shouldNotBeNull() shouldContain "reasons=internalError"
-        listError.message.orEmpty() shouldNotContain "backendError"
-        flowError.message.orEmpty() shouldNotContain "backendError"
-    }
 
     @Test
     fun `missing jobReference fails clearly when more pages are required`() {
@@ -231,9 +239,5 @@ class BigQueryQueryContinuationUnitTest {
             )
         )
 
-    private companion object {
-        private const val PROJECT_ID = "proj"
-        private const val DATASET_ID = "ds"
-        private const val JOB_ID = "job-1"
-    }
+
 }

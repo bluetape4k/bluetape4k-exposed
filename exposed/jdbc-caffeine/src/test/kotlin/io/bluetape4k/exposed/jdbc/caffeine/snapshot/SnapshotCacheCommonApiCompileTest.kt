@@ -3,8 +3,10 @@
 package io.bluetape4k.exposed.jdbc.caffeine.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.AsyncSnapshotInvalidationStore
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
@@ -15,22 +17,23 @@ import io.bluetape4k.exposed.cache.snapshot.MeasuredInvalidation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheApplyReport
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLimits
-import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFence
-import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFenceRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheLookup
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheMiss
-import io.bluetape4k.exposed.cache.snapshot.SnapshotMissCapabilityRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheMutation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
+import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFence
+import io.bluetape4k.exposed.cache.snapshot.SnapshotLocalFenceRegistry
+import io.bluetape4k.exposed.cache.snapshot.SnapshotMissCapabilityRegistry
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.SnapshotTransactionBridge
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.stageInvalidationMutation
 import io.bluetape4k.exposed.cache.snapshot.stageMappedSnapshotMutation
 import io.bluetape4k.exposed.cache.snapshot.stageSnapshotMutation
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
@@ -41,6 +44,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 class SnapshotCacheCommonApiCompileTest {
+
+    companion object: KLogging() {
+        private val VALIDATOR = CacheSnapshotValueValidator<Payload> {}
+
+        private fun success(operation: SnapshotCacheOperation, count: Int) = SnapshotCacheApplyReport(
+            listOf(SnapshotCacheOperationResult(operation, SnapshotCacheOutcome.SUCCESS, count)),
+        )
+    }
 
     @Test
     fun `opted in consumer compiles lookup factories hooks and both invalidation overloads`() {
@@ -88,11 +99,11 @@ class SnapshotCacheCommonApiCompileTest {
             .use { it.readBytes().decodeToString() }
         val signatures = facade.declaredMethods.joinToString("\n") { it.toGenericString() }
 
-        annotationBytes.contains("RequiresOptIn") shouldBeEqualTo true
-        annotationBytes.contains("ERROR") shouldBeEqualTo true
-        facadeBytes.contains("InternalSnapshotCacheApi") shouldBeEqualTo true
-        signatures.contains("JdbcTransaction").shouldBeFalse()
-        signatures.contains("R2dbcTransaction").shouldBeFalse()
+        annotationBytes shouldContain "RequiresOptIn"
+        annotationBytes shouldContain "ERROR"
+        facadeBytes shouldContain "InternalSnapshotCacheApi"
+        signatures shouldNotContain "JdbcTransaction"
+        signatures shouldNotContain "R2dbcTransaction"
         facade.declaredMethods.count { it.name == "stageInvalidationMutation" } shouldBeEqualTo 2
     }
 
@@ -106,11 +117,11 @@ class SnapshotCacheCommonApiCompileTest {
         val missMethods = SnapshotCacheMiss::class.java.declaredMethods.map { it.name }
 
         prepared.id shouldBeEqualTo 1L
-        fenceMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" } shouldBeEqualTo true
-        missMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" } shouldBeEqualTo true
+        fenceMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" }.shouldBeTrue()
+        missMethods.none { it.startsWith("get") || it.startsWith("component") || it == "copy" }.shouldBeTrue()
     }
 
-    private class ConsumerBridge : SnapshotTransactionBridge<ConsumerTransaction> {
+    private class ConsumerBridge: SnapshotTransactionBridge<ConsumerTransaction> {
         val interceptors = mutableListOf<StatementInterceptor>()
 
         override fun isRoot(transaction: ConsumerTransaction): Boolean = true
@@ -124,7 +135,7 @@ class SnapshotCacheCommonApiCompileTest {
         }
     }
 
-    private class ConsumerTransaction : Transaction() {
+    private class ConsumerTransaction: Transaction() {
         override val db: DatabaseApi
             get() = error("Database is not used by the compile contract")
         override val transactionManager: TransactionManagerApi
@@ -133,7 +144,7 @@ class SnapshotCacheCommonApiCompileTest {
         override val outerTransaction: Transaction? = null
     }
 
-    private class ConsumerLocalStore : SnapshotCacheStore<Long, Payload> {
+    private class ConsumerLocalStore: SnapshotCacheStore<Long, Payload> {
         override val storeId = SnapshotStoreId("local", "consumer:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "consumer-local:v1"
@@ -157,7 +168,7 @@ class SnapshotCacheCommonApiCompileTest {
         ): SnapshotCacheApplyReport = success(SnapshotCacheOperation.INVALIDATE, ids.size)
     }
 
-    private class ConsumerAsyncStore : AsyncSnapshotInvalidationStore<Long> {
+    private class ConsumerAsyncStore: AsyncSnapshotInvalidationStore<Long> {
         override val storeId = SnapshotStoreId("remote", "consumer:v1")
         override val storeInstanceToken: Any = Any()
         override val compatibilityFingerprint: String = "consumer-remote:v1"
@@ -173,13 +184,9 @@ class SnapshotCacheCommonApiCompileTest {
             CompletableFuture.completedFuture(success(SnapshotCacheOperation.INVALIDATE, batch.size))
     }
 
-    private data class Payload(val value: String) : Serializable
-
-    companion object {
-        private val VALIDATOR = CacheSnapshotValueValidator<Payload> {}
-
-        private fun success(operation: SnapshotCacheOperation, count: Int) = SnapshotCacheApplyReport(
-            listOf(SnapshotCacheOperationResult(operation, SnapshotCacheOutcome.SUCCESS, count)),
-        )
+    private data class Payload(val value: String): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
     }
 }

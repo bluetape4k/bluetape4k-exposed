@@ -31,8 +31,8 @@ data class RedisRepositoryResilienceConfig(
     val retryExponentialBackoff: Boolean = true,
     val circuitBreakerEnabled: Boolean = false,
     val timeoutDuration: Duration = Duration.ofSeconds(2),
-) : Serializable {
-    companion object : KLogging() {
+): Serializable {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
     }
 

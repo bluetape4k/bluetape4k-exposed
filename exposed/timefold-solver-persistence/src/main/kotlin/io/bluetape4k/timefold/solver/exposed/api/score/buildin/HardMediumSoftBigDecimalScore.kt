@@ -61,9 +61,9 @@ fun Table.hardMediumSoftBigDecimalScore(
 class HardMediumSoftBigDecimalScoreColumnType(
     length: Int,
 ): ColumnWithTransform<String, HardMediumSoftBigDecimalScore>(
-        VarCharColumnType(length),
+    VarCharColumnType(length),
     HardMediumSoftBigDecimalScoreTransformer(),
-    )
+)
 
 /**
  * [HardMediumSoftBigDecimalScore]와 데이터베이스 String 값 간의 변환을 수행하는 Transformer 클래스입니다.

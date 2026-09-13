@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.codec
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodec
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodecs
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -25,21 +25,27 @@ class LettuceBinaryCodecUserRecordTest {
                 LettuceBinaryCodecs.jdk(),
                 LettuceBinaryCodecs.kryo(),
                 LettuceBinaryCodecs.fory(),
+                LettuceBinaryCodecs.fastFory(),
                 LettuceBinaryCodecs.gzipJdk(),
                 LettuceBinaryCodecs.gzipKryo(),
                 LettuceBinaryCodecs.gzipFory(),
+                LettuceBinaryCodecs.gzipFastFory(),
                 LettuceBinaryCodecs.deflateJdk(),
                 LettuceBinaryCodecs.deflateKryo(),
+                LettuceBinaryCodecs.deflateFory(),
                 LettuceBinaryCodecs.deflateFory(),
                 LettuceBinaryCodecs.lz4Jdk(),
                 LettuceBinaryCodecs.lz4Kryo(),
                 LettuceBinaryCodecs.lz4Fory(),
+                LettuceBinaryCodecs.lz4FastFory(),
                 LettuceBinaryCodecs.snappyJdk(),
                 LettuceBinaryCodecs.snappyKryo(),
                 LettuceBinaryCodecs.snappyFory(),
+                LettuceBinaryCodecs.snappyFastFory(),
                 LettuceBinaryCodecs.zstdJdk(),
                 LettuceBinaryCodecs.zstdKryo(),
-                LettuceBinaryCodecs.zstdFory()
+                LettuceBinaryCodecs.zstdFory(),
+                LettuceBinaryCodecs.zstdFastFory()
             )
     }
 

@@ -15,10 +15,7 @@ import org.jetbrains.exposed.v1.core.Table
  * 기본 `ENGINE=OLAP`과 `replication_num=1`은 유지합니다. 옵션 변경은 Exposed migration
  * diff로 추적되지 않으므로 별도의 검토된 수동 migration이 필요합니다.
  */
-open class StarRocksTable(
-    name: String = "",
-): Table(name) {
-
+open class StarRocksTable(name: String = ""): Table(name) {
     override fun createStatement(): List<String> {
         require(options.isEmpty()) { "StarRocksTable.options is unsupported; use the fixed OLAP table contract." }
         require(storageParameters.isEmpty()) {
@@ -42,7 +39,7 @@ private val STARROCKS_ENGINE_REGEX = Regex("\\bENGINE\\s*=", RegexOption.IGNORE_
  * 있는 PK와 nullable clause만 처리합니다. 범용 SQL parser가 아니므로 수동 DDL의 모든 dialect를
  * 해석하지 않으며, 실제 ENGINE 절이 없을 때만 기존 기본 OLAP 옵션을 추가합니다.
  */
-private fun String.sanitizeForStarRocks(): String {
+internal fun String.sanitizeForStarRocks(): String {
     val masked = maskDdlQuotedRegions(this)
     val depths = IntArray(length)
     var depth = 0
@@ -72,7 +69,10 @@ private fun String.sanitizeForStarRocks(): String {
             if (!removed[index]) append(char)
         }
     }
-    val hasEngineClause = STARROCKS_ENGINE_REGEX.findAll(masked).any { match -> depths[match.range.first] == 0 }
+    val hasEngineClause = STARROCKS_ENGINE_REGEX
+        .findAll(masked)
+        .any { match -> depths[match.range.first] == 0 }
+
     return if (hasEngineClause) sanitized
     else "$sanitized ENGINE=OLAP PROPERTIES (\"replication_num\" = \"1\")"
 }
@@ -87,12 +87,14 @@ private fun isStarRocksDefaultExpression(sql: String, depths: IntArray, index: I
     val next = sql.substring(index + "NULL".length).trimStart().firstOrNull()
     val nullabilitySuffix = next == ',' || next == ')'
     val defaultValueIsNull = prefix.trimEnd().endsWith("DEFAULT", ignoreCase = true)
+
     return STARROCKS_DEFAULT_REGEX.containsMatchIn(prefix) && (!nullabilitySuffix || defaultValueIsNull)
 }
 
 /** 기존 StarRocks 계약인 NOT NULL은 nullable 제거 대상에서 제외합니다. */
 private fun isStarRocksNotNullClause(sql: String, index: Int, pattern: Regex): Boolean =
-    pattern === STARROCKS_NULL_REGEX && sql.substring(0, index).trimEnd().endsWith("NOT", ignoreCase = true)
+    pattern === STARROCKS_NULL_REGEX &&
+            sql.substring(0, index).trimEnd().endsWith("NOT", ignoreCase = true)
 
 /** 인용 영역과 주석의 원문 위치를 유지하며 제약 검색에서 제외합니다. */
 private fun maskDdlQuotedRegions(sql: String): String {
@@ -102,16 +104,22 @@ private fun maskDdlQuotedRegions(sql: String): String {
         val start = index
         val quote = sql[index]
         when {
-            quote == '\'' || quote == '"' || quote == '`' -> index = quotedRegionEnd(sql, index)
-            sql.startsWith("--", index) -> index = sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
-            sql.startsWith("/*", index) ->
+            quote == '\'' || quote == '"' || quote == '`' ->
+                index = quotedRegionEnd(sql, index)
+
+            sql.startsWith("--", index)                   ->
+                index = sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
+
+            sql.startsWith("/*", index)                   ->
                 index = sql.indexOf("*/", index + 2).takeIf { it >= 0 }?.plus(2) ?: sql.length
-            else -> {
+
+            else                                          -> {
                 index++
                 continue
             }
         }
-        for (position in start until index) masked[position] = '_'
+        for (position in start until index)
+            masked[position] = '_'
     }
     return String(masked)
 }

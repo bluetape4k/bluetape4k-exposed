@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.CockroachServer
 import io.bluetape4k.testcontainers.database.JdbcServer
 import io.bluetape4k.testcontainers.database.MariaDBServer
@@ -14,13 +15,12 @@ import io.bluetape4k.testcontainers.database.PostgreSQLServer
 import io.bluetape4k.testcontainers.infra.ToxiproxyServer
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
-import io.ktor.server.application.call
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -148,7 +148,9 @@ class ExposedKtorDriverTimeoutTest {
             withTimeout(10.seconds) { requestCompleted.await() }
         }
 
-        withTimeout(5.seconds) { client.get("/ping").bodyAsText() } shouldBeEqualTo "COMPLETED"
+        withTimeout(5.seconds) {
+            client.get("/ping").bodyAsText()
+        } shouldBeEqualTo "COMPLETED"
     }
 
     @Test
@@ -191,7 +193,7 @@ class ExposedKtorDriverTimeoutTest {
             tcpExchange(toxiproxy.host, proxyPort) shouldBeEqualTo "PONG"
             val activeProxy = checkNotNull(proxy)
             activeProxy.disable()
-            runCatching { tcpExchange(toxiproxy.host, proxyPort) }.isFailure shouldBeEqualTo true
+            runCatching { tcpExchange(toxiproxy.host, proxyPort) }.isFailure.shouldBeTrue()
 
             activeProxy.delete()
             proxy = null
@@ -262,8 +264,8 @@ class ExposedKtorDriverTimeoutTest {
                         }
                         call.respondText(
                             "case=${case.name};capability=${case.capability};" +
-                                "inherited=$inherited;outcome=${outcome.label()};" +
-                                "failure=${outcome.exceptionOrNull()?.javaClass?.simpleName ?: "none"}",
+                                    "inherited=$inherited;outcome=${outcome.label()};" +
+                                    "failure=${outcome.exceptionOrNull()?.javaClass?.simpleName ?: "none"}",
                         )
                     }
                     get("/ping") {
@@ -314,8 +316,8 @@ class ExposedKtorDriverTimeoutTest {
                     }
                     call.respondText(
                         "case=${case.name};capability=${case.capability};" +
-                            "inherited=$inherited;outcome=${outcome.label()};" +
-                            "failure=${outcome.exceptionOrNull()?.javaClass?.simpleName ?: "none"}",
+                                "inherited=$inherited;outcome=${outcome.label()};" +
+                                "failure=${outcome.exceptionOrNull()?.javaClass?.simpleName ?: "none"}",
                     )
                 }
                 get("/ping") {
@@ -405,7 +407,7 @@ class ExposedKtorDriverTimeoutTest {
     private fun DriverCase.r2dbcUrl(): String {
         val databaseName = server.getDatabaseName() ?: error("database name is required for $name")
         return "r2dbc:$r2dbcScheme://${server.getUsername()}:${server.getPassword()}" +
-            "@${server.host}:${server.port}/$databaseName"
+                "@${server.host}:${server.port}/$databaseName"
     }
 
     private fun Result<*>.label(): Outcome = if (isSuccess) Outcome.COMPLETED else Outcome.FAILED
@@ -430,7 +432,7 @@ class ExposedKtorDriverTimeoutTest {
         UNSUPPORTED,
     }
 
-    companion object {
+    companion object: KLogging() {
         private const val DEFAULT_TIMEOUT_SECONDS = 1
         private const val OVERRIDE_TIMEOUT_SECONDS = 5
         private const val PROXY_PORT = 8666

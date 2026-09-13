@@ -1,14 +1,21 @@
 package io.bluetape4k.exposed.tests
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import org.jetbrains.exposed.v1.core.DatabaseConfig
+import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
-import kotlinx.coroutines.async
+import kotlin.coroutines.cancellation.CancellationException
 
 class JdbcTestDbFixtureTest {
     @Test
@@ -16,50 +23,85 @@ class JdbcTestDbFixtureTest {
         val unsupported = object: org.jetbrains.exposed.v1.core.vendors.H2Dialect() {
             override val supportsCreateSchema: Boolean = false
         }
-        val fixture = jdbcTestDbFixture("unsupported", { configure ->
-            database { configure(); explicitDialect = unsupported }
-        })
+        val fixture = jdbcTestDbFixture(
+            key = "unsupported",
+            createDatabase = { configure ->
+                database { configure(); explicitDialect = unsupported }
+            }
+        )
         var executed = false
-        withSchemas(fixture, org.jetbrains.exposed.v1.core.Schema("must_not_create")) { executed = true }
-        executed shouldBeEqualTo false
+
+        withSchemas(fixture, Schema("must_not_create")) {
+            executed = true
+        }
+
+        executed.shouldBeFalse()
     }
 
     @Test
     fun `일시 구성 본문이 실제 취소되어도 등록과 기본 연결을 복원한다`() = io.bluetape4k.junit5.coroutines.runSuspendIO {
-        val fixture = jdbcTestDbFixture("temporary-cancel", { database(it) })
+        val fixture = jdbcTestDbFixture(
+            key = "temporary-cancel",
+            createDatabase = { database(it) }
+        )
         var temporary: Database? = null
-        kotlinx.coroutines.coroutineScope {
+
+        coroutineScope {
             val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
             val job = async {
                 withDbSuspending(fixture, configure = {}) {
                     temporary = db
                     entered.complete(Unit)
-                    kotlinx.coroutines.awaitCancellation()
+                    awaitCancellation()
                 }
             }
             entered.await()
             job.cancel()
-            assertFailsWith<java.util.concurrent.CancellationException> { job.await() }
+
+            assertFailsWith<CancellationException> {
+                job.await()
+            }
         }
-        assertFailsWith<IllegalStateException> { TransactionManager.managerFor(checkNotNull(temporary)) }
-        withDb(fixture) { db shouldBeSameInstanceAs fixture.database }
+
+        assertFailsWith<IllegalStateException> {
+            TransactionManager.managerFor(checkNotNull(temporary))
+        }
+
+        withDb(fixture) {
+            db shouldBeSameInstanceAs fixture.database
+        }
     }
 
     @Test
     fun `종료 callback은 fixture별 한 번 등록하고 초기화 중 실행하지 않는다`() {
         val hooks = mutableListOf<() -> Unit>()
         val calls = mutableListOf<Int>()
-        val first = JdbcTestDbFixture(1, { database(it) }, {
-            calls.add(1)
-            throw IllegalStateException("shutdown")
-        }, hooks::add)
-        val second = JdbcTestDbFixture(2, { database(it) }, { calls.add(2) }, hooks::add)
+        val first = JdbcTestDbFixture(
+            key = 1,
+            createDatabase = { database(it) },
+            onShutdown = {
+                calls.add(1)
+                throw IllegalStateException("shutdown")
+            },
+            registerShutdown = hooks::add
+        )
+        val second = JdbcTestDbFixture(
+            key = 2,
+            createDatabase = { database(it) },
+            onShutdown = { calls.add(2) },
+            hooks::add
+        )
+
         withDb(first) {}
         withDb(first, configure = {}) {}
         withDb(second) {}
+
         hooks.size shouldBeEqualTo 2
-        calls.isEmpty() shouldBeEqualTo true
-        assertFailsWith<IllegalStateException> { hooks[0]() }
+        calls.shouldBeEmpty()
+
+        assertFailsWith<IllegalStateException> {
+            hooks[0]()
+        }
         hooks[1]()
         calls shouldBeEqualTo listOf(1, 2)
     }
@@ -69,26 +111,42 @@ class JdbcTestDbFixtureTest {
         val sentinel = "fixture-sensitive-sentinel"
         val urlSentinel = "fixture_url_secret"
         val configSentinel = 918273
-        val key = object { override fun toString(): String = error(sentinel) }
+        val key = object {
+            override fun toString(): String = error(sentinel)
+        }
         val logger = org.slf4j.LoggerFactory
             .getLogger("io.bluetape4k.exposed.tests") as ch.qos.logback.classic.Logger
         val appender = ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>()
         appender.start()
         logger.addAppender(appender)
+
         try {
-            val fixture = jdbcTestDbFixture(key, { configure ->
-                Database.connect("jdbc:h2:mem:$urlSentinel;DB_CLOSE_DELAY=-1", "org.h2.Driver",
-                                 databaseConfig = DatabaseConfig { configure() })
-            })
+            val fixture = jdbcTestDbFixture(
+                key = key,
+                createDatabase = { configure ->
+                    Database.connect(
+                        "jdbc:h2:mem:$urlSentinel;DB_CLOSE_DELAY=-1",
+                        "org.h2.Driver",
+                        databaseConfig = DatabaseConfig { configure() }
+                    )
+                }
+            )
+
             withDb(fixture, configure = { defaultFetchSize = configSentinel }) {}
+
             val broken = jdbcTestDbFixture(key, { throw IllegalArgumentException(sentinel) })
-            assertFailsWith<IllegalArgumentException> { withDb(broken) {} }
-            appender.list.isNotEmpty() shouldBeEqualTo true
+            assertFailsWith<IllegalArgumentException> {
+                withDb(broken) {}
+            }
+
+            appender.list.shouldNotBeEmpty()
+
             val secrets = listOf(sentinel, urlSentinel, configSentinel.toString())
+
             val leaked = appender.list.any { event ->
                 secrets.any(event.formattedMessage::contains) || event.throwableProxy != null
             }
-            leaked shouldBeEqualTo false
+            leaked.shouldBeFalse()
         } finally {
             logger.detachAppender(appender)
             appender.stop()
@@ -100,6 +158,7 @@ class JdbcTestDbFixtureTest {
         assertFailsWith<IllegalArgumentException> {
             withDb(TestDB.H2_MYSQL, configure = { throw IllegalArgumentException("configure sentinel") }) {}
         }
+
         TestDB.H2_MYSQL.db shouldBeSameInstanceAs jdbcFixtureFor(TestDB.H2_MYSQL).database
     }
 
@@ -113,9 +172,16 @@ class JdbcTestDbFixtureTest {
     @Test
     fun `첫 일시 구성은 기본 wrapper와 분리되고 등록이 해제된다`() {
         var creates = 0
-        val fixture = jdbcTestDbFixture("custom", { config -> creates++; database(config) })
+        val fixture = jdbcTestDbFixture(
+            key = "custom",
+            createDatabase = { config ->
+                creates++
+                database(config)
+            }
+        )
         fixture.database.shouldBeNull()
         var temporary: Database? = null
+
         withDb(fixture, configure = { defaultFetchSize = 17 }) { key ->
             key shouldBeEqualTo "custom"
             currentJdbcTestDbFixture shouldBeSameInstanceAs fixture
@@ -125,9 +191,14 @@ class JdbcTestDbFixtureTest {
             currentJdbcTestDbFixture shouldBeSameInstanceAs fixture
         }
         creates shouldBeEqualTo 2
-        assertFailsWith<IllegalStateException> { TransactionManager.managerFor(checkNotNull(temporary)) }
+
+        assertFailsWith<IllegalStateException> {
+            TransactionManager.managerFor(checkNotNull(temporary))
+        }
         val baseline = fixture.database
-        withDb(fixture) { db shouldBeSameInstanceAs baseline }
+        withDb(fixture) {
+            db shouldBeSameInstanceAs baseline
+        }
         creates shouldBeEqualTo 2
     }
 
@@ -135,11 +206,18 @@ class JdbcTestDbFixtureTest {
     fun `생성 실패 다음 호출은 초기화를 다시 시도한다`() {
         var attempts = 0
         val failure = IllegalStateException("create sentinel")
-        val fixture = jdbcTestDbFixture("retry", {
-            if (++attempts == 1) throw failure
-            database(it)
-        })
-        assertFailsWith<IllegalStateException> { withDb(fixture) {} } shouldBeSameInstanceAs failure
+        val fixture = jdbcTestDbFixture(
+            key = "retry",
+            createDatabase = {
+                if (++attempts == 1) throw failure
+                database(it)
+            }
+        )
+
+        assertFailsWith<IllegalStateException> {
+            withDb(fixture) {}
+        } shouldBeSameInstanceAs failure
+
         fixture.database.shouldBeNull()
         withDb(fixture) {}
         attempts shouldBeEqualTo 2
@@ -150,12 +228,25 @@ class JdbcTestDbFixtureTest {
         var registrations = 0
         var created: Database? = null
         val failure = IllegalStateException("hook sentinel")
-        val fixture = JdbcTestDbFixture("hook", { database(it).also { db -> created = db } }, {}, {
-            if (++registrations == 1) throw failure
-        })
-        assertFailsWith<IllegalStateException> { withDb(fixture) {} } shouldBeSameInstanceAs failure
+        val fixture = JdbcTestDbFixture(
+            key = "hook",
+            createDatabase = { database(it).also { db -> created = db } },
+            onShutdown = {},
+            registerShutdown = {
+                if (++registrations == 1) throw failure
+            }
+        )
+
+        assertFailsWith<IllegalStateException> {
+            withDb(fixture) {}
+        } shouldBeSameInstanceAs failure
+
         fixture.database.shouldBeNull()
-        assertFailsWith<IllegalStateException> { TransactionManager.managerFor(checkNotNull(created)) }
+
+        assertFailsWith<IllegalStateException> {
+            TransactionManager.managerFor(checkNotNull(created))
+        }
+
         withDb(fixture) {}
         withDb(fixture) {}
         registrations shouldBeEqualTo 2
@@ -165,19 +256,30 @@ class JdbcTestDbFixtureTest {
     fun `일시 wrapper에 기본 인스턴스를 반환하면 기본 연결은 유지된다`() {
         val shared = database()
         val fixture = jdbcTestDbFixture("same", { shared })
+
         withDb(fixture) {}
-        assertFailsWith<IllegalArgumentException> { withDb(fixture, configure = {}) {} }
+
+        assertFailsWith<IllegalArgumentException> {
+            withDb(fixture, configure = {}) {}
+        }
+
         fixture.database shouldBeSameInstanceAs shared
-        withDb(fixture) { db shouldBeSameInstanceAs shared }
+        withDb(fixture) {
+            db shouldBeSameInstanceAs shared
+        }
     }
 
     @Test
     fun `본문 실패 뒤 기본 wrapper와 permit을 복원한다`() {
         val failure = IllegalArgumentException("body sentinel")
         val fixture = jdbcTestDbFixture("body", { database(it) })
+
         assertFailsWith<IllegalArgumentException> {
             withDb(fixture, configure = {}) { throw failure }
         } shouldBeSameInstanceAs failure
-        withDb(fixture) { db shouldBeSameInstanceAs fixture.database }
+
+        withDb(fixture) {
+            db shouldBeSameInstanceAs fixture.database
+        }
     }
 }

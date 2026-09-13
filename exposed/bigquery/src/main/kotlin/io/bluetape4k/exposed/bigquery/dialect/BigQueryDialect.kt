@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.bigquery.dialect
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
-import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 
 /**
@@ -36,6 +35,5 @@ class BigQueryDialect: PostgreSQLDialect(name = dialectName) {
     // BigQuery는 WINDOW FRAME GROUPS 지원
     override val supportsWindowFrameGroupsMode: Boolean = true
 
-    @OptIn(InternalApi::class)
     override fun modifyColumn(column: Column<*>, columnDiff: ColumnDiff): List<String> = emptyList()
 }

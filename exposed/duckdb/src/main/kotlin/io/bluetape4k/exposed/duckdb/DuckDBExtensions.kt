@@ -43,7 +43,9 @@ suspend fun <T> suspendTransaction(
 ): T = withContext(dispatcher) {
     // DuckDB JDBC는 블로킹 드라이버이므로 Dispatchers.IO(또는 커스텀 VirtualThread 디스패처)에서 실행한다.
     // withContext는 코루틴 취소를 자동으로 전파하므로 별도 취소 처리 없이 CancellationException이 상위로 전달된다.
-    transaction(db) { block() }
+    transaction(db) {
+        block()
+    }
 }
 
 /**
@@ -80,7 +82,11 @@ fun <T> queryFlow(
 ): Flow<T> = flow {
     // DuckDB JDBC ResultSet은 트랜잭션 경계 밖에서 접근하면 예외가 발생하므로,
     // 트랜잭션 내부에서 toList()로 즉시 materialization 한다.
-    val items = withContext(dispatcher) { transaction(db) { block().toList() } }
+    val items = withContext(dispatcher) {
+        transaction(db) {
+            block().toList()
+        }
+    }
     for (item in items) {
         // forEach 대신 for+ensureActive()를 사용하는 이유:
         // forEach는 suspend 람다가 아니므로 코루틴 취소 신호를 emit 사이에서 확인하지 못한다.

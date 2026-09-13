@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
@@ -15,12 +15,12 @@ import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.r2dbc.redisson.repository.scenario.R2dbcReadThroughScenario
 import io.bluetape4k.exposed.r2dbc.redisson.repository.scenario.R2dbcWriteThroughScenario
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -43,22 +43,20 @@ class R2dbcReadWriteThroughCacheTest {
             withUserTable(testDB, context, statement)
         }
 
-        override suspend fun getExistingId() =
-            suspendTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override suspend fun getExistingId() = suspendTransaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds() =
-            suspendTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-                    .toList()
-            }
+        override suspend fun getExistingIds() = suspendTransaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+                .toList()
+        }
 
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 

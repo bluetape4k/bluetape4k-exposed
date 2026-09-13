@@ -1,15 +1,15 @@
 package io.bluetape4k.exposed.tests.dml
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.inProperCase
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContain
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.Table
@@ -255,6 +255,7 @@ class CreateTableTest: AbstractExposedTest() {
             SchemaUtils.create(parent, child)
             parent.exists().shouldBeTrue()
             child.exists().shouldBeTrue()
+
             SchemaUtils.drop(parent, child)
         }
     }
@@ -311,6 +312,7 @@ class CreateTableTest: AbstractExposedTest() {
             SchemaUtils.create(parent, child)
             parent.exists().shouldBeTrue()
             child.exists().shouldBeTrue()
+
             SchemaUtils.drop(parent, child)
         }
     }

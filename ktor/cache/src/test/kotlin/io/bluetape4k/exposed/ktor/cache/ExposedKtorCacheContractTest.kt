@@ -2,20 +2,24 @@ package io.bluetape4k.exposed.ktor.cache
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBe
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorCacheContractTest {
 
+    companion object: KLogging()
+
     @Test
-    fun `cache contributors expose a core cache probe without leaking supplier details`() = runBlocking {
+    fun `cache contributors expose a core cache probe without leaking supplier details`() = runSuspendIO {
         val report = CacheHealthReport(
             mode = CacheWriteMode.WRITE_BEHIND,
             queueDepth = 3,
@@ -27,11 +31,9 @@ class ExposedKtorCacheContractTest {
         )
         val probe = exposedKtorCacheReadinessProbes(config).single()
 
-        probe.backend shouldBeEqualTo io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend.CACHE
+        probe.backend shouldBeEqualTo ExposedKtorReadinessBackend.CACHE
         probe.component shouldBeEqualTo "orders"
-        probe.probe(1.seconds) shouldBeEqualTo
-            io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome.UP
-        Unit
+        probe.probe(1.seconds) shouldBeEqualTo ExposedKtorReadinessOutcome.UP
     }
 
     @Test
@@ -45,6 +47,7 @@ class ExposedKtorCacheContractTest {
             @Suppress("UNCHECKED_CAST")
             (config.contributors as MutableList<ExposedKtorCacheContributor>).add(source[1])
         }
+
         assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig(
                 listOf(
@@ -54,13 +57,15 @@ class ExposedKtorCacheContractTest {
             )
         }
         assertFailsWith<IllegalArgumentException> {
-            ExposedKtorCacheContributor.custom("orders/{id}") { ExposedKtorCacheStatus.UP }
+            ExposedKtorCacheContributor.custom("orders/{id}") {
+                ExposedKtorCacheStatus.UP
+            }
         }
-        (config.contributors.first() !== source[1]).shouldBeTrue()
+        config.contributors.first() shouldNotBe source[1]
     }
 
     @Test
-    fun `active supplier cancellation is sanitized as down`() = runBlocking {
+    fun `active supplier cancellation is sanitized as down`() = runSuspendIO {
         val probe = exposedKtorCacheReadinessProbes(
             ExposedKtorCacheReadinessConfig(
                 listOf(
@@ -72,6 +77,5 @@ class ExposedKtorCacheContractTest {
         ).single()
 
         probe.probe(1.seconds) shouldBeEqualTo ExposedKtorReadinessOutcome.DOWN
-        Unit
     }
 }

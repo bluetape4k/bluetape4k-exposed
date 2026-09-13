@@ -3,8 +3,8 @@ package io.bluetape4k.exposed.jdbc.caffeine.snapshot
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
@@ -12,6 +12,9 @@ import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
+import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
+import org.awaitility.Awaitility.await
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Table
@@ -25,12 +28,11 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.currentOrNull
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import org.awaitility.Awaitility.await
 import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.sql.SQLException
 import java.time.Duration
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -40,6 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 class JdbcSnapshotTransactionTest {
+
+    companion object: KLogging() {
+        private const val RACE_REPETITIONS: Int = 100
+    }
 
     @Test
     fun `commit publishes staged snapshot only after database success and performs zero extra SQL writes`() {
@@ -119,7 +125,7 @@ class JdbcSnapshotTransactionTest {
         }
 
         mappings.get() shouldBeEqualTo 1
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("source")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("source")
     }
 
     @Test
@@ -165,7 +171,7 @@ class JdbcSnapshotTransactionTest {
             stageSnapshot(cache, miss, CacheSnapshot(Payload("accepted")))
         }
 
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("accepted")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("accepted")
     }
 
     @Test
@@ -202,7 +208,7 @@ class JdbcSnapshotTransactionTest {
         }
 
         mappings.get() shouldBeEqualTo 0
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("valid-after-rejection")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("valid-after-rejection")
     }
 
     @Test
@@ -247,13 +253,13 @@ class JdbcSnapshotTransactionTest {
         }
 
         first.lookup(1L).snapshot.shouldBeNull()
-        second.lookup(2L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("second")
+        second.lookup(2L).snapshot?.value shouldBeEqualTo Payload("second")
     }
 
     @Test
     fun `older miss cannot repopulate when newer invalidation wins a controlled race`() {
         val database = database()
-        val failures = io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer(RACE_REPETITIONS)
+        val failures = snapshotCacheFailureBuffer(RACE_REPETITIONS)
         val cache = cache("stale-race:v1", failureBuffer = failures)
         val executor = TrackedExecutor(threadCount = 2)
 
@@ -264,12 +270,14 @@ class JdbcSnapshotTransactionTest {
                 val ready = CountDownLatch(2)
                 val start = CountDownLatch(1)
                 val invalidated = CountDownLatch(1)
+
                 val newerInvalidation = executor.submit {
                     ready.countDown()
                     start.await(5, TimeUnit.SECONDS).shouldBeTrue()
                     transaction(database) { stageInvalidation(cache, id) }
                     invalidated.countDown()
                 }
+
                 val olderFill = executor.submit {
                     ready.countDown()
                     start.await(5, TimeUnit.SECONDS).shouldBeTrue()
@@ -286,7 +294,7 @@ class JdbcSnapshotTransactionTest {
                 olderFill.get(5, TimeUnit.SECONDS)
 
                 cache.lookup(id).snapshot.shouldBeNull()
-                failures.poll().shouldNotBeNull().outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
+                failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
             }
         } finally {
             executor.close()
@@ -358,7 +366,7 @@ class JdbcSnapshotTransactionTest {
         populate(database, cache, 2L, "callback")
 
         transaction(database) {
-            registerInterceptor(object : StatementInterceptor {
+            registerInterceptor(object: StatementInterceptor {
                 override fun beforeCommit(transaction: Transaction) {
                     (transaction as JdbcTransaction).stageInvalidation(cache, 2L)
                 }
@@ -371,7 +379,7 @@ class JdbcSnapshotTransactionTest {
         populate(database, cache, 3L, "keep")
         assertFailsWith<RollbackMarker> {
             transaction(database) {
-                registerInterceptor(object : StatementInterceptor {
+                registerInterceptor(object: StatementInterceptor {
                     override fun beforeRollback(transaction: Transaction) {
                         (transaction as JdbcTransaction).stageInvalidation(cache, 3L)
                     }
@@ -393,7 +401,7 @@ class JdbcSnapshotTransactionTest {
 
         transaction(database) {
             stageInvalidation(cache, 1L)
-            registerInterceptor(object : StatementInterceptor {
+            registerInterceptor(object: StatementInterceptor {
                 override fun beforeCommit(transaction: Transaction) {
                     runCatching {
                         (transaction as JdbcTransaction).stageInvalidation(cache, 2L)
@@ -439,7 +447,7 @@ class JdbcSnapshotTransactionTest {
             }
         }
 
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("root")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("root")
     }
 
     @Test
@@ -453,7 +461,7 @@ class JdbcSnapshotTransactionTest {
     fun `earlier throwing lifecycle callbacks retain no staged payload beyond transaction collection`() {
         val database = database()
         Callback.entries.forEach { callback ->
-            val failures = io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer(4)
+            val failures = snapshotCacheFailureBuffer(4)
             val cache = cache("throwing-${callback.name.lowercase()}-gc:v1", failureBuffer = failures)
             val payloadReference = stageSnapshotBehindThrowingCallback(database, cache, callback)
 
@@ -476,6 +484,7 @@ class JdbcSnapshotTransactionTest {
             commit()
             assertFailsWith<IllegalStateException> { stageInvalidation(cache, 2L) }
         }
+
         transaction(database) {
             stageInvalidation(cache, 3L)
             rollback()
@@ -517,6 +526,7 @@ class JdbcSnapshotTransactionTest {
                 throw RollbackMarker()
             }
         }
+
         val second = cache.lookup(1L).miss.shouldNotBeNull()
         transaction(database) {
             maxAttempts = 1
@@ -525,7 +535,7 @@ class JdbcSnapshotTransactionTest {
         }
 
         reads.get() shouldBeEqualTo 2
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("second")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("second")
     }
 
     private fun assertEarlierThrowingCallbackDoesNotPublish(callback: Callback) {
@@ -536,7 +546,7 @@ class JdbcSnapshotTransactionTest {
 
         runCatching {
             transaction(database) {
-                registerInterceptor(object : StatementInterceptor {
+                registerInterceptor(object: StatementInterceptor {
                     override fun afterCommit(transaction: Transaction) {
                         if (callback == Callback.AFTER_COMMIT) throw CallbackMarker()
                     }
@@ -555,7 +565,7 @@ class JdbcSnapshotTransactionTest {
         }.onFailure { transactionFailure.set(true) }
 
         transactionFailure.get().shouldBeTrue()
-        cache.lookup(1L).snapshot.shouldNotBeNull().value shouldBeEqualTo Payload("keep")
+        cache.lookup(1L).snapshot?.value shouldBeEqualTo Payload("keep")
     }
 
     private fun stageSnapshotBehindThrowingCallback(
@@ -566,10 +576,11 @@ class JdbcSnapshotTransactionTest {
         var payload: Payload? = Payload("unpublished")
         val payloadReference = WeakReference(requireNotNull(payload))
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
+
         runCatching {
             transaction(database) {
                 maxAttempts = 1
-                registerInterceptor(object : StatementInterceptor {
+                registerInterceptor(object: StatementInterceptor {
                     override fun afterCommit(transaction: Transaction) {
                         if (callback == Callback.AFTER_COMMIT) throw CallbackMarker()
                     }
@@ -631,7 +642,7 @@ class JdbcSnapshotTransactionTest {
         transaction(database) { SchemaUtils.create(SnapshotRows) }
     }
 
-    private fun writeCountingLogger(counter: AtomicInteger) = object : SqlLogger {
+    private fun writeCountingLogger(counter: AtomicInteger) = object: SqlLogger {
         override fun log(context: StatementContext, transaction: Transaction) {
             if (context.statement.type.name in setOf("INSERT", "UPDATE", "DELETE")) counter.incrementAndGet()
         }
@@ -643,20 +654,29 @@ class JdbcSnapshotTransactionTest {
         return interceptors.size
     }
 
-    private object SnapshotRows : Table("snapshot_rows_task4") {
+    private object SnapshotRows: Table("snapshot_rows_task4") {
         val id = long("id")
         val value = varchar("value", 64)
         override val primaryKey = PrimaryKey(id)
     }
 
-    private data class Payload(val value: String) : Serializable
-    private class RollbackMarker : RuntimeException()
-    private class MapperMarker : RuntimeException()
-    private class ValidatorMarker : RuntimeException()
-    private class CallbackMarker : RuntimeException()
-    private enum class Callback { AFTER_COMMIT, BEFORE_ROLLBACK, AFTER_ROLLBACK }
+    private data class Payload(val value: String): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
-    private class TrackedExecutor(threadCount: Int) : AutoCloseable {
+    private class RollbackMarker: RuntimeException()
+    private class MapperMarker: RuntimeException()
+    private class ValidatorMarker: RuntimeException()
+    private class CallbackMarker: RuntimeException()
+    private enum class Callback {
+        AFTER_COMMIT,
+        BEFORE_ROLLBACK,
+        AFTER_ROLLBACK
+    }
+
+    private class TrackedExecutor(threadCount: Int): AutoCloseable {
         private val executor = Executors.newFixedThreadPool(threadCount)
         private val futures = mutableListOf<Future<*>>()
 
@@ -667,9 +687,5 @@ class JdbcSnapshotTransactionTest {
             executor.shutdownNow()
             executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
         }
-    }
-
-    companion object {
-        private const val RACE_REPETITIONS: Int = 100
     }
 }

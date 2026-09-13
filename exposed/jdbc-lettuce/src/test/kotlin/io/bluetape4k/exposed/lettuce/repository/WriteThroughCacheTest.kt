@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.lettuce.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.UserCredentialRepository
@@ -14,6 +13,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.withUserCredentialsTable
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.lettuce.repository.scenarios.WriteThroughScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -30,6 +30,7 @@ import java.util.*
  * - 동기 Repository가 지원하는 Remote Cache 설정을 테스트한다.
  */
 class WriteThroughCacheTest {
+
     companion object: KLogging()
 
     // -------------------------------------------------------------------------
@@ -43,21 +44,19 @@ class WriteThroughCacheTest {
         override fun withEntityTable(testDB: TestDB, statement: JdbcTransaction.() -> Unit) =
             withUserTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override fun getNonExistentId() = Long.MIN_VALUE
         override fun updateEmail(entity: UserRecord) =
@@ -80,28 +79,28 @@ class WriteThroughCacheTest {
         AbstractJdbcLettuceTest(),
         WriteThroughScenario<UUID, UserCredentialsRecord> {
 
+        companion object: KLogging()
+
         override fun withEntityTable(testDB: TestDB, statement: JdbcTransaction.() -> Unit) =
             withUserCredentialsTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override fun getNonExistentId(): UUID = Uuid.V7.nextId()
         override fun updateEmail(entity: UserCredentialsRecord) =
-            entity.copy(email = Base58.randomString(4) + ".wt-updated@example.com")
+            entity.copy(email = Base58.randomString(8) + ".wt-updated@example.com")
 
         override fun createNewEntity(): UserCredentialsRecord = UserSchema.newUserCredentialsRecord()
     }

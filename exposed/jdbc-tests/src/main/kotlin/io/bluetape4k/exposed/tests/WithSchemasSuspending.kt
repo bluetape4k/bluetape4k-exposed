@@ -3,15 +3,15 @@
 
 package io.bluetape4k.exposed.tests
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import java.util.concurrent.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlin.coroutines.CoroutineContext
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import java.util.concurrent.CancellationException
+import kotlin.coroutines.CoroutineContext
 
 /** enum fixture의 요청 schema를 생성·정리하며 미지원 dialect에서는 본문을 실행하지 않습니다. */
 suspend fun withSchemasSuspending(

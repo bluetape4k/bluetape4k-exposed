@@ -109,13 +109,13 @@ queryFlow(db) {
 
 ## 주요 파일/클래스 목록
 
-| 파일                                 | 설명                                      |
-|------------------------------------|-----------------------------------------|
-| `DuckDBDatabase.kt`                | 연결 팩토리 (인메모리/파일/읽기전용)                   |
-| `DuckDBConnectionWrapper.kt`       | JDBC 1.1.3 generated-key 오버로드 호환 래퍼     |
+| 파일                               | 설명                                        |
+|------------------------------------|---------------------------------------------|
+| `DuckDBDatabase.kt`                | 연결 팩토리 (인메모리/파일/읽기전용)        |
+| `DuckDBConnectionWrapper.kt`       | JDBC 1.1.3 generated-key 오버로드 호환 래퍼 |
 | `DuckDBExtensions.kt`              | `suspendTransaction`, `queryFlow` 확장 함수 |
-| `dialect/DuckDBDialect.kt`         | PostgreSQLDialect 상속 DuckDB 다이얼렉트       |
-| `dialect/DuckDBDialectMetadata.kt` | FK 제약 캐싱 no-op 구현                       |
+| `dialect/DuckDBDialect.kt`         | PostgreSQLDialect 상속 DuckDB 다이얼렉트    |
+| `dialect/DuckDBDialectMetadata.kt` | FK 제약 캐싱 no-op 구현                     |
 
 ## 테스트
 

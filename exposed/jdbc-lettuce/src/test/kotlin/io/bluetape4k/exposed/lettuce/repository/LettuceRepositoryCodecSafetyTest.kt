@@ -4,10 +4,10 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
-import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
 import io.mockk.clearMocks
@@ -23,6 +23,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class LettuceRepositoryCodecSafetyTest: AbstractJdbcLettuceTest() {
+
+    companion object: KLogging()
 
     private val redisClient = mockk<RedisClient>()
 

@@ -2,8 +2,6 @@ package io.bluetape4k.exposed.mysql8.gis
 
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
-import org.jetbrains.exposed.v1.core.vendors.currentDialect
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryCollection
 import org.locationtech.jts.geom.LineString
@@ -31,7 +29,6 @@ import org.locationtech.jts.geom.Polygon
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoPoint(name: String, srid: Int = SRID_WGS84): Column<Point> {
-    check(currentDialect is MysqlDialect) { "geoPoint는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, pointColumnType(srid))
 }
 
@@ -51,7 +48,6 @@ fun Table.geoPoint(name: String, srid: Int = SRID_WGS84): Column<Point> {
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoPolygon(name: String, srid: Int = SRID_WGS84): Column<Polygon> {
-    check(currentDialect is MysqlDialect) { "geoPolygon는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, polygonColumnType(srid))
 }
 
@@ -71,7 +67,6 @@ fun Table.geoPolygon(name: String, srid: Int = SRID_WGS84): Column<Polygon> {
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoLineString(name: String, srid: Int = SRID_WGS84): Column<LineString> {
-    check(currentDialect is MysqlDialect) { "geoLineString는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, lineStringColumnType(srid))
 }
 
@@ -91,7 +86,6 @@ fun Table.geoLineString(name: String, srid: Int = SRID_WGS84): Column<LineString
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoMultiPoint(name: String, srid: Int = SRID_WGS84): Column<MultiPoint> {
-    check(currentDialect is MysqlDialect) { "geoMultiPoint는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, multiPointColumnType(srid))
 }
 
@@ -111,7 +105,6 @@ fun Table.geoMultiPoint(name: String, srid: Int = SRID_WGS84): Column<MultiPoint
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoMultiPolygon(name: String, srid: Int = SRID_WGS84): Column<MultiPolygon> {
-    check(currentDialect is MysqlDialect) { "geoMultiPolygon는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, multiPolygonColumnType(srid))
 }
 
@@ -131,7 +124,6 @@ fun Table.geoMultiPolygon(name: String, srid: Int = SRID_WGS84): Column<MultiPol
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoMultiLineString(name: String, srid: Int = SRID_WGS84): Column<MultiLineString> {
-    check(currentDialect is MysqlDialect) { "geoMultiLineString는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, multiLineStringColumnType(srid))
 }
 
@@ -151,7 +143,6 @@ fun Table.geoMultiLineString(name: String, srid: Int = SRID_WGS84): Column<Multi
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoGeometry(name: String, srid: Int = SRID_WGS84): Column<Geometry> {
-    check(currentDialect is MysqlDialect) { "geoGeometry는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, geometryColumnType(srid))
 }
 
@@ -171,6 +162,5 @@ fun Table.geoGeometry(name: String, srid: Int = SRID_WGS84): Column<Geometry> {
  * @throws IllegalStateException MySQL이 아닌 dialect에서 호출 시
  */
 fun Table.geoGeometryCollection(name: String, srid: Int = SRID_WGS84): Column<GeometryCollection> {
-    check(currentDialect is MysqlDialect) { "geoGeometryCollection는 MySQL dialect에서만 지원됩니다." }
     return registerColumn(name, geometryCollectionColumnType(srid))
 }

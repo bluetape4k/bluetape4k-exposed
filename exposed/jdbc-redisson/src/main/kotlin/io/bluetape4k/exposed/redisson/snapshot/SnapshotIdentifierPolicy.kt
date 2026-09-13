@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.redisson.snapshot
 
 import java.nio.ByteBuffer
-import java.util.UUID
+import java.util.*
 
 /**
  * 분산 snapshot 무효화 key에 사용하는 canonical scalar identifier 정책입니다.
@@ -10,7 +10,7 @@ import java.util.UUID
  * surrogate row identifier를 사용해야 합니다. 민감하거나 composite 또는 String인 domain identifier는
  * 분산 snapshot invalidator에서 사용하기 전에 Long 또는 UUID surrogate로 매핑합니다.
  */
-sealed interface SnapshotIdentifierPolicy<ID : Any>
+sealed interface SnapshotIdentifierPolicy<ID: Any>
 
 /** canonical signed 8-byte big-endian Long identifier 정책을 반환합니다. */
 fun longSnapshotIdentifierPolicy(): SnapshotIdentifierPolicy<Long> = LongSnapshotIdentifierPolicy
@@ -18,13 +18,13 @@ fun longSnapshotIdentifierPolicy(): SnapshotIdentifierPolicy<Long> = LongSnapsho
 /** canonical 16-byte big-endian UUID identifier 정책을 반환합니다. */
 fun uuidSnapshotIdentifierPolicy(): SnapshotIdentifierPolicy<UUID> = UuidSnapshotIdentifierPolicy
 
-internal sealed interface CanonicalSnapshotIdentifierPolicy<ID : Any> : SnapshotIdentifierPolicy<ID> {
+internal sealed interface CanonicalSnapshotIdentifierPolicy<ID: Any>: SnapshotIdentifierPolicy<ID> {
     val keyEncodingId: String
     fun encodeAny(value: Any): ByteArray
     fun decode(bytes: ByteArray): ID
 }
 
-private data object LongSnapshotIdentifierPolicy : CanonicalSnapshotIdentifierPolicy<Long> {
+private data object LongSnapshotIdentifierPolicy: CanonicalSnapshotIdentifierPolicy<Long> {
     override val keyEncodingId: String = "bt4k-long-be-v1"
 
     override fun encodeAny(value: Any): ByteArray {
@@ -42,7 +42,7 @@ private data object LongSnapshotIdentifierPolicy : CanonicalSnapshotIdentifierPo
     }
 }
 
-private data object UuidSnapshotIdentifierPolicy : CanonicalSnapshotIdentifierPolicy<UUID> {
+private data object UuidSnapshotIdentifierPolicy: CanonicalSnapshotIdentifierPolicy<UUID> {
     override val keyEncodingId: String = "bt4k-uuid-be-v1"
 
     override fun encodeAny(value: Any): ByteArray {

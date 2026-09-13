@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.bigquery
 
+import io.bluetape4k.exceptions.BluetapeException
+
 /**
  * BigQuery REST API 쿼리 실행 중 발생한 오류를 나타내는 예외.
  *
@@ -26,4 +28,4 @@ package io.bluetape4k.exposed.bigquery
 class BigQueryQueryException(
     message: String,
     cause: Throwable? = null,
-): RuntimeException(message, cause)
+): BluetapeException(message, cause)

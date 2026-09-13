@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.cockroachdb
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import io.bluetape4k.testcontainers.database.CockroachServer
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -26,10 +27,12 @@ abstract class AbstractCockroachDbTest {
             )
         }
 
+        private const val MAX_RETRY_COUNT = 30
+
         @JvmStatic
         @BeforeAll
         fun waitForCockroachReady() {
-            repeat(30) { attempt ->
+            repeat(MAX_RETRY_COUNT) { attempt ->
                 runCatching {
                     transaction(db) {
                         exec("SELECT 1") { rs ->
@@ -40,10 +43,10 @@ abstract class AbstractCockroachDbTest {
                 }.onSuccess {
                     return
                 }.onFailure { e ->
-                    if (attempt == 29) {
+                    if (attempt == MAX_RETRY_COUNT - 1) {
                         throw e
                     }
-                    log.warn("CockroachDB not ready (attempt {}/30), waiting 1s...", attempt + 1)
+                    log.warn(e) { "CockroachDB not ready (attempt ${attempt + 1}/$MAX_RETRY_COUNT), waiting 1s..." }
                     Thread.sleep(1000L)
                 }
             }

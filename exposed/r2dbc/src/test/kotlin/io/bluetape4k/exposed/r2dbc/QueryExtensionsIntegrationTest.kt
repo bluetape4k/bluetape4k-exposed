@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.r2dbc
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.batchInsert
@@ -19,11 +19,11 @@ import org.junit.jupiter.params.provider.MethodSource
  *
  * 실제 데이터베이스 연결이 필요한 suspend 확장 함수를 검증합니다.
  */
-class QueryExtensionsIntegrationTest : AbstractExposedR2dbcTest() {
+class QueryExtensionsIntegrationTest: AbstractExposedR2dbcTest() {
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
-    private object ItemTable : IntIdTable("r2dbc_qext_items") {
+    private object ItemTable: IntIdTable("r2dbc_qext_items") {
         val name = varchar("name", 128)
     }
 
@@ -62,9 +62,11 @@ class QueryExtensionsIntegrationTest : AbstractExposedR2dbcTest() {
             ItemTable.batchInsert(names) { name -> this[ItemTable.name] = name }
 
             val indices = mutableListOf<Int>()
-            ItemTable.selectAll().orderBy(ItemTable.id, SortOrder.ASC).forEachIndexed { index, _ ->
-                indices.add(index)
-            }
+            ItemTable.selectAll()
+                .orderBy(ItemTable.id, SortOrder.ASC)
+                .forEachIndexed { index, _ ->
+                    indices.add(index)
+                }
 
             indices shouldBeEqualTo listOf(0, 1, 2)
         }
@@ -78,9 +80,11 @@ class QueryExtensionsIntegrationTest : AbstractExposedR2dbcTest() {
             ItemTable.batchInsert(names) { name -> this[ItemTable.name] = name }
 
             val pairs = mutableListOf<Pair<Int, String>>()
-            ItemTable.selectAll().orderBy(ItemTable.id, SortOrder.ASC).forEachIndexed { index, row ->
-                pairs.add(index to row[ItemTable.name])
-            }
+            ItemTable.selectAll()
+                .orderBy(ItemTable.id, SortOrder.ASC)
+                .forEachIndexed { index, row ->
+                    pairs.add(index to row[ItemTable.name])
+                }
 
             pairs.map { it.first } shouldBeEqualTo listOf(0, 1)
             pairs.map { it.second } shouldBeEqualTo names

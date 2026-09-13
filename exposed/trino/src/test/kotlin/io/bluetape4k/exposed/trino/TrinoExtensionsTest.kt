@@ -1,17 +1,17 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -191,8 +191,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
             }
 
             val rows = queryFlow(db) {
-                Events.selectAll()
-                    .orderBy(Events.eventId to SortOrder.ASC)
+                Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
             }.toList()
 
             rows shouldHaveSize 3
@@ -229,10 +228,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     @Test
     fun `queryFlow 는 빈 테이블에서 빈 리스트를 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
-            val rows = queryFlow(db) {
-                Events.selectAll()
-            }.toList()
-
+            val rows = queryFlow(db) { Events.selectAll() }.toList()
             rows.shouldBeEmpty()
         }
     }

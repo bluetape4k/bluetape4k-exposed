@@ -21,7 +21,7 @@ import java.io.Serializable
 data class RedissonOrderSnapshot @JsonCreator constructor(
     @JsonProperty("id") val id: Long,
     @JsonProperty("description") val description: String,
-) : Serializable {
+): Serializable {
     private companion object {
         private const val serialVersionUID: Long = 1L
     }

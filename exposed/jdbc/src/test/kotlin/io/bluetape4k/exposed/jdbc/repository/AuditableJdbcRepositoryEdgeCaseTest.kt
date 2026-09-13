@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
@@ -7,13 +14,6 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -35,13 +35,13 @@ import java.time.Instant
  * - UserContext 설정 시 updatedBy 저장
  * - auditedUpdateById의 동작 검증
  */
-class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
+class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ── 테이블 정의 ─────────────────────────────────────────────────────────────
 
-    object AuditableEdgeCaseTable : AuditableLongIdTable("auditable_edge_items") {
+    object AuditableEdgeCaseTable: AuditableLongIdTable("auditable_edge_items") {
         val name = varchar("name", 255)
         val age = integer("age").default(0)
     }
@@ -56,7 +56,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
         override val createdAt: Instant? = null,
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
-    ) : Auditable, Serializable {
+    ): Auditable, Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -64,7 +64,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
 
     // ── Repository 구현 ──────────────────────────────────────────────────────────
 
-    object AuditableEdgeCaseRepository :
+    object AuditableEdgeCaseRepository:
         LongAuditableJdbcRepository<AuditableEdgeCaseRecord, AuditableEdgeCaseTable> {
 
         override val table = AuditableEdgeCaseTable
@@ -119,6 +119,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             ids shouldHaveSize 1
             ids.first().shouldBeGreaterThan(0L)
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo 1L
+
             val saved = findById(ids.first())
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()
@@ -138,6 +139,7 @@ class AuditableJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
             ids shouldHaveSize records.size
             ids.all { id -> id > 0L }.shouldBeTrue()
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo records.size.toLong()
+
             val saved = findById(ids.first())
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()

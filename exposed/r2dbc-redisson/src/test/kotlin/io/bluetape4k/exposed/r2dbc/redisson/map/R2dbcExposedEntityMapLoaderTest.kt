@@ -1,27 +1,27 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.future.await
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.shouldNotContain
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.r2dbc.insert
-import java.io.Serializable
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
+import java.io.Serializable
 
 class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
@@ -59,7 +59,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 failure.javaClass.simpleName shouldBeEqualTo "ExposedR2dbcException"
                 val errorEvents = appender.events.filter { event ->
                     event.formattedMessage.contains("모든 ID") &&
-                        event.level.levelInt >= ch.qos.logback.classic.Level.ERROR.levelInt
+                            event.level.levelInt >= ch.qos.logback.classic.Level.ERROR.levelInt
                 }
                 errorEvents.size shouldBeEqualTo 2
                 errorEvents.forEach { event ->
@@ -112,7 +112,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             TestDB.H2,
             LoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -151,7 +151,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             TestDB.H2,
             LoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -189,7 +189,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             TestDB.H2,
             LoaderTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }

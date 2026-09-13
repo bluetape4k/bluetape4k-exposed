@@ -19,20 +19,19 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.support.requirePositiveNumber
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.cancellation.CancellationException
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -57,6 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Exposed JDBC와 Caffeine in-process local cache를 결합하는 추상 repository입니다.
@@ -255,7 +255,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     when {
                         cause == null -> WriteBehindWorkerCompletion.DRAINED
                         cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
-                        else -> WriteBehindWorkerCompletion.FAILED
+                        else          -> WriteBehindWorkerCompletion.FAILED
                     }
                 )
                 writeBehindLifecycleLock.withLock {
@@ -463,7 +463,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             lastFlushError.set(e)
             log.warn {
                 "Write-Behind event: component=jdbc operation=flush " +
-                    "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=flush queueDepth=${writeBehindQueueDepth.get()}"
             }
             return false
         }
@@ -493,7 +493,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
                 if (remainingNanos <= 0L) continue
-                    delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
             } else {
                 delay(backoffMillis)
             }
@@ -588,7 +588,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 } catch (_: Exception) {
                     log.warn {
                         "Cache event: component=jdbc operation=cache_warming failureKind=error " +
-                            "queueDepth=${writeBehindQueueDepth.get()}"
+                                "queueDepth=${writeBehindQueueDepth.get()}"
                     }
                 }
             }
@@ -604,7 +604,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     override fun extractId(entity: E): ID =
         error(
             "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
+                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
         )
 
     // -------------------------------------------------------------------------
@@ -662,9 +662,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                             }
                             throw IllegalStateException(
                                 "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity}). " +
-                                    "Entity id=$id was NOT persisted to the database. " +
-                                    "Increase LocalCacheConfig.writeBehindQueueCapacity or reduce the " +
-                                    "write rate."
+                                        "Entity id=$id was NOT persisted to the database. " +
+                                        "Increase LocalCacheConfig.writeBehindQueueCapacity or reduce the " +
+                                        "write rate."
                             )
                         }
                         writeBehindCoordinator.markEnqueued(admissionToken)
@@ -746,7 +746,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 }
             }
 
-            else -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
+            else                        -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
         }
     }
 
@@ -819,8 +819,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         } catch (_: Exception) {
             log.warn {
                 "Cache post-persistence hook failed. " +
-                    "component=jdbc operation=after_persisted failureKind=error " +
-                    "writeCount=1 queueDepth=${writeBehindQueueDepth.get()}"
+                        "component=jdbc operation=after_persisted failureKind=error " +
+                        "writeCount=1 queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -838,8 +838,8 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         } catch (_: Exception) {
             log.warn {
                 "Cache post-persistence hook failed. " +
-                    "component=jdbc operation=after_persisted failureKind=error " +
-                    "writeCount=${writes.size} queueDepth=${writeBehindQueueDepth.get()}"
+                        "component=jdbc operation=after_persisted failureKind=error " +
+                        "writeCount=${writes.size} queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -860,7 +860,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun CacheWorkerState.isWriteBehindTerminalOrDraining(): Boolean =
         this == CacheWorkerState.DRAINING ||
-            isWriteBehindTerminal()
+                isWriteBehindTerminal()
 
     private fun CacheWorkerState.isWriteBehindTerminal(): Boolean =
         this == CacheWorkerState.FAILED || this == CacheWorkerState.STOPPED
@@ -933,7 +933,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 ?: state.name
         return IllegalStateException(
             "Write-Behind worker is not accepting writes because the repository is closing, closed, or terminal. " +
-                "cacheName=$cacheName, workerState=$state, terminalReason=$terminalReason"
+                    "cacheName=$cacheName, workerState=$state, terminalReason=$terminalReason"
         )
     }
 
@@ -1001,7 +1001,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         } catch (_: Exception) {
             log.warn {
                 "Write-Behind event: component=jdbc operation=close_cleanup " +
-                    "failureKind=scope_cancel queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=scope_cancel queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -1025,7 +1025,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             if (!writeBehindJob.isCompleted) {
                 log.warn {
                     "Write-Behind event: component=jdbc operation=close " +
-                        "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()}"
+                            "failureKind=close_join_timeout queueDepth=${writeBehindQueueDepth.get()}"
                 }
             }
         } else {
@@ -1039,7 +1039,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         } catch (_: Exception) {
             log.warn {
                 "Write-Behind event: component=jdbc operation=close_cleanup " +
-                    "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=cache_invalidate queueDepth=${writeBehindQueueDepth.get()}"
             }
         }
     }
@@ -1121,17 +1121,17 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         }
 
         when (closeOutcome) {
-            WriteBehindCloseOutcome.TIMEOUT -> log.warn {
+            WriteBehindCloseOutcome.TIMEOUT     -> log.warn {
                 "Write-Behind event: component=jdbc operation=close " +
-                    "failureKind=close_timeout queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=close_timeout queueDepth=${writeBehindQueueDepth.get()}"
             }
 
             WriteBehindCloseOutcome.INTERRUPTED -> log.warn {
                 "Write-Behind event: component=jdbc operation=close " +
-                    "failureKind=close_interrupted queueDepth=${writeBehindQueueDepth.get()}"
+                        "failureKind=close_interrupted queueDepth=${writeBehindQueueDepth.get()}"
             }
 
-            else -> Unit
+            else                                -> Unit
         }
         return closeOutcome
     }
@@ -1143,14 +1143,14 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         val outcome = writeBehindCloseOutcome
         val completed = outcome == null || outcome == WriteBehindCloseOutcome.COMPLETED
         val drained = completed && snapshot.queueDepth == 0 &&
-            writeBehindWorkerState.get() == CacheWorkerState.STOPPED
+                writeBehindWorkerState.get() == CacheWorkerState.STOPPED
         val kind = if (drained) {
             CloseCompletionKind.COMPLETED
         } else {
             when (outcome) {
                 WriteBehindCloseOutcome.TIMEOUT -> CloseCompletionKind.TIMEOUT
                 WriteBehindCloseOutcome.INTERRUPTED -> CloseCompletionKind.INTERRUPTED
-                else -> CloseCompletionKind.FAILED
+                else                            -> CloseCompletionKind.FAILED
             }
         }
         writeBehindCoordinator.publishCloseCompletion(
@@ -1165,7 +1165,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun markCloseCleanupPendingIfNeeded(): Boolean = writeBehindLifecycleLock.withLock {
         val pending = writeBehindAdmissions.get().inProgress > 0 ||
-            writeBehindPersistedHookInProgress.get() > 0
+                writeBehindPersistedHookInProgress.get() > 0
         if (pending) writeBehindCloseCleanupPending.set(true)
         pending
     }
@@ -1177,7 +1177,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         try {
             val ready = writeBehindLifecycleLock.withLock {
                 writeBehindAdmissions.get().inProgress == 0 &&
-                    writeBehindPersistedHookInProgress.get() == 0
+                        writeBehindPersistedHookInProgress.get() == 0
             }
             if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return
             invalidateCacheOnCloseSafely()
@@ -1201,13 +1201,13 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             when (reason) {
                 WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
                 WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindFailureKind.CLOSE_INTERRUPTED
-                WriteBehindCloseFailureReason.WORKER -> WriteBehindFailureKind.WORKER
+                WriteBehindCloseFailureReason.WORKER  -> WriteBehindFailureKind.WORKER
             }
         )
         writeBehindCloseOutcome = when (reason) {
             WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindCloseOutcome.TIMEOUT
             WriteBehindCloseFailureReason.INTERRUPTED -> WriteBehindCloseOutcome.INTERRUPTED
-            WriteBehindCloseFailureReason.WORKER -> WriteBehindCloseOutcome.FAILED
+            WriteBehindCloseFailureReason.WORKER  -> WriteBehindCloseOutcome.FAILED
         }
         writeBehindLifecycleChanged.signalAll()
     }
@@ -1236,10 +1236,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
         val failureReason: WriteBehindCloseFailureReason?
             get() = when (this) {
-                TIMEOUT -> WriteBehindCloseFailureReason.TIMEOUT
+                TIMEOUT   -> WriteBehindCloseFailureReason.TIMEOUT
                 INTERRUPTED -> WriteBehindCloseFailureReason.INTERRUPTED
                 COMPLETED -> null
-                FAILED -> WriteBehindCloseFailureReason.WORKER
+                FAILED    -> WriteBehindCloseFailureReason.WORKER
             }
     }
 

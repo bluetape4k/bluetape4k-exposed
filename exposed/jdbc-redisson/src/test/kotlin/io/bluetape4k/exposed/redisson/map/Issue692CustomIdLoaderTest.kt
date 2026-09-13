@@ -29,10 +29,8 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `custom ID fallback emits ordered bounded pages`(testDB: TestDB) {
         val sqlStatements = mutableListOf<String>()
-        withTables(
-            testDB,
-            Issue692CustomIdTable,
-        ) {
+
+        withTables(testDB, Issue692CustomIdTable) {
             listOf("a01", "a02", "a03", "a04", "a05").forEach { id ->
                 Issue692CustomIdTable.insert {
                     it[Issue692CustomIdTable.id] = Issue692CustomId(id)
@@ -40,7 +38,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                 }
             }
 
-            addLogger(object : SqlLogger {
+            addLogger(object: SqlLogger {
                 override fun log(context: StatementContext, transaction: Transaction) {
                     sqlStatements += context.sql(transaction)
                 }
@@ -87,7 +85,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                 testDB,
                 Issue692CustomIdTable,
                 configure = {
-                    sqlLogger = object : SqlLogger {
+                    sqlLogger = object: SqlLogger {
                         override fun log(context: StatementContext, transaction: Transaction) {
                             val sql = context.sql(transaction)
                             sqlStatements += sql

@@ -45,5 +45,7 @@ fun JdbcTransaction.execCreateMissingTablesAndColumns(vararg tables: Table) {
 
     SchemaUtils
         .addMissingColumnsStatements(*tables)
-        .forEach { sql -> exec(sql) }
+        .forEach { sql ->
+            exec(sql)
+        }
 }

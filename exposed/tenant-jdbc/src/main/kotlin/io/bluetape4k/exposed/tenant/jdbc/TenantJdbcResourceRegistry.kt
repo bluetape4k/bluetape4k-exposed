@@ -2,12 +2,12 @@
 
 package io.bluetape4k.exposed.tenant.jdbc
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.info
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
-import java.util.Collections
-import java.util.IdentityHashMap
-import java.util.LinkedHashMap
-import java.util.LinkedHashSet
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
@@ -25,12 +25,12 @@ import javax.sql.DataSource
  * 직접 보장해야 합니다. 이 registry는 authorization, lease, secret redaction, Spring/Ktor lifecycle,
  * pool 설정 또는 readiness 확인을 대신하지 않습니다.
  */
-class TenantJdbcResourceRegistry<K : Any> private constructor(
+class TenantJdbcResourceRegistry<K: Any> private constructor(
     private val resources: Map<K, OwnedTenantJdbcResource>,
     /** registry 생성 시 복사한 tenant key의 변경 불가능한 insertion-order view입니다. */
     val configuredTenants: Set<K>,
     private val hooks: TenantJdbcRegistryHooks,
-) : AutoCloseable {
+): AutoCloseable {
 
     /**
      * 등록된 tenant의 resource를 정확히 조회합니다.
@@ -66,16 +66,17 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
      * owner에게 원형으로 전달하고, 이후 호출에는 secret을 포함하지 않는 고정 예외를 반환합니다.
      */
     override fun close() {
+        log.info { "Closing tenant JDBC resource registry" }
         while (true) {
             when (val observed = state.get()) {
-                CloseState.Open -> {
+                CloseState.Open          -> {
                     val closing = CloseState.Closing(Thread.currentThread(), CountDownLatch(1))
                     if (state.compareAndSet(observed, closing)) {
                         closeAsOwner(closing)
                     }
                 }
 
-                is CloseState.Closing -> {
+                is CloseState.Closing    -> {
                     if (observed.owner === Thread.currentThread()) return
 
                     hooks.beforeCloseWait()
@@ -93,7 +94,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
 
                 CloseState.ClosedSuccess -> return
                 is CloseState.ClosedFailure -> throw observed.failure
-                CloseState.ClosedFatal -> throw IllegalStateException(FATAL_CLOSE_MESSAGE)
+                CloseState.ClosedFatal   -> throw IllegalStateException(FATAL_CLOSE_MESSAGE)
             }
         }
     }
@@ -101,8 +102,9 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
     private val state = AtomicReference<CloseState>(CloseState.Open)
 
     private fun checkOpen() {
+        log.debug { "Checking if tenant JDBC resource registry is open. state: ${state.get()}" }
         if (state.get() !is CloseState.Open) {
-            throw IllegalStateException(CLOSED_MESSAGE)
+            error(CLOSED_MESSAGE)
         }
     }
 
@@ -125,7 +127,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         val finalState = when {
             primary == null -> CloseState.ClosedSuccess
             primary.isFatal() -> CloseState.ClosedFatal
-            else -> CloseState.ClosedFailure(primary)
+            else            -> CloseState.ClosedFailure(primary)
         }
         state.set(finalState)
         closing.completion.countDown()
@@ -134,12 +136,12 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         when (finalState) {
             CloseState.ClosedSuccess -> Unit
             is CloseState.ClosedFailure -> throw finalState.failure
-            CloseState.ClosedFatal -> throw checkNotNull(primary)
-            else -> error("Close owner published an invalid lifecycle state.")
+            CloseState.ClosedFatal   -> throw checkNotNull(primary)
+            else                     -> error("Close owner published an invalid lifecycle state.")
         }
     }
 
-    companion object {
+    companion object: KLogging() {
         private const val CLOSED_MESSAGE = "Tenant JDBC resource registry is closed."
         private const val FATAL_CLOSE_MESSAGE = "Tenant JDBC resource registry closed after a fatal cleanup failure."
 
@@ -154,7 +156,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
          * 정리합니다. callback이 던진 원형 Throwable graph는 가능한 한 그대로 보존됩니다.
          */
         @JvmStatic
-        fun <K : Any, D : DataSource> create(
+        fun <K: Any, D: DataSource> create(
             tenants: Iterable<K>,
             dataSourceFactory: (K) -> D,
             disposeDataSource: (K, D) -> Unit,
@@ -165,7 +167,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
             hooks = TenantJdbcRegistryHooks(),
         )
 
-        internal fun <K : Any, D : DataSource> createForTesting(
+        internal fun <K: Any, D: DataSource> createForTesting(
             tenants: Iterable<K>,
             dataSourceFactory: (K) -> D,
             disposeDataSource: (K, D) -> Unit,
@@ -173,7 +175,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
         ): TenantJdbcResourceRegistry<K> = createInternal(tenants, dataSourceFactory, disposeDataSource, hooks)
 
         @Suppress("SwallowedException", "ThrowsCount")
-        private fun <K : Any, D : DataSource> createInternal(
+        private fun <K: Any, D: DataSource> createInternal(
             tenants: Iterable<K>,
             dataSourceFactory: (K) -> D,
             disposeDataSource: (K, D) -> Unit,
@@ -240,7 +242,7 @@ class TenantJdbcResourceRegistry<K : Any> private constructor(
             }
         }
 
-        private fun <K : Any, D : DataSource> disposeCurrent(
+        private fun <K: Any, D: DataSource> disposeCurrent(
             tenant: K,
             dataSource: D,
             disposer: (K, D) -> Unit,
@@ -278,7 +280,7 @@ private class OwnedTenantJdbcResource(
     override val dataSource: DataSource,
     override val database: Database,
     val dispose: () -> Unit,
-) : TenantJdbcResource
+): TenantJdbcResource
 
 internal data class TenantJdbcRegistryHooks(
     val connectDatabase: (DataSource) -> Database = { dataSource -> Database.connect(dataSource) },
@@ -289,20 +291,20 @@ internal data class TenantJdbcRegistryHooks(
 )
 
 private sealed interface CloseState {
-    data object Open : CloseState
+    data object Open: CloseState
 
-    data class Closing(val owner: Thread, val completion: CountDownLatch) : CloseState
+    data class Closing(val owner: Thread, val completion: CountDownLatch): CloseState
 
-    data object ClosedSuccess : CloseState
+    data object ClosedSuccess: CloseState
 
-    data class ClosedFailure(val failure: Throwable) : CloseState
+    data class ClosedFailure(val failure: Throwable): CloseState
 
-    data object ClosedFatal : CloseState
+    data object ClosedFatal: CloseState
 }
 
 private class AssemblyFailure(
     val failure: Throwable,
-) : RuntimeException(null, null, false, false)
+): RuntimeException(null, null, false, false)
 
 private class FailureAccumulator {
     private val failures = ArrayList<Throwable>()

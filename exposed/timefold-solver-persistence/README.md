@@ -17,16 +17,16 @@ This module provides seamless integration between Timefold Solver's scoring syst
 
 ## Supported Score Types
 
-| Score Type                        | Description                         | DB Storage Format             |
-|---------------------------------|-------------------------------------|-------------------------------|
-| `SimpleScore`                   | Single score value                  | BigInt                        |
-| `SimpleBigDecimalScore`         | Single score as BigDecimal          | VarChar                       |
-| `HardSoftScore`                 | Two-level Hard/Soft score           | VarChar (e.g., "100/-50")     |
-| `HardSoftBigDecimalScore`       | Hard/Soft score as BigDecimal       | VarChar                       |
-| `HardMediumSoftScore`           | Three-level Hard/Medium/Soft score  | VarChar (e.g., "100/50/-30")  |
-| `HardMediumSoftBigDecimalScore` | Three-level score as BigDecimal     | VarChar                       |
-| `BendableScore`                 | Flexible Hard/Soft level score      | VarChar                       |
-| `BendableBigDecimalScore`       | Bendable score as BigDecimal        | VarChar                       |
+| Score Type                      | Description                        | DB Storage Format            |
+|---------------------------------|------------------------------------|------------------------------|
+| `SimpleScore`                   | Single score value                 | BigInt                       |
+| `SimpleBigDecimalScore`         | Single score as BigDecimal         | VarChar                      |
+| `HardSoftScore`                 | Two-level Hard/Soft score          | VarChar (e.g., "100/-50")    |
+| `HardSoftBigDecimalScore`       | Hard/Soft score as BigDecimal      | VarChar                      |
+| `HardMediumSoftScore`           | Three-level Hard/Medium/Soft score | VarChar (e.g., "100/50/-30") |
+| `HardMediumSoftBigDecimalScore` | Three-level score as BigDecimal    | VarChar                      |
+| `BendableScore`                 | Flexible Hard/Soft level score     | VarChar                      |
+| `BendableBigDecimalScore`       | Bendable score as BigDecimal       | VarChar                      |
 
 ## Score Column Families
 

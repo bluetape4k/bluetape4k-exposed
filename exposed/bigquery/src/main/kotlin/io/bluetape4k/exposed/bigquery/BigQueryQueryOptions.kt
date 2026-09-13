@@ -2,6 +2,8 @@ package io.bluetape4k.exposed.bigquery
 
 import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.TableReference
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 
 /**
@@ -27,19 +29,14 @@ data class BigQueryQueryOptions(
     }
 
     init {
-        maximumBytesBilled?.let {
-            require(it > 0L) { "maximumBytesBilled must be positive: $it" }
-        }
-        timeoutMs?.let {
-            require(it > 0L) { "timeoutMs must be positive: $it" }
-        }
+        maximumBytesBilled?.requirePositiveNumber("maximumBytesBilled")
+        timeoutMs?.requirePositiveNumber("timeoutMs")
+
         labels.forEach { (key, value) ->
-            require(key.isNotBlank()) { "label key must not be blank." }
-            require(value.isNotBlank()) { "label value must not be blank for key '$key'." }
+            key.requireNotBlank { "label key must not be blank." }
+            value.requireNotBlank { "label value must not be blank for key '$key'." }
         }
-        location?.let {
-            require(it.isNotBlank()) { "location must not be blank." }
-        }
+        location?.requireNotBlank("location")
     }
 
     internal fun applyTo(request: QueryRequest): QueryRequest = request.apply {
@@ -81,9 +78,9 @@ data class BigQueryDestinationTable(
     }
 
     init {
-        require(projectId.isNotBlank()) { "projectId must not be blank." }
-        require(datasetId.isNotBlank()) { "datasetId must not be blank." }
-        require(tableId.isNotBlank()) { "tableId must not be blank." }
+        projectId.requireNotBlank("projectId")
+        datasetId.requireNotBlank("datasetId")
+        tableId.requireNotBlank("tableId")
     }
 
     internal fun toTableReference(): TableReference =

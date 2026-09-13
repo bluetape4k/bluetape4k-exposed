@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
@@ -15,6 +16,9 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
 
 class R2dbcFixtureFailureInjectionTest {
+
+    companion object: KLoggingChannel()
+
     // coroutine debug의 예외 복제 대신 최초 실패 인스턴스의 보존 여부를 검사한다.
     private class FixtureFailure(val phase: String): RuntimeException(phase)
 
@@ -26,12 +30,17 @@ class R2dbcFixtureFailureInjectionTest {
 
     @Test
     fun `본문과 unregister가 함께 실패해도 최초 실패와 기본 연결을 보존한다`() = runSuspendIO {
-        val fixture = r2dbcTestDbFixture("body-cleanup", { database(it) })
+        val fixture = r2dbcTestDbFixture(
+            key = "body-cleanup",
+            createDatabase = { database(it) }
+        )
         val primary = FixtureFailure("body")
         val cleanup = FixtureFailure("unregister")
         var temporary: R2dbcDatabase? = null
+
         withDb(fixture) {}
         mockkObject(TransactionManager.Companion)
+
         try {
             every { TransactionManager.closeAndUnregister(any()) } throws cleanup
             val actual = assertFailsWith<FixtureFailure> {
@@ -43,7 +52,10 @@ class R2dbcFixtureFailureInjectionTest {
             actual shouldBeSameInstanceAs primary
             actual.suppressed.toList() shouldBeEqualTo listOf(cleanup)
             fixture.semaphore.availablePermits shouldBeEqualTo 1
-            withDb(fixture) { db shouldBeSameInstanceAs fixture.database }
+
+            withDb(fixture) {
+                db shouldBeSameInstanceAs fixture.database
+            }
         } finally {
             unmockkObject(TransactionManager.Companion)
             temporary?.let { TransactionManager.closeAndUnregister(it) }
@@ -52,18 +64,27 @@ class R2dbcFixtureFailureInjectionTest {
 
     @Test
     fun `본문 성공 뒤 unregister 실패는 호출자에게 전파하고 permit을 반환한다`() = runSuspendIO {
-        val fixture = r2dbcTestDbFixture("cleanup-only", { database(it) })
+        val fixture = r2dbcTestDbFixture(
+            key = "cleanup-only",
+            createDatabase = { database(it) }
+        )
         val cleanup = FixtureFailure("unregister")
         var temporary: R2dbcDatabase? = null
+
         withDb(fixture) {}
         mockkObject(TransactionManager.Companion)
+
         try {
             every { TransactionManager.closeAndUnregister(any()) } throws cleanup
+
             assertFailsWith<FixtureFailure> {
                 withDb(fixture, configure = {}) { temporary = db }
             } shouldBeSameInstanceAs cleanup
+
             fixture.semaphore.availablePermits shouldBeEqualTo 1
-            withDb(fixture) { db shouldBeSameInstanceAs fixture.database }
+            withDb(fixture) {
+                db shouldBeSameInstanceAs fixture.database
+            }
         } finally {
             unmockkObject(TransactionManager.Companion)
             temporary?.let { TransactionManager.closeAndUnregister(it) }
@@ -76,23 +97,33 @@ class R2dbcFixtureFailureInjectionTest {
         val cleanup = FixtureFailure("unregister")
         var registrations = 0
         var created: R2dbcDatabase? = null
-        val fixture = R2dbcTestDbFixture("registration", {
-            database(it).also { db -> created = db }
-        }, {}, {
-            if (++registrations == 1) throw primary
-        })
+        val fixture = R2dbcTestDbFixture(
+            key = "registration",
+            createDatabase = {
+                database(it).also { db -> created = db }
+            },
+            onShutdown = {},
+            registerShutdown = {
+                if (++registrations == 1) throw primary
+            }
+        )
         mockkObject(TransactionManager.Companion)
+
         try {
             every { TransactionManager.closeAndUnregister(any()) } throws cleanup
-            val actual = assertFailsWith<FixtureFailure> { withDb(fixture) {} }
+            val actual = assertFailsWith<FixtureFailure> {
+                withDb(fixture) {}
+            }
             actual shouldBeSameInstanceAs primary
             actual.suppressed.toList() shouldBeEqualTo listOf(cleanup)
+
             fixture.database.shouldBeNull()
             fixture.semaphore.availablePermits shouldBeEqualTo 1
         } finally {
             unmockkObject(TransactionManager.Companion)
             created?.let { TransactionManager.closeAndUnregister(it) }
         }
+
         withDb(fixture) {}
         registrations shouldBeEqualTo 2
     }
@@ -101,12 +132,16 @@ class R2dbcFixtureFailureInjectionTest {
     fun `legacy beforeConnection은 일시 wrapper마다 한 번 실행한다`() = runSuspendIO {
         val selected = TestDB.H2
         withDb(selected) {}
+
         val original = selected.beforeConnection
         var calls = 0
         val counting: suspend () -> Unit = { calls++; original() }
+
         // enum 내부 connect는 getter 대신 필드를 읽으므로 callback 자체를 잠시 교체한다.
-        val callback = TestDB::class.java.getDeclaredField("beforeConnection").apply { isAccessible = true }
+        val callback = TestDB::class.java.getDeclaredField("beforeConnection")
+            .apply { isAccessible = true }
         callback.set(selected, counting)
+
         try {
             withDb(selected, configure = {}) {}
             withDb(selected) {}

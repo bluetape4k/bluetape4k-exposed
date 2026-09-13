@@ -53,6 +53,7 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
     private val valueCodec: RedisCodec<String, E> = ExposedR2dbcLettuceCodecs.requireExplicit(),
 ): R2dbcLettuceRepository<ID, E> {
+
     companion object: KLoggingChannel()
 
     init {
@@ -98,12 +99,11 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         if (config.nearCacheEnabled) {
             LettuceSuspendNearCache(
                 redisClient = client,
-                config =
-                    LettuceNearCacheConfig(
-                        cacheName = config.nearCacheName,
-                        maxLocalSize = config.nearCacheMaxSize,
-                        redisTtl = config.nearCacheTtl
-                    )
+                config = LettuceNearCacheConfig(
+                    cacheName = config.nearCacheName,
+                    maxLocalSize = config.nearCacheMaxSize,
+                    redisTtl = config.nearCacheTtl
+                )
             )
         } else {
             null
@@ -175,15 +175,17 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         val nc = nearCache ?: return cache.getAll(ids.toSet())
         val result = mutableMapOf<ID, E>()
         val missedIds = mutableListOf<ID>()
+
         for (id in ids) {
             val local = nc.get(serializeKey(id))
             if (local != null) result[id] = local else missedIds.add(id)
         }
         if (missedIds.isNotEmpty()) {
-            cache.getAll(missedIds.toSet()).forEach { (id, value) ->
-                result[id] = value
-                nc.put(serializeKey(id), value)
-            }
+            cache.getAll(missedIds.toSet())
+                .forEach { (id, value) ->
+                    result[id] = value
+                    nc.put(serializeKey(id), value)
+                }
         }
         return result
     }
@@ -225,9 +227,8 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn {
+            log.warn(e) {
                 "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
-                    .plus(", errorType=${e::class.simpleName}")
             }
         }
         return entities
@@ -258,7 +259,9 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
     override suspend fun putAll(entities: Map<ID, E>, batchSize: Int) {
         batchSize.requirePositiveNumber("batchSize")
         cache.putAll(entities, batchSize)
-        entities.forEach { (id, entity) -> nearCache?.put(serializeKey(id), entity) }
+        entities.forEach { (id, entity) ->
+            nearCache?.put(serializeKey(id), entity)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -310,7 +313,7 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn { "nearCache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
+            log.warn(e) { "nearCache 종료 중 오류 발생" }
         }
     }
 
@@ -318,7 +321,7 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         try {
             closeCacheResource()
         } catch (e: Exception) {
-            log.warn { "cache 종료 중 오류 발생: errorType=${e::class.simpleName}" }
+            log.warn(e) { "cache 종료 중 오류 발생" }
         }
     }
 }

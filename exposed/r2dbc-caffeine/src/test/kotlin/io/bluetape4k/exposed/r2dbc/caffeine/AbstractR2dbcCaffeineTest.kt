@@ -12,6 +12,7 @@ import io.bluetape4k.logging.coroutines.KLoggingChannel
  * - Redis/Testcontainers 불필요 (Caffeine 로컬 캐시)
  */
 abstract class AbstractR2dbcCaffeineTest: AbstractExposedR2dbcTest() {
+
     companion object: KLoggingChannel() {
         @JvmStatic
         protected val faker = Fakers.faker

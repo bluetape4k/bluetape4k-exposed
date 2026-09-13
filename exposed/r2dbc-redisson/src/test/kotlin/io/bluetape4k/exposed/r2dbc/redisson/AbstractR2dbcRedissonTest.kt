@@ -7,9 +7,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.faker.Fakers
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.error
-import io.bluetape4k.redis.redisson.redissonClientOf
 import io.bluetape4k.testcontainers.storage.RedisServer
-import io.bluetape4k.utils.ShutdownQueue
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -39,22 +37,14 @@ abstract class AbstractR2dbcRedissonTest: AbstractExposedR2dbcTest() {
 
         @JvmStatic
         protected fun randomString(): String =
-            Fakers.randomString(1024, 2048)
+            Fakers.randomString(256, 512)
 
         @JvmStatic
         protected fun randomName(): String = "$LibraryName:${Base58.randomString(8)}"
 
         @JvmStatic
         protected fun newRedisson(): RedissonClient {
-            val config = RedisServer.Launcher.RedissonLib.getRedissonConfig(
-                connectionPoolSize = 256,
-                minimumIdleSize = 12,
-                threads = 128,
-                nettyThreads = 64,
-            )
-            return redissonClientOf(config).apply {
-                ShutdownQueue.register { shutdown() }
-            }
+            return RedisServer.Launcher.RedissonLib.getRedisson(redis.url)
         }
     }
 

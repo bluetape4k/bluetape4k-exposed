@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.bluetape4k.support.requirePositiveNumber
 import io.github.resilience4j.retry.RetryConfig
@@ -61,7 +62,7 @@ class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
         .waitDuration(retryInterval)
         .build()
 ) {
-    companion object {
+    companion object: KLoggingChannel() {
         private const val DEFAULT_CHUNK_SIZE = 1000
     }
 

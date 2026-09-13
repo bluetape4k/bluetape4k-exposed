@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.starrocks
 import io.bluetape4k.exposed.starrocks.dialect.StarRocksDialect
 import io.bluetape4k.exposed.starrocks.dialect.StarRocksDialectMetadata
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requireInRange
 import io.bluetape4k.support.requireNotBlank
 import org.jetbrains.exposed.v1.core.DatabaseApi
@@ -44,7 +45,7 @@ object StarRocksDatabase: KLogging() {
         Database.registerJdbcDriver("jdbc:starrocks", DRIVER, StarRocksDialect.dialectName)
         DatabaseApi.registerDialect(StarRocksDialect.dialectName) { StarRocksDialect() }
         Database.registerDialectMetadata(StarRocksDialect.dialectName) { StarRocksDialectMetadata() }
-        log.debug("StarRocks dialect registered: ${StarRocksDialect.dialectName}")
+        log.debug { "StarRocks dialect registered: ${StarRocksDialect.dialectName}" }
     }
 
     /**
@@ -94,9 +95,10 @@ object StarRocksDatabase: KLogging() {
                 val raw = DriverManager.getConnection(jdbcUrl, props)
                 runCatching { StarRocksConnectionWrapper(raw) }
                     .getOrElse { e ->
-                        runCatching { raw.close() }.onFailure { closeEx ->
-                            e.addSuppressed(closeEx)
-                        }
+                        runCatching { raw.close() }
+                            .onFailure { closeEx ->
+                                e.addSuppressed(closeEx)
+                            }
                         throw e
                     }
             }
@@ -110,9 +112,10 @@ object StarRocksDatabase: KLogging() {
                 val raw = dataSource.connection
                 runCatching { StarRocksConnectionWrapper(raw) }
                     .getOrElse { e ->
-                        runCatching { raw.close() }.onFailure { closeEx ->
-                            e.addSuppressed(closeEx)
-                        }
+                        runCatching { raw.close() }
+                            .onFailure { closeEx ->
+                                e.addSuppressed(closeEx)
+                            }
                         throw e
                     }
             }

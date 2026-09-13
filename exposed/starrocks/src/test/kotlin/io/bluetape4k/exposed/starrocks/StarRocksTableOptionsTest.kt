@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.starrocks
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -10,6 +11,8 @@ import org.junit.jupiter.params.provider.ValueSource
 
 /** OLAP 기본 engine과 충돌하는 generic 옵션을 SQL 생성 전에 거부하는지 검증한다. */
 class StarRocksTableOptionsTest {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @ValueSource(
@@ -23,8 +26,9 @@ class StarRocksTableOptionsTest {
             val id = long("id")
             override val options = listOf(RawTableOption(sql))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "options"
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message.orEmpty() shouldContain "options"
     }
 
     @Test
@@ -32,8 +36,9 @@ class StarRocksTableOptionsTest {
         val table = object: StarRocksTable("starrocks_typed_options") {
             override val options = listOf(EngineOption(TableEngine.INNODB), CharsetOption("utf8mb4"))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "options"
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message.orEmpty() shouldContain "options"
     }
 
     @ParameterizedTest
@@ -43,20 +48,27 @@ class StarRocksTableOptionsTest {
             val id = long("id")
             override val storageParameters = listOf(FillFactorParameter(70), RawTableStorageParameter(sql))
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
-            .message.orEmpty() shouldContain "storageParameters"
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }.message.orEmpty() shouldContain "storageParameters"
     }
 
     @Test
     fun `사용자 storage renderer는 거부 과정에서 실행하지 않는다`() {
         var calls = 0
         val parameter = object: Table.TableStorageParameter() {
-            override fun toSQL(): String { calls++; return "replication_num=1" }
+            override fun toSQL(): String {
+                calls++
+                return "replication_num=1"
+            }
         }
         val table = object: StarRocksTable("starrocks_custom_storage") {
             override val storageParameters = listOf(parameter)
         }
-        assertFailsWith<IllegalArgumentException> { table.createStatement() }
+
+        assertFailsWith<IllegalArgumentException> {
+            table.createStatement()
+        }
         calls shouldBeEqualTo 0
     }
 }

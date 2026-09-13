@@ -2,46 +2,50 @@ package io.bluetape4k.exposed.lettuce.map
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.MapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.codec.StringCodec
 import org.junit.jupiter.api.Test
 import java.time.Duration
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
+    companion object: KLogging()
+
     @Test
     fun `write-behind mixed retry batch preserves each entry count in both queue orders`() {
         val prefix = randomName()
         val attempts = AtomicInteger()
-        val attemptedBatches = CopyOnWriteArrayList<List<String>>()
+        val attemptedBatches = ArrayList<List<String>>()
         val firstAttemptStarted = CountDownLatch(1)
         val releaseFirstAttempt = CountDownLatch(1)
         val freshWritten = CountDownLatch(1)
-        val writer =
-            object: MapWriter<String, String> {
-                override fun write(map: Map<String, String>) {
-                    attemptedBatches += map.keys.toList()
-                    when (attempts.incrementAndGet()) {
-                        1 -> {
-                            firstAttemptStarted.countDown()
-                            check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
-                                "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
-                            }
-                            error("planned first write failure")
-                        }
-                        2, 3 -> error("planned mixed write failure")
-                        else -> if ("fresh" in map) freshWritten.countDown()
-                    }
-                }
 
-                override fun delete(keys: Collection<String>) = Unit
+        val writer = object: MapWriter<String, String> {
+            override fun write(map: Map<String, String>) {
+                attemptedBatches += map.keys.toList()
+                when (attempts.incrementAndGet()) {
+                    1    -> {
+                        firstAttemptStarted.countDown()
+                        check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
+                            "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
+                        }
+                        error("planned first write failure")
+                    }
+                    2, 3 -> error("planned mixed write failure")
+                    else -> if ("fresh" in map) freshWritten.countDown()
+                }
             }
+
+            override fun delete(keys: Collection<String>) = Unit
+        }
+
         val map = newMap(
             prefix = prefix,
             writer = writer,
@@ -54,9 +58,9 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
             check(firstAttemptStarted.await(5, TimeUnit.SECONDS)) {
                 "첫 번째 write-behind 시도가 시작되지 않았습니다."
             }
+
             map["fresh"] = "new"
             releaseFirstAttempt.countDown()
-
             check(freshWritten.await(5, TimeUnit.SECONDS)) {
                 "새 항목이 재시도 후 성공하지 않았습니다."
             }
@@ -67,6 +71,7 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
                 listOf("fresh", "retried"),
                 listOf("fresh")
             )
+
             deadLetterKeys(prefix) shouldBeEqualTo listOf("retried")
         } finally {
             releaseFirstAttempt.countDown()
@@ -82,22 +87,23 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         val firstAttemptStarted = CountDownLatch(1)
         val releaseFirstAttempt = CountDownLatch(1)
         val freshWritten = CountDownLatch(1)
-        val writer =
-            object: MapWriter<String, String> {
-                override fun write(map: Map<String, String>) {
-                    attemptedBatches += map.keys.toList()
-                    if (attempts.incrementAndGet() == 1) {
-                        firstAttemptStarted.countDown()
-                        check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
-                            "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
-                        }
-                        error("planned queue saturation failure")
-                    }
-                    if ("fresh" in map) freshWritten.countDown()
-                }
 
-                override fun delete(keys: Collection<String>) = Unit
+        val writer = object: MapWriter<String, String> {
+            override fun write(map: Map<String, String>) {
+                attemptedBatches += map.keys.toList()
+                if (attempts.incrementAndGet() == 1) {
+                    firstAttemptStarted.countDown()
+                    check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
+                        "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
+                    }
+                    error("planned queue saturation failure")
+                }
+                if ("fresh" in map) freshWritten.countDown()
             }
+
+            override fun delete(keys: Collection<String>) = Unit
+        }
+
         val map = newMap(
             prefix = prefix,
             writer = writer,
@@ -111,9 +117,9 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
             check(firstAttemptStarted.await(5, TimeUnit.SECONDS)) {
                 "첫 번째 write-behind 시도가 시작되지 않았습니다."
             }
+
             map["fresh"] = "new"
             releaseFirstAttempt.countDown()
-
             check(freshWritten.await(5, TimeUnit.SECONDS)) {
                 "포화된 큐에 남은 새 항목이 write-behind에 반영되지 않았습니다."
             }
@@ -132,21 +138,19 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
         writeBehindBatchSize: Int,
         writeBehindQueueCapacity: Int = 10,
         writeBehindDelay: Duration,
-    ): ExposedLettuceLoadedMap<String, String> =
-        ExposedLettuceLoadedMap(
-            client = redisClient,
-            writer = writer,
-            config =
-                LettuceCacheConfig(
-                    keyPrefix = prefix,
-                    writeMode = WriteMode.WRITE_BEHIND,
-                    writeBehindBatchSize = writeBehindBatchSize,
-                    writeBehindQueueCapacity = writeBehindQueueCapacity,
-                    writeBehindDelay = writeBehindDelay,
-                    writeBehindShutdownTimeout = Duration.ofSeconds(5)
-                ),
-            valueCodec = StringCodec.UTF8
-        )
+    ): ExposedLettuceLoadedMap<String, String> = ExposedLettuceLoadedMap(
+        client = redisClient,
+        writer = writer,
+        config = LettuceCacheConfig(
+            keyPrefix = prefix,
+            writeMode = WriteMode.WRITE_BEHIND,
+            writeBehindBatchSize = writeBehindBatchSize,
+            writeBehindQueueCapacity = writeBehindQueueCapacity,
+            writeBehindDelay = writeBehindDelay,
+            writeBehindShutdownTimeout = Duration.ofSeconds(5)
+        ),
+        valueCodec = StringCodec.UTF8
+    )
 
     private fun deadLetterKeys(prefix: String): List<String> =
         redisClient.connect(StringCodec.UTF8).use { connection ->

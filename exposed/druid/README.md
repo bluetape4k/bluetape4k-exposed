@@ -2,9 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-Query-only Apache Druid JDBC experiment for `bluetape4k-exposed`. The module
-uses Apache Calcite Avatica JDBC to connect to a Druid Router or Broker and
-provides small helpers for SQL query execution and datasource metadata discovery.
+Query-only Apache Druid JDBC experiment for `bluetape4k-exposed`. The module uses Apache Calcite Avatica JDBC to connect to a Druid Router or Broker and provides small helpers for SQL query execution and datasource metadata discovery.
 
 ## Positioning
 
@@ -96,21 +94,16 @@ val comments = DruidJdbc.querySuspend(
 ) { rs -> rs.getString("comment") }
 ```
 
-Blocking JDBC work is dispatched to `Dispatchers.IO` by default. Cancellation is
-re-thrown rather than swallowed.
+Blocking JDBC work is dispatched to `Dispatchers.IO` by default. Cancellation is re-thrown rather than swallowed.
 
 ## Router/Broker stickiness
 
-Druid JDBC connections are stateful at the Broker. Prefer the Router Avatica
-endpoint, which provides connection stickiness, or use a Broker/load balancer
-configuration that keeps JDBC requests sticky. Keep `transparent_reconnection`
+Druid JDBC connections are stateful at the Broker. Prefer the Router Avatica endpoint, which provides connection stickiness, or use a Broker/load balancer configuration that keeps JDBC requests sticky. Keep `transparent_reconnection`
 enabled so Avatica can recover from Broker pool membership changes or restarts.
 
 ## Local/container smoke test
 
-Normal CI runs the module unit tests only. To prove a prepared local/container
-Druid instance with a loaded fixture datasource, start Druid first, load a
-fixture such as `wikipedia`, then run:
+Normal CI runs the module unit tests only. To prove a prepared local/container Druid instance with a loaded fixture datasource, start Druid first, load a fixture such as `wikipedia`, then run:
 
 ```bash
 EXPOSED_DRUID_SMOKE=true \
@@ -120,9 +113,7 @@ EXPOSED_DRUID_DATASOURCE=wikipedia \
 ```
 
 The smoke test checks Avatica connection, metadata discovery, and one `SELECT`
-against the fixture datasource. Keep Testcontainers or Docker-backed Druid
-verification serial; the official Druid quickstart is multi-container and
-memory-heavy.
+against the fixture datasource. Keep Testcontainers or Docker-backed Druid verification serial; the official Druid quickstart is multi-container and memory-heavy.
 
 ## References
 

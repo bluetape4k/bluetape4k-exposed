@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -15,6 +16,7 @@ import java.sql.DriverManager
 abstract class AbstractStarRocksTest {
 
     companion object: KLogging() {
+
         private val starRocks: StarRocksTestServer by lazy { StarRocksTestServer.Launcher.starRocks }
 
         val host: String
@@ -52,11 +54,14 @@ abstract class AbstractStarRocksTest {
             starRocks.verifyHostPortMapping()
             waitForStarRocksReady()
             createDatabase()
+            Thread.sleep(3000L)
             waitForClusterCapacity()
         }
 
+        private const val MAX_ATTEMPTS = 60
+
         private fun waitForStarRocksReady() {
-            repeat(60) { attempt ->
+            repeat(MAX_ATTEMPTS) { attempt ->
                 runCatching {
                     DriverManager.getConnection(bootstrapJdbcUrl, connectionProperties).use { conn ->
                         conn.createStatement().use { stmt ->
@@ -69,10 +74,10 @@ abstract class AbstractStarRocksTest {
                 }.onSuccess {
                     return
                 }.onFailure { e ->
-                    if (attempt == 59) {
+                    if (attempt == MAX_ATTEMPTS - 1) {
                         throw e
                     }
-                    log.warn("StarRocks not ready (attempt {}/60), waiting 1s...", attempt + 1)
+                    log.warn(e) { "StarRocks not ready (attempt ${attempt + 1}/$MAX_ATTEMPTS), waiting 1s..." }
                     Thread.sleep(1000L)
                 }
             }
@@ -86,8 +91,10 @@ abstract class AbstractStarRocksTest {
             }
         }
 
+        private const val MAX_ATTEMPTS_CLUSTER = 120
+
         private fun waitForClusterCapacity() {
-            repeat(120) { attempt ->
+            repeat(MAX_ATTEMPTS_CLUSTER) { attempt ->
                 runCatching {
                     DriverManager.getConnection(jdbcUrl, connectionProperties).use { conn ->
                         conn.createStatement().use { stmt ->
@@ -109,11 +116,13 @@ abstract class AbstractStarRocksTest {
                 }.onSuccess {
                     return
                 }.onFailure { e ->
-                    if (attempt == 119) {
+                    if (attempt == (MAX_ATTEMPTS_CLUSTER - 1)) {
                         throw e
                     }
-                    log.warn("StarRocks capacity not ready (attempt {}/120), waiting 1s...", attempt + 1)
-                    Thread.sleep(1000L)
+                    log.warn(e) {
+                        "StarRocks capacity not ready (attempt ${attempt + 1}/$MAX_ATTEMPTS_CLUSTER), waiting 1s..."
+                    }
+                    Thread.sleep(3000L)
                 }
             }
         }

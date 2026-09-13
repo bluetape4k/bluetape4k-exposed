@@ -31,7 +31,9 @@ class DruidJdbcSmokeTest {
 
     @Test
     fun `Druid Avatica connection executes SELECT 1`() {
-        val values = DruidJdbc.query("SELECT 1 AS one", options) { rs -> rs.getInt("one") }
+        val values = DruidJdbc.query("SELECT 1 AS one", options) { rs ->
+            rs.getInt("one")
+        }
         values shouldBeEqualTo listOf(1)
     }
 
@@ -44,7 +46,9 @@ class DruidJdbcSmokeTest {
 
     @Test
     fun `Druid SELECT reads fixture datasource`() {
-        val rows = DruidJdbc.query("SELECT * FROM \"$datasource\" LIMIT 1", options) { rs -> rs.getObject(1) }
+        val rows = DruidJdbc.query("SELECT * FROM \"$datasource\" LIMIT 1", options) { rs ->
+            rs.getObject(1)
+        }
         rows.shouldNotBeEmpty()
     }
 }

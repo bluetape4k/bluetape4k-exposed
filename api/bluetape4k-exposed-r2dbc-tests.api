@@ -448,21 +448,6 @@ public final class io/bluetape4k/exposed/r2dbc/tests/Containers : io/bluetape4k/
 	public final fun getPostgres ()Lio/bluetape4k/testcontainers/database/PostgreSQLServer;
 }
 
-public abstract class io/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase {
-	public static final field Companion Lio/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase$Companion;
-	public static final field ENABLE_DIALECTS_METHOD Ljava/lang/String;
-	public fun <init> ()V
-	public final fun addIfNotExistsIfSupported ()Ljava/lang/String;
-	public static final fun enableDialects ()Ljava/util/Set;
-	public static final fun getFaker ()Lnet/datafaker/Faker;
-	protected final fun prepareSchemaForTest (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Schema;
-}
-
-public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcExposedTestBase$Companion : io/bluetape4k/logging/KLogging {
-	public final fun enableDialects ()Ljava/util/Set;
-	public final fun getFaker ()Lnet/datafaker/Faker;
-}
-
 public final class io/bluetape4k/exposed/r2dbc/tests/R2dbcFixtureExecutionKt {
 	public static final fun getCurrentR2dbcTestDbFixture ()Lio/bluetape4k/exposed/r2dbc/tests/R2dbcTestDbFixture;
 }

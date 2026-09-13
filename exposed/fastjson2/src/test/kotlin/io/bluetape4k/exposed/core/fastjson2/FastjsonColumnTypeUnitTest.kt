@@ -1,41 +1,50 @@
 package io.bluetape4k.exposed.core.fastjson2
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.fastjson2.FastjsonSerializer as SharedFastjsonSerializer
+import io.bluetape4k.codec.Base58
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.toUtf8Bytes
-import java.io.IOException
-import java.io.Reader
-import java.io.StringReader
-import java.lang.reflect.Proxy
-import java.sql.Clob
-import java.util.concurrent.atomic.AtomicBoolean
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.statements.jdbc.JdbcResult
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
+import java.io.IOException
+import java.io.Reader
+import java.io.Serializable
+import java.io.StringReader
+import java.lang.reflect.Proxy
+import java.sql.Clob
+import java.util.concurrent.atomic.AtomicBoolean
+import io.bluetape4k.fastjson2.FastjsonSerializer as SharedFastjsonSerializer
 
 /**
  * [FastjsonColumnType] 및 [FastjsonBColumnType]의 직렬화/역직렬화 단위 테스트입니다.
  */
 class FastjsonColumnTypeUnitTest {
+
+    companion object: KLogging()
+
     private data class SamplePayload(
         val name: String,
         val count: Int,
-    )
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private val serializer = DefaultFastjsonSerializer
-    private val columnType =
-        FastjsonColumnType<SamplePayload>(
-            serilaize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-        )
+    private val columnType = FastjsonColumnType(
+        serilaize = { serializer.serializeAsString(it) },
+        deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+    )
 
     @Test
     fun `valueFromDB 는 문자열 JSON 을 객체로 역직렬화한다`() {
@@ -107,21 +116,19 @@ class FastjsonColumnTypeUnitTest {
 
     @Test
     fun `FastjsonBColumnType 은 usesBinaryFormat 이 true 이다`() {
-        val bColumnType =
-            FastjsonBColumnType<SamplePayload>(
-                serialize = { serializer.serializeAsString(it) },
-                deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-            )
+        val bColumnType = FastjsonBColumnType<SamplePayload>(
+            serialize = { serializer.serializeAsString(it) },
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        )
         bColumnType.usesBinaryFormat.shouldBeTrue()
     }
 
     @Test
     fun `FastjsonBColumnType 은 valueFromDB 에서 문자열을 역직렬화한다`() {
-        val bColumnType =
-            FastjsonBColumnType<SamplePayload>(
-                serialize = { serializer.serializeAsString(it) },
-                deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
-            )
+        val bColumnType = FastjsonBColumnType<SamplePayload>(
+            serialize = { serializer.serializeAsString(it) },
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        )
         val source = SamplePayload("jsonb", 42)
         val json = serializer.serializeAsString(source)
 
@@ -143,8 +150,8 @@ class FastjsonColumnTypeUnitTest {
         val s1 = DefaultFastjsonSerializer
         val s2 = DefaultFastjsonSerializer
 
-        (s1 === s2).shouldBeTrue()
-        (s1 === SharedFastjsonSerializer.Default).shouldBeTrue()
+        s2 shouldBe s1
+        s1 shouldBe SharedFastjsonSerializer.Default
     }
 
     /**
@@ -271,6 +278,7 @@ class FastjsonColumnTypeUnitTest {
     fun `readObject 는 H2 Oracle mode의 실제 CLOB 결과를 JSON 문자열로 정규화한다`() {
         val source = SamplePayload("oracle", 42)
         val json = serializer.serializeAsString(source)
+
         val database = Database.connect(
             url = "jdbc:h2:mem:fastjson-oracle-clob-${Base58.randomString(8)};MODE=Oracle;DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
@@ -310,15 +318,15 @@ class FastjsonColumnTypeUnitTest {
                 "getCharacterStream" -> reader
                 "toString" -> "tracking-clob"
                 "hashCode" -> System.identityHashCode(reader)
-                "equals" -> false
-                else -> error("Unexpected Clob method: ${method.name}")
+                "equals"   -> false
+                else       -> error("Unexpected Clob method: ${method.name}")
             }
         } as Clob
 
     private class TrackingReader(
         text: String,
         private val failOnRead: Boolean = false,
-    ) : Reader() {
+    ): Reader() {
         private val delegate = StringReader(text)
         val closed = AtomicBoolean(false)
 

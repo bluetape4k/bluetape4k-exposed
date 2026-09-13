@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse.support
 
+import io.bluetape4k.logging.KLogging
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -29,6 +30,9 @@ internal class TrackingClickHouseConnection(
     private val delegate: Connection,
     private val observed: JdbcObservation,
 ): Connection by delegate {
+
+    companion object: KLogging()
+    
     private val closed = AtomicBoolean()
     private val markers = mutableMapOf<String, String>()
 
@@ -83,11 +87,11 @@ internal class TrackingClickHouseConnection(
                     observed.queryTimeouts.incrementAndGet()
                     invokeJdbc(statement, method, args)
                 }
-                "cancel" -> {
+                "cancel"       -> {
                     observed.cancels.incrementAndGet()
                     invokeJdbc(statement, method, args)
                 }
-                "close" -> {
+                "close"        -> {
                     if (closed.compareAndSet(false, true)) {
                         try {
                             invokeJdbc(statement, method, args)
@@ -98,7 +102,7 @@ internal class TrackingClickHouseConnection(
                     }
                     null
                 }
-                else -> invokeJdbc(statement, method, args)
+                else           -> invokeJdbc(statement, method, args)
             }
         } as PreparedStatement
     }
@@ -128,7 +132,7 @@ internal class TrackingClickHouseConnection(
                     }
                     null
                 }
-                else -> invokeJdbc(result, method, args)
+                else   -> invokeJdbc(result, method, args)
             }
         } as ResultSet
     }

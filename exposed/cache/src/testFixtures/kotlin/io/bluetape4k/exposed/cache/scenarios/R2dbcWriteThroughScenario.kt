@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.cache.scenarios
 
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.delay
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.delay
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.api.Assumptions
@@ -113,7 +113,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
                     entity,
                     updatedEntities.find {
                         repository.extractId(it) == repository.extractId(entity)
-                    }!!
+                    }.shouldNotBeNull()
                 )
             }
 
@@ -127,9 +127,10 @@ interface R2dbcWriteThroughScenario<ID: Any, E: Serializable>: R2dbcCacheTestSce
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    entitiesFromCache.values.find {
-                        repository.extractId(it) == repository.extractId(entity)
-                    }!!
+                    entitiesFromCache.values
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
                 )
             }
         }

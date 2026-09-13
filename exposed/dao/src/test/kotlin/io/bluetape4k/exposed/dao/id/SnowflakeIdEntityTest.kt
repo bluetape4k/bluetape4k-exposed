@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.dao.id
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.core.dao.id.SnowflakeIdTable
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
@@ -17,9 +18,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.dao.entityCache
-import org.jetbrains.exposed.v1.dao.flushCache
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -76,7 +75,6 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                     age = faker.number().numberBetween(8, 80)
                 }
             }
-            flushCache()
             entityCache.clear()
 
             T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
@@ -97,7 +95,7 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                 this[T1.name] = name
                 this[T1.age] = age
             }
-            flushCache()
+            entityCache.clear()
 
             T1.selectAll().count().toInt() shouldBeEqualTo entityCount
         }
@@ -122,7 +120,6 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                 }
             }
             tasks.awaitAll()
-            flushCache()
             entityCache.clear()
 
             T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
@@ -146,7 +143,7 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                 }
             }
             task.await()
-            flushCache()
+            entityCache.clear()
 
             T1.selectAll().count().toInt() shouldBeEqualTo entityCount
         }
@@ -184,7 +181,7 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                 }
                 .collect()
 
-            flushCache()
+            entityCache.clear()
 
             T1.selectAll().count().toInt() shouldBeEqualTo entityCount
         }

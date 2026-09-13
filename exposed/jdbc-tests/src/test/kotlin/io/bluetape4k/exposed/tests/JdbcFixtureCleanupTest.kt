@@ -2,27 +2,39 @@ package io.bluetape4k.exposed.tests
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Schema
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 
 class JdbcFixtureCleanupTest {
+
+    companion object: KLogging()
+
     private class BodyFailure(val marker: Int): IllegalArgumentException("body sentinel")
+
     private val selected = TestDB.valueOf(System.getenv("EXPOSED_TEST_DB") ?: "H2").also {
         check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
     }
+
     private val fixture = jdbcTestDbFixture(selected, { configure -> selected.connect(configure) })
-    private val table = object: Table("jdbc_fixture_cleanup") { val id = integer("id") }
+
+    private val table = object: Table("jdbc_fixture_cleanup") {
+        val id = integer("id")
+    }
 
     @Test
     fun `생성 도중 실패는 요청 테이블만 정리하고 opt out을 존중한다`() {
@@ -33,6 +45,7 @@ class JdbcFixtureCleanupTest {
                 val id = integer("id")
                 override fun createStatement(): List<String> =
                     super.createStatement() + "INVALID FIXTURE CREATE STATEMENT"
+
                 override fun dropStatement(): List<String> {
                     drops++
                     return super.dropStatement()
@@ -40,18 +53,24 @@ class JdbcFixtureCleanupTest {
             }
             try {
                 assertFailsWith<Exception> {
-                    withTables(fixture, broken, dropTables = dropTables) { bodyRan = true }
+                    withTables(fixture, broken, dropTables = dropTables) {
+                        bodyRan = true
+                    }
                 }
-                bodyRan shouldBeEqualTo false
+                bodyRan.shouldBeFalse()
                 if (dropTables) {
-                    (drops >= 2) shouldBeEqualTo true
-                    withDb(fixture) { broken.exists() shouldBeEqualTo false }
+                    drops shouldBeGreaterOrEqualTo 2
+                    withDb(fixture) {
+                        broken.exists().shouldBeFalse()
+                    }
                 } else {
                     drops shouldBeEqualTo 1
                     // PostgreSQL은 실패한 DDL을 rollback하므로 잔존 여부가 아닌 drop 미호출을 검증한다.
                 }
             } finally {
-                withDb(fixture) { SchemaUtils.drop(broken) }
+                withDb(fixture) {
+                    SchemaUtils.drop(broken)
+                }
             }
         }
     }
@@ -60,11 +79,15 @@ class JdbcFixtureCleanupTest {
     fun `cleanup 취소와 자기 자신인 예외가 본문 실패를 덮지 않는다`() {
         val primary = BodyFailure(9)
         val cancellation = java.util.concurrent.CancellationException("cleanup")
+
         retainJdbcFailure(primary, primary) shouldBeSameInstanceAs primary
+
         primary.suppressed.size shouldBeEqualTo 0
+
         withDb(fixture) {
-            cleanupJdbcFixture(primary, recover = false,
-            ) { throw cancellation }
+            cleanupJdbcFixture(primary, recover = false) {
+                throw cancellation
+            }
         }
         primary.suppressed.single() shouldBeSameInstanceAs cancellation
     }
@@ -72,10 +95,12 @@ class JdbcFixtureCleanupTest {
     @Test
     fun `본문 성공 뒤 cleanup 실패는 호출자에게 전달한다`() {
         val failure = BodyFailure(10)
+
         assertFailsWith<BodyFailure> {
             withDb(fixture) {
-                cleanupJdbcFixture(null, recover = false,
-                ) { throw failure }
+                cleanupJdbcFixture(null, recover = false) {
+                    throw failure
+                }
             }
         } shouldBeSameInstanceAs failure
     }
@@ -95,7 +120,10 @@ class JdbcFixtureCleanupTest {
         coroutineScope {
             val entered = CompletableDeferred<Unit>()
             val job = launch {
-                withSchemasSuspending(fixture, schema) { entered.complete(Unit); awaitCancellation() }
+                withSchemasSuspending(fixture, schema) {
+                    entered.complete(Unit)
+                    awaitCancellation()
+                }
             }
             entered.await()
             job.cancelAndJoin()
@@ -110,19 +138,30 @@ class JdbcFixtureCleanupTest {
 
     @Test
     fun `본문 실패 뒤 테이블이 없고 무관한 테이블은 유지된다`() {
-        val sentinel = object: Table("jdbc_fixture_sentinel") { val id = integer("id") }
+        val sentinel = object: Table("jdbc_fixture_sentinel") {
+            val id = integer("id")
+        }
         val failure = BodyFailure(1)
-        withDb(fixture) { SchemaUtils.create(sentinel) }
+
+        withDb(fixture) {
+            SchemaUtils.create(sentinel)
+        }
+
         try {
             assertFailsWith<BodyFailure> {
-                withTables(fixture, table) { throw failure }
+                withTables(fixture, table) {
+                    throw failure
+                }
             } shouldBeSameInstanceAs failure
+
             withDb(fixture) {
-                table.exists() shouldBeEqualTo false
-                sentinel.exists() shouldBeEqualTo true
+                table.exists().shouldBeFalse()
+                sentinel.exists().shouldBeTrue()
             }
         } finally {
-            withDb(fixture) { SchemaUtils.drop(sentinel, table) }
+            withDb(fixture) {
+                SchemaUtils.drop(sentinel, table)
+            }
         }
     }
 
@@ -138,15 +177,21 @@ class JdbcFixtureCleanupTest {
                 return super.dropStatement()
             }
         }
+
         try {
             assertFailsWith<BodyFailure> {
-                withTables(fixture, broken) { failDrop = true; throw failure }
+                withTables(fixture, broken) {
+                    failDrop = true
+                    throw failure
+                }
             } shouldBeSameInstanceAs failure
             cleanup.size shouldBeEqualTo 2
             failure.suppressed.toList() shouldBeEqualTo cleanup
         } finally {
             failDrop = false
-            withDb(fixture) { SchemaUtils.drop(broken) }
+            withDb(fixture) {
+                SchemaUtils.drop(broken)
+            }
         }
     }
 
@@ -154,11 +199,17 @@ class JdbcFixtureCleanupTest {
     fun `drop opt out은 본문 실패에도 테이블을 남긴다`() {
         try {
             assertFailsWith<BodyFailure> {
-                withTables(fixture, table, dropTables = false) { throw BodyFailure(3) }
+                withTables(fixture, table, dropTables = false) {
+                    throw BodyFailure(3)
+                }
             }
-            withDb(fixture) { table.exists() shouldBeEqualTo true }
+            withDb(fixture) {
+                table.exists().shouldBeTrue()
+            }
         } finally {
-            withDb(fixture) { SchemaUtils.drop(table) }
+            withDb(fixture) {
+                SchemaUtils.drop(table)
+            }
         }
     }
 
@@ -167,11 +218,17 @@ class JdbcFixtureCleanupTest {
         coroutineScope {
             val entered = CompletableDeferred<Unit>()
             val job = launch {
-                withTablesSuspending(fixture, table) { entered.complete(Unit); awaitCancellation() }
+                withTablesSuspending(fixture, table) {
+                    entered.complete(Unit)
+                    awaitCancellation()
+                }
             }
             entered.await()
             job.cancelAndJoin()
-            withDbSuspending(fixture) { table.exists() shouldBeEqualTo false }
+
+            withDbSuspending(fixture) {
+                table.exists().shouldBeFalse()
+            }
         }
     }
 }

@@ -1,17 +1,17 @@
 package io.bluetape4k.exposed.r2dbc.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
-import io.bluetape4k.exposed.r2dbc.virtualThreadTransaction
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.exposed.r2dbc.virtualThreadTransaction
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
@@ -42,7 +42,11 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
         override val updatedBy: String? = null,
         override val updatedAt: Instant? = null,
         val id: Long = 0L,
-    ): Auditable
+    ): Auditable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     object ArticleRepository: LongAuditableR2dbcRepository<ArticleRecord, ArticleTable> {
         override val table = ArticleTable

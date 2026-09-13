@@ -66,6 +66,14 @@ value class ClickHouseSettingName private constructor(val sql: String): Serializ
         val MIN_ROWS_FOR_WIDE_PART: ClickHouseSettingName = ClickHouseSettingName("min_rows_for_wide_part")
         val STORAGE_POLICY: ClickHouseSettingName = ClickHouseSettingName("storage_policy")
 
+        fun ofName(name: String): ClickHouseSettingName {
+            val trimmed = validateSettingIdentifier(name)
+            require(trimmed in SAFE_SETTING_NAMES) {
+                "ClickHouse setting name is not allowlisted: $name. Use unsafeRawSetting for explicit raw settings."
+            }
+            return ClickHouseSettingName(trimmed)
+        }
+
         fun of(name: String): ClickHouseSettingName {
             val trimmed = validateSettingIdentifier(name)
             require(trimmed in SAFE_SETTING_NAMES) {

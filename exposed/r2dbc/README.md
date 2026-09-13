@@ -6,8 +6,7 @@ Provides extension functions and the Repository pattern for use with Exposed in 
 
 ## Opt-in multi-row VALUES
 
-Existing `batchInsert` calls keep the legacy path. Exposed 1.5.0 multi-row SQL is
-available through an additional overload with a required `useMultiRowValues` argument:
+Existing `batchInsert` calls keep the legacy path. Exposed 1.5.0 multi-row SQL is available through an additional overload with a required `useMultiRowValues` argument:
 
 ```kotlin
 // Inside the caller's suspendTransaction {}:
@@ -16,23 +15,11 @@ repository.batchInsert(items, useMultiRowValues = true) { item ->
 }
 ```
 
-`false` delegates to the existing overload, including its `ignore` and generated-value
-settings. The repository rejects `true` combined with `ignore=true` before consuming
-input or executing SQL, even for empty input: Exposed 1.5.0 cannot reliably map
-partially ignored multi-row results. Use the legacy path when ignoring conflicts.
+`false` delegates to the existing overload, including its `ignore` and generated-value settings. The repository rejects `true` combined with `ignore=true` before consuming input or executing SQL, even for empty input: Exposed 1.5.0 cannot reliably map partially ignored multi-row results. Use the legacy path when ignoring conflicts.
 
-For multi-row input, collection is bounded to the allowed row count plus one.
-The estimate `rows × table.columns.size` must not exceed 65,535 (SQLite: 32,766).
-This is not an exact bind count or a guarantee for every driver; use smaller chunks
-for expressions with multiple binds or lower driver limits. Valid empty input is
-a no-op. Oversized input is rejected before the binder/INSERT, without rolling back
-earlier work in the caller's transaction. On SQL failure, the caller must roll back.
+For multi-row input, collection is bounded to the allowed row count plus one. The estimate `rows × table.columns.size` must not exceed 65,535 (SQLite: 32,766). This is not an exact bind count or a guarantee for every driver; use smaller chunks for expressions with multiple binds or lower driver limits. Valid empty input is a no-op. Oversized input is rejected before the binder/INSERT, without rolling back earlier work in the caller's transaction. On SQL failure, the caller must roll back.
 
-H2/PostgreSQL tests cover ordinary inserts, nullable values, generated IDs and input
-order. MySQL/Oracle generated-key combinations are not verified; use `false` when
-reliable generated-ID mapping is required. With `shouldReturnGeneratedValues=false`,
-the mapper must not require DB-generated values. `saveAll` is unchanged.
-SQL tuple/parameter-set observations do not establish network round-trips or a speedup.
+H2/PostgreSQL tests cover ordinary inserts, nullable values, generated IDs and input order. MySQL/Oracle generated-key combinations are not verified; use `false` when reliable generated-ID mapping is required. With `shouldReturnGeneratedValues=false`, the mapper must not require DB-generated values. `saveAll` is unchanged. SQL tuple/parameter-set observations do not establish network round-trips or a speedup.
 
 ## Overview
 
@@ -40,8 +27,8 @@ SQL tuple/parameter-set observations do not establish network round-trips or a s
 
 ### Key Features
 
-- **Repository pattern**: `R2dbcRepository<ID, E>`, `AuditableR2dbcRepository<ID, E, T>`,
-  and `SoftDeletedR2dbcRepository<ID, E, T>` interfaces
+- **Repository
+  pattern**: `R2dbcRepository<ID, E>`, `AuditableR2dbcRepository<ID, E, T>`, and `SoftDeletedR2dbcRepository<ID, E, T>` interfaces
 - **Flow-based queries**: `findAll`, `findBy`, `findByField`, and others return `Flow<E>`
 - **Batch insert support**: `BatchInsertOnConflictDoNothing` pattern
     - For PostgreSQL-compatible databases, uses `ON CONFLICT DO NOTHING` without pinning to a specific `id` column
@@ -122,16 +109,13 @@ Measured local H2/PostgreSQL/MySQL8 benchmarks showed that pure acquire/close th
 
 ### Core R2dbcRepository Structure
 
-This architecture view shows the runtime contract: application code enters a caller-owned `suspendTransaction`, the
-repository maps `IdTable` rows to entities, read methods expose `Flow<E>`, and writes delegate to Exposed R2DBC
-statements.
+This architecture view shows the runtime contract: application code enters a caller-owned `suspendTransaction`, the repository maps `IdTable` rows to entities, read methods expose `Flow<E>`, and writes delegate to Exposed R2DBC statements.
 
 ![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-r2dbc-diagram-01.png)
 
 ### Repository Capability Map
 
-This capability map separates repository CRUD, state extensions, SQL composition helpers, driver utilities, and
-virtual-thread execution helpers so readers can choose the lowest API boundary they need.
+This capability map separates repository CRUD, state extensions, SQL composition helpers, driver utilities, and virtual-thread execution helpers so readers can choose the lowest API boundary they need.
 
 ![R2DBC repository capability map](../../docs/images/readme-diagrams/exposed-r2dbc-diagram-02.png)
 
@@ -165,25 +149,25 @@ data class ActorRecord(
     val lastName: String,
 )
 
-object ActorTable : LongIdTable("actors") {
+object ActorTable: LongIdTable("actors") {
     val firstName = varchar("first_name", 50)
-    val lastName  = varchar("last_name",  50)
+  val lastName = varchar("last_name", 50)
 }
 
-class ActorRepository : LongR2dbcRepository<ActorRecord> {
+class ActorRepository: LongR2dbcRepository<ActorRecord> {
     override val table = ActorTable
     override fun extractId(entity: ActorRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ActorRecord(
-        id        = this[ActorTable.id].value,
+      id = this[ActorTable.id].value,
         firstName = this[ActorTable.firstName],
-        lastName  = this[ActorTable.lastName],
+      lastName = this[ActorTable.lastName],
     )
 
     suspend fun save(record: ActorRecord): ActorRecord {
         val id = ActorTable.insertAndGetId {
             it[firstName] = record.firstName
-            it[lastName]  = record.lastName
+          it[lastName] = record.lastName
         }
         return record.copy(id = id.value)
     }
@@ -204,9 +188,7 @@ suspendTransaction {
 
 ### 2. Typed cursor pagination
 
-Use the suspending `findCursorPage` extension inside the caller-owned `suspendTransaction`. It returns a
-materialized `ExposedCursorPage`, so the row mapping and connection release complete before the transaction
-boundary closes.
+Use the suspending `findCursorPage` extension inside the caller-owned `suspendTransaction`. It returns a materialized `ExposedCursorPage`, so the row mapping and connection release complete before the transaction boundary closes.
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.repository.findCursorPage
@@ -227,12 +209,7 @@ suspendTransaction {
 ```
 
 The cursor is the raw non-null primary-key value. Each call issues one bounded `SELECT` with
-`LIMIT pageSize + 1`, never a count or offset query, and accepts `pageSize` from 1 through 10,000.
-All six `SortOrder` variants are supported; ascending variants use strict `>`, descending variants use
-strict `<`, and null-placement variants only preserve direction. The caller owns token encoding, signing,
-expiry, tenant/authorization scope, and reuse of the same sort and predicate. There is no snapshot guarantee.
-The default predicate is `Op.TRUE`, so soft-deleted rows require an explicit active predicate. Cancellation
-rethrows `CancellationException` and releases the connection through the surrounding transaction/pool.
+`LIMIT pageSize + 1`, never a count or offset query, and accepts `pageSize` from 1 through 10,000. All six `SortOrder` variants are supported; ascending variants use strict `>`, descending variants use strict `<`, and null-placement variants only preserve direction. The caller owns token encoding, signing, expiry, tenant/authorization scope, and reuse of the same sort and predicate. There is no snapshot guarantee. The default predicate is `Op.TRUE`, so soft-deleted rows require an explicit active predicate. Cancellation rethrows `CancellationException` and releases the connection through the surrounding transaction/pool.
 
 ### 3. Implementing AuditableR2dbcRepository
 
@@ -279,8 +256,7 @@ suspendTransaction {
 ```
 
 `updatedAt` is assigned with the database `CURRENT_TIMESTAMP`, and `updatedBy` uses the explicit
-`updatedBy` argument. If `updatedBy` is omitted, the value is captured from `UserContext.getCurrentUser()`.
-Plain `updateById()` and `updateAll()` do not set audit columns.
+`updatedBy` argument. If `updatedBy` is omitted, the value is captured from `UserContext.getCurrentUser()`. Plain `updateById()` and `updateAll()` do not set audit columns.
 
 ### 4. Implementing SoftDeletedR2dbcRepository
 
@@ -379,36 +355,35 @@ suspendTransaction {
 }
 ```
 
-`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared
-parameters from CTE predicates keep their binding order.
+`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared parameters from CTE predicates keep their binding order.
 
 ## R2dbcRepository Key Methods
 
-| Method                                | Suspend | Return type      | Description                             |
-|---------------------------------------|---------|------------------|-----------------------------------------|
-| `count()`                             | yes     | `Long`           | Total record count                      |
-| `countBy(predicate)`                  | yes     | `Long`           | Count matching records                  |
-| `existsById(id)`                      | yes     | `Boolean`        | Check existence by ID                   |
-| `existsBy(predicate)`                 | yes     | `Boolean`        | Check existence by condition            |
-| `findById(id)`                        | yes     | `E`              | Find by ID (throws if not found)        |
-| `findByIdOrNull(id)`                  | yes     | `E?`             | Find by ID (returns null if not found)  |
-| `findAll(limit, offset, ...)`         | no      | `Flow<E>`        | Find all (supports paging and sorting)  |
-| `findWithFilters(...)`                | no      | `Flow<E>`        | Find with multiple AND conditions       |
-| `findBy(...)`                         | no      | `Flow<E>`        | Alias for `findWithFilters`             |
-| `findFirstOrNull(...)`                | yes     | `E?`             | First matching entity                   |
-| `findLastOrNull(...)`                 | yes     | `E?`             | Last matching entity                    |
-| `findByField(field, value)`           | no      | `Flow<E>`        | Find by a specific column value         |
-| `findByFieldOrNull(field, value)`     | yes     | `E?`             | First result matching a specific column |
-| `findAllByIds(ids)`                   | no      | `Flow<E>`        | Find multiple entities by IDs           |
-| `findPage(pageNumber, pageSize, ...)` | yes     | `ExposedPage<E>` | Paginated query                         |
-| `findCursorPage(pageSize, cursor, ...)` | yes   | `ExposedCursorPage<E, ID>` | Typed primary-key cursor page      |
-| `deleteById(id)`                      | yes     | `Int`            | Delete by ID                            |
-| `deleteAll(op)`                       | yes     | `Int`            | Delete matching records                 |
-| `deleteAllByIds(ids)`                 | yes     | `Int`            | Delete multiple records by IDs          |
-| `updateById(id, ...)`                 | yes     | `Int`            | Update by ID                            |
-| `updateAll(predicate, ...)`           | yes     | `Int`            | Bulk update matching records            |
-| `batchInsert(entities, ...)`          | yes     | `List<E>`        | Batch insert                            |
-| `batchUpsert(entities, ...)`          | yes     | `List<E>`        | Batch upsert                            |
+| Method                                  | Suspend | Return type                | Description                             |
+|-----------------------------------------|---------|----------------------------|-----------------------------------------|
+| `count()`                               | yes     | `Long`                     | Total record count                      |
+| `countBy(predicate)`                    | yes     | `Long`                     | Count matching records                  |
+| `existsById(id)`                        | yes     | `Boolean`                  | Check existence by ID                   |
+| `existsBy(predicate)`                   | yes     | `Boolean`                  | Check existence by condition            |
+| `findById(id)`                          | yes     | `E`                        | Find by ID (throws if not found)        |
+| `findByIdOrNull(id)`                    | yes     | `E?`                       | Find by ID (returns null if not found)  |
+| `findAll(limit, offset, ...)`           | no      | `Flow<E>`                  | Find all (supports paging and sorting)  |
+| `findWithFilters(...)`                  | no      | `Flow<E>`                  | Find with multiple AND conditions       |
+| `findBy(...)`                           | no      | `Flow<E>`                  | Alias for `findWithFilters`             |
+| `findFirstOrNull(...)`                  | yes     | `E?`                       | First matching entity                   |
+| `findLastOrNull(...)`                   | yes     | `E?`                       | Last matching entity                    |
+| `findByField(field, value)`             | no      | `Flow<E>`                  | Find by a specific column value         |
+| `findByFieldOrNull(field, value)`       | yes     | `E?`                       | First result matching a specific column |
+| `findAllByIds(ids)`                     | no      | `Flow<E>`                  | Find multiple entities by IDs           |
+| `findPage(pageNumber, pageSize, ...)`   | yes     | `ExposedPage<E>`           | Paginated query                         |
+| `findCursorPage(pageSize, cursor, ...)` | yes     | `ExposedCursorPage<E, ID>` | Typed primary-key cursor page           |
+| `deleteById(id)`                        | yes     | `Int`                      | Delete by ID                            |
+| `deleteAll(op)`                         | yes     | `Int`                      | Delete matching records                 |
+| `deleteAllByIds(ids)`                   | yes     | `Int`                      | Delete multiple records by IDs          |
+| `updateById(id, ...)`                   | yes     | `Int`                      | Update by ID                            |
+| `updateAll(predicate, ...)`             | yes     | `Int`                      | Bulk update matching records            |
+| `batchInsert(entities, ...)`            | yes     | `List<E>`                  | Batch insert                            |
+| `batchUpsert(entities, ...)`            | yes     | `List<E>`                  | Batch upsert                            |
 
 ## SoftDeletedR2dbcRepository Additional Methods
 
@@ -426,45 +401,41 @@ parameters from CTE predicates keep their binding order.
 
 ## AuditableR2dbcRepository Additional Methods
 
-| Method                                           | Suspend | Return type | Description                           |
-|--------------------------------------------------|---------|-------------|---------------------------------------|
-| `auditedUpdateById(id, updatedBy, ...)`          | yes     | `Int`       | Update by ID and set audit columns    |
-| `auditedUpdateAll(updatedBy, predicate, ...)`    | yes     | `Int`       | Bulk update and set audit columns     |
+| Method                                        | Suspend | Return type | Description                        |
+|-----------------------------------------------|---------|-------------|------------------------------------|
+| `auditedUpdateById(id, updatedBy, ...)`       | yes     | `Int`       | Update by ID and set audit columns |
+| `auditedUpdateAll(updatedBy, predicate, ...)` | yes     | `Int`       | Bulk update and set audit columns  |
 
 ## Convenience Type Aliases
 
-| Interface                          | Primary key type   |
-|------------------------------------|--------------------|
-| `IntR2dbcRepository`               | `Int`              |
-| `LongR2dbcRepository`              | `Long`             |
-| `KotlinUuidR2dbcRepository`        | `kotlin.uuid.Uuid` |
-| `JavaUuidR2dbcRepository`          | `java.util.UUID`   |
-| `StringR2dbcRepository`            | `String`           |
-| `IntAuditableR2dbcRepository`      | `Int`              |
-| `LongAuditableR2dbcRepository`     | `Long`             |
-| `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
-| `IntSoftDeletedR2dbcRepository`    | `Int`              |
-| `LongSoftDeletedR2dbcRepository`   | `Long`             |
+| Interface                              | Primary key type   |
+|----------------------------------------|--------------------|
+| `IntR2dbcRepository`                   | `Int`              |
+| `LongR2dbcRepository`                  | `Long`             |
+| `KotlinUuidR2dbcRepository`            | `kotlin.uuid.Uuid` |
+| `JavaUuidR2dbcRepository`              | `java.util.UUID`   |
+| `StringR2dbcRepository`                | `String`           |
+| `IntAuditableR2dbcRepository`          | `Int`              |
+| `LongAuditableR2dbcRepository`         | `Long`             |
+| `UUIDAuditableR2dbcRepository`         | `java.util.UUID`   |
+| `IntSoftDeletedR2dbcRepository`        | `Int`              |
+| `LongSoftDeletedR2dbcRepository`       | `Long`             |
 | `KotlinUuidSoftDeletedR2dbcRepository` | `kotlin.uuid.Uuid` |
 | `JavaUuidSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
-| `StringSoftDeletedR2dbcRepository` | `String`           |
+| `StringSoftDeletedR2dbcRepository`     | `String`           |
 
 ### UUID repository naming in 2.0
 
-`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use
-filesystem-safe JVM class names. Update source imports and implementation
-supertypes as follows:
+`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use filesystem-safe JVM class names. Update source imports and implementation supertypes as follows:
 
-| 1.x source name                    | 2.0 canonical name                     | Binary compatibility |
-|-----------------------------------|----------------------------------------|----------------------|
-| `UuidR2dbcRepository`             | `KotlinUuidR2dbcRepository`            | Recompile required   |
-| `UUIDR2dbcRepository`             | `JavaUuidR2dbcRepository`              | Recompile required   |
-| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | Recompile required  |
-| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | Recompile required  |
+| 1.x source name                  | 2.0 canonical name                     | Binary compatibility |
+|----------------------------------|----------------------------------------|----------------------|
+| `UuidR2dbcRepository`            | `KotlinUuidR2dbcRepository`            | Recompile required   |
+| `UUIDR2dbcRepository`            | `JavaUuidR2dbcRepository`              | Recompile required   |
+| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | Recompile required   |
+| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | Recompile required   |
 
-The 1.x names remain deprecated source-only typealiases in 2.0. They do not
-produce legacy JVM classes, so compiled consumers must be rebuilt against the
-canonical names.
+The 1.x names remain deprecated source-only typealiases in 2.0. They do not produce legacy JVM classes, so compiled consumers must be rebuilt against the canonical names.
 
 ## Virtual Thread Transactions
 

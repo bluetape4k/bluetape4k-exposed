@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cockroachdb
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -15,10 +16,15 @@ import org.junit.jupiter.api.Test
  */
 class CockroachDatabaseTest: AbstractCockroachDbTest() {
 
+    companion object: KLogging()
+
     @Test
     fun `buildJdbcUrl builds PostgreSQL wire URL`() {
-        CockroachDatabase.buildJdbcUrl("localhost", 26257, "defaultdb") shouldBeEqualTo
-                "jdbc:postgresql://localhost:26257/defaultdb"
+        CockroachDatabase.buildJdbcUrl(
+            "localhost",
+            26257,
+            "defaultdb"
+        ) shouldBeEqualTo "jdbc:postgresql://localhost:26257/defaultdb"
     }
 
     @Test
@@ -47,7 +53,9 @@ class CockroachDatabaseTest: AbstractCockroachDbTest() {
     @Test
     fun `simple schema create insert select and drop succeeds`() {
         transaction(db) {
-            runCatching { SchemaUtils.drop(CockroachSmokeEvents) }
+            runCatching {
+                SchemaUtils.drop(CockroachSmokeEvents)
+            }
             SchemaUtils.create(CockroachSmokeEvents)
 
             CockroachSmokeEvents.insert {

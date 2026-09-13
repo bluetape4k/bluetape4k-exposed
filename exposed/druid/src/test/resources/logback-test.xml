@@ -3,12 +3,15 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <immediateFlush>true</immediateFlush>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%blue(%24.24t)] %yellow(%-36.36logger{35}):%line: %msg%n%throwable</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%blue(%24.24t)] %yellow(%-36.36logger{35}):%line:
+                %msg%n%throwable
+            </pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <logger name="io.bluetape4k.exposed.druid" level="DEBUG"/>
+    <logger name="Exposed" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

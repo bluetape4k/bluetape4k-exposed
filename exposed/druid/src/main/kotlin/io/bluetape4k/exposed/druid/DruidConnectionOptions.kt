@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.druid
 import io.bluetape4k.support.requireNotBlank
 import java.io.Serializable
 import java.net.URI
-import java.util.Properties
+import java.util.*
 
 private const val DEFAULT_DRUID_AVATICA_ENDPOINT = "http://localhost:8888/druid/v2/sql/avatica/"
 

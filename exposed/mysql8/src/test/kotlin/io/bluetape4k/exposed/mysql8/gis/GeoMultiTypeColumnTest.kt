@@ -1,13 +1,12 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
 /**
@@ -15,31 +14,29 @@ import org.junit.jupiter.api.Test
  *
  * GIS 다중 지오메트리 타입이 MySQL에 올바르게 직렬화/역직렬화되는지 검증한다.
  */
-class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
+class GeoMultiTypeColumnTest: AbstractMySqlGisTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
-    class MultiPointTable : LongIdTable("geo_multi_points") {
+    object MultiPointTable: LongIdTable("geo_multi_points") {
         val name = varchar("name", 255)
         val points = geoMultiPoint("points")
     }
 
-    class MultiPolygonTable : LongIdTable("geo_multi_polygons") {
+    object MultiPolygonTable: LongIdTable("geo_multi_polygons") {
         val name = varchar("name", 255)
         val zones = geoMultiPolygon("zones")
     }
 
-    class MultiLineTable : LongIdTable("geo_multi_lines") {
+    object MultiLineTable: LongIdTable("geo_multi_lines") {
         val name = varchar("name", 255)
         val paths = geoMultiLineString("paths")
     }
 
     @Test
     fun `MultiPoint 저장 및 조회`() {
-        val table = transaction(db) { MultiPointTable() }
-
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(MultiPointTable) {
+            MultiPointTable.insert {
                 it[name] = "도시 클러스터"
                 it[points] = wgs84MultiPoint(
                     wgs84Point(126.9780, 37.5665),  // 서울
@@ -48,10 +45,10 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
                 )
             }
 
-            val rows = table.selectAll().toList()
+            val rows = MultiPointTable.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.points]
+            val result = rows.first()[MultiPointTable.points]
             result.shouldNotBeNull()
             result.numGeometries shouldBeEqualTo 3
         }
@@ -59,10 +56,8 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
 
     @Test
     fun `MultiPolygon 저장 및 조회`() {
-        val table = transaction(db) { MultiPolygonTable() }
-
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(MultiPolygonTable) {
+            MultiPolygonTable.insert {
                 it[name] = "서울 + 부산 구역"
                 it[zones] = wgs84MultiPolygon(
                     wgs84Rectangle(126.8, 37.4, 127.1, 37.7),  // 서울
@@ -70,10 +65,10 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
                 )
             }
 
-            val rows = table.selectAll().toList()
+            val rows = MultiPolygonTable.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.zones]
+            val result = rows.first()[MultiPolygonTable.zones]
             result.shouldNotBeNull()
             result.numGeometries shouldBeEqualTo 2
         }
@@ -81,10 +76,8 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
 
     @Test
     fun `MultiLineString 저장 및 조회`() {
-        val table = transaction(db) { MultiLineTable() }
-
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(MultiLineTable) {
+            MultiLineTable.insert {
                 it[name] = "고속도로 구간"
                 it[paths] = wgs84MultiLineString(
                     wgs84LineString(126.978 to 37.566, 127.000 to 37.264),  // 서울-수원
@@ -92,10 +85,10 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
                 )
             }
 
-            val rows = table.selectAll().toList()
+            val rows = MultiLineTable.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.paths]
+            val result = rows.first()[MultiLineTable.paths]
             result.shouldNotBeNull()
             result.numGeometries shouldBeEqualTo 2
         }
@@ -103,9 +96,7 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
 
     @Test
     fun `MultiPoint - 여러 행 저장 후 전체 조회`() {
-        val table = transaction(db) { MultiPointTable() }
-
-        withGeoTables(table) {
+        withGeoTables(MultiPointTable) {
             val clusters = listOf(
                 "수도권" to wgs84MultiPoint(
                     wgs84Point(126.9780, 37.5665),
@@ -117,13 +108,13 @@ class GeoMultiTypeColumnTest : AbstractMySqlGisTest() {
                 ),
             )
             clusters.forEach { (clusterName, mp) ->
-                table.insert {
+                MultiPointTable.insert {
                     it[name] = clusterName
                     it[points] = mp
                 }
             }
 
-            val rows = table.selectAll().toList()
+            val rows = MultiPointTable.selectAll().toList()
             rows shouldHaveSize 2
         }
     }

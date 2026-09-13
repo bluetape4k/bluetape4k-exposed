@@ -52,7 +52,7 @@ class ClickHouseFloat32ColumnType: ColumnType<Float>() {
         is Float -> value
         is Number -> value.toFloat()
         is String -> value.toFloat()
-        else -> error("Unexpected Float32 value: $value (${value::class.simpleName})")
+        else     -> error("Unexpected Float32 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Float): Any = value
@@ -84,7 +84,7 @@ class ClickHouseInt8ColumnType: ColumnType<Byte>() {
         is Byte -> value
         is Number -> value.toByte()
         is String -> value.toByte()
-        else -> error("Unexpected Int8 value: $value (${value::class.simpleName})")
+        else    -> error("Unexpected Int8 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Byte): Any = value
@@ -100,7 +100,7 @@ class ClickHouseInt16ColumnType: ColumnType<Short>() {
         is Short -> value
         is Number -> value.toShort()
         is String -> value.toShort()
-        else -> error("Unexpected Int16 value: $value (${value::class.simpleName})")
+        else     -> error("Unexpected Int16 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Short): Any = value
@@ -116,7 +116,7 @@ class ClickHouseInt32ColumnType: ColumnType<Int>() {
         is Int -> value
         is Number -> value.toInt()
         is String -> value.toInt()
-        else -> error("Unexpected Int32 value: $value (${value::class.simpleName})")
+        else   -> error("Unexpected Int32 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Int): Any = value
@@ -132,7 +132,7 @@ class ClickHouseInt64ColumnType: ColumnType<Long>() {
         is Long -> value
         is Number -> value.toLong()
         is String -> value.toLong()
-        else -> error("Unexpected Int64 value: $value (${value::class.simpleName})")
+        else    -> error("Unexpected Int64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Long): Any = value

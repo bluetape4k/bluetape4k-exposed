@@ -3,67 +3,81 @@ package io.bluetape4k.exposed.jdbc.repository
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.UUID
+import java.util.*
 
-private object CursorPaginationTable : IdTable<Long>("cursor_pagination_rows") {
-    override val id: Column<EntityID<Long>> = long("id").entityId()
-    override val primaryKey = PrimaryKey(id)
-    val active = bool("active")
-}
 
-private data class CursorRecord(
-    val id: Long,
-    val active: Boolean,
-)
+class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
 
-private object CursorPaginationRepository : LongJdbcRepository<CursorRecord> {
-    override val table = CursorPaginationTable
+    companion object: KLogging()
 
-    override fun extractId(entity: CursorRecord): Long = entity.id
+    private object CursorPaginationTable: IdTable<Long>("cursor_pagination_rows") {
+        override val id: Column<EntityID<Long>> = long("id").entityId()
+        override val primaryKey = PrimaryKey(id)
+        val active = bool("active")
+    }
 
-    override fun ResultRow.toEntity(): CursorRecord = CursorRecord(
-        id = this[CursorPaginationTable.id].value,
-        active = this[CursorPaginationTable.active],
+    private data class CursorRecord(
+        val id: Long,
+        val active: Boolean,
     )
 
-    fun insert(record: CursorRecord) {
-        CursorPaginationTable.insert {
-            it[CursorPaginationTable.id] = record.id
-            it[CursorPaginationTable.active] = record.active
+    private object CursorPaginationRepository: LongJdbcRepository<CursorRecord> {
+        override val table = CursorPaginationTable
+
+        override fun extractId(entity: CursorRecord): Long = entity.id
+
+        override fun ResultRow.toEntity(): CursorRecord = CursorRecord(
+            id = this[CursorPaginationTable.id].value,
+            active = this[CursorPaginationTable.active],
+        )
+
+        fun insert(record: CursorRecord) {
+            CursorPaginationTable.insert {
+                it[CursorPaginationTable.id] = record.id
+                it[CursorPaginationTable.active] = record.active
+            }
         }
     }
-}
 
-class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `커서 페이지는 sparse ID를 오름차순으로 이어서 조회한다`(testDB: TestDB) {
         withTables(testDB, CursorPaginationTable) {
-            seed(CursorRecord(1, true), CursorRecord(3, true), CursorRecord(7, true), CursorRecord(20, true))
+            seed(
+                CursorRecord(1, true),
+                CursorRecord(3, true),
+                CursorRecord(7, true),
+                CursorRecord(20, true)
+            )
 
             val first = CursorPaginationRepository.findCursorPage(pageSize = 2)
             first.content.map(CursorRecord::id) shouldBeEqualTo listOf(1L, 3L)
@@ -81,7 +95,12 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `커서 페이지는 DESC와 null placement sort를 방향별로 처리한다`(testDB: TestDB) {
         withTables(testDB, CursorPaginationTable) {
-            seed(CursorRecord(1, true), CursorRecord(3, true), CursorRecord(7, true), CursorRecord(20, true))
+            seed(
+                CursorRecord(1, true),
+                CursorRecord(3, true),
+                CursorRecord(7, true),
+                CursorRecord(20, true)
+            )
 
             listOf(
                 SortOrder.DESC,
@@ -109,7 +128,12 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `predicate는 cursor boundary와 AND로 결합된다`(testDB: TestDB) {
         withTables(testDB, CursorPaginationTable) {
-            seed(CursorRecord(1, false), CursorRecord(3, true), CursorRecord(7, false), CursorRecord(20, true))
+            seed(
+                CursorRecord(1, false),
+                CursorRecord(3, true),
+                CursorRecord(7, false),
+                CursorRecord(20, true)
+            )
 
             val page = CursorPaginationRepository.findCursorPage(pageSize = 10) {
                 CursorPaginationTable.active eq true
@@ -147,7 +171,12 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
         try {
             val firstCursor = transaction(database) {
                 SchemaUtils.create(CursorPaginationTable)
-                seed(CursorRecord(1, true), CursorRecord(3, true), CursorRecord(7, true), CursorRecord(20, true))
+                seed(
+                    CursorRecord(1, true),
+                    CursorRecord(3, true),
+                    CursorRecord(7, true),
+                    CursorRecord(20, true)
+                )
                 connectionIds += System.identityHashCode(connection)
                 val page = CursorPaginationRepository.findCursorPage(pageSize = 2)
                 commit()
@@ -172,9 +201,10 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
             nextPage.content.map(CursorRecord::id) shouldBeEqualTo listOf(5L, 7L)
             nextPage.nextCursor shouldBeEqualTo 7L
             nextPage.hasNext.shouldBeTrue()
-            assertTrue(connectionIds.distinct().size >= 2) {
-                "cursor mutation checks must use at least two physical JDBC connections"
-            }
+            connectionIds.distinct().size shouldBeGreaterOrEqualTo 2
+//            assertTrue(connectionIds.distinct().size >= 2) {
+//                "cursor mutation checks must use at least two physical JDBC connections"
+//            }
         } finally {
             transaction(database) {
                 SchemaUtils.drop(CursorPaginationTable)
@@ -187,7 +217,12 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `커서 predicate는 앞에 삽입된 불일치 행을 노출하지 않는다`(testDB: TestDB) {
         withTables(testDB, CursorPaginationTable) {
-            seed(CursorRecord(1, true), CursorRecord(3, true), CursorRecord(7, false), CursorRecord(20, true))
+            seed(
+                CursorRecord(1, true),
+                CursorRecord(3, true),
+                CursorRecord(7, false),
+                CursorRecord(20, true)
+            )
 
             val first = CursorPaginationRepository.findCursorPage(pageSize = 1) {
                 CursorPaginationTable.active eq true
@@ -198,7 +233,7 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
                 CursorPaginationTable.active eq true
             }
             next.content.map(CursorRecord::id) shouldBeEqualTo listOf(3L, 20L)
-            next.content.map(CursorRecord::id).contains(2L).shouldBeFalse()
+            next.content.map(CursorRecord::id) shouldNotContain 2L
         }
     }
 
@@ -207,9 +242,14 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
     fun `커서 조회는 count 없이 한 번의 bounded SELECT를 실행한다`(testDB: TestDB) {
         Assumptions.assumeTrue(testDB == TestDB.H2)
         withTables(testDB, CursorPaginationTable) {
-            seed(CursorRecord(1, true), CursorRecord(3, true), CursorRecord(7, true), CursorRecord(20, true))
+            seed(
+                CursorRecord(1, true),
+                CursorRecord(3, true),
+                CursorRecord(7, true),
+                CursorRecord(20, true)
+            )
             val sqlStatements = mutableListOf<String>()
-            addLogger(object : SqlLogger {
+            addLogger(object: SqlLogger {
                 override fun log(context: StatementContext, transaction: Transaction) {
                     sqlStatements += context.sql(transaction)
                 }
@@ -223,6 +263,7 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
             selectStatements.size shouldBeEqualTo 1
             sqlStatements.none { it.contains("count(", ignoreCase = true) }.shouldBeTrue()
             val sql = selectStatements.single().lowercase()
+            log.debug { "selectStatements=$sql" }
             sql.contains("> ").shouldBeTrue()
             sql.contains("active").shouldBeTrue()
             sql.contains("order by").shouldBeTrue()
@@ -230,7 +271,7 @@ class JdbcRepositoryCursorPaginationTest : AbstractExposedTest() {
         }
     }
 
-    private fun org.jetbrains.exposed.v1.jdbc.JdbcTransaction.seed(vararg records: CursorRecord) {
+    private fun JdbcTransaction.seed(vararg records: CursorRecord) {
         records.forEach(CursorPaginationRepository::insert)
     }
 }

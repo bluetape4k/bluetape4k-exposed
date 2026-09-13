@@ -10,7 +10,8 @@ JetBrains Exposed DAO 계층을 위한 Entity helper, String 기반 DAO 엔티�
 
 - **DAO 확장 함수**: `idEquals`, `idHashCode`, `entityToStringBuilder` 등 Entity 공통 구현 보조
 - **StringEntity**: `String` 타입 기본 키를 쓰는 DAO Entity/EntityClass 기반 클래스
-- **생성형 ID DAO wrapper**: `exposed-core`의 KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, Timebased UUID Base62 테이블에 대응하는 Entity/EntityClass 쌍
+- **생성형 ID DAO
+  wrapper**: `exposed-core`의 KSUID, KSUID millis, ULID, Snowflake, Timebased UUID, Timebased UUID Base62 테이블에 대응하는 Entity/EntityClass 쌍
 - **Auditable DAO 기반 클래스**: `flush()` 중 감사 사용자명을 채우는 `AuditableEntity`와 Int/Long/UUID EntityClass 쌍
 - `exposed-core`를 기반으로 하며, 테이블 정의와 DAO 엔티티 helper의 경계를 분리
 
@@ -220,31 +221,31 @@ class TokenEntity(id: TimebasedUUIDBase62EntityID): TimebasedUUIDBase62Entity(id
 
 ## 주요 파일/클래스 목록
 
-| 파일                                   | 설명                                                            |
-|--------------------------------------|---------------------------------------------------------------|
-| `EntityExtensions.kt`                | `idEquals`, `idHashCode`, `entityToStringBuilder` 등 Entity 보조 |
-| `StringEntity.kt`                    | String PK 기반 Entity/EntityClass                               |
-| `auditable/AuditableEntity.kt`       | `flush()` 중 `createdBy` 또는 `updatedBy`를 설정하는 DAO 감사 기반 클래스 |
-| `auditable/AuditableEntityClass.kt`  | Int/Long/UUID Auditable EntityClass helper                    |
-| `dao/id/KsuidEntity.kt`              | KSUID Entity/EntityClass 쌍                                     |
-| `dao/id/KsuidMillisEntity.kt`        | KSUID millis Entity/EntityClass 쌍                              |
-| `dao/id/UlidEntity.kt`               | ULID Entity/EntityClass 쌍                                      |
-| `dao/id/SnowflakeIdEntity.kt`        | Snowflake Long Entity/EntityClass 쌍                            |
-| `dao/id/TimebasedUUIDEntity.kt`      | UUIDv7 Entity/EntityClass 쌍                                    |
-| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass 쌍 및 MySQL variant            |
+| 파일                                  | 설명                                                                      |
+|---------------------------------------|---------------------------------------------------------------------------|
+| `EntityExtensions.kt`                 | `idEquals`, `idHashCode`, `entityToStringBuilder` 등 Entity 보조          |
+| `StringEntity.kt`                     | String PK 기반 Entity/EntityClass                                         |
+| `auditable/AuditableEntity.kt`        | `flush()` 중 `createdBy` 또는 `updatedBy`를 설정하는 DAO 감사 기반 클래스 |
+| `auditable/AuditableEntityClass.kt`   | Int/Long/UUID Auditable EntityClass helper                                |
+| `dao/id/KsuidEntity.kt`               | KSUID Entity/EntityClass 쌍                                               |
+| `dao/id/KsuidMillisEntity.kt`         | KSUID millis Entity/EntityClass 쌍                                        |
+| `dao/id/UlidEntity.kt`                | ULID Entity/EntityClass 쌍                                                |
+| `dao/id/SnowflakeIdEntity.kt`         | Snowflake Long Entity/EntityClass 쌍                                      |
+| `dao/id/TimebasedUUIDEntity.kt`       | UUIDv7 Entity/EntityClass 쌍                                              |
+| `dao/id/TimebasedUUIDBase62Entity.kt` | UUIDv7 Base62 Entity/EntityClass 쌍 및 MySQL variant                      |
 
 ## ID 전략 비교
 
-| Core table                  | DAO helper pair                           | PK 타입    | 길이     | 특징                         |
-|-----------------------------|-------------------------------------------|----------|--------|----------------------------|
-| `KsuidTable`                | `KsuidEntity` / `KsuidEntityClass`         | `String` | 27자    | 시간 정렬, URL-safe            |
-| `KsuidMillisTable`          | `KsuidMillisEntity` / Class                | `String` | 27자    | 밀리초 정밀도 KSUID              |
-| `UlidTable`                 | `UlidEntity` / `UlidEntityClass`           | `String` | 26자    | StatefulMonotonic ULID     |
-| `SnowflakeIdTable`          | `SnowflakeIdEntity` / Class                | `Long`   | -      | 분산 환경, 고성능                 |
-| `TimebasedUUIDTable`        | `TimebasedUUIDEntity` / Class              | `UUID`   | 36자    | UUID v7 기반 시간 정렬 ID        |
-| `TimebasedUUIDBase62Table`  | `TimebasedUUIDBase62Entity` / Class        | `String` | 최대 24자 | UUID v7을 Base62로 인코딩       |
+| Core table                      | DAO helper pair                          | PK 타입  | 길이      | 특징                           |
+|---------------------------------|------------------------------------------|----------|-----------|--------------------------------|
+| `KsuidTable`                    | `KsuidEntity` / `KsuidEntityClass`       | `String` | 27자      | 시간 정렬, URL-safe            |
+| `KsuidMillisTable`              | `KsuidMillisEntity` / Class              | `String` | 27자      | 밀리초 정밀도 KSUID            |
+| `UlidTable`                     | `UlidEntity` / `UlidEntityClass`         | `String` | 26자      | StatefulMonotonic ULID         |
+| `SnowflakeIdTable`              | `SnowflakeIdEntity` / Class              | `Long`   | -         | 분산 환경, 고성능              |
+| `TimebasedUUIDTable`            | `TimebasedUUIDEntity` / Class            | `UUID`   | 36자      | UUID v7 기반 시간 정렬 ID      |
+| `TimebasedUUIDBase62Table`      | `TimebasedUUIDBase62Entity` / Class      | `String` | 최대 24자 | UUID v7을 Base62로 인코딩      |
 | `TimebasedUUIDBase62TableMySql` | `TimebasedUUIDBase62EntityMySql` / Class | `String` | 최대 24자 | MySQL binary collation variant |
-| `SoftDeletedIdTable`        | Core table only                            | 제네릭      | -      | `isDeleted` 컬럼 포함          |
+| `SoftDeletedIdTable`            | Core table only                          | 제네릭   | -         | `isDeleted` 컬럼 포함          |
 
 ## AuditableEntity (감사 추적 DAO)
 
@@ -256,10 +257,10 @@ class TokenEntity(id: TimebasedUUIDBase62EntityID): TimebasedUUIDBase62Entity(id
 
 #### 자동 설정 동작
 
-| 상황            | 자동 설정 필드    | 비고                                                              |
-|---------------|-------------|-----------------------------------------------------------------|
-| 신규 엔티티 INSERT | `createdBy` | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
-| 기존 엔티티 UPDATE | `updatedBy` | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정          |
+| 상황               | 자동 설정 필드 | 비고                                                                     |
+|--------------------|----------------|--------------------------------------------------------------------------|
+| 신규 엔티티 INSERT | `createdBy`    | `createdAt`은 테이블의 DB `defaultExpression(CurrentTimestamp)`으로 설정 |
+| 기존 엔티티 UPDATE | `updatedBy`    | `updatedAt`은 Repository의 `auditedUpdateById()` 호출 시 설정            |
 
 ![DAO automatic field assignment flow diagram](../../docs/images/readme-diagrams/exposed-dao-sequence-01.png)
 
@@ -330,7 +331,7 @@ transaction {
 
 ### 구체 엔티티/EntityClass 타입
 
-| 기본키    | Entity                | EntityClass                |
+| 기본키 | Entity                | EntityClass                |
 |--------|-----------------------|----------------------------|
 | `Int`  | `AuditableIntEntity`  | `AuditableIntEntityClass`  |
 | `Long` | `AuditableLongEntity` | `AuditableLongEntityClass` |

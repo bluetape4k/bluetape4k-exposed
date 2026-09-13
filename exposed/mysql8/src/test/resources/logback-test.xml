@@ -15,7 +15,7 @@
     </appender>
     <!-- formatter:on -->
 
-    <logger name="io.bluetape4k.exposed.mysql8.gis" level="DEBUG"/>
+    <logger name="io.bluetape4k.exposed.mysql8" level="DEBUG"/>
     <logger name="org.jetbrains.exposed" level="DEBUG"/>
     <logger name="Exposed" level="DEBUG"/>
 

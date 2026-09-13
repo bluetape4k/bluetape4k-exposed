@@ -1,5 +1,14 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.r2dbc.caffeine.AbstractR2dbcCaffeineTest
@@ -10,21 +19,12 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeEmpty
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -36,7 +36,8 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -67,11 +68,11 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     fun `get - concurrent cache misses run one async loader per key`() = runSuspendIO {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get")
 
-        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
+        val results = CopyOnWriteArrayList<ActorRecord>()
 
         SuspendedJobTester()
             .workers(8)
-            .rounds(1)
+            .rounds(4)
             .addAll(
                 List(8) {
                     suspend {
@@ -90,11 +91,11 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
-        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
+        val results = ConcurrentHashMap<Long, ActorRecord>()
 
         SuspendedJobTester()
             .workers(8)
-            .rounds(1)
+            .rounds(4)
             .addAll(
                 List(8) {
                     suspend {
@@ -104,9 +105,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
             )
             .run()
 
-        results.forEach { result ->
-            result.keys shouldBeEqualTo ids.toSet()
-        }
+        results.keys shouldBeEqualTo ids.toSet()
         repository.singleLoadCount.get() shouldBeEqualTo ids.size
         repository.bulkLoadCount.get() shouldBeEqualTo 0
     }

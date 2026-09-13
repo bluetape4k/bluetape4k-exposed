@@ -55,9 +55,9 @@ fun Table.simpleBigDecimalScore(
 class SimpleBigDecimalScoreColumnType(
     length: Int,
 ): ColumnWithTransform<String, SimpleBigDecimalScore>(
-        VarCharColumnType(length),
+    VarCharColumnType(length),
     SimpleBigDecimalScoreTransformer(),
-    )
+)
 
 /**
  * [SimpleBigDecimalScore]와 데이터베이스 String 값 간의 변환을 수행하는 Transformer 클래스입니다.

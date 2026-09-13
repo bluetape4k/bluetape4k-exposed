@@ -1,11 +1,11 @@
 package io.bluetape4k.exposed.lettuce.repository.scenarios
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.cache.scenarios.JdbcWriteBehindScenario
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.junit.jupiter.api.Assumptions
@@ -40,7 +40,6 @@ interface WriteBehindScenario<ID: Any, E: java.io.Serializable>:
 
             val updated = updateEmail(entity)
             repository.put(id, updated)
-
             repository.get(id) shouldBeEqualTo updated
         }
     }
@@ -77,16 +76,17 @@ interface WriteBehindScenario<ID: Any, E: java.io.Serializable>:
         }
         withEntityTable(testDB) {
             val ids = getExistingIds()
-            val entities =
-                ids.associateWith { id ->
-                    updateEmail(repository.findByIdFromDb(id)!!)
-                }
+            val entities = ids.associateWith { id ->
+                updateEmail(repository.findByIdFromDb(id)!!)
+            }
             repository.putAll(entities)
 
             await
                 .atMost(Duration.ofSeconds(5))
                 .withPollInterval(Duration.ofMillis(100))
-                .until { entities.all { (id, expected) -> repository.findByIdFromDb(id) == expected } }
+                .until {
+                    entities.all { (id, expected) -> repository.findByIdFromDb(id) == expected }
+                }
 
             entities.forEach { (id, expected) ->
                 repository.findByIdFromDb(id) shouldBeEqualTo expected

@@ -1,10 +1,10 @@
 package io.bluetape4k.exposed.mysql8.gis
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -23,22 +23,22 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
      * 클래스(인스턴스)로 선언한다. withGeoTables 내에서 인스턴스를 생성하면
      * 이미 트랜잭션이 활성화된 상태에서 컬럼이 등록된다.
      */
-    class GeoPoints: LongIdTable("geo_points") {
+    object GeoPoints: LongIdTable("geo_points") {
         val name = varchar("name", 255)
         val location = geoPoint("location")
     }
 
-    class GeoPolygons: LongIdTable("geo_polygons") {
+    object GeoPolygons: LongIdTable("geo_polygons") {
         val name = varchar("name", 255)
         val area = geoPolygon("area")
     }
 
-    class GeoLines: LongIdTable("geo_lines") {
+    object GeoLines: LongIdTable("geo_lines") {
         val name = varchar("name", 255)
         val path = geoLineString("path")
     }
 
-    class GeoGeometries: LongIdTable("geo_geometries") {
+    object GeoGeometries: LongIdTable("geo_geometries") {
         val name = varchar("name", 255)
         val geom = geoGeometry("geom")
     }
@@ -53,18 +53,17 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
     fun `Point 저장 및 조회`() {
         val lng = 126.9780
         val lat = 37.5665
-        val table = transaction(db) { GeoPoints() }
 
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(GeoPoints) {
+            GeoPoints.insert {
                 it[name] = "서울"
                 it[location] = wgs84Point(lng, lat)
             }
 
-            val rows = table.selectAll().toList()
+            val rows = GeoPoints.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.location]
+            val result = rows.first()[GeoPoints.location]
             result.shouldNotBeNull()
             result.coordinate.x.shouldBeNear(lng)
             result.coordinate.y.shouldBeNear(lat)
@@ -77,18 +76,17 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             minLng = 126.0, minLat = 37.0,
             maxLng = 127.0, maxLat = 38.0,
         )
-        val table = transaction(db) { GeoPolygons() }
 
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(GeoPolygons) {
+            GeoPolygons.insert {
                 it[name] = "테스트 영역"
                 it[area] = polygon
             }
 
-            val rows = table.selectAll().toList()
+            val rows = GeoPolygons.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.area]
+            val result = rows.first()[GeoPolygons.area]
             result.shouldNotBeNull()
         }
     }
@@ -99,18 +97,17 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             126.9780 to 37.5665,
             129.0756 to 35.1796,
         )
-        val table = transaction(db) { GeoLines() }
 
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(GeoLines) {
+            GeoLines.insert {
                 it[name] = "서울-부산"
                 it[path] = line
             }
 
-            val rows = table.selectAll().toList()
+            val rows = GeoLines.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.path]
+            val result = rows.first()[GeoLines.path]
             result.shouldNotBeNull()
             result.numPoints shouldBeEqualTo 2
         }
@@ -120,17 +117,17 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
     fun `axis-order 검증 - lng lat 순서 보존`() {
         val lng = 126.9780
         val lat = 37.5665
-        val table = transaction(db) { GeoPoints() }
 
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(GeoPoints) {
+            GeoPoints.insert {
                 it[name] = "서울"
                 it[location] = wgs84Point(lng, lat)
             }
 
-            val row = table.selectAll().single()
-            val point = row[table.location]
+            val row = GeoPoints.selectAll().single()
+            val point = row[GeoPoints.location]
             point.shouldNotBeNull()
+
             // coordinate.x = longitude, coordinate.y = latitude
             point.coordinate.x.shouldBeNear(lng)
             point.coordinate.y.shouldBeNear(lat)
@@ -146,17 +143,16 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             "대구" to wgs84Point(128.6014, 35.8714),
             "광주" to wgs84Point(126.8514, 35.1595),
         )
-        val table = transaction(db) { GeoPoints() }
 
-        withGeoTables(table) {
+        withGeoTables(GeoPoints) {
             cities.forEach { (cityName, point) ->
-                table.insert {
+                GeoPoints.insert {
                     it[name] = cityName
                     it[location] = point
                 }
             }
 
-            val rows = table.selectAll().toList()
+            val rows = GeoPoints.selectAll().toList()
             rows shouldHaveSize 5
         }
     }
@@ -165,18 +161,17 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
     fun `Geometry 범용 컬럼에 Point 저장`() {
         val lng = 126.9780
         val lat = 37.5665
-        val table = transaction(db) { GeoGeometries() }
 
-        withGeoTables(table) {
-            table.insert {
+        withGeoTables(GeoGeometries) {
+            GeoGeometries.insert {
                 it[name] = "서울 포인트"
                 it[geom] = wgs84Point(lng, lat)
             }
 
-            val rows = table.selectAll().toList()
+            val rows = GeoGeometries.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[table.geom]
+            val result = rows.first()[GeoGeometries.geom]
             result.shouldNotBeNull()
         }
     }

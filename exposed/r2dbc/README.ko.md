@@ -6,8 +6,7 @@ Exposed R2DBC 환경에서 사용할 수 있는 확장 함수와 Repository 패�
 
 ## Multi-row VALUES 선택
 
-기존 `batchInsert` 호출은 기존 경로를 유지한다. Exposed 1.5.0의 multi-row SQL은
-필수 `useMultiRowValues` 인자를 가진 추가 overload로 선택한다.
+기존 `batchInsert` 호출은 기존 경로를 유지한다. Exposed 1.5.0의 multi-row SQL은 필수 `useMultiRowValues` 인자를 가진 추가 overload로 선택한다.
 
 ```kotlin
 // 호출자가 연 suspendTransaction {} 내부:
@@ -16,34 +15,25 @@ repository.batchInsert(items, useMultiRowValues = true) { item ->
 }
 ```
 
-`false`는 `ignore`와 생성 값 요청 설정을 포함해 기존 overload에 위임한다.
-Repository는 `true`와 `ignore=true` 조합을 빈 입력에서도 순회·SQL 실행 전에 거부한다.
-Exposed 1.5.0의 부분 충돌 반환 결과를 정확히 매핑할 수 없기 때문이다.
-충돌 무시가 필요하면 기존 경로를 사용한다.
+`false`는 `ignore`와 생성 값 요청 설정을 포함해 기존 overload에 위임한다. Repository는 `true`와 `ignore=true` 조합을 빈 입력에서도 순회·SQL 실행 전에 거부한다. Exposed 1.5.0의 부분 충돌 반환 결과를 정확히 매핑할 수 없기 때문이다. 충돌 무시가 필요하면 기존 경로를 사용한다.
 
 Multi-row 입력은 허용 행 수 + 1개까지만 수집한다.
-`행 수 × table.columns.size` 추정치는 65,535(SQLite: 32,766)를 넘을 수 없다.
-실제 bind 수나 모든 driver의 한도를 보장하는 값은 아니다. 다중 bind 표현식이나
-더 작은 driver 한도는 청크 크기를 줄여 처리한다. 허용된 빈 입력은 no-op이다.
-초과 입력은 바인더·INSERT 전에 거부하지만 호출자 트랜잭션의 선행 쓰기는 취소하지 않는다.
-SQL 오류가 발생하면 호출자가 rollback해야 한다.
+`행 수 × table.columns.size` 추정치는 65,535 (SQLite: 32,766)를 넘을 수 없다. 실제 bind 수나 모든 driver의 한도를 보장하는 값은 아니다. 다중 bind 표현식이나 더 작은 driver 한도는 청크 크기를 줄여 처리한다. 허용된 빈 입력은 no-op이다. 초과 입력은 바인더·INSERT 전에 거부하지만 호출자 트랜잭션의 선행 쓰기는 취소하지 않는다. SQL 오류가 발생하면 호출자가 rollback해야 한다.
 
-H2/PostgreSQL 테스트는 일반 삽입, nullable 값, 생성 ID와 입력 순서를 검증한다.
-MySQL/Oracle의 생성 키 조합은 미검증이며, 정확한 생성 ID 매핑이 필요하면 `false`를 사용한다.
+H2/PostgreSQL 테스트는 일반 삽입, nullable 값, 생성 ID와 입력 순서를 검증한다. MySQL/Oracle의 생성 키 조합은 미검증이며, 정확한 생성 ID 매핑이 필요하면 `false`를 사용한다.
 `shouldReturnGeneratedValues=false`일 때 mapper는 DB 생성 값을 요구하면 안 된다.
-`saveAll`은 변경하지 않는다. SQL tuple·parameter-set 관찰은 네트워크 round-trip이나
-성능 배수의 근거가 아니다.
+`saveAll`은 변경하지 않는다. SQL tuple·parameter-set 관찰은 네트워크 round-trip이나 성능 배수의 근거가 아니다.
 
 ## 개요
 
-`exposed-r2dbc`는 JetBrains Exposed의 R2DBC(Reactive Relational Database Connectivity) 드라이버를 사용하여 비동기/반응형 데이터베이스 작업을 수행할 수 있는 확장 기능을 제공합니다. Kotlin Coroutines와 완벽하게 호환됩니다.
+`exposed-r2dbc`는 JetBrains Exposed의 R2DBC (Reactive Relational Database Connectivity) 드라이버를 사용하여 비동기/반응형 데이터베이스 작업을 수행할 수 있는 확장 기능을 제공합니다. Kotlin Coroutines와 완벽하게 호환됩니다.
 
 ### 주요 기능
 
 - **Repository 패턴**: `R2dbcRepository<ID, E>`, `AuditableR2dbcRepository<ID, E, T>`,
   `SoftDeletedR2dbcRepository<ID, E, T>` 인터페이스
 - **Flow 기반 조회**: `findAll`, `findBy`, `findByField` 등이 `Flow<E>` 반환
-- **Batch Insert 지원**: 충돌 무시 배치 삽입(`BatchInsertOnConflictDoNothing`) 패턴
+- **Batch Insert 지원**: 충돌 무시 배치 삽입 (`BatchInsertOnConflictDoNothing`) 패턴
     - PostgreSQL 계열은 특정 `id` 컬럼에 고정하지 않고 `ON CONFLICT DO NOTHING`으로 동작
 - **Coroutines 친화 API**: 모든 단건 조회/변경 연산이 `suspend` 함수
 - **감사 UPDATE 지원**: `AuditableR2dbcRepository`가 `updatedAt`, `updatedBy` 자동 설정
@@ -121,16 +111,13 @@ val database = R2dbcDatabase.connect(
 
 ### R2dbcRepository 핵심 구조
 
-이 아키텍처 그림은 런타임 계약을 보여줍니다. 애플리케이션 코드는 직접 연 `suspendTransaction` 안에서 repository를
-호출하고, repository는 `IdTable` 행을 엔티티로 매핑하며, 읽기 메서드는 `Flow<E>`를 반환하고 쓰기 메서드는 Exposed
-R2DBC statement로 위임합니다.
+이 아키텍처 그림은 런타임 계약을 보여줍니다. 애플리케이션 코드는 직접 연 `suspendTransaction` 안에서 repository를 호출하고, repository는 `IdTable` 행을 엔티티로 매핑하며, 읽기 메서드는 `Flow<E>`를 반환하고 쓰기 메서드는 Exposed R2DBC statement로 위임합니다.
 
 ![Core R2DBC repository structure diagram](../../docs/images/readme-diagrams/exposed-r2dbc-diagram-01.png)
 
 ### Repository 기능 지도
 
-이 기능 지도는 repository CRUD, 상태 확장, SQL 조합 helper, driver utility, virtual-thread 실행 helper를 나눠
-보여줍니다. 필요한 API 경계를 가장 낮은 수준에서 고르기 쉽도록 정리했습니다.
+이 기능 지도는 repository CRUD, 상태 확장, SQL 조합 helper, driver utility, virtual-thread 실행 helper를 나눠 보여줍니다. 필요한 API 경계를 가장 낮은 수준에서 고르기 쉽도록 정리했습니다.
 
 ![R2DBC repository capability map](../../docs/images/readme-diagrams/exposed-r2dbc-diagram-02.png)
 
@@ -142,8 +129,7 @@ R2DBC statement로 위임합니다.
 
 ### Soft-delete 가시성 흐름
 
-Soft-delete 연산은 `isDeleted` 플래그만 갱신합니다. 이후 읽기는 `findAll`, `findActive`, `findDeleted` 중 하나를
-명시적으로 선택하므로, 어떤 행까지 보일지는 호출자가 정합니다.
+Soft-delete 연산은 `isDeleted` 플래그만 갱신합니다. 이후 읽기는 `findAll`, `findActive`, `findDeleted` 중 하나를 명시적으로 선택하므로, 어떤 행까지 보일지는 호출자가 정합니다.
 
 ![R2DBC soft-delete visibility flow diagram](../../docs/images/readme-diagrams/exposed-r2dbc-sequence-02.png)
 
@@ -164,25 +150,25 @@ data class ActorRecord(
     val lastName: String,
 )
 
-object ActorTable : LongIdTable("actors") {
+object ActorTable: LongIdTable("actors") {
     val firstName = varchar("first_name", 50)
-    val lastName  = varchar("last_name",  50)
+  val lastName = varchar("last_name", 50)
 }
 
-class ActorRepository : LongR2dbcRepository<ActorRecord> {
+class ActorRepository: LongR2dbcRepository<ActorRecord> {
     override val table = ActorTable
     override fun extractId(entity: ActorRecord) = entity.id
 
     override suspend fun ResultRow.toEntity() = ActorRecord(
-        id        = this[ActorTable.id].value,
+      id = this[ActorTable.id].value,
         firstName = this[ActorTable.firstName],
-        lastName  = this[ActorTable.lastName],
+      lastName = this[ActorTable.lastName],
     )
 
     suspend fun save(record: ActorRecord): ActorRecord {
         val id = ActorTable.insertAndGetId {
             it[firstName] = record.firstName
-            it[lastName]  = record.lastName
+          it[lastName] = record.lastName
         }
         return record.copy(id = id.value)
     }
@@ -204,8 +190,7 @@ suspendTransaction {
 ### 2. 타입이 있는 커서 페이징
 
 호출자가 소유한 `suspendTransaction` 안에서 suspend `findCursorPage` 확장을 사용합니다. 결과는
-`ExposedCursorPage`로 메모리에 완성되어 반환되므로 트랜잭션 경계가 닫히기 전에 행 매핑과 연결 정리가
-끝납니다.
+`ExposedCursorPage`로 메모리에 완성되어 반환되므로 트랜잭션 경계가 닫히기 전에 행 매핑과 연결 정리가 끝납니다.
 
 ```kotlin
 import io.bluetape4k.exposed.r2dbc.repository.findCursorPage
@@ -225,13 +210,8 @@ suspendTransaction {
 }
 ```
 
-커서는 null이 아닌 기본 키 원시 값입니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된
-SELECT 하나만 실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고,
-여섯 가지 `SortOrder` 변형을 지원합니다. 오름차순은 엄격한 `>`, 내림차순은 엄격한 `<`를 사용하며
-null 배치 변형은 방향만 유지합니다. 토큰 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과
-predicate의 재사용은 호출자 책임이고 호출 사이 snapshot은 보장하지 않습니다. 기본 predicate가
-`Op.TRUE`이므로 논리 삭제 행은 활성 조건을 명시해야 합니다. 취소 시 `CancellationException`을
-그대로 다시 던지고 바깥 트랜잭션/pool이 연결을 정리합니다.
+커서는 null이 아닌 기본 키 원시 값입니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된 SELECT 하나만 실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고, 여섯 가지 `SortOrder` 변형을 지원합니다. 오름차순은 엄격한 `>`, 내림차순은 엄격한 `<`를 사용하며 null 배치 변형은 방향만 유지합니다. 토큰 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과 predicate의 재사용은 호출자 책임이고 호출 사이 snapshot은 보장하지 않습니다. 기본 predicate가
+`Op.TRUE`이므로 논리 삭제 행은 활성 조건을 명시해야 합니다. 취소 시 `CancellationException`을 그대로 다시 던지고 바깥 트랜잭션/pool이 연결을 정리합니다.
 
 ### 3. AuditableR2dbcRepository 구현
 
@@ -278,8 +258,7 @@ suspendTransaction {
 ```
 
 `updatedAt`은 DB `CURRENT_TIMESTAMP`로 설정되고, `updatedBy`는 명시한 `updatedBy` 인자를 사용합니다.
-`updatedBy`를 생략하면 호출 시점의 `UserContext.getCurrentUser()` 값을 캡처합니다.
-일반 `updateById()`, `updateAll()`은 감사 컬럼을 설정하지 않습니다.
+`updatedBy`를 생략하면 호출 시점의 `UserContext.getCurrentUser()` 값을 캡처합니다. 일반 `updateById()`, `updateAll()`은 감사 컬럼을 설정하지 않습니다.
 
 ### 4. SoftDeletedR2dbcRepository 구현
 
@@ -377,92 +356,87 @@ suspendTransaction {
 }
 ```
 
-`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의
-prepared parameter binding 순서를 유지합니다.
+`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의 prepared parameter binding 순서를 유지합니다.
 
 ## R2dbcRepository 주요 메서드
 
-| 메서드                                   | suspend 여부 | 반환 타입            | 설명                       |
-|---------------------------------------|------------|------------------|--------------------------|
-| `count()`                             | suspend    | `Long`           | 전체 레코드 수                 |
-| `countBy(predicate)`                  | suspend    | `Long`           | 조건에 맞는 레코드 수             |
-| `existsById(id)`                      | suspend    | `Boolean`        | ID로 존재 여부 확인             |
-| `existsBy(predicate)`                 | suspend    | `Boolean`        | 조건으로 존재 여부 확인            |
-| `findById(id)`                        | suspend    | `E`              | ID로 단건 조회 (없으면 예외)       |
-| `findByIdOrNull(id)`                  | suspend    | `E?`             | ID로 단건 조회 (없으면 null)     |
-| `findAll(limit, offset, ...)`         | —          | `Flow<E>`        | 전체 조회 (페이징/정렬 지원)        |
-| `findWithFilters(...)`                | —          | `Flow<E>`        | 다중 조건 AND 조합 조회          |
-| `findBy(...)`                         | —          | `Flow<E>`        | `findWithFilters`의 alias |
-| `findFirstOrNull(...)`                | suspend    | `E?`             | 조건에 맞는 첫 번째 엔티티          |
-| `findLastOrNull(...)`                 | suspend    | `E?`             | 조건에 맞는 마지막 엔티티           |
-| `findByField(field, value)`           | —          | `Flow<E>`        | 특정 컬럼 값으로 조회             |
-| `findByFieldOrNull(field, value)`     | suspend    | `E?`             | 특정 컬럼 값으로 첫 번째 조회        |
-| `findAllByIds(ids)`                   | —          | `Flow<E>`        | 여러 ID로 일괄 조회             |
-| `findPage(pageNumber, pageSize, ...)` | suspend    | `ExposedPage<E>` | 페이징 조회                   |
-| `findCursorPage(pageSize, cursor, ...)` | suspend | `ExposedCursorPage<E, ID>` | 타입이 있는 기본 키 커서 조회 |
-| `deleteById(id)`                      | suspend    | `Int`            | ID로 삭제                   |
-| `deleteAll(op)`                       | suspend    | `Int`            | 조건에 맞는 레코드 삭제            |
-| `deleteAllByIds(ids)`                 | suspend    | `Int`            | 여러 ID로 일괄 삭제             |
-| `updateById(id, ...)`                 | suspend    | `Int`            | ID로 수정                   |
-| `updateAll(predicate, ...)`           | suspend    | `Int`            | 조건에 맞는 레코드 일괄 수정         |
-| `batchInsert(entities, ...)`          | suspend    | `List<E>`        | 배치 삽입                    |
-| `batchUpsert(entities, ...)`          | suspend    | `List<E>`        | 배치 Upsert                |
+| 메서드                                  | suspend 여부 | 반환 타입                  | 설명                          |
+|-----------------------------------------|--------------|----------------------------|-------------------------------|
+| `count()`                               | suspend      | `Long`                     | 전체 레코드 수                |
+| `countBy(predicate)`                    | suspend      | `Long`                     | 조건에 맞는 레코드 수         |
+| `existsById(id)`                        | suspend      | `Boolean`                  | ID로 존재 여부 확인           |
+| `existsBy(predicate)`                   | suspend      | `Boolean`                  | 조건으로 존재 여부 확인       |
+| `findById(id)`                          | suspend      | `E`                        | ID로 단건 조회 (없으면 예외)  |
+| `findByIdOrNull(id)`                    | suspend      | `E?`                       | ID로 단건 조회 (없으면 null)  |
+| `findAll(limit, offset, ...)`           | —            | `Flow<E>`                  | 전체 조회 (페이징/정렬 지원)  |
+| `findWithFilters(...)`                  | —            | `Flow<E>`                  | 다중 조건 AND 조합 조회       |
+| `findBy(...)`                           | —            | `Flow<E>`                  | `findWithFilters`의 alias     |
+| `findFirstOrNull(...)`                  | suspend      | `E?`                       | 조건에 맞는 첫 번째 엔티티    |
+| `findLastOrNull(...)`                   | suspend      | `E?`                       | 조건에 맞는 마지막 엔티티     |
+| `findByField(field, value)`             | —            | `Flow<E>`                  | 특정 컬럼 값으로 조회         |
+| `findByFieldOrNull(field, value)`       | suspend      | `E?`                       | 특정 컬럼 값으로 첫 번째 조회 |
+| `findAllByIds(ids)`                     | —            | `Flow<E>`                  | 여러 ID로 일괄 조회           |
+| `findPage(pageNumber, pageSize, ...)`   | suspend      | `ExposedPage<E>`           | 페이징 조회                   |
+| `findCursorPage(pageSize, cursor, ...)` | suspend      | `ExposedCursorPage<E, ID>` | 타입이 있는 기본 키 커서 조회 |
+| `deleteById(id)`                        | suspend      | `Int`                      | ID로 삭제                     |
+| `deleteAll(op)`                         | suspend      | `Int`                      | 조건에 맞는 레코드 삭제       |
+| `deleteAllByIds(ids)`                   | suspend      | `Int`                      | 여러 ID로 일괄 삭제           |
+| `updateById(id, ...)`                   | suspend      | `Int`                      | ID로 수정                     |
+| `updateAll(predicate, ...)`             | suspend      | `Int`                      | 조건에 맞는 레코드 일괄 수정  |
+| `batchInsert(entities, ...)`            | suspend      | `List<E>`                  | 배치 삽입                     |
+| `batchUpsert(entities, ...)`            | suspend      | `List<E>`                  | 배치 Upsert                   |
 
 ## SoftDeletedR2dbcRepository 추가 메서드
 
-| 메서드                                         | suspend 여부 | 반환 타입            | 설명                           |
-|---------------------------------------------|------------|------------------|------------------------------|
-| `softDeleteById(id)`                        | suspend    | `Unit`           | ID로 논리 삭제 (`isDeleted=true`) |
-| `restoreById(id)`                           | suspend    | `Unit`           | ID로 논리 삭제 복원                 |
-| `countActive(predicate)`                    | suspend    | `Long`           | 활성 레코드 수                     |
-| `countDeleted(predicate)`                   | suspend    | `Long`           | 삭제된 레코드 수                    |
-| `findActive(limit, offset, ...)`            | —          | `Flow<E>`        | 활성 레코드만 조회                   |
-| `findDeleted(limit, offset, ...)`           | —          | `Flow<E>`        | 삭제된 레코드만 조회                  |
-| `softDeleteAll(predicate)`                  | suspend    | `Int`            | 조건에 맞는 레코드 일괄 논리 삭제          |
-| `restoreAll(predicate)`                     | suspend    | `Int`            | 조건에 맞는 레코드 일괄 복원             |
-| `findActivePage(pageNumber, pageSize, ...)` | suspend    | `ExposedPage<E>` | 활성 레코드 페이징 조회                |
+| 메서드                                      | suspend 여부 | 반환 타입        | 설명                              |
+|---------------------------------------------|--------------|------------------|-----------------------------------|
+| `softDeleteById(id)`                        | suspend      | `Unit`           | ID로 논리 삭제 (`isDeleted=true`) |
+| `restoreById(id)`                           | suspend      | `Unit`           | ID로 논리 삭제 복원               |
+| `countActive(predicate)`                    | suspend      | `Long`           | 활성 레코드 수                    |
+| `countDeleted(predicate)`                   | suspend      | `Long`           | 삭제된 레코드 수                  |
+| `findActive(limit, offset, ...)`            | —            | `Flow<E>`        | 활성 레코드만 조회                |
+| `findDeleted(limit, offset, ...)`           | —            | `Flow<E>`        | 삭제된 레코드만 조회              |
+| `softDeleteAll(predicate)`                  | suspend      | `Int`            | 조건에 맞는 레코드 일괄 논리 삭제 |
+| `restoreAll(predicate)`                     | suspend      | `Int`            | 조건에 맞는 레코드 일괄 복원      |
+| `findActivePage(pageNumber, pageSize, ...)` | suspend      | `ExposedPage<E>` | 활성 레코드 페이징 조회           |
 
 ## AuditableR2dbcRepository 추가 메서드
 
-| 메서드                                              | suspend 여부 | 반환 타입 | 설명                      |
-|--------------------------------------------------|------------|-------|-------------------------|
-| `auditedUpdateById(id, updatedBy, ...)`          | suspend    | `Int` | ID로 수정하고 감사 컬럼 설정      |
-| `auditedUpdateAll(updatedBy, predicate, ...)`    | suspend    | `Int` | 조건에 맞게 일괄 수정하고 감사 컬럼 설정 |
+| 메서드                                        | suspend 여부 | 반환 타입 | 설명                                     |
+|-----------------------------------------------|--------------|-----------|------------------------------------------|
+| `auditedUpdateById(id, updatedBy, ...)`       | suspend      | `Int`     | ID로 수정하고 감사 컬럼 설정             |
+| `auditedUpdateAll(updatedBy, predicate, ...)` | suspend      | `Int`     | 조건에 맞게 일괄 수정하고 감사 컬럼 설정 |
 
 ## 편의 타입 별칭
 
-| 인터페이스                              | 기본키 타입             |
-|------------------------------------|--------------------|
-| `IntR2dbcRepository`               | `Int`              |
-| `LongR2dbcRepository`              | `Long`             |
-| `KotlinUuidR2dbcRepository`        | `kotlin.uuid.Uuid` |
-| `JavaUuidR2dbcRepository`          | `java.util.UUID`   |
-| `StringR2dbcRepository`            | `String`           |
-| `IntAuditableR2dbcRepository`      | `Int`              |
-| `LongAuditableR2dbcRepository`     | `Long`             |
-| `UUIDAuditableR2dbcRepository`     | `java.util.UUID`   |
-| `IntSoftDeletedR2dbcRepository`    | `Int`              |
-| `LongSoftDeletedR2dbcRepository`   | `Long`             |
+| 인터페이스                             | 기본키 타입        |
+|----------------------------------------|--------------------|
+| `IntR2dbcRepository`                   | `Int`              |
+| `LongR2dbcRepository`                  | `Long`             |
+| `KotlinUuidR2dbcRepository`            | `kotlin.uuid.Uuid` |
+| `JavaUuidR2dbcRepository`              | `java.util.UUID`   |
+| `StringR2dbcRepository`                | `String`           |
+| `IntAuditableR2dbcRepository`          | `Int`              |
+| `LongAuditableR2dbcRepository`         | `Long`             |
+| `UUIDAuditableR2dbcRepository`         | `java.util.UUID`   |
+| `IntSoftDeletedR2dbcRepository`        | `Int`              |
+| `LongSoftDeletedR2dbcRepository`       | `Long`             |
 | `KotlinUuidSoftDeletedR2dbcRepository` | `kotlin.uuid.Uuid` |
 | `JavaUuidSoftDeletedR2dbcRepository`   | `java.util.UUID`   |
-| `StringSoftDeletedR2dbcRepository` | `String`           |
+| `StringSoftDeletedR2dbcRepository`     | `String`           |
 
 ### 2.0 UUID Repository 이름 변경
 
-`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에
-안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현
-상위 타입을 다음과 같이 바꾸세요.
+`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에 안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현 상위 타입을 다음과 같이 바꾸세요.
 
 | 1.x 소스 이름                    | 2.0 canonical 이름                     | 바이너리 호환성 |
-|---------------------------------|----------------------------------------|----------------|
-| `UuidR2dbcRepository`           | `KotlinUuidR2dbcRepository`            | 재컴파일 필요   |
-| `UUIDR2dbcRepository`           | `JavaUuidR2dbcRepository`              | 재컴파일 필요   |
-| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | 재컴파일 필요  |
-| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | 재컴파일 필요  |
+|----------------------------------|----------------------------------------|-----------------|
+| `UuidR2dbcRepository`            | `KotlinUuidR2dbcRepository`            | 재컴파일 필요   |
+| `UUIDR2dbcRepository`            | `JavaUuidR2dbcRepository`              | 재컴파일 필요   |
+| `UuidSoftDeletedR2dbcRepository` | `KotlinUuidSoftDeletedR2dbcRepository` | 재컴파일 필요   |
+| `UUIDSoftDeletedR2dbcRepository` | `JavaUuidSoftDeletedR2dbcRepository`   | 재컴파일 필요   |
 
-2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존
-JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로
-다시 빌드해야 합니다.
+2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존 JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로 다시 빌드해야 합니다.
 
 ## 가상 스레드 트랜잭션
 
@@ -531,24 +505,23 @@ val rows = ActorTable.selectImplicitAll()
 
 ## 주요 파일/클래스 목록
 
-| 파일                                             | 설명                                    |
-|------------------------------------------------|---------------------------------------|
-| `repository/R2dbcRepository.kt`                | R2DBC Repository 기본 인터페이스             |
-| `repository/SoftDeletedR2dbcRepository.kt`     | Soft Delete R2DBC Repository          |
-| `TableExtensions.kt`                           | 테이블 메타데이터 비동기 확장 함수                   |
+| 파일                                           | 설명                                       |
+|------------------------------------------------|--------------------------------------------|
+| `repository/R2dbcRepository.kt`                | R2DBC Repository 기본 인터페이스           |
+| `repository/SoftDeletedR2dbcRepository.kt`     | Soft Delete R2DBC Repository               |
+| `TableExtensions.kt`                           | 테이블 메타데이터 비동기 확장 함수         |
 | `QueryExtensions.kt`                           | Flow/Query 확장 함수 (`forEach`, `any` 등) |
-| `ReadableExtensions.kt`                        | R2DBC Readable 타입 안전 컬럼 값 조회 확장       |
-| `ImplicitSelectAll.kt`                         | `SELECT *` Query 구현 (`ImplicitQuery`) |
-| `virtualThreadTransaction.kt`                  | Java 21 Virtual Thread 기반 트랜잭션 실행     |
-| `statements/BatchInsertOnConflictDoNothing.kt` | ON CONFLICT DO NOTHING 배치 삽입          |
+| `ReadableExtensions.kt`                        | R2DBC Readable 타입 안전 컬럼 값 조회 확장 |
+| `ImplicitSelectAll.kt`                         | `SELECT *` Query 구현 (`ImplicitQuery`)    |
+| `virtualThreadTransaction.kt`                  | Java 21 Virtual Thread 기반 트랜잭션 실행  |
+| `statements/BatchInsertOnConflictDoNothing.kt` | ON CONFLICT DO NOTHING 배치 삽입           |
 
 ## 테스트
 
 ### 애플리케이션 소유 멱등성 경계
 
 PostgreSQL 통합 fixture인
-[`ApplicationOwnedIdempotencyRecordR2dbcTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/idempotency/ApplicationOwnedIdempotencyRecordR2dbcTest.kt)는
-테스트 전용 멱등성 레코드를 증명하며, 이 모듈은 공개 idempotency repository API를 제공하지 않습니다.
+[`ApplicationOwnedIdempotencyRecordR2dbcTest`](src/test/kotlin/io/bluetape4k/exposed/r2dbc/idempotency/ApplicationOwnedIdempotencyRecordR2dbcTest.kt)는 테스트 전용 멱등성 레코드를 증명하며, 이 모듈은 공개 idempotency repository API를 제공하지 않습니다.
 
 - 데이터베이스는 `(scope, idempotency_key)` 레코드의 단일성과 owner token 기반 종료 처리 및 stale owner 교체를 위한 compare-and-set 갱신을 보장합니다.
 - 애플리케이션은 scope 선택, request fingerprint 계산, stale timeout, 재시도 동작, result reference 보존 정책을 소유합니다.

@@ -2,9 +2,7 @@
 
 [English](./README.md) | 한국어
 
-`bluetape4k-exposed`용 Apache Druid JDBC query-only 실험 모듈입니다. Apache
-Calcite Avatica JDBC로 Druid Router 또는 Broker에 연결하고, SQL 조회 실행과
-datasource metadata 조회를 위한 작은 helper만 제공합니다.
+`bluetape4k-exposed`용 Apache Druid JDBC query-only 실험 모듈입니다. Apache Calcite Avatica JDBC로 Druid Router 또는 Broker에 연결하고, SQL 조회 실행과 datasource metadata 조회를 위한 작은 helper만 제공합니다.
 
 ## 포지셔닝
 
@@ -96,21 +94,15 @@ val comments = DruidJdbc.querySuspend(
 ) { rs -> rs.getString("comment") }
 ```
 
-블로킹 JDBC 작업은 기본적으로 `Dispatchers.IO`에서 실행합니다. 코루틴 취소는
-삼키지 않고 다시 던집니다.
+블로킹 JDBC 작업은 기본적으로 `Dispatchers.IO`에서 실행합니다. 코루틴 취소는 삼키지 않고 다시 던집니다.
 
 ## Router/Broker stickiness
 
-Druid JDBC 연결은 Broker 쪽 상태를 가집니다. Router Avatica endpoint를 우선
-사용하세요. Router는 JDBC 요청을 sticky하게 라우팅할 수 있습니다. Broker 또는
-load balancer에 직접 연결한다면 JDBC 요청이 같은 Broker로 유지되도록 구성해야
-합니다. Broker pool 변경이나 재시작에 대비해 `transparent_reconnection`은 켜둡니다.
+Druid JDBC 연결은 Broker 쪽 상태를 가집니다. Router Avatica endpoint를 우선 사용하세요. Router는 JDBC 요청을 sticky하게 라우팅할 수 있습니다. Broker 또는 load balancer에 직접 연결한다면 JDBC 요청이 같은 Broker로 유지되도록 구성해야 합니다. Broker pool 변경이나 재시작에 대비해 `transparent_reconnection`은 켜둡니다.
 
 ## Local/container smoke test
 
-일반 CI는 모듈 unit test만 실행합니다. 준비된 local/container Druid 인스턴스와
-로드된 fixture datasource를 검증하려면 먼저 Druid를 시작하고 `wikipedia` 같은
-fixture를 로드한 뒤 다음을 실행합니다:
+일반 CI는 모듈 unit test만 실행합니다. 준비된 local/container Druid 인스턴스와 로드된 fixture datasource를 검증하려면 먼저 Druid를 시작하고 `wikipedia` 같은 fixture를 로드한 뒤 다음을 실행합니다:
 
 ```bash
 EXPOSED_DRUID_SMOKE=true \
@@ -119,9 +111,7 @@ EXPOSED_DRUID_DATASOURCE=wikipedia \
 ./gradlew --no-parallel :bluetape4k-exposed-druid:test --tests '*DruidJdbcSmokeTest'
 ```
 
-smoke test는 Avatica 연결, metadata discovery, fixture datasource 대상 `SELECT`를
-검증합니다. Testcontainers 또는 Docker 기반 Druid 검증은 반드시 serial로 실행하세요.
-공식 Druid quickstart는 multi-container이고 메모리 요구량이 큽니다.
+smoke test는 Avatica 연결, metadata discovery, fixture datasource 대상 `SELECT`를 검증합니다. Testcontainers 또는 Docker 기반 Druid 검증은 반드시 serial로 실행하세요. 공식 Druid quickstart는 multi-container이고 메모리 요구량이 큽니다.
 
 ## 참고
 

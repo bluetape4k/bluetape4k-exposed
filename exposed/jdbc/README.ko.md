@@ -7,8 +7,7 @@ JetBrains Exposed JDBC 계층을 위한 Repository 패턴, 트랜잭션 확장, 
 
 ## Multi-row VALUES 선택
 
-기존 `batchInsert` 호출은 기존 경로를 유지한다. Exposed 1.5.0의 multi-row SQL은
-필수 `useMultiRowValues` 인자를 가진 추가 overload로 선택한다.
+기존 `batchInsert` 호출은 기존 경로를 유지한다. Exposed 1.5.0의 multi-row SQL은 필수 `useMultiRowValues` 인자를 가진 추가 overload로 선택한다.
 
 ```kotlin
 // 호출자가 연 transaction {} 내부:
@@ -17,23 +16,14 @@ repository.batchInsert(items, useMultiRowValues = true) { item ->
 }
 ```
 
-`false`는 `ignore`와 생성 값 요청 설정을 포함해 기존 overload에 위임한다.
-Repository는 `true`와 `ignore=true` 조합을 빈 입력에서도 순회·SQL 실행 전에 거부한다.
-Exposed 1.5.0의 부분 충돌 반환 결과를 정확히 매핑할 수 없기 때문이다.
-충돌 무시가 필요하면 기존 경로를 사용한다.
+`false`는 `ignore`와 생성 값 요청 설정을 포함해 기존 overload에 위임한다. Repository는 `true`와 `ignore=true` 조합을 빈 입력에서도 순회·SQL 실행 전에 거부한다. Exposed 1.5.0의 부분 충돌 반환 결과를 정확히 매핑할 수 없기 때문이다. 충돌 무시가 필요하면 기존 경로를 사용한다.
 
 Multi-row 입력은 허용 행 수 + 1개까지만 수집한다.
-`행 수 × table.columns.size` 추정치는 65,535(SQLite: 32,766)를 넘을 수 없다.
-실제 bind 수나 모든 driver의 한도를 보장하는 값은 아니다. 다중 bind 표현식이나
-더 작은 driver 한도는 청크 크기를 줄여 처리한다. 허용된 빈 입력은 no-op이다.
-초과 입력은 바인더·INSERT 전에 거부하지만 호출자 트랜잭션의 선행 쓰기는 취소하지 않는다.
-SQL 오류가 발생하면 호출자가 rollback해야 한다.
+`행 수 × table.columns.size` 추정치는 65,535 (SQLite: 32,766)를 넘을 수 없다. 실제 bind 수나 모든 driver의 한도를 보장하는 값은 아니다. 다중 bind 표현식이나 더 작은 driver 한도는 청크 크기를 줄여 처리한다. 허용된 빈 입력은 no-op이다. 초과 입력은 바인더·INSERT 전에 거부하지만 호출자 트랜잭션의 선행 쓰기는 취소하지 않는다. SQL 오류가 발생하면 호출자가 rollback해야 한다.
 
-H2/PostgreSQL 테스트는 일반 삽입, nullable 값, 생성 ID와 입력 순서를 검증한다.
-MySQL/Oracle의 생성 키 조합은 미검증이며, 정확한 생성 ID 매핑이 필요하면 `false`를 사용한다.
+H2/PostgreSQL 테스트는 일반 삽입, nullable 값, 생성 ID와 입력 순서를 검증한다. MySQL/Oracle의 생성 키 조합은 미검증이며, 정확한 생성 ID 매핑이 필요하면 `false`를 사용한다.
 `shouldReturnGeneratedValues=false`일 때 mapper는 DB 생성 값을 요구하면 안 된다.
-`saveAll`은 변경하지 않는다. SQL tuple·parameter-set 관찰은 네트워크 round-trip이나
-성능 배수의 근거가 아니다.
+`saveAll`은 변경하지 않는다. SQL tuple·parameter-set 관찰은 네트워크 round-trip이나 성능 배수의 근거가 아니다.
 
 ## 개요
 
@@ -270,15 +260,10 @@ transaction {
 }
 ```
 
-이 확장은 `IdTable.id`의 원시 값을 커서로 사용하고 오름차순/내림차순에 따라 엄격한 `>`/`<` 경계를
-적용합니다. 여섯 가지 `SortOrder` 변형을 모두 허용하지만 기본 키가 null이 아니므로 null 배치
-변형은 방향만 유지합니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된 SELECT 하나만
-실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize` 범위는 1부터 10,000까지입니다.
+이 확장은 `IdTable.id`의 원시 값을 커서로 사용하고 오름차순/내림차순에 따라 엄격한 `>`/`<` 경계를 적용합니다. 여섯 가지 `SortOrder` 변형을 모두 허용하지만 기본 키가 null이 아니므로 null 배치 변형은 방향만 유지합니다. 한 번의 호출은 `LIMIT pageSize + 1`을 사용하는 제한된 SELECT 하나만 실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize` 범위는 1부터 10,000까지입니다.
 `hasNext`와 `nextCursor`의 불변식은 `ExposedCursorPage` 문서와 같습니다.
 
-커서 토큰의 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과 predicate의 재사용은 호출자 책임입니다.
-호출 사이에 하나의 기준 데이터는 보장하지 않습니다. 기본 predicate는 `Op.TRUE`이므로 논리 삭제 저장소는
-활성 행 조건을 명시해야 합니다. `findPage`와 Spring Batch keyset reader는 별도 계약으로 유지됩니다.
+커서 토큰의 인코딩, 서명, 만료, tenant/권한 범위, 같은 정렬과 predicate의 재사용은 호출자 책임입니다. 호출 사이에 하나의 기준 데이터는 보장하지 않습니다. 기본 predicate는 `Op.TRUE`이므로 논리 삭제 저장소는 활성 행 조건을 명시해야 합니다. `findPage`와 Spring Batch keyset reader는 별도 계약으로 유지됩니다.
 
 ### 7. 배치 삽입 / Upsert
 
@@ -323,50 +308,49 @@ transaction {
 }
 ```
 
-`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의
-prepared parameter 바인딩 순서가 유지됩니다.
+`withCte()`는 CTE 본문과 최종 SELECT를 같은 Exposed `QueryBuilder`로 렌더링하므로 CTE predicate의 prepared parameter 바인딩 순서가 유지됩니다.
 
 ## JdbcRepository 주요 메서드
 
-| 메서드                                   | 설명                       |
-|---------------------------------------|--------------------------|
-| `count()`                             | 전체 레코드 수                 |
-| `countBy(predicate)`                  | 조건에 맞는 레코드 수             |
-| `existsById(id)`                      | ID로 존재 여부 확인             |
-| `existsBy(predicate)`                 | 조건으로 존재 여부 확인            |
-| `findById(id)`                        | ID로 단건 조회 (없으면 예외)       |
-| `findByIdOrNull(id)`                  | ID로 단건 조회 (없으면 null)     |
-| `findAll(limit, offset, ...)`         | 전체 조회 (페이징/정렬 지원)        |
-| `findWithFilters(...)`                | 다중 조건 AND 조합 조회          |
-| `findBy(...)`                         | `findWithFilters`의 alias |
-| `findFirstOrNull(...)`                | 조건에 맞는 첫 번째 엔티티          |
-| `findLastOrNull(...)`                 | 조건에 맞는 마지막 엔티티           |
-| `findByField(field, value)`           | 특정 컬럼 값으로 조회             |
-| `findAllByIds(ids)`                   | 여러 ID로 일괄 조회             |
-| `findPage(pageNumber, pageSize, ...)` | 페이징 조회                   |
-| `findCursorPage(pageSize, cursor, ...)` | 타입이 있는 기본 키 커서 조회       |
-| `deleteById(id)`                      | ID로 삭제                   |
-| `deleteByIdIgnore(id)`                | ID로 삭제 (예외 무시)           |
-| `deleteAll(op)`                       | 조건에 맞는 레코드 삭제            |
-| `deleteAllByIds(ids)`                 | 여러 ID로 일괄 삭제             |
-| `updateById(id, ...)`                 | ID로 수정                   |
-| `updateAll(predicate, ...)`           | 조건에 맞는 레코드 일괄 수정         |
-| `batchInsert(entities, ...)`          | 배치 삽입                    |
-| `batchUpsert(entities, ...)`          | 배치 Upsert                |
+| 메서드                                  | 설명                          |
+|-----------------------------------------|-------------------------------|
+| `count()`                               | 전체 레코드 수                |
+| `countBy(predicate)`                    | 조건에 맞는 레코드 수         |
+| `existsById(id)`                        | ID로 존재 여부 확인           |
+| `existsBy(predicate)`                   | 조건으로 존재 여부 확인       |
+| `findById(id)`                          | ID로 단건 조회 (없으면 예외)  |
+| `findByIdOrNull(id)`                    | ID로 단건 조회 (없으면 null)  |
+| `findAll(limit, offset, ...)`           | 전체 조회 (페이징/정렬 지원)  |
+| `findWithFilters(...)`                  | 다중 조건 AND 조합 조회       |
+| `findBy(...)`                           | `findWithFilters`의 alias     |
+| `findFirstOrNull(...)`                  | 조건에 맞는 첫 번째 엔티티    |
+| `findLastOrNull(...)`                   | 조건에 맞는 마지막 엔티티     |
+| `findByField(field, value)`             | 특정 컬럼 값으로 조회         |
+| `findAllByIds(ids)`                     | 여러 ID로 일괄 조회           |
+| `findPage(pageNumber, pageSize, ...)`   | 페이징 조회                   |
+| `findCursorPage(pageSize, cursor, ...)` | 타입이 있는 기본 키 커서 조회 |
+| `deleteById(id)`                        | ID로 삭제                     |
+| `deleteByIdIgnore(id)`                  | ID로 삭제 (예외 무시)         |
+| `deleteAll(op)`                         | 조건에 맞는 레코드 삭제       |
+| `deleteAllByIds(ids)`                   | 여러 ID로 일괄 삭제           |
+| `updateById(id, ...)`                   | ID로 수정                     |
+| `updateAll(predicate, ...)`             | 조건에 맞는 레코드 일괄 수정  |
+| `batchInsert(entities, ...)`            | 배치 삽입                     |
+| `batchUpsert(entities, ...)`            | 배치 Upsert                   |
 
 ## SoftDeletedJdbcRepository 추가 메서드
 
-| 메서드                                         | 설명                           |
-|---------------------------------------------|------------------------------|
+| 메서드                                      | 설명                              |
+|---------------------------------------------|-----------------------------------|
 | `softDeleteById(id)`                        | ID로 논리 삭제 (`isDeleted=true`) |
-| `restoreById(id)`                           | ID로 논리 삭제 복원                 |
-| `countActive(predicate)`                    | 활성 레코드 수                     |
-| `countDeleted(predicate)`                   | 삭제된 레코드 수                    |
-| `findActive(limit, offset, ...)`            | 활성 레코드만 조회                   |
-| `findDeleted(limit, offset, ...)`           | 삭제된 레코드만 조회                  |
-| `softDeleteAll(predicate)`                  | 조건에 맞는 레코드 일괄 논리 삭제          |
-| `restoreAll(predicate)`                     | 조건에 맞는 레코드 일괄 복원             |
-| `findActivePage(pageNumber, pageSize, ...)` | 활성 레코드 페이징 조회                |
+| `restoreById(id)`                           | ID로 논리 삭제 복원               |
+| `countActive(predicate)`                    | 활성 레코드 수                    |
+| `countDeleted(predicate)`                   | 삭제된 레코드 수                  |
+| `findActive(limit, offset, ...)`            | 활성 레코드만 조회                |
+| `findDeleted(limit, offset, ...)`           | 삭제된 레코드만 조회              |
+| `softDeleteAll(predicate)`                  | 조건에 맞는 레코드 일괄 논리 삭제 |
+| `restoreAll(predicate)`                     | 조건에 맞는 레코드 일괄 복원      |
+| `findActivePage(pageNumber, pageSize, ...)` | 활성 레코드 페이징 조회           |
 
 ## AuditableJdbcRepository (감사 추적 Repository)
 
@@ -495,7 +479,7 @@ transaction {
 
 ### 편의 타입 별칭
 
-| 인터페이스                         | 기본키 타입           |
+| 인터페이스                    | 기본키 타입      |
 |-------------------------------|------------------|
 | `IntAuditableJdbcRepository`  | `Int`            |
 | `LongAuditableJdbcRepository` | `Long`           |
@@ -503,64 +487,58 @@ transaction {
 
 ## 편의 타입 별칭 (일반 Repository)
 
-| 인터페이스                             | 기본키 타입             |
-|-----------------------------------|--------------------|
-| `IntJdbcRepository`               | `Int`              |
-| `LongJdbcRepository`              | `Long`             |
-| `KotlinUuidJdbcRepository`        | `kotlin.uuid.Uuid` |
-| `JavaUuidJdbcRepository`          | `java.util.UUID`   |
-| `StringJdbcRepository`            | `String`           |
-| `IntSoftDeletedJdbcRepository`    | `Int`              |
-| `LongSoftDeletedJdbcRepository`   | `Long`             |
+| 인터페이스                            | 기본키 타입        |
+|---------------------------------------|--------------------|
+| `IntJdbcRepository`                   | `Int`              |
+| `LongJdbcRepository`                  | `Long`             |
+| `KotlinUuidJdbcRepository`            | `kotlin.uuid.Uuid` |
+| `JavaUuidJdbcRepository`              | `java.util.UUID`   |
+| `StringJdbcRepository`                | `String`           |
+| `IntSoftDeletedJdbcRepository`        | `Int`              |
+| `LongSoftDeletedJdbcRepository`       | `Long`             |
 | `KotlinUuidSoftDeletedJdbcRepository` | `kotlin.uuid.Uuid` |
 | `JavaUuidSoftDeletedJdbcRepository`   | `java.util.UUID`   |
-| `StringSoftDeletedJdbcRepository` | `String`           |
+| `StringSoftDeletedJdbcRepository`     | `String`           |
 
 ### 2.0 UUID Repository 이름 변경
 
-`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에
-안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현
-상위 타입을 다음과 같이 바꾸세요.
+`kotlin.uuid.Uuid`와 `java.util.UUID` repository 특수화가 파일시스템에 안전한 JVM class 이름을 사용하도록 변경되었습니다. 소스의 import와 구현 상위 타입을 다음과 같이 바꾸세요.
 
 | 1.x 소스 이름                   | 2.0 canonical 이름                    | 바이너리 호환성 |
-|--------------------------------|----------------------------------------|----------------|
-| `UuidJdbcRepository`           | `KotlinUuidJdbcRepository`             | 재컴파일 필요   |
-| `UUIDJdbcRepository`           | `JavaUuidJdbcRepository`               | 재컴파일 필요   |
-| `UuidSoftDeletedJdbcRepository` | `KotlinUuidSoftDeletedJdbcRepository` | 재컴파일 필요  |
-| `UUIDSoftDeletedJdbcRepository` | `JavaUuidSoftDeletedJdbcRepository`   | 재컴파일 필요  |
+|---------------------------------|---------------------------------------|-----------------|
+| `UuidJdbcRepository`            | `KotlinUuidJdbcRepository`            | 재컴파일 필요   |
+| `UUIDJdbcRepository`            | `JavaUuidJdbcRepository`              | 재컴파일 필요   |
+| `UuidSoftDeletedJdbcRepository` | `KotlinUuidSoftDeletedJdbcRepository` | 재컴파일 필요   |
+| `UUIDSoftDeletedJdbcRepository` | `JavaUuidSoftDeletedJdbcRepository`   | 재컴파일 필요   |
 
-2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존
-JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로
-다시 빌드해야 합니다.
+2.0에서는 1.x 이름을 deprecated source-only typealias로 유지합니다. 기존 JVM class는 생성하지 않으므로, 이미 컴파일된 consumer는 canonical 이름으로 다시 빌드해야 합니다.
 
 ## 주요 파일/클래스 목록
 
-| 파일                                                  | 설명                                 |
-|-----------------------------------------------------|------------------------------------|
-| `jdbc/repository/JdbcRepository.kt`                 | JDBC Repository 기본 인터페이스           |
-| `jdbc/repository/SoftDeletedJdbcRepository.kt`      | Soft Delete 지원 Repository          |
-| `repository/ExposedRepository.kt`                   | (Deprecated) 구 Repository 인터페이스    |
-| `core/SuspendedQuery.kt`                            | 커서 기반 배치 Flow 쿼리                   |
-| `jdbc/VirtualThreadJdbcTransaction.kt`              | Virtual Thread 기반 JDBC 트랜잭션        |
-| `core/transactions/VirtualThreadTransaction.kt`     | (Deprecated) 구 Virtual Thread 트랜잭션 |
-| `core/ImplicitSelectAll.kt`                         | `SELECT *` 형태의 묵시적 전체 조회           |
-| `core/TableExtensions.kt`                           | 테이블 메타데이터 확장 함수                    |
-| `core/SchemaUtilsExtensions.kt`                     | SchemaUtils 확장 함수                  |
+| 파일                                            | 설명                                    |
+|-------------------------------------------------|-----------------------------------------|
+| `jdbc/repository/JdbcRepository.kt`             | JDBC Repository 기본 인터페이스         |
+| `jdbc/repository/SoftDeletedJdbcRepository.kt`  | Soft Delete 지원 Repository             |
+| `repository/ExposedRepository.kt`               | (Deprecated) 구 Repository 인터페이스   |
+| `core/SuspendedQuery.kt`                        | 커서 기반 배치 Flow 쿼리                |
+| `jdbc/VirtualThreadJdbcTransaction.kt`          | Virtual Thread 기반 JDBC 트랜잭션       |
+| `core/transactions/VirtualThreadTransaction.kt` | (Deprecated) 구 Virtual Thread 트랜잭션 |
+| `core/ImplicitSelectAll.kt`                     | `SELECT *` 형태의 묵시적 전체 조회      |
+| `core/TableExtensions.kt`                       | 테이블 메타데이터 확장 함수             |
+| `core/SchemaUtilsExtensions.kt`                 | SchemaUtils 확장 함수                   |
 
 ## MySQL 8 JDBC conformance
 
-`MySQLJdbcParallelKeyEnumerationTest`는 MySQL 8 Connector/J, HikariCP,
-Testcontainers 조합에서 JDBC 병렬 키 열거 경계를 검증합니다. fixture는 테스트 전용이며
-production API, pool 설정, 릴리스 매뉴얼을 변경하지 않습니다.
+`MySQLJdbcParallelKeyEnumerationTest`는 MySQL 8 Connector/J, HikariCP, Testcontainers 조합에서 JDBC 병렬 키 열거 경계를 검증합니다. fixture는 테스트 전용이며 production API, pool 설정, 릴리스 매뉴얼을 변경하지 않습니다.
 
-| 계약 | 증거 |
-|------|------|
-| Sparse ID와 서로 겹치지 않는 range 순서 | MySQL 8: PASS |
-| overlap/reverse 검증과 빈 range 무-lease 경로 | MySQL 8: PASS |
-| `maxConcurrency=2`에서 Hikari pool 1/2/4의 exact lease peak | MySQL 8: PASS |
-| `READ_COMMITTED`와 `REPEATABLE_READ` 두-SELECT fixture | MySQL 8: PASS |
+| 계약                                                            | 증거          |
+|-----------------------------------------------------------------|---------------|
+| Sparse ID와 서로 겹치지 않는 range 순서                         | MySQL 8: PASS |
+| overlap/reverse 검증과 빈 range 무-lease 경로                   | MySQL 8: PASS |
+| `maxConcurrency=2`에서 Hikari pool 1/2/4의 exact lease peak     | MySQL 8: PASS |
+| `READ_COMMITTED`와 `REPEATABLE_READ` 두-SELECT fixture          | MySQL 8: PASS |
 | statement rollback, SQLState `23000`, lease retry request count | MySQL 8: PASS |
-| cleanup primary/suppressed failure와 caller executor 소유권 | MySQL 8: PASS |
+| cleanup primary/suppressed failure와 caller executor 소유권     | MySQL 8: PASS |
 
 driver 전용 테스트 실행 명령은 다음과 같습니다.
 
@@ -572,29 +550,22 @@ EXPOSED_TEST_DB=MYSQL_V8 TESTCONTAINERS_RYUK_DISABLED=true \
   --no-parallel --max-workers=1 --console=plain
 ```
 
-H2 단위 테스트 baseline은 `JdbcParallelKeyEnumerationTest`로 유지합니다.
-기존 `.github/workflows/nightly-tests.yml`의 MySQL nightly job이 Docker 환경을
-제공하며, 이 conformance class는 모든 MySQL 배포나 모든 JDBC driver가 동등하다고
-주장하지 않습니다. pool size 1은 의도적인 under-provisioned pressure case이며 운영
-권고가 아닙니다. isolation callback은 내부 두-SELECT 테스트 seam만 사용하고 public
-overload의 shared 기준 데이터를 약속하지 않습니다. `SERIALIZABLE`, network fault,
-cancellation은 이 이슈 범위 밖이며 후속 이슈 #697, #690에서 다룹니다.
+H2 단위 테스트 baseline은 `JdbcParallelKeyEnumerationTest`로 유지합니다. 기존 `.github/workflows/nightly-tests.yml`의 MySQL nightly job이 Docker 환경을 제공하며, 이 conformance class는 모든 MySQL 배포나 모든 JDBC driver가 동등하다고 주장하지 않습니다. pool size 1은 의도적인 under-provisioned pressure case이며 운영 권고가 아닙니다. isolation callback은 내부 두-SELECT 테스트 seam만 사용하고 public overload의 shared 기준 데이터를 약속하지 않습니다. `SERIALIZABLE`, network fault, cancellation은 이 이슈 범위 밖이며 후속 이슈 #697, #690에서 다룹니다.
 
 ## 성능 벤치마크
 
-`ExposedJdbcBenchmark` JMH 측정 결과 (PostgreSQL via Testcontainers, HikariCP pool).
-전체 최적화 이력은 [2026-04-21-self-improve.md](./2026-04-21-self-improve.md) 참고.
+`ExposedJdbcBenchmark` JMH 측정 결과 (PostgreSQL via Testcontainers, HikariCP pool). 전체 최적화 이력은 [2026-04-21-self-improve.md](./2026-04-21-self-improve.md) 참고.
 
-**환경**: Java 21, Kotlin 2.3, PostgreSQL 16, HikariCP max=24, @Threads(14), @Warmup(3×3s) + @Measurement(5×5s)
+**환경**: Java 21, Kotlin 2.3, PostgreSQL 16, HikariCP max=24, @Threads (14), @Warmup (3×3s) + @Measurement (5×5s)
 
-| 벤치마크 | ops/s |
-|----------|-------|
-| `singleInsert` | ~14,400 |
-| `singleFindById` | ~15,000 |
-| `singleUpdate` | ~14,300 |
-| `joinQuery` (INNER JOIN + WHERE + LIMIT 100) | ~1,510 |
-| `batchInsert` (batchSize=100) | ~217 |
-| **합계** | **~45,431** |
+| 벤치마크                                     | ops/s       |
+|----------------------------------------------|-------------|
+| `singleInsert`                               | ~14,400     |
+| `singleFindById`                             | ~15,000     |
+| `singleUpdate`                               | ~14,300     |
+| `joinQuery` (INNER JOIN + WHERE + LIMIT 100) | ~1,510      |
+| `batchInsert` (batchSize=100)                | ~217        |
+| **합계**                                     | **~45,431** |
 
 ![Exposed JDBC benchmark throughput chart](../../docs/images/readme-charts/exposed-jdbc-benchmark-chart-01.png)
 
@@ -606,8 +577,7 @@ cancellation은 이 이슈 범위 밖이며 후속 이슈 #697, #690에서 다�
 ### 애플리케이션 소유 멱등성 경계
 
 PostgreSQL 통합 fixture인
-[`ApplicationOwnedIdempotencyRecordJdbcTest`](src/test/kotlin/io/bluetape4k/exposed/jdbc/idempotency/ApplicationOwnedIdempotencyRecordJdbcTest.kt)는
-테스트 전용 멱등성 레코드를 증명하며, 이 모듈은 공개 idempotency repository API를 제공하지 않습니다.
+[`ApplicationOwnedIdempotencyRecordJdbcTest`](src/test/kotlin/io/bluetape4k/exposed/jdbc/idempotency/ApplicationOwnedIdempotencyRecordJdbcTest.kt)는 테스트 전용 멱등성 레코드를 증명하며, 이 모듈은 공개 idempotency repository API를 제공하지 않습니다.
 
 - 데이터베이스는 `(scope, idempotency_key)` 레코드의 단일성과 owner token 기반 종료 처리 및 stale owner 교체를 위한 compare-and-set 갱신을 보장합니다.
 - 애플리케이션은 scope 선택, request fingerprint 계산, stale timeout, 재시도 동작, result reference 보존 정책을 소유합니다.

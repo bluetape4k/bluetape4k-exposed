@@ -103,7 +103,7 @@ class BigQueryResultRow(private val data: Map<String, Any?>) {
         } catch (e: Exception) {
             throw IllegalArgumentException(
                 "Failed to convert BigQuery value '$s' for column '${column.name}' " +
-                    "(type: ${column.columnType::class.simpleName})",
+                        "(type: ${column.columnType::class.simpleName})",
                 e
             )
         }

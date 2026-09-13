@@ -16,7 +16,14 @@ import org.jetbrains.exposed.v1.core.QueryBuilder
  * ```
  */
 enum class DateDiffUnit {
-    second, minute, hour, day, week, month, quarter, year;
+    second,
+    minute,
+    hour,
+    day,
+    week,
+    month,
+    quarter,
+    year;
 
     /** SQL에 삽입될 단위 문자열 (작은따옴표 포함) */
     val sqlValue: String get() = "'$name'"
@@ -38,7 +45,7 @@ enum class DateDiffUnit {
  *
  * @param T 입력 expression의 타입.
  */
-class ToYYYYMM<T>(val expr: Expression<T>) : Function<Int>(IntegerColumnType()) {
+class ToYYYYMM<T>(val expr: Expression<T>): Function<Int>(IntegerColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("toYYYYMM(")
         queryBuilder.append(expr)
@@ -71,7 +78,7 @@ fun <T> Expression<T>.toYYYYMM(): ToYYYYMM<T> = ToYYYYMM(this)
  *
  * @param T 입력 expression의 타입.
  */
-class ToYYYYMMDD<T>(val expr: Expression<T>) : Function<Int>(IntegerColumnType()) {
+class ToYYYYMMDD<T>(val expr: Expression<T>): Function<Int>(IntegerColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("toYYYYMMDD(")
         queryBuilder.append(expr)
@@ -112,7 +119,7 @@ class DateDiff<T>(
     val unit: DateDiffUnit,
     val from: Expression<T>,
     val to: Expression<T>,
-) : Function<Long>(LongColumnType()) {
+): Function<Long>(LongColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("dateDiff(")
         queryBuilder.append(unit.sqlValue)
@@ -160,7 +167,7 @@ fun <T> dateDiff(unit: DateDiffUnit, from: Expression<T>, to: Expression<T>): Da
 class ToStartOfInterval<T>(
     val expr: Expression<T>,
     val intervalSeconds: Long,
-) : Function<java.time.Instant>(org.jetbrains.exposed.v1.javatime.JavaInstantColumnType()) {
+): Function<java.time.Instant>(org.jetbrains.exposed.v1.javatime.JavaInstantColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("toStartOfInterval(")
         queryBuilder.append(expr)

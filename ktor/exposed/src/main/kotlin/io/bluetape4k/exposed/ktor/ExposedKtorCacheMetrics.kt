@@ -6,8 +6,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Timer
 import kotlinx.coroutines.CancellationException
-import java.util.Collections
-import java.util.IdentityHashMap
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
@@ -251,13 +250,16 @@ private class CacheMeterOwnership(
 }
 
 /** 설치 실패를 외부에 노출할 때 사용할 안정적인 분류입니다. */
-internal enum class CacheMeterFailureReason { IDENTITY_COLLISION, REGISTRATION_FAILED }
+internal enum class CacheMeterFailureReason {
+    IDENTITY_COLLISION,
+    REGISTRATION_FAILED
+}
 
 /** registry의 원본 예외 메시지나 내부 상태를 노출하지 않는 설치 실패 원인입니다. */
 internal class CacheMeterInstallationFailure(
     val reason: CacheMeterFailureReason,
     val primaryFailureType: String? = null,
-) : RuntimeException()
+): RuntimeException()
 
 /** 설치 rollback 결과를 secret 없이 보존하는 구조화된 진단입니다. */
 internal class CacheMeterRollbackDiagnostic(
@@ -267,7 +269,7 @@ internal class CacheMeterRollbackDiagnostic(
     val failed: Int,
     val residual: Int,
     failures: List<CacheMeterRollbackFailure>,
-) : RuntimeException(
+): RuntimeException(
     "Cache metric rollback failed: " +
             "attempted=$attempted,removed=$removed,notFound=$notFound,failed=$failed,residual=$residual."
 ) {
@@ -280,7 +282,7 @@ internal class CacheMeterRollbackDiagnostic(
 internal class CacheMeterRollbackFailure(
     meter: Meter,
     failure: RuntimeException,
-) : RuntimeException(
+): RuntimeException(
     "Cache metric rollback remove failed: " +
             "meter=${meter.id.name},component=${meter.id.getTag("component") ?: "unknown"}," +
             "kind=${meter.id.getTag("kind") ?: "unknown"},reason=${failure.javaClass.name}."

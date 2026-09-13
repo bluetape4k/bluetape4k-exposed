@@ -1,4 +1,3 @@
-
 tasks.test {
     // DuckDB JDBC uses System.load() for native library — required for Java 25+
     jvmArgs("--enable-native-access=ALL-UNNAMED")
@@ -6,8 +5,8 @@ tasks.test {
 
 dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
-    implementation(bt4k.bluetape4k.core)
-    api(bt4k.bluetape4k.logging)
+
+    api(bt4k.bluetape4k.core)
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(bt4k.exposed.java.time)

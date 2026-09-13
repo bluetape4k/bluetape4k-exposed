@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -21,7 +22,18 @@ import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
+class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private const val FINGERPRINT_A =
+            "sha256:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+
+        private const val FINGERPRINT_B =
+            "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+
+        private const val STATE_IN_FLIGHT = "IN_FLIGHT"
+        private const val STATE_COMPLETED = "COMPLETED"
+    }
 
     @Test
     fun `PostgreSQL unique constraint admits only one concurrent owner`() {
@@ -45,7 +57,9 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
                             )
                         }
                     }
-                    .map { future -> future.get(20, TimeUnit.SECONDS) }
+                    .map { future ->
+                        future.get(20, TimeUnit.SECONDS)
+                    }
 
                 outcomes.count { it is IdempotencyAcquireResult.Acquired } shouldBeEqualTo 1
                 outcomes.count { it is IdempotencyAcquireResult.InFlight } shouldBeEqualTo 1
@@ -63,6 +77,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
 
             fixture.acquire("order-command", "idem-conflict", FINGERPRINT_A, "owner-a", 1_000L)
                 .shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
+
             fixture.acquire("order-command", "idem-conflict", FINGERPRINT_B, "owner-b", 1_001L)
                 .shouldBeInstanceOf<IdempotencyAcquireResult.FingerprintConflict>()
         }
@@ -101,6 +116,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
                 nowEpochMillis = 1_499L,
                 staleAfterMillis = 500L,
             ).shouldBeInstanceOf<IdempotencyDiagnosis.Active>()
+
             fixture.retryInterrupted(
                 scope = "order-command",
                 key = "idem-retry",
@@ -109,6 +125,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
                 staleBeforeEpochMillis = 999L,
                 nowEpochMillis = 1_499L,
             ).shouldBeInstanceOf<IdempotencyAcquireResult.InFlight>()
+
             fixture.finalize("order-command", "idem-retry", "owner-b", "premature-result", 1_499L)
                 .shouldBeFalse()
 
@@ -285,22 +302,22 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
                 snapshot.state == STATE_COMPLETED ->
                     IdempotencyAcquireResult.Completed(requireNotNull(snapshot.resultReference))
 
-                else -> IdempotencyAcquireResult.InFlight
+                else                              -> IdempotencyAcquireResult.InFlight
             }
     }
 
     private sealed interface IdempotencyAcquireResult {
-        data object Acquired : IdempotencyAcquireResult
-        data object FingerprintConflict : IdempotencyAcquireResult
-        data object InFlight : IdempotencyAcquireResult
-        data class Completed(val resultReference: String) : IdempotencyAcquireResult
+        data object Acquired: IdempotencyAcquireResult
+        data object FingerprintConflict: IdempotencyAcquireResult
+        data object InFlight: IdempotencyAcquireResult
+        data class Completed(val resultReference: String): IdempotencyAcquireResult
     }
 
     private sealed interface IdempotencyDiagnosis {
-        data object Missing : IdempotencyDiagnosis
-        data object Active : IdempotencyDiagnosis
-        data object Interrupted : IdempotencyDiagnosis
-        data object Completed : IdempotencyDiagnosis
+        data object Missing: IdempotencyDiagnosis
+        data object Active: IdempotencyDiagnosis
+        data object Interrupted: IdempotencyDiagnosis
+        data object Completed: IdempotencyDiagnosis
     }
 
     private data class IdempotencySnapshot(
@@ -317,12 +334,12 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
                 "policy" to "retry_after_timeout",
             )
 
-            IdempotencyDiagnosis.Active -> mapOf("state" to "in_flight", "policy" to "wait")
+            IdempotencyDiagnosis.Active    -> mapOf("state" to "in_flight", "policy" to "wait")
             IdempotencyDiagnosis.Completed -> mapOf("state" to "completed", "policy" to "replay_result")
-            IdempotencyDiagnosis.Missing -> mapOf("state" to "missing", "policy" to "acquire")
+            IdempotencyDiagnosis.Missing   -> mapOf("state" to "missing", "policy" to "acquire")
         }
 
-    private object IdempotencyRecords : Table("app_idempotency_record_jdbc") {
+    private object IdempotencyRecords: Table("app_idempotency_record_jdbc") {
         val scope = varchar("scope", 80)
         val key = varchar("idempotency_key", 120)
         val fingerprint = varchar("request_fingerprint", 80)
@@ -332,14 +349,5 @@ class ApplicationOwnedIdempotencyRecordJdbcTest : AbstractExposedTest() {
         val updatedAtEpochMillis = long("updated_at_epoch_ms")
 
         override val primaryKey = PrimaryKey(scope, key)
-    }
-
-    companion object {
-        private const val FINGERPRINT_A =
-            "sha256:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
-        private const val FINGERPRINT_B =
-            "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
-        private const val STATE_IN_FLIGHT = "IN_FLIGHT"
-        private const val STATE_COMPLETED = "COMPLETED"
     }
 }

@@ -16,7 +16,7 @@ public final class io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSu
 	public final fun warmAll (Ljava/util/Map;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap$Companion : io/bluetape4k/logging/KLogging {
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/ExposedR2dbcLettuceSuspendedLoadedMap$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
 }
 
 public abstract class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapLoader : io/bluetape4k/redis/lettuce/map/SuspendedMapLoader {
@@ -45,7 +45,7 @@ public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMap
 	public fun loadAllKeysFlow ()Lkotlinx/coroutines/flow/Flow;
 }
 
-public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapLoader$Companion {
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapLoader$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
 }
 
 public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter : io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcEntityMapWriter {
@@ -54,7 +54,7 @@ public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMap
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;Lio/bluetape4k/redis/lettuce/map/WriteMode;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;IILjava/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
-public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter$Companion {
+public final class io/bluetape4k/exposed/r2dbc/lettuce/map/R2dbcExposedEntityMapWriter$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
 }
 
 public abstract class io/bluetape4k/exposed/r2dbc/lettuce/repository/AbstractR2dbcLettuceRepository : io/bluetape4k/exposed/r2dbc/lettuce/repository/R2dbcLettuceRepository {

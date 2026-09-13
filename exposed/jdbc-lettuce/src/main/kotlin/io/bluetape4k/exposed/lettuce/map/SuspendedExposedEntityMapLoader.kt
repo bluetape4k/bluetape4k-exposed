@@ -1,9 +1,11 @@
 package io.bluetape4k.exposed.lettuce.map
 
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -38,55 +40,57 @@ class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
     private val toEntity: (ResultRow) -> E,
     private val batchSize: Int = DEFAULT_BATCH_SIZE,
 ): SuspendedEntityMapLoader<ID, E>() {
-    companion object {
+
+    companion object: KLogging() {
         private const val DEFAULT_BATCH_SIZE = 1000
     }
 
     init {
-        require(batchSize > 0) { "batchSize는 0보다 커야 합니다. batchSize=$batchSize" }
+        batchSize.requirePositiveNumber("batchSize")
     }
 
-    override fun loadById(id: ID): E? =
-        table
-            .selectAll()
-            .where { table.id eq id }
-            .singleOrNull()
-            ?.let(toEntity)
+    override fun loadById(id: ID): E? = table
+        .selectAll()
+        .where { table.id eq id }
+        .singleOrNull()
+        ?.let(toEntity)
 
-    override fun loadAllIds(): List<ID> =
-        buildList {
-            var offset = 0L
-            var lastId: ID? = null
-            var keysetSupported: Boolean? = null
-            while (true) {
-                val cursor = lastId
-                val query = table.select(table.id).orderBy(table.id, SortOrder.ASC)
-                val batch =
-                    if (keysetSupported == true && cursor != null) {
-                        query
-                            .where { table.rawIdColumn() greater cursor.asComparableKey() }
-                            .limit(batchSize)
-                            .map { it[table.id].value }
-                    } else {
-                        query
-                            .limit(batchSize)
-                            .offset(offset)
-                            .map { it[table.id].value }
-                    }
-                addAll(batch)
-                if (batch.size < batchSize) break
+    override fun loadAllIds(): List<ID> = buildList {
+        var offset = 0L
+        var lastId: ID? = null
+        var keysetSupported: Boolean? = null
 
-                val currentLastId = batch.last()
-                if (keysetSupported == null) {
-                    keysetSupported = currentLastId.isKeysetScalar()
-                }
-                if (keysetSupported == true) {
-                    lastId = currentLastId
+        while (true) {
+            val cursor = lastId
+            val query = table.select(table.id).orderBy(table.id, SortOrder.ASC)
+
+            val batch =
+                if (keysetSupported == true && cursor != null) {
+                    query
+                        .where { table.rawIdColumn() greater cursor.asComparableKey() }
+                        .limit(batchSize)
+                        .map { it[table.id].value }
                 } else {
-                    offset += batch.size.toLong()
+                    query
+                        .limit(batchSize)
+                        .offset(offset)
+                        .map { it[table.id].value }
                 }
+
+            addAll(batch)
+            if (batch.size < batchSize) break
+
+            val currentLastId = batch.last()
+            if (keysetSupported == null) {
+                keysetSupported = currentLastId.isKeysetScalar()
+            }
+            if (keysetSupported) {
+                lastId = currentLastId
+            } else {
+                offset += batch.size.toLong()
             }
         }
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

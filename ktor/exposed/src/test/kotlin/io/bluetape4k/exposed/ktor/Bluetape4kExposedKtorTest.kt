@@ -1,10 +1,10 @@
 package io.bluetape4k.exposed.ktor
 
-import io.bluetape4k.codec.Base58
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.codec.Base58
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
@@ -18,28 +18,26 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.basic
 import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.nio.file.Files
 import java.nio.file.Path
 import java.sql.SQLException
-import java.util.Base64
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
@@ -65,8 +63,8 @@ class Bluetape4kExposedKtorTest {
             installBluetape4kExposedKtor()
         }
 
-        client.get("/healthz/exposed").shouldHaveStatus(HttpStatusCode.NotFound)
-        client.get("/readyz/exposed").shouldHaveStatus(HttpStatusCode.NotFound)
+        client.get("/healthz/exposed") shouldHaveStatus HttpStatusCode.NotFound
+        client.get("/readyz/exposed") shouldHaveStatus HttpStatusCode.NotFound
     }
 
     @Test
@@ -108,56 +106,58 @@ class Bluetape4kExposedKtorTest {
     }
 
     @Test
-    fun `caller authentication protects direct cache readiness while installer routes stay disabled`() = testApplication {
-        val invocations = AtomicInteger()
-        val cacheReadiness = cacheReadiness {
-            invocations.incrementAndGet()
-            ExposedKtorCacheStatus.UP
-        }
-        application {
-            installBluetape4kKtorCore(
-                Bluetape4kKtorCoreConfig(installStatusPages = false, installHealthRoutes = false)
-            )
-            install(Authentication) {
-                basic("ops") {
-                    realm = "ops"
-                    validate { credentials ->
-                        credentials.takeIf { it.name == "operator" && it.password == "secret" }
-                            ?.let { UserIdPrincipal(it.name) }
+    fun `caller authentication protects direct cache readiness while installer routes stay disabled`() =
+        testApplication {
+            val invocations = AtomicInteger()
+            val cacheReadiness = cacheReadiness {
+                invocations.incrementAndGet()
+                ExposedKtorCacheStatus.UP
+            }
+            application {
+                installBluetape4kKtorCore(
+                    Bluetape4kKtorCoreConfig(installStatusPages = false, installHealthRoutes = false)
+                )
+                install(Authentication) {
+                    basic("ops") {
+                        realm = "ops"
+                        validate { credentials ->
+                            credentials.takeIf { it.name == "operator" && it.password == "secret" }
+                                ?.let { UserIdPrincipal(it.name) }
+                        }
+                    }
+                }
+                installBluetape4kExposedKtor(
+                    config = Bluetape4kExposedKtorConfig(installHealthRoutes = false),
+                    cacheReadiness = cacheReadiness,
+                )
+                routing {
+                    authenticate("ops") {
+                        bluetape4kExposedHealthRoutes(
+                            jdbcDatabase = null,
+                            jdbcBlockingDispatcher = null,
+                            r2dbcDatabase = null,
+                            cacheReadiness = cacheReadiness,
+                        )
                     }
                 }
             }
-            installBluetape4kExposedKtor(
-                config = Bluetape4kExposedKtorConfig(installHealthRoutes = false),
-                cacheReadiness = cacheReadiness,
-            )
-            routing {
-                authenticate("ops") {
-                    bluetape4kExposedHealthRoutes(
-                        jdbcDatabase = null,
-                        jdbcBlockingDispatcher = null,
-                        r2dbcDatabase = null,
-                        cacheReadiness = cacheReadiness,
-                    )
-                }
+
+            val denied = bluetape4kJsonClient().get("/readyz/exposed")
+                .shouldHaveStatus(HttpStatusCode.Unauthorized)
+            denied.bodyAsText() shouldNotContain "cache.ops"
+            denied.bodyAsText() shouldNotContain HealthResponse.UP
+            invocations.get() shouldBeEqualTo 0
+
+            val authorization = Base64.getEncoder().encodeToString("operator:secret".toByteArray())
+            val allowed = bluetape4kJsonClient().get("/readyz/exposed") {
+                header(HttpHeaders.Authorization, "Basic $authorization")
             }
+                .shouldHaveStatus(HttpStatusCode.OK)
+                .decodeJsonBody<HealthResponse>()
+
+            allowed shouldBeEqualTo HealthResponse.up(mapOf("cache.ops" to HealthResponse.UP))
+            invocations.get() shouldBeEqualTo 1
         }
-
-        val denied = bluetape4kJsonClient().get("/readyz/exposed")
-            .shouldHaveStatus(HttpStatusCode.Unauthorized)
-        denied.bodyAsText() shouldNotContain "cache.ops"
-        denied.bodyAsText() shouldNotContain HealthResponse.UP
-        invocations.get() shouldBeEqualTo 0
-
-        val authorization = Base64.getEncoder().encodeToString("operator:secret".toByteArray())
-        val allowed = bluetape4kJsonClient().get("/readyz/exposed") {
-            header(HttpHeaders.Authorization, "Basic $authorization")
-        }.shouldHaveStatus(HttpStatusCode.OK)
-            .decodeJsonBody<HealthResponse>()
-
-        allowed shouldBeEqualTo HealthResponse.up(mapOf("cache.ops" to HealthResponse.UP))
-        invocations.get() shouldBeEqualTo 1
-    }
 
     @Test
     fun `cache installer KDoc pins security deadline unsupported probes and resource ownership`() {
@@ -220,9 +220,7 @@ class Bluetape4kExposedKtorTest {
             }
             routing {
                 get("/db") {
-                    throw SQLException(
-                        "jdbc:h2:mem:secret; user=sa password=top-secret SELECT * FROM payments"
-                    )
+                    throw SQLException("jdbc:h2:mem:secret; user=sa password=top-secret SELECT * FROM payments")
                 }
             }
         }
@@ -336,7 +334,10 @@ class Bluetape4kExposedKtorTest {
 
     private fun exposedKtorInstallerSource(): String {
         val relative = "ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/Bluetape4kExposedKtor.kt"
-        val paths = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/Bluetape4kExposedKtor.kt"))
+        val paths = listOf(
+            Path.of(relative),
+            Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/Bluetape4kExposedKtor.kt")
+        )
         return Files.readString(paths.first(Files::exists))
     }
 }

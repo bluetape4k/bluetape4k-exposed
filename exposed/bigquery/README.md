@@ -9,15 +9,20 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 `exposed-bigquery` gives Exposed users a BigQuery REST execution path without pretending that BigQuery is a JDBC database:
 
-- **BigQueryContext**: Converts Exposed DSL to SQL through an internal H2 PostgreSQL-mode database, then executes the SQL through BigQuery `jobs.query`.
+-
+
+**BigQueryContext**: Converts Exposed DSL to SQL through an internal H2 PostgreSQL-mode database, then executes the SQL through BigQuery `jobs.query`.
     - Supports SELECT, INSERT, UPDATE, DELETE, and CREATE TABLE DDL.
     - Provides synchronous, suspend, and Flow result-consumption APIs.
 - **BigQueryQueryExecutor**: Wraps Exposed `Query` objects and follows BigQuery `pageToken` pagination.
 - **BigQueryResultRow**: Reads REST response rows through Exposed column references.
     - Column lookup is case-insensitive.
     - `"null"` strings and BigQuery null sentinels become Kotlin `null`.
-- **BigQueryQueryOptions**: Applies dry-run, billed-byte caps, labels, priority, location, timeout, query cache, and destination-table settings.
-- **BigQueryDialect**: Reuses `PostgreSQLDialect` while disabling BigQuery-incompatible behavior such as ALTER COLUMN TYPE.
+-
+
+**BigQueryQueryOptions**: Applies dry-run, billed-byte caps, labels, priority, location, timeout, query cache, and destination-table settings.
+-
+**BigQueryDialect**: Reuses `PostgreSQLDialect` while disabling BigQuery-incompatible behavior such as ALTER COLUMN TYPE.
 
 ## Module Positioning
 
@@ -145,8 +150,7 @@ with(context) {
 
 ### 6. Query Job Options and Dry Run
 
-Use `BigQueryQueryOptions` when a query needs cost controls, labels, priority,
-location, destination-table routing, timeout overrides, or cache behavior.
+Use `BigQueryQueryOptions` when a query needs cost controls, labels, priority, location, destination-table routing, timeout overrides, or cache behavior.
 
 ```kotlin
 import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
@@ -166,9 +170,7 @@ with(context) {
 }
 ```
 
-`validateRawQuery` and `validateQuery` force `dryRun=true`, so BigQuery validates
-SQL, permissions, and estimated cost without executing a billable query. The
-same options can be passed to `runRawQuery`, `runQuery`, or `withBigQuery(...)`
+`validateRawQuery` and `validateQuery` force `dryRun=true`, so BigQuery validates SQL, permissions, and estimated cost without executing a billable query. The same options can be passed to `runRawQuery`, `runQuery`, or `withBigQuery(...)`
 when the query should actually execute.
 
 ## Type Mapping

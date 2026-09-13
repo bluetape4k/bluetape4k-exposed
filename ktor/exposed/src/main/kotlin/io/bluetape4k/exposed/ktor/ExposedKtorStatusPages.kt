@@ -15,7 +15,7 @@ import java.sql.SQLException
     message = "core와 선택한 backend adapter의 StatusPages mapping을 조합하세요.",
     level = DeprecationLevel.WARNING,
 )
-/** client에 안전한 Exposed error response를 등록합니다. */
+        /** client에 안전한 Exposed error response를 등록합니다. */
 fun StatusPagesConfig.bluetape4kExposedErrors() {
     // Register child/core mappings first; the legacy handlers below retain the
     // old-package exception surface and response contract.

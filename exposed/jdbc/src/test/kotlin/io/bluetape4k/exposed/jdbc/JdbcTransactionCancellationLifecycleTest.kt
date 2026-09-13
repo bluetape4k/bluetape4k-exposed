@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.jdbc
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
@@ -32,18 +33,23 @@ import java.util.concurrent.TimeUnit
 /** 실제 JDBC 자원을 유지한 채 acquisition·begin·statement 경계에서 Job을 취소한다. */
 class JdbcTransactionCancellationLifecycleTest {
 
-    enum class Boundary { ACQUIRED, BEGIN, STATEMENT, BEGIN_FAILURE }
-
-    companion object {
+    companion object: KLogging() {
         @JvmStatic
         fun cases() = TestDB.enabledDialects()
             .filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
             .flatMap { db -> Boundary.entries.map { Arguments.of(db, it) } }
     }
 
+    enum class Boundary {
+        ACQUIRED,
+        BEGIN,
+        STATEMENT,
+        BEGIN_FAILURE
+    }
+
     // stacktrace recovery의 복사를 배제하고 transaction이 전달한 원인을 관측한다.
-    private class BoundaryCancellation(val boundary: Boundary) : CancellationException(boundary.name)
-    private class BeginFailure(val boundary: Boundary) : IllegalStateException(boundary.name)
+    private class BoundaryCancellation(val boundary: Boundary): CancellationException(boundary.name)
+    private class BeginFailure(val boundary: Boundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
@@ -54,6 +60,7 @@ class JdbcTransactionCancellationLifecycleTest {
         val release = CountDownLatch(1)
         val cancellation = BoundaryCancellation(boundary)
         val beginFailure = BeginFailure(boundary)
+
         // JDBC의 동기 경계를 고정하므로 stress tester 대신 bounded latch와 실제 IO Job을 사용한다.
         fun pause(at: Boundary) {
             if (boundary == at) {
@@ -61,10 +68,12 @@ class JdbcTransactionCancellationLifecycleTest {
                 check(release.await(10, TimeUnit.SECONDS)) { "JDBC boundary was not released" }
             }
         }
+
         Class.forName(testDB.driver)
         val database = instrumentedDatabase(testDB, boundary, events, beginFailure, ::pause)
+
         try {
-            withTimeout(15_000) {
+            withTimeout(timeMillis = 15_000) {
                 coroutineScope {
                     val observed = CompletableDeferred<Throwable>()
                     val job = launch {
@@ -101,6 +110,7 @@ class JdbcTransactionCancellationLifecycleTest {
             events.count { it == "rollback" } shouldBeEqualTo if (boundary == Boundary.BEGIN_FAILURE) 0 else 1
             events.count { it == "statement" } shouldBeEqualTo if (boundary == Boundary.STATEMENT) 1 else 0
             events.count { it == "statement-close" } shouldBeEqualTo if (boundary == Boundary.STATEMENT) 1 else 0
+
             if (boundary == Boundary.STATEMENT) {
                 check(events.indexOf("statement-close") < events.indexOf("close"))
             }
@@ -135,7 +145,7 @@ class JdbcTransactionCancellationLifecycleTest {
             }
             proxy<Connection>(connection) { method, args ->
                 when (method.name) {
-                    "setAutoCommit" -> {
+                    "setAutoCommit"    -> {
                         if (args?.firstOrNull() == false) {
                             events.add("begin")
                             if (boundary == Boundary.BEGIN_FAILURE) throw beginFailure
@@ -157,7 +167,7 @@ class JdbcTransactionCancellationLifecycleTest {
                         events.add(method.name)
                         invoke(connection, method, args)
                     }
-                    else -> invoke(connection, method, args)
+                    else               -> invoke(connection, method, args)
                 }
             }
         },
@@ -167,7 +177,7 @@ class JdbcTransactionCancellationLifecycleTest {
         },
     )
 
-    private inline fun <reified T : Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
+    private inline fun <reified T: Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
         Proxy.newProxyInstance(target.javaClass.classLoader, arrayOf(T::class.java)) { _, method, args ->
             call(method, args)
         } as T

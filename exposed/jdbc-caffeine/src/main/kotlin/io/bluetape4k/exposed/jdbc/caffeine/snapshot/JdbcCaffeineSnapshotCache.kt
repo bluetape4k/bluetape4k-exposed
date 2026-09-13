@@ -28,6 +28,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import java.io.Serializable
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -38,7 +39,7 @@ import kotlin.reflect.KClass
  *
  * 인스턴스는 thread 또는 closeable resource를 소유하지 않습니다. database 접근은 전적으로 호출자가 소유합니다.
  */
-class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
+class JdbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
     idType: KClass<ID>,
     valueType: KClass<V>,
     private val config: CaffeineSnapshotCacheConfig,
@@ -46,7 +47,8 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
     internal val validator: CacheSnapshotValueValidator<V>,
     /** 이 facade가 사용하는 호출자 소유의 bounded failure buffer입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
-) : SnapshotCacheStore<ID, V> {
+): SnapshotCacheStore<ID, V> {
+
     private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
     private val fences = SnapshotLocalFenceRegistry<ID>(config.fenceStripes)
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
@@ -197,11 +199,11 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
         }
     }
 
-    companion object {
+    companion object: KLogging() {
         private const val BACKEND = "caffeine-jdbc"
         private const val VERSION = "jdbc-caffeine-snapshot-v1"
 
-        internal fun <ID : Any, V : Serializable> create(
+        internal fun <ID: Any, V: Serializable> create(
             idType: KClass<ID>,
             valueType: KClass<V>,
             config: CaffeineSnapshotCacheConfig,
@@ -222,7 +224,7 @@ class JdbcCaffeineSnapshotCache<ID : Any, V : Serializable> private constructor(
 }
 
 /** 명시적인 runtime type token을 사용해 cache-only JDBC Caffeine snapshot facade를 생성합니다. */
-fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
+fun <ID: Any, V: Serializable> jdbcCaffeineSnapshotCache(
     idType: KClass<ID>,
     valueType: KClass<V>,
     config: CaffeineSnapshotCacheConfig,
@@ -237,7 +239,7 @@ fun <ID : Any, V : Serializable> jdbcCaffeineSnapshotCache(
 }
 
 /** reified runtime type token을 사용해 cache-only JDBC Caffeine snapshot facade를 생성합니다. */
-inline fun <reified ID : Any, reified V : Serializable> jdbcCaffeineSnapshotCache(
+inline fun <reified ID: Any, reified V: Serializable> jdbcCaffeineSnapshotCache(
     config: CaffeineSnapshotCacheConfig,
     valueSizer: SnapshotValueSizer<V>? = null,
     validator: CacheSnapshotValueValidator<V> = rejectDirectEntitySnapshotValues(),
@@ -245,7 +247,7 @@ inline fun <reified ID : Any, reified V : Serializable> jdbcCaffeineSnapshotCach
 ): JdbcCaffeineSnapshotCache<ID, V> =
     jdbcCaffeineSnapshotCache(ID::class, V::class, config, valueSizer, validator, failureBuffer)
 
-private fun <ID : Any, V : Serializable> buildCache(
+private fun <ID: Any, V: Serializable> buildCache(
     config: CaffeineSnapshotCacheConfig,
 ): Cache<ID, StoredSnapshot<V>> {
     val base = Caffeine.newBuilder()
@@ -259,7 +261,11 @@ private fun <ID : Any, V : Serializable> buildCache(
     return base.maximumSize(config.maximumSize).build()
 }
 
-private data class StoredSnapshot<V : Serializable>(
+private data class StoredSnapshot<V: Serializable>(
     val snapshot: CacheSnapshot<V>,
     val caffeineWeight: Int,
-)
+): Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}

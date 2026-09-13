@@ -73,10 +73,17 @@ object FastjsonSchema {
         val numbers = fastjsonb<IntArray>("numbers")
     }
 
+    data class DataHolder(
+        val user: User,
+        val logins: Int,
+        val active: Boolean,
+        val team: String?,
+    ): Serializable
 
-    data class DataHolder(val user: User, val logins: Int, val active: Boolean, val team: String?): Serializable
-
-    data class User(val name: String, val team: String?): Serializable
+    data class User(
+        val name: String,
+        val team: String?,
+    ): Serializable
 
     data class UserGroup(val users: List<User>): Serializable
 

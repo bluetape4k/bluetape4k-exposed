@@ -12,7 +12,7 @@ Exposed JDBC와 Redisson 캐시를 결합해 Read-Through/Write-Through 캐시 �
 
 - **MapLoader/MapWriter 지원**: Redisson Read-Through/Write-Through 캐시 연동
     - 동기 `loadAllKeys()`는 지원되는 scalar ID에서 순서가 보장된 keyset page를 사용하고 custom ID에서는 기존 offset fallback을 사용하며, 각 page는 `batchSize`로 제한
-    - 동기·suspended JDBC `loadAllKeys()` 경로는 Exposed의 statement별 `queryTimeout`을 30초로 설정합니다(`queryTimeout` 단위는 초). suspended 경로의 전체 열거 60초 예산은 별도 timeout입니다
+  - 동기·suspended JDBC `loadAllKeys()` 경로는 Exposed의 statement별 `queryTimeout`을 30초로 설정합니다 (`queryTimeout` 단위는 초). suspended 경로의 전체 열거 60초 예산은 별도 timeout입니다
     - `loadAllKeysInParallel(ranges, options)`는 호출자가 분할한 겹치지 않는 `[lowerInclusive, upperExclusive)` PK range를 Virtual Thread와 독립 JDBC transaction으로 병렬 열거하는 opt-in materialized 경로이며, bounded concurrency와 선언 순서 merge를 사용하고 기본 sequential loader는 변경하지 않음. Exposed range predicate는 `Comparable` PK 경계를 요구함
     - suspended `loadAllKeys()`는 rendezvous channel back-pressure를 사용하는 Redisson `AsyncIterator`로 PK 오름차순 keyset page를 스트리밍
     - 두 JDBC loader 경로 모두 keyset 비교를 사용할 수 없는 custom ID에서는 offset fallback을 사용하며, suspended 경로는 한 번에 `batchSize` page만 처리하고 caller cancellation을 producer transaction까지 전달함
@@ -36,8 +36,7 @@ dependencies {
 ## 아키텍처 개요
 
 아키텍처 그림은 애플리케이션 호출을 처리하는 Redisson map과 캐시만 제거할 때 사용하는 map을 나눠 보여줍니다.
-`RedissonCacheConfig`가 `RMapCache`와 `RLocalCachedMap` 중 하나를 선택하고, read-only 모드에서는 loader만 붙이며,
-read/write 모드에서만 writer를 붙입니다.
+`RedissonCacheConfig`가 `RMapCache`와 `RLocalCachedMap` 중 하나를 선택하고, read-only 모드에서는 loader만 붙이며, read/write 모드에서만 writer를 붙입니다.
 
 ![JDBC Redisson Redis cache architecture diagram](../../docs/images/readme-diagrams/exposed-jdbc-redisson-diagram-01.png)
 
@@ -45,11 +44,9 @@ read/write 모드에서만 writer를 붙입니다.
 
 ### 동기 Repository 계층 구조
 
-클래스 다이어그램은 동기 repository 계약에 집중합니다. 코루틴 경로도 같은 캐시 정책을 사용하지만, Redisson future와
-Exposed suspend transaction을 기다리는 흐름은 sequence diagram에서 보는 편이 더 읽기 쉽습니다.
+클래스 다이어그램은 동기 repository 계약에 집중합니다. 코루틴 경로도 같은 캐시 정책을 사용하지만, Redisson future와 Exposed suspend transaction을 기다리는 흐름은 sequence diagram에서 보는 편이 더 읽기 쉽습니다.
 
 ![JDBC Redisson synchronous repository hierarchy diagram](../../docs/images/readme-diagrams/exposed-jdbc-redisson-diagram-02.png)
-
 
 ## 기본 사용법
 
@@ -93,19 +90,19 @@ class UserRedissonRepository(
     override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
-        id    = this[UserTable.id].value,
-        name  = this[UserTable.name],
+        id = this[UserTable.id].value,
+        name = this[UserTable.name],
         email = this[UserTable.email],
     )
 
     // Write-Through 모드 시 구현 필요
     override fun UpdateStatement.updateEntity(entity: UserRecord) {
-        this[UserTable.name]  = entity.name
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 
     override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
-        this[UserTable.name]  = entity.name
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 }
@@ -159,18 +156,18 @@ class SuspendedUserRedissonRepository(
     override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
-        id    = this[UserTable.id].value,
-        name  = this[UserTable.name],
+        id = this[UserTable.id].value,
+        name = this[UserTable.name],
         email = this[UserTable.email],
     )
 
     override fun UpdateStatement.updateEntity(entity: UserRecord) {
-        this[UserTable.name]  = entity.name
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 
     override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
-        this[UserTable.name]  = entity.name
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 }
@@ -225,44 +222,30 @@ val deleteFromDbConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
 ## Redis Codec 안전성
 
 `RedissonCacheConfig` 상수는 기본적으로 Fory 계열 binary codec을 사용합니다. Repository 생성자는
-`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은
-Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요.
-dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
+`trustedBinaryCache = true`를 명시하지 않으면 Fory/Kryo/JDK 계열 binary codec을 거부합니다. 이 opt-in은 Redis 인스턴스가 private이고, Redis 내용을 신뢰할 수 없는 클라이언트가 쓸 수 없는 경우에만 사용하세요. dependency 경계에 놓인 Redis 데이터에는 기본 binary codec 대신 검토된 custom codec을 제공하세요.
 
 <!-- REDISSON-SNAPSHOT-INVALIDATION -->
+
 ## 커밋 기준 데이터에 맞춘 Redisson 무효화 (opt-in)
 
-`JdbcRedissonSnapshotInvalidator`는 애플리케이션 Near Cache만 무효화하는 별도 opt-in 경로입니다. 캐시 read나
-기준 데이터 `PUT`을 노출하지 않고, 기존 `JdbcRedissonRepository`의 데이터도 옮기지 않습니다. `stageInvalidation`은
-현재 최상위 JDBC 트랜잭션이 커밋된 뒤 `fastRemoveAsync`만 호출합니다. 롤백하면 아무것도 공개하지 않습니다.
-이 transaction은 `maxAttempts = 1`이어야 하므로 애플리케이션 재시도는 transaction 전체를 감쌉니다.
+`JdbcRedissonSnapshotInvalidator`는 애플리케이션 Near Cache만 무효화하는 별도 opt-in 경로입니다. 캐시 read나 기준 데이터 `PUT`을 노출하지 않고, 기존 `JdbcRedissonRepository`의 데이터도 옮기지 않습니다. `stageInvalidation`은 현재 최상위 JDBC 트랜잭션이 커밋된 뒤 `fastRemoveAsync`만 호출합니다. 롤백하면 아무것도 공개하지 않습니다. 이 transaction은 `maxAttempts = 1`이어야 하므로 애플리케이션 재시도는 transaction 전체를 감쌉니다.
 
 ### Key, codec, namespace 계약
 
 - 분산 identifier에는 secret, credential, PII가 아닌 surrogate `Long` 또는 `UUID`만 사용합니다.
-  `longSnapshotIdentifierPolicy()`나 `uuidSnapshotIdentifierPolicy()`를 선택하세요. String policy는 의도적으로
-  제공하지 않습니다. 민감한 key, composite key, domain String key는 먼저 surrogate로 바꿔야 합니다.
-- Repository map key와 무효화에는 같은 `SnapshotRedissonCodec` 객체를 사용합니다. 원격 compatibility fingerprint는
-  backend, namespace, key/value runtime class, schema version, codec delegate class, `codecVersion`, canonical key
-  encoding, synchronization strategy를 묶습니다. 비어 있는 namespace는 marker가 없으면 원자적으로 선점합니다.
-  map이 이미 있는데 marker가 없거나, marker가 호환되지 않으면 map 접근이나 mutation 허용 전에 실패합니다.
-- `SnapshotCacheConfig.namespace`는 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`에 맞고, 운영자가 소유하는 정적인
-  버전 이름이어야 합니다. 예: `orders:v1`. tenant, request, user, entity 같은 동적 identifier를 넣으면 안
-  됩니다. 서로 다른 애플리케이션 버전이 version 없는 namespace를 공유하게 두지 마세요.
-- Fory, Kryo, JDK 계열 binary delegate는 consumer마다 `trustedBinaryCache = true`를 명시해야 합니다. 모든 writer와
-  payload를 신뢰할 수 있는 격리 캐시에서만 이 opt-in을 사용하세요.
+  `longSnapshotIdentifierPolicy()`나 `uuidSnapshotIdentifierPolicy()`를 선택하세요. String policy는 의도적으로 제공하지 않습니다. 민감한 key, composite key, domain String key는 먼저 surrogate로 바꿔야 합니다.
+- Repository map key와 무효화에는 같은 `SnapshotRedissonCodec` 객체를 사용합니다. 원격 compatibility fingerprint는 backend, namespace, key/value runtime class, schema version, codec delegate class, `codecVersion`, canonical key encoding, synchronization strategy를 묶습니다. 비어 있는 namespace는 marker가 없으면 원자적으로 선점합니다. map이 이미 있는데 marker가 없거나, marker가 호환되지 않으면 map 접근이나 mutation 허용 전에 실패합니다.
+- `SnapshotCacheConfig.namespace`는 `[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*`에 맞고, 운영자가 소유하는 정적인 버전 이름이어야 합니다. 예: `orders:v1`. tenant, request, user, entity 같은 동적 identifier를 넣으면 안 됩니다. 서로 다른 애플리케이션 버전이 version 없는 namespace를 공유하게 두지 마세요.
+- Fory, Kryo, JDK 계열 binary delegate는 consumer마다 `trustedBinaryCache = true`를 명시해야 합니다. 모든 writer와 payload를 신뢰할 수 있는 격리 캐시에서만 이 opt-in을 사용하세요.
 - 여러 노드에서 사용할 때는 `SyncStrategy.INVALIDATE`가 필요하고, reconnect 복구에는 항상
   `ReconnectionStrategy.CLEAR`가 필요합니다.
 
 ### Canonical Redisson 예제
 
-아래 코드는 English README의 블록과 byte-for-byte로 같으며 source-usage fixture로 실제 컴파일합니다. DTO는
-분리된 직렬화 가능 값이고, invalidator에는 payload가 아니라 key만 전달합니다. `orderSnapshotCodec()`은 한 번만
-호출하고, 그때 만든 객체 하나를 Repository map 설정과 `orderSnapshotInvalidator` 양쪽에 그대로 전달하세요.
-consumer마다 wrapper를 따로 만들면 안 됩니다. 이 typed JSON delegate는 trusted-binary opt-in 없이도 DTO를
-왕복 직렬화합니다.
+아래 코드는 English README의 블록과 byte-for-byte로 같으며 source-usage fixture로 실제 컴파일합니다. DTO는 분리된 직렬화 가능 값이고, invalidator에는 payload가 아니라 key만 전달합니다. `orderSnapshotCodec()`은 한 번만 호출하고, 그때 만든 객체 하나를 Repository map 설정과 `orderSnapshotInvalidator` 양쪽에 그대로 전달하세요. consumer마다 wrapper를 따로 만들면 안 됩니다. 이 typed JSON delegate는 trusted-binary opt-in 없이도 DTO를 왕복 직렬화합니다.
 
 <!-- README-CANONICAL-REDISSON-BEGIN -->
+
 ```kotlin
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -321,76 +304,48 @@ fun JdbcTransaction.invalidateOrderSnapshot(
     stageInvalidation(invalidator, id)
 }
 ```
+
 <!-- README-CANONICAL-REDISSON-END -->
 
 ### 진입 제한, 실패 관찰, 복구
 
-`quotaHealth()`는 `SnapshotInvalidationQuotaHealth`를 반환하며, 호출자가 소유한 `RedissonClient`의 chunk 수와
-encoded-byte quota 상태를 제한된 구조 정보로 보여줍니다. quota가 포화되면 이미 받은 future를 막거나 취소하지 않고
-해당 chunk를 거부합니다. 이미 커밋된 DB를 되돌리지는 못합니다. 거부된 chunk, 버려진 failure event, 반복 무효화,
-지속적인 포화를 alert로 감시하세요.
-반복 무효화에는 rate control을 적용하고, 무효화나 reconnect로 miss가 늘어나면 DB load shedding을 적용해야 합니다.
+`quotaHealth()`는 `SnapshotInvalidationQuotaHealth`를 반환하며, 호출자가 소유한 `RedissonClient`의 chunk 수와 encoded-byte quota 상태를 제한된 구조 정보로 보여줍니다. quota가 포화되면 이미 받은 future를 막거나 취소하지 않고 해당 chunk를 거부합니다. 이미 커밋된 DB를 되돌리지는 못합니다. 거부된 chunk, 버려진 failure event, 반복 무효화, 지속적인 포화를 alert로 감시하세요. 반복 무효화에는 rate control을 적용하고, 무효화나 reconnect로 miss가 늘어나면 DB load shedding을 적용해야 합니다.
 
-받아들인 chunk는 future가 끝나면 quota를 반환합니다. 끝나지 않는 future는 client를 교체할 때까지 제한된 lease만
-유지합니다. 호출자가 소유한 `SnapshotCacheFailureBuffer`는 호출한 thread에서 명시적으로 drain하세요. 공개
-failure/health 데이터에는 제한된 구조 count와 exception type만 남습니다. exception text, stack trace, payload,
-identifier, SQL, URL, endpoint, credential은 남기지 않습니다.
+받아들인 chunk는 future가 끝나면 quota를 반환합니다. 끝나지 않는 future는 client를 교체할 때까지 제한된 lease만 유지합니다. 호출자가 소유한 `SnapshotCacheFailureBuffer`는 호출한 thread에서 명시적으로 drain하세요. 공개 failure/health 데이터에는 제한된 구조 count와 exception type만 남습니다. exception text, stack trace, payload, identifier, SQL, URL, endpoint, credential은 남기지 않습니다.
 
-복구할 때는 쓰기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만든 뒤 기존 client를 닫습니다. 제한된
-monotonic deadline 안에서 처리 중인 quota가 0이 될 때까지 확인하고 failure buffer를 drain하세요. 새 quota
-limit을 적용한 별도 `RedissonClient`를 만들고, 닫은 client는 다시 사용하지 않습니다. 무효화 후처리는 DB에 쓰거나
-Redis를 기다리거나 Redis future를 취소하지 않습니다. 커밋된 DB/캐시 상태를 원자적으로 만들 수도 없습니다. 애플리케이션 소유
-outbox나 repair path가 따로 필요합니다.
+복구할 때는 쓰기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만든 뒤 기존 client를 닫습니다. 제한된 monotonic deadline 안에서 처리 중인 quota가 0이 될 때까지 확인하고 failure buffer를 drain하세요. 새 quota limit을 적용한 별도 `RedissonClient`를 만들고, 닫은 client는 다시 사용하지 않습니다. 무효화 후처리는 DB에 쓰거나 Redis를 기다리거나 Redis future를 취소하지 않습니다. 커밋된 DB/캐시 상태를 원자적으로 만들 수도 없습니다. 애플리케이션 소유 outbox나 repair path가 따로 필요합니다.
 
 ### Namespace 정리 권한과 제한 시간
 
-`clearSnapshotNamespace`와 `clearMapRetainingMarker`에는 `DelicateSnapshotCacheAdminApi`가 붙어 있습니다. 모든
-쓰기 작업을 중지하고 트래픽을 멈춘 뒤, 사용 중인 모든 client에서 해당 namespace를 제거해야 실행할 수 있습니다.
-network isolation과 dedicated namespace-scoped Redis ACL identity가 필요합니다. 이 ACL은 marker/map inspect와
-unlink, local-cache clear용 제한된 pub/sub, 임시 clear semaphore key/channel만 허용하고 global keyevent
-subscription은 거부해야 합니다. 이 함수를 request-facing path에 노출하면 안 됩니다. exact fingerprint는 실수
-방지 장치이지 authorization이 아닙니다.
+`clearSnapshotNamespace`와 `clearMapRetainingMarker`에는 `DelicateSnapshotCacheAdminApi`가 붙어 있습니다. 모든 쓰기 작업을 중지하고 트래픽을 멈춘 뒤, 사용 중인 모든 client에서 해당 namespace를 제거해야 실행할 수 있습니다. network isolation과 dedicated namespace-scoped Redis ACL identity가 필요합니다. 이 ACL은 marker/map inspect와 unlink, local-cache clear용 제한된 pub/sub, 임시 clear semaphore key/channel만 허용하고 global keyevent subscription은 거부해야 합니다. 이 함수를 request-facing path에 노출하면 안 됩니다. exact fingerprint는 실수 방지 장치이지 authorization이 아닙니다.
 
 두 함수 모두 `SnapshotNamespaceCleanupResult`를 반환합니다. rollout이나 rollback의 다음 단계로 넘어가기 전에
 `SnapshotNamespaceCleanupOutcome`을 확인하세요.
 
-하나의 timeout을 marker inspect, asynchronous map unlink, 각 local view clear, 마지막 검증이 공유합니다. 서버가
-받은 command는 취소하지 않습니다. `TIMED_OUT_ACCEPTED_UNKNOWN`이면 다시 quiesce한 상태에서 같은 작업을 실행해
-관찰된 partial state를 확인하고 이어서 정리해야 합니다.
+하나의 timeout을 marker inspect, asynchronous map unlink, 각 local view clear, 마지막 검증이 공유합니다. 서버가 받은 command는 취소하지 않습니다. `TIMED_OUT_ACCEPTED_UNKNOWN`이면 다시 quiesce한 상태에서 같은 작업을 실행해 관찰된 partial state를 확인하고 이어서 정리해야 합니다.
 
 ### 정확한 `v1` → `v2` rollout
 
 <!-- SNAPSHOT-ROLLOUT-CONTRACT: shadow-warm-only; no-v2-user-reads-or-writes; write-quiesced-cutover; rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; no-cross-namespace-invalidation -->
 
-`v1` 무효화는 `v2`에 전달되지 않고 `v2` 무효화도 `v1`에 전달되지 않습니다. `v1`이 서비스하는 동안 `v2`를
-shadow cache로 배포해 DB에서 미리 채울 수는 있지만, `v2`가 사용자 읽기에 응답하거나 사용자 쓰기를 받아서는 안
-됩니다. 활성 `v1` 쓰기로 shadow가 오래된 상태가 될 수 있으므로, 두 버전의 사용자 트래픽을 겹치는 방식은 안전한
-전환 절차가 아닙니다.
+`v1` 무효화는 `v2`에 전달되지 않고 `v2` 무효화도 `v1`에 전달되지 않습니다. `v1`이 서비스하는 동안 `v2`를 shadow cache로 배포해 DB에서 미리 채울 수는 있지만, `v2`가 사용자 읽기에 응답하거나 사용자 쓰기를 받아서는 안 됩니다. 활성 `v1` 쓰기로 shadow가 오래된 상태가 될 수 있으므로, 두 버전의 사용자 트래픽을 겹치는 방식은 안전한 전환 절차가 아닙니다.
 
-1. 별도 `:v2` namespace에 `v2`를 shadow-only로 배포하고 운영 진단을 위해 DB에서 미리 채웁니다. `v1`과 `v2`는
-   격리해야 하며, 서로 다른 버전의 node가 version 없는 namespace를 공유하면 안 됩니다.
-2. 전환 구간을 시작하면 **모든 사용자 읽기와 쓰기**를 중지하고 처리 중인 작업을 drain한 뒤 두 quota가 모두 0인지
-   확인합니다. 모든 shadow `v2` client를 닫고 제거한 다음 `v2`에 `clearMapRetainingMarker`를 호출합니다. 새 `v2`
-   client를 만들고 트래픽을 계속 멈춘 상태에서 DB로부터 `v2`를 다시 채운 뒤, DB 기준 읽기 결과와 일치하는지
-   검증합니다.
+1. 별도 `:v2` namespace에 `v2`를 shadow-only로 배포하고 운영 진단을 위해 DB에서 미리 채웁니다. `v1`과 `v2`는 격리해야 하며, 서로 다른 버전의 node가 version 없는 namespace를 공유하면 안 됩니다.
+2. 전환 구간을 시작하면 **모든 사용자 읽기와
+   쓰기**를 중지하고 처리 중인 작업을 drain한 뒤 두 quota가 모두 0인지 확인합니다. 모든 shadow `v2` client를 닫고 제거한 다음 `v2`에 `clearMapRetainingMarker`를 호출합니다. 새 `v2`
+   client를 만들고 트래픽을 계속 멈춘 상태에서 DB로부터 `v2`를 다시 채운 뒤, DB 기준 읽기 결과와 일치하는지 검증합니다.
 3. 재구축 결과를 검증한 뒤 모든 `v1` application client를 닫고 제거하고, 모든 node와 traffic route를 한 번에
    `v2`로 전환합니다. 모든 트래픽이 `v2`를 향하는 것을 확인한 뒤에만 사용자 읽기와 쓰기를 재개하세요. `v1`과
    `v2` 사용자 트래픽을 동시에 운영하면 안 됩니다.
-4. `v2`가 서비스를 시작하고 `v1` client가 하나도 남지 않은 뒤에만 `v1`에 `clearSnapshotNamespace`를 호출합니다.
-   마지막 결과가 `COMPLETED`이거나 재검증한 `ALREADY_COMPLETE`여야 합니다. command를 받은 뒤 shared timeout이
-   끝났다면 namespace를 quiesce한 채 다시 실행하세요. invalidation alert/rate control을 유지하고, 차가운 miss가
-   DB read를 증폭하면 load shedding을 적용합니다.
+4. `v2`가 서비스를 시작하고 `v1` client가 하나도 남지 않은 뒤에만 `v1`에 `clearSnapshotNamespace`를 호출합니다. 마지막 결과가 `COMPLETED`이거나 재검증한 `ALREADY_COMPLETE`여야 합니다. command를 받은 뒤 shared timeout이 끝났다면 namespace를 quiesce한 채 다시 실행하세요. invalidation alert/rate control을 유지하고, 차가운 miss가 DB read를 증폭하면 load shedding을 적용합니다.
 
 ### 정확한 `v2` → `v1` rollback
 
-1. `v2` 쓰기 작업과 기존 `v1` 읽기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만듭니다. 처리 중인 작업을
-   drain하고 두 quota가 모두 0인지 확인한 뒤 기존 application client를 닫고 제거합니다.
+1. `v2` 쓰기 작업과 기존 `v1` 읽기 작업을 중지하고 트래픽을 멈춰 변경이 없는 상태로 만듭니다. 처리 중인 작업을 drain하고 두 quota가 모두 0인지 확인한 뒤 기존 application client를 닫고 제거합니다.
 2. `v1`에 `clearMapRetainingMarker`를 호출합니다. remote map과 모든 node의 local `v1` view를 지우되 정확히 일치하는
    `v1` marker는 유지하고 다시 검증해야 합니다. shared timeout이 끝나면 트래픽을 멈춘 상태에서 다시 실행합니다.
-3. 모든 node를 보존한 설정과 정확히 같은 설정을 쓰는 새 빈 `v1` client로 전환합니다. DB에서 다시 채우고 DB
-   기준 read 결과를 검증하세요. miss가 캐시를 다시 채우는 동안 load shedding을 적용합니다.
-4. 다시 채운 결과를 검증하고 전용 client의 작업을 멈춰 닫은 뒤에만 `v2`에 `clearSnapshotNamespace`를 호출합니다.
-   검증된 DB rebuild 전에 `v2`를 정리하면 안 됩니다.
+3. 모든 node를 보존한 설정과 정확히 같은 설정을 쓰는 새 빈 `v1` client로 전환합니다. DB에서 다시 채우고 DB 기준 read 결과를 검증하세요. miss가 캐시를 다시 채우는 동안 load shedding을 적용합니다.
+4. 다시 채운 결과를 검증하고 전용 client의 작업을 멈춰 닫은 뒤에만 `v2`에 `clearSnapshotNamespace`를 호출합니다. 검증된 DB rebuild 전에 `v2`를 정리하면 안 됩니다.
 
 ### 4. Write-Through / Write-Behind Repository 구현
 
@@ -409,21 +364,21 @@ class UserWriteThroughRepository(
     override fun extractId(entity: UserRecord): Long = entity.id
 
     override fun ResultRow.toEntity() = UserRecord(
-        id    = this[UserTable.id].value,
-        name  = this[UserTable.name],
+        id = this[UserTable.id].value,
+        name = this[UserTable.name],
         email = this[UserTable.email],
     )
 
     // 기존 레코드 UPDATE 시 호출
     override fun UpdateStatement.updateEntity(entity: UserRecord) {
-        this[UserTable.name]  = entity.name
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 
     // 신규 레코드 INSERT 시 호출 (client-side ID인 경우)
     override fun BatchInsertStatement.insertEntity(entity: UserRecord) {
-        this[UserTable.id]    = EntityID(entity.id, UserTable)
-        this[UserTable.name]  = entity.name
+        this[UserTable.id] = EntityID(entity.id, UserTable)
+        this[UserTable.name] = entity.name
         this[UserTable.email] = entity.email
     }
 }
@@ -450,22 +405,19 @@ transaction {
 
 ### Write-Through (동기)
 
-`put()`을 호출하면 Redisson이 반환하기 전에 `ExposedEntityMapWriter`를 실행합니다. 이미 존재하는 ID는 UPDATE하고,
-DB가 ID를 자동 생성하지 않는 테이블은 `BatchInsertStatement.insertEntity`로 INSERT할 수 있습니다.
+`put()`을 호출하면 Redisson이 반환하기 전에 `ExposedEntityMapWriter`를 실행합니다. 이미 존재하는 ID는 UPDATE하고, DB가 ID를 자동 생성하지 않는 테이블은 `BatchInsertStatement.insertEntity`로 INSERT할 수 있습니다.
 
 ![JDBC Redisson write-through sequence diagram](../../docs/images/readme-diagrams/exposed-jdbc-redisson-sequence-02.png)
 
 ### Write-Behind (동기)
 
-`put()` 호출에서는 Redis가 값을 먼저 받아들이고, writer가 나중에 DB로 flush합니다. 쓰기 지연은 줄어들지만, DB 반영을
-바로 확인해야 하는 호출자는 background write 구간을 고려해야 합니다.
+`put()` 호출에서는 Redis가 값을 먼저 받아들이고, writer가 나중에 DB로 flush합니다. 쓰기 지연은 줄어들지만, DB 반영을 바로 확인해야 하는 호출자는 background write 구간을 고려해야 합니다.
 
 ![JDBC Redisson write-behind sequence diagram](../../docs/images/readme-diagrams/exposed-jdbc-redisson-sequence-03.png)
 
 ### Read-Through (Suspend 코루틴)
 
-`SuspendedJdbcRedissonRepository`는 같은 read-through 정책을 `suspend` 함수로 제공합니다. repository는 Redisson
-async map 연산을 기다리고, DB 읽기는 Exposed suspend transaction으로 수행합니다.
+`SuspendedJdbcRedissonRepository`는 같은 read-through 정책을 `suspend` 함수로 제공합니다. repository는 Redisson async map 연산을 기다리고, DB 읽기는 Exposed suspend transaction으로 수행합니다.
 
 ![Suspended JDBC Redisson read-through sequence diagram](../../docs/images/readme-diagrams/exposed-jdbc-redisson-sequence-04.png)
 
@@ -485,20 +437,20 @@ Suspend write-behind 경로는 Redis가 값을 받은 뒤에 재개됩니다. DB
 
 `JdbcRedissonRepository`는 동기 방식, `SuspendedJdbcRedissonRepository`는 동일 API를 `suspend` 함수로 제공합니다.
 
-| 메서드                                     | 설명                                                 |
-|-----------------------------------------|----------------------------------------------------|
-| `containsKey(id)`                            | 캐시에 해당 ID 캐시 키 존재 여부 확인 (미스 시 DB Read-Through)          |
-| `get(id)` / `cache[id]`                 | 캐시에서 엔티티 조회 (Read-Through)                         |
+| 메서드                                  | 설명                                                            |
+|-----------------------------------------|-----------------------------------------------------------------|
+| `containsKey(id)`                       | 캐시에 해당 ID 캐시 키 존재 여부 확인 (미스 시 DB Read-Through) |
+| `get(id)` / `cache[id]`                 | 캐시에서 엔티티 조회 (Read-Through)                             |
 | `getAll(ids, batchSize)`                | 캐시에서 여러 엔티티 일괄 조회                                  |
-| `findByIdFromDb(id)`                    | DB에서 직접 조회 (캐시 우회)                                 |
-| `findAllFromDb(ids)`                    | DB에서 여러 엔티티 직접 조회 (캐시 우회)                          |
-| `findAll(limit, offset, sortBy, where)` | DB 조회 후 결과를 캐시에 저장하여 반환                            |
-| `put(entity)`                           | 캐시에 저장 (Write-Through/Behind 모드 시 DB에도 반영)         |
-| `putAll(entities, batchSize)`           | 캐시에 일괄 저장                                          |
+| `findByIdFromDb(id)`                    | DB에서 직접 조회 (캐시 우회)                                    |
+| `findAllFromDb(ids)`                    | DB에서 여러 엔티티 직접 조회 (캐시 우회)                        |
+| `findAll(limit, offset, sortBy, where)` | DB 조회 후 결과를 캐시에 저장하여 반환                          |
+| `put(entity)`                           | 캐시에 저장 (Write-Through/Behind 모드 시 DB에도 반영)          |
+| `putAll(entities, batchSize)`           | 캐시에 일괄 저장                                                |
 | `upsertAll(entities, batchSize)`        | Redisson 배치 map write 경로를 사용하는 명시적 벌크 캐시 upsert |
-| `invalidate(ids)`                       | 캐시에서 제거 (`deleteFromDBOnInvalidate=true` 시 DB도 삭제) |
-| `invalidateAll()`                       | 캐시 전체 비우기                                          |
-| `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거                                     |
+| `invalidate(ids)`                       | 캐시에서 제거 (`deleteFromDBOnInvalidate=true` 시 DB도 삭제)    |
+| `invalidateAll()`                       | 캐시 전체 비우기                                                |
+| `invalidateByPattern(pattern, count)`   | 패턴에 맞는 키 캐시 제거                                        |
 
 > **참고**: `SuspendedJdbcRedissonRepository`의 `invalidateAll()`은 `Boolean`을 반환합니다.
 
@@ -506,26 +458,26 @@ Suspend write-behind 경로는 Redis가 값을 받은 뒤에 재개됩니다. DB
 
 ### Repository (repository/)
 
-| 파일                                           | 설명                                  |
-|----------------------------------------------|-------------------------------------|
-| `JdbcRedissonRepository.kt`                  | 동기식 캐시 Repository 인터페이스             |
-| `AbstractJdbcRedissonRepository.kt`          | 동기식 캐시 Repository 추상 클래스            |
-| `SuspendedJdbcRedissonRepository.kt`         | 코루틴 캐시 Repository 인터페이스             |
-| `AbstractSuspendedJdbcRedissonRepository.kt` | 코루틴 캐시 Repository 추상 클래스            |
-| `ExposedRedissonCodecSafety.kt`              | 신뢰된 binary codec opt-in guard              |
+| 파일                                         | 설명                               |
+|----------------------------------------------|------------------------------------|
+| `JdbcRedissonRepository.kt`                  | 동기식 캐시 Repository 인터페이스  |
+| `AbstractJdbcRedissonRepository.kt`          | 동기식 캐시 Repository 추상 클래스 |
+| `SuspendedJdbcRedissonRepository.kt`         | 코루틴 캐시 Repository 인터페이스  |
+| `AbstractSuspendedJdbcRedissonRepository.kt` | 코루틴 캐시 Repository 추상 클래스 |
+| `ExposedRedissonCodecSafety.kt`              | 신뢰된 binary codec opt-in guard   |
 
 ### Map (map/)
 
-| 파일                                   | 설명                        |
-|--------------------------------------|---------------------------|
-| `EntityMapLoader.kt`                 | 동기식 MapLoader 인터페이스       |
-| `EntityMapWriter.kt`                 | 동기식 MapWriter 인터페이스       |
+| 파일                                 | 설명                        |
+|--------------------------------------|-----------------------------|
+| `EntityMapLoader.kt`                 | 동기식 MapLoader 인터페이스 |
+| `EntityMapWriter.kt`                 | 동기식 MapWriter 인터페이스 |
 | `ExposedEntityMapLoader.kt`          | Exposed JDBC 기반 MapLoader |
 | `ExposedEntityMapWriter.kt`          | Exposed JDBC 기반 MapWriter |
-| `SuspendedEntityMapLoader.kt`        | 코루틴 MapLoader 인터페이스       |
-| `SuspendedEntityMapWriter.kt`        | 코루틴 MapWriter 인터페이스       |
-| `SuspendedExposedEntityMapLoader.kt` | 코루틴 MapLoader 구현체         |
-| `SuspendedExposedEntityMapWriter.kt` | 코루틴 MapWriter 구현체         |
+| `SuspendedEntityMapLoader.kt`        | 코루틴 MapLoader 인터페이스 |
+| `SuspendedEntityMapWriter.kt`        | 코루틴 MapWriter 인터페이스 |
+| `SuspendedExposedEntityMapLoader.kt` | 코루틴 MapLoader 구현체     |
+| `SuspendedExposedEntityMapWriter.kt` | 코루틴 MapWriter 구현체     |
 
 ## 테스트
 

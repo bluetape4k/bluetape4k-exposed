@@ -13,7 +13,7 @@ public final class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry 
 	public final fun resourceFor (Ljava/lang/Object;)Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResource;
 }
 
-public final class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry$Companion {
+public final class io/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry$Companion : io/bluetape4k/logging/KLogging {
 	public final fun create (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lio/bluetape4k/exposed/tenant/jdbc/TenantJdbcResourceRegistry;
 }
 

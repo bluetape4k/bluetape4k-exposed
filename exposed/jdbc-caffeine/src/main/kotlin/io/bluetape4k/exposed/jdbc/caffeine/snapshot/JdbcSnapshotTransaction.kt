@@ -16,7 +16,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.currentOrNull
 import java.io.Serializable
 
 /** Stages [snapshot] for cache-only publication after this root JDBC transaction commits. */
-fun <ID : Any, V : Serializable> JdbcTransaction.stageSnapshot(
+fun <ID: Any, V: Serializable> JdbcTransaction.stageSnapshot(
     cache: JdbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
     snapshot: CacheSnapshot<V>,
@@ -30,7 +30,7 @@ fun <ID : Any, V : Serializable> JdbcTransaction.stageSnapshot(
 )
 
 /** Maps [source] inside this root JDBC transaction and stages the detached result for commit-only publication. */
-fun <ID : Any, S, V : Serializable> JdbcTransaction.stageSnapshot(
+fun <ID: Any, S, V: Serializable> JdbcTransaction.stageSnapshot(
     cache: JdbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
     source: S,
@@ -46,7 +46,7 @@ fun <ID : Any, S, V : Serializable> JdbcTransaction.stageSnapshot(
 )
 
 /** Stages cache-only invalidation after this root JDBC transaction commits. */
-fun <ID : Any, V : Serializable> JdbcTransaction.stageInvalidation(
+fun <ID: Any, V: Serializable> JdbcTransaction.stageInvalidation(
     cache: JdbcCaffeineSnapshotCache<ID, V>,
     id: ID,
 ) {
@@ -54,7 +54,7 @@ fun <ID : Any, V : Serializable> JdbcTransaction.stageInvalidation(
 }
 
 @InternalSnapshotCacheApi
-private object JdbcSnapshotTransactionBridge : SnapshotTransactionBridge<JdbcTransaction> {
+private object JdbcSnapshotTransactionBridge: SnapshotTransactionBridge<JdbcTransaction> {
     override fun isRoot(transaction: JdbcTransaction): Boolean = transaction.outerTransaction == null
 
     override fun isCurrent(transaction: JdbcTransaction): Boolean =

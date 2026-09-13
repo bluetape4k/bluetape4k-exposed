@@ -12,7 +12,7 @@ import java.io.Serializable
  * @param ID 엔티티의 식별자 타입
  * @param E 엔티티 타입
  */
-interface SuspendJdbcRedisRepository<ID: Any, E: Serializable> : SuspendedJdbcCacheRepository<ID, E> {
+interface SuspendJdbcRedisRepository<ID: Any, E: Serializable>: SuspendedJdbcCacheRepository<ID, E> {
 
     /**
      * Redis SCAN 명령으로 패턴에 맞는 캐시 키를 무효화합니다 (DB에는 영향 없음, suspend).

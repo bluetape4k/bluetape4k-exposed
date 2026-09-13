@@ -15,13 +15,13 @@ import org.jetbrains.exposed.v1.core.Key
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
 import org.jetbrains.exposed.v1.core.transactions.nullableTransactionScope
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transactionManager
-import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.ContinuationInterceptor
 
 /** 현재 JDBC 트랜잭션의 fixture입니다. commit 후에도 유지됩니다. */
 var currentJdbcTestDbFixture by nullableTransactionScope<JdbcTestDbFixture<*>>()

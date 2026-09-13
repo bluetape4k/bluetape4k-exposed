@@ -17,6 +17,7 @@ import io.bluetape4k.redis.lettuce.map.WriteMode
  */
 @Suppress("DEPRECATION")
 interface SuspendedCacheTestScenario<ID: Any, E: java.io.Serializable>: SuspendedJdbcCacheTestScenario<ID, E> {
+
     companion object: KLoggingChannel()
 
     /** 테스트 대상 suspend 레포지토리 (SuspendedJdbcLettuceRepository는 SuspendedJdbcCacheRepository를 구현하므로 공변 오버라이드) */

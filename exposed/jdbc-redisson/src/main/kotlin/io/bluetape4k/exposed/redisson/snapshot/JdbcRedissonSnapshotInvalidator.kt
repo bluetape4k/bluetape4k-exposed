@@ -12,15 +12,14 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperationResult
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
-import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
+import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RedissonClient
 import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
-import java.lang.reflect.Array as ReflectArray
 import java.security.MessageDigest
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
@@ -28,8 +27,8 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlin.jvm.javaObjectType
 import kotlin.reflect.KClass
+import java.lang.reflect.Array as ReflectArray
 
 private const val REDISSON_JDBC_BACKEND = "redisson-jdbc"
 private const val LONG_KEY_ENCODING = "bt4k-long-be-v1"
@@ -44,7 +43,7 @@ private val redissonInvalidationQuotas = RedissonInvalidationQuotaRegistry()
  * coordination이 소유하며, 이 adapter는 구조적인 outcome만 보고합니다. Completion이 quota를
  * 해제한 뒤에는 identifier를 보관하지 않습니다.
  */
-class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
+class JdbcRedissonSnapshotInvalidator<ID: Any> internal constructor(
     private val localCacheMap: RLocalCachedMap<ID, Any?>,
     private val codec: SnapshotRedissonCodec<ID>,
     private val idType: KClass<ID>,
@@ -57,7 +56,7 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
     @InternalSnapshotCacheApi
     override val storeInstanceToken: Any,
     private val identifierEncoder: (Any) -> ByteArray = codec::encodeSnapshotIdentifier,
-) : AsyncSnapshotInvalidationStore<ID> {
+): AsyncSnapshotInvalidationStore<ID> {
 
     init {
         requireSupportedIdentifier(codec, idType)
@@ -178,7 +177,7 @@ class JdbcRedissonSnapshotInvalidator<ID : Any> internal constructor(
 }
 
 /** 명시적인 runtime type token으로 JDBC Redisson snapshot invalidator를 생성합니다. */
-fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
+fun <ID: Any, V: Serializable> jdbcRedissonSnapshotInvalidator(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
     idType: KClass<ID>,
@@ -242,7 +241,7 @@ fun <ID : Any, V : Serializable> jdbcRedissonSnapshotInvalidator(
 }
 
 /** Reified runtime type token을 사용해 JDBC Redisson snapshot invalidator를 생성합니다. */
-inline fun <reified ID : Any, reified V : Serializable> jdbcRedissonSnapshotInvalidator(
+inline fun <reified ID: Any, reified V: Serializable> jdbcRedissonSnapshotInvalidator(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,
     config: JdbcRedissonSnapshotInvalidatorConfig,
@@ -253,7 +252,7 @@ inline fun <reified ID : Any, reified V : Serializable> jdbcRedissonSnapshotInva
 /** 이 invalidator에서 호출자가 소유한 Redisson client의 payload-free bounded admission health를 반환합니다. */
 fun JdbcRedissonSnapshotInvalidator<*>.quotaHealth(): SnapshotInvalidationQuotaHealth = currentQuotaHealth()
 
-private fun <ID : Any> requireSupportedIdentifier(codec: SnapshotRedissonCodec<ID>, idType: KClass<ID>) {
+private fun <ID: Any> requireSupportedIdentifier(codec: SnapshotRedissonCodec<ID>, idType: KClass<ID>) {
     val expectedEncoding = when (idType) {
         Long::class -> LONG_KEY_ENCODING
         UUID::class -> UUID_KEY_ENCODING
@@ -272,7 +271,7 @@ private fun KClass<*>.supportedIdentifierRawClass(): Class<*> = when (this) {
     else -> java
 }
 
-private fun <ID : Any> List<MeasuredInvalidation<ID>>.partitionByEncodedBytes(
+private fun <ID: Any> List<MeasuredInvalidation<ID>>.partitionByEncodedBytes(
     maxEncodedBytes: Int,
 ): List<List<MeasuredInvalidation<ID>>> {
     val chunks = ArrayList<List<MeasuredInvalidation<ID>>>()

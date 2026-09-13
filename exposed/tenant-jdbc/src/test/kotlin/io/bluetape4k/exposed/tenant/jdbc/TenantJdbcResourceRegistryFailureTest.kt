@@ -5,22 +5,27 @@ package io.bluetape4k.exposed.tenant.jdbc
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertSame
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
-import java.util.IdentityHashMap
+import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
+import kotlin.test.assertFailsWith
 
 class TenantJdbcResourceRegistryFailureTest {
+
+    companion object: KLogging()
 
     private val fixtures = mutableListOf<FailureFixture>()
 
@@ -42,10 +47,15 @@ class TenantJdbcResourceRegistryFailureTest {
             )
         }
 
-        assertSame(connectFailure, failure)
-        assertEquals(
-            listOf("create:a", "connect:a", "create:b", "connect:b", "dispose:b", "unregister:a", "dispose:a"),
-            fixture.events,
+        failure shouldBe connectFailure
+        fixture.events shouldBeEqualTo listOf(
+            "create:a",
+            "connect:a",
+            "create:b",
+            "connect:b",
+            "dispose:b",
+            "unregister:a",
+            "dispose:a"
         )
     }
 
@@ -61,8 +71,14 @@ class TenantJdbcResourceRegistryFailureTest {
             )
         }
 
-        assertSame(factoryFailure, failure)
-        assertEquals(listOf("create:a", "connect:a", "create:b", "unregister:a", "dispose:a"), fixture.events)
+        failure shouldBe factoryFailure
+        fixture.events shouldBeEqualTo listOf(
+            "create:a",
+            "connect:a",
+            "create:b",
+            "unregister:a",
+            "dispose:a"
+        )
     }
 
     @Test
@@ -83,13 +99,16 @@ class TenantJdbcResourceRegistryFailureTest {
                 ),
             )
         }
-        assertSame(commitFailure, observedCommitFailure)
-        assertEquals(
-            listOf(
-                "create:a", "connect:a", "create:b", "connect:b",
-                "unregister:b", "dispose:b", "unregister:a", "dispose:a",
-            ),
-            commitFixture.events,
+        observedCommitFailure shouldBe commitFailure
+        commitFixture.events shouldBeEqualTo listOf(
+            "create:a",
+            "connect:a",
+            "create:b",
+            "connect:b",
+            "unregister:b",
+            "dispose:b",
+            "unregister:a",
+            "dispose:a",
         )
 
         val publishFixture = failureFixture()
@@ -104,13 +123,17 @@ class TenantJdbcResourceRegistryFailureTest {
                 ),
             )
         }
-        assertSame(publishFailure, observedPublishFailure)
-        assertEquals(
-            listOf(
-                "create:a", "connect:a", "create:b", "connect:b",
-                "unregister:b", "dispose:b", "unregister:a", "dispose:a",
-            ),
-            publishFixture.events,
+
+        observedPublishFailure shouldBe publishFailure
+        publishFixture.events shouldBeEqualTo listOf(
+            "create:a",
+            "connect:a",
+            "create:b",
+            "connect:b",
+            "unregister:b",
+            "dispose:b",
+            "unregister:a",
+            "dispose:a",
         )
     }
 
@@ -130,11 +153,11 @@ class TenantJdbcResourceRegistryFailureTest {
         val first = catchThrowable { registry.close() }
         val second = catchThrowable { registry.close() }
 
-        assertSame(unregisterB, first)
-        assertSame(first, second)
-        assertEquals(listOf(disposeB, unregisterA, disposeA), first.suppressed.toList())
-        assertEquals(1, fixture.disposeCalls.getValue("a").get())
-        assertEquals(1, fixture.disposeCalls.getValue("b").get())
+        first shouldBe unregisterB
+        second shouldBe first
+        first.suppressed.toList() shouldBeEqualTo listOf(disposeB, unregisterA, disposeA)
+        fixture.disposeCalls.getValue("a").get() shouldBeEqualTo 1
+        fixture.disposeCalls.getValue("b").get() shouldBeEqualTo 1
     }
 
     @Test
@@ -155,13 +178,11 @@ class TenantJdbcResourceRegistryFailureTest {
 
         val observed = catchThrowable { registry.close() }
 
-        assertSame(primary, observed)
-        assertEquals(
-            listOf(alreadySuppressed) + cleanupFailures.drop(1).filterNot { it === alreadySuppressed },
-            observed.suppressed.toList(),
-        )
-        assertEquals(128, fixture.disposeCalls.size)
-        assertTrue(fixture.disposeCalls.values.all { it.get() == 1 })
+        observed shouldBe primary
+        observed.suppressed.toList() shouldBeEqualTo listOf(alreadySuppressed) + cleanupFailures.drop(1)
+            .filterNot { it === alreadySuppressed }
+        fixture.disposeCalls.size shouldBeEqualTo 128
+        fixture.disposeCalls.values.all { it.get() == 1 }.shouldBeTrue()
     }
 
     @Test
@@ -177,25 +198,33 @@ class TenantJdbcResourceRegistryFailureTest {
 
         val observed = catchThrowable { registry.close() }
 
-        assertSame(fatal, observed)
-        assertEquals(listOf(ordinary), observed.suppressed.toList())
-        assertEquals(1, fixture.disposeCalls.getValue("a").get())
-        assertEquals(1, fixture.disposeCalls.getValue("b").get())
-        assertThrows(IllegalStateException::class.java) { TransactionManager.managerFor(databaseA) }
-        val state = registry.javaClass.getDeclaredField("state").run {
-            isAccessible = true
-            (get(registry) as java.util.concurrent.atomic.AtomicReference<*>).get()
+        observed shouldBe fatal
+        observed.suppressed.toList() shouldBeEqualTo listOf(ordinary)
+        fixture.disposeCalls.getValue("a").get() shouldBeEqualTo 1
+        fixture.disposeCalls.getValue("b").get() shouldBeEqualTo 1
+
+        assertFailsWith<IllegalStateException> {
+            TransactionManager.managerFor(databaseA)
         }
-        assertFalse(state!!::class.java.declaredFields.any { Throwable::class.java.isAssignableFrom(it.type) })
-        val later = assertThrows(IllegalStateException::class.java) { registry.close() }
-        assertEquals("Tenant JDBC resource registry closed after a fatal cleanup failure.", later.message)
+
+        val state = registry.javaClass.getDeclaredField("state")
+            .run {
+                isAccessible = true
+                (get(registry) as AtomicReference<*>).get()
+            }
+        state::class.java.declaredFields.any { Throwable::class.java.isAssignableFrom(it.type) }.shouldBeFalse()
+
+        val later = assertFailsWith<IllegalStateException> {
+            registry.close()
+        }
+        later.message shouldBeEqualTo "Tenant JDBC resource registry closed after a fatal cleanup failure."
     }
 
     @Test
     @Suppress("DEPRECATION")
     fun `fatal assembly failure 종류는 원형을 유지하고 best effort cleanup을 수행한다`() {
         val fatalFailures = listOf<Throwable>(
-            object : VirtualMachineError("vm") {},
+            object: VirtualMachineError("vm") {},
             ThreadDeath(),
             LinkageError("linkage"),
         )
@@ -208,15 +237,17 @@ class TenantJdbcResourceRegistryFailureTest {
                     connectFailureFor = "b" to fatal,
                 )
             }
-            assertSame(fatal, observed, "fatal[$index]")
-            assertTrue("unregister:a" in fixture.events, "fatal[$index]")
-            assertTrue("dispose:a" in fixture.events, "fatal[$index]")
+
+            observed shouldBe fatal
+            fixture.events shouldContain "unregister:a"
+            fixture.events shouldContain "dispose:a"
         }
     }
 
     @Test
     fun `InterruptedException은 construction과 close 경로에서 interrupt flag를 복원한다`() {
-        assertFalse(Thread.interrupted())
+        Thread.interrupted().shouldBeFalse()
+
         val constructionFixture = failureFixture()
         val constructionInterrupt = InterruptedException("construction")
         val constructionFailure = catchThrowable {
@@ -229,18 +260,19 @@ class TenantJdbcResourceRegistryFailureTest {
                 ),
             )
         }
-        assertSame(constructionInterrupt, constructionFailure)
-        assertTrue(Thread.currentThread().isInterrupted)
-        assertTrue(Thread.interrupted())
+        constructionFailure shouldBe constructionInterrupt
+        Thread.currentThread().isInterrupted.shouldBeTrue()
+        Thread.interrupted().shouldBeTrue()
 
         val closeFixture = failureFixture()
         val closeInterrupt = InterruptedException("close")
         val registry = closeFixture.create(listOf("a"))
         closeFixture.unregisterFailures["a"] = closeInterrupt
         val closeFailure = catchThrowable { registry.close() }
-        assertSame(closeInterrupt, closeFailure)
-        assertTrue(Thread.currentThread().isInterrupted)
-        assertTrue(Thread.interrupted())
+
+        closeFailure shouldBe closeInterrupt
+        Thread.currentThread().isInterrupted.shouldBeTrue()
+        Thread.interrupted().shouldBeTrue()
     }
 
     @Test
@@ -254,9 +286,9 @@ class TenantJdbcResourceRegistryFailureTest {
         fixture.disposeFailures["a"] = IllegalStateException(marker)
         try {
             val failure = catchThrowable { registry.close() }
-            assertEquals(marker, failure.message)
-            assertTrue(appender.list.none { marker in it.formattedMessage })
-            assertTrue(appender.list.none { it.throwableProxy?.message?.contains(marker) == true })
+            failure.message shouldBeEqualTo marker
+            appender.list.none { marker in it.formattedMessage }.shouldBeTrue()
+            appender.list.none { it.throwableProxy?.message?.contains(marker) == true }.shouldBeTrue()
         } finally {
             root.detachAppender(appender)
             appender.stop()

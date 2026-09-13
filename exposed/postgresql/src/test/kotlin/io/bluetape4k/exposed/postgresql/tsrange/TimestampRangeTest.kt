@@ -1,8 +1,10 @@
 package io.bluetape4k.exposed.postgresql.tsrange
 
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -141,8 +143,8 @@ class TimestampRangeTest {
         val r1 = TimestampRange(start, end, lowerInclusive = true, upperInclusive = false)
         val r2 = TimestampRange(start, end, lowerInclusive = true, upperInclusive = false)
 
-        (r1 == r2).shouldBeTrue()
-        (r1.hashCode() == r2.hashCode()).shouldBeTrue()
+        r1 shouldBeEqualTo r2
+        r1.hashCode() shouldBeEqualTo r2.hashCode()
     }
 
     @Test
@@ -150,7 +152,7 @@ class TimestampRangeTest {
         val r1 = TimestampRange(start, end, lowerInclusive = true, upperInclusive = false)
         val r2 = TimestampRange(start, end, lowerInclusive = true, upperInclusive = true)
 
-        (r1 == r2).shouldBeFalse()
+        r1 shouldNotBeEqualTo r2
     }
 
     @Test
@@ -158,7 +160,7 @@ class TimestampRangeTest {
         val r1 = TimestampRange(start, end)
         val r2 = TimestampRange(start.plusSeconds(1), end)
 
-        (r1 == r2).shouldBeFalse()
+        r1 shouldNotBeEqualTo r2
     }
 
     @Test

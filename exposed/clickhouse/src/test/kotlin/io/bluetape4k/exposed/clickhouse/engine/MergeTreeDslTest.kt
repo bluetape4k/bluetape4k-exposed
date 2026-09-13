@@ -6,10 +6,13 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.clickhouse.functions.toYYYYMM
 import io.bluetape4k.exposed.clickhouse.sanitizeForClickHouse
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.junit.jupiter.api.Test
 
 class MergeTreeDslTest {
+
+    companion object: KLogging()
 
     private object EngineDslEvents: Table("engine_dsl_events") {
         val eventId = long("event_id")
@@ -37,6 +40,7 @@ class MergeTreeDslTest {
     @Test
     fun `MergeTree basic with orderBy`() {
         val engine = mergeTree { unsafeRawOrderBy("a", "b") }
+
         val clause = engine.toClause()
         clause shouldContain "ENGINE = MergeTree()"
         clause shouldContain "ORDER BY (a, b)"
@@ -48,6 +52,7 @@ class MergeTreeDslTest {
             unsafeRawOrderBy("a", "b")
             unsafeRawPartitionBy("toYYYYMM(c)")
         }
+
         val clause = engine.toClause()
         clause shouldContain "PARTITION BY toYYYYMM(c)"
     }
@@ -58,6 +63,7 @@ class MergeTreeDslTest {
             orderBy(EngineDslEvents.eventId)
             setting("index_granularity", 8192)
         }
+
         val clause = engine.toClause()
         clause shouldContain "SETTINGS index_granularity = 8192"
     }
@@ -212,6 +218,7 @@ class MergeTreeDslTest {
             orderBy(EngineDslEvents.eventId)
             versionColumn(EngineDslEvents.version)
         }
+
         val clause = engine.toClause()
         clause shouldContain "ENGINE = ReplacingMergeTree(version)"
         clause shouldContain "ORDER BY (event_id)"
@@ -267,7 +274,9 @@ class MergeTreeDslTest {
             orderBy(EngineDslEvents.eventId)
             partitionBy(EngineDslEvents.eventMonth)
         }
+
         val clause = engine.toClause()
+
         clause shouldContain "ENGINE = AggregatingMergeTree()"
         clause shouldContain "ORDER BY (event_id)"
     }
@@ -299,6 +308,7 @@ class MergeTreeDslTest {
     fun `sanitizeForClickHouse removes PRIMARY KEY`() {
         val sql = "CREATE TABLE t (id BIGINT PRIMARY KEY, name VARCHAR(255) NOT NULL)"
         val sanitized = sanitizeForClickHouse(sql)
+
         sanitized shouldNotContain "PRIMARY KEY"
         sanitized shouldNotContain "NOT NULL"
     }
@@ -307,6 +317,7 @@ class MergeTreeDslTest {
     fun `sanitizeForClickHouse removes CONSTRAINT PRIMARY KEY`() {
         val sql = "CREATE TABLE t (id BIGINT, CONSTRAINT pk PRIMARY KEY (id))"
         val sanitized = sanitizeForClickHouse(sql)
+
         sanitized shouldNotContain "CONSTRAINT"
         sanitized shouldNotContain "PRIMARY KEY"
     }
@@ -315,6 +326,7 @@ class MergeTreeDslTest {
     fun `sanitizeForClickHouse removes REFERENCES`() {
         val sql = "CREATE TABLE t (user_id BIGINT REFERENCES users(id))"
         val sanitized = sanitizeForClickHouse(sql)
+
         sanitized shouldNotContain "REFERENCES"
     }
 
@@ -322,6 +334,7 @@ class MergeTreeDslTest {
     fun `sanitizeForClickHouse removes NULL and NOT NULL`() {
         val sql = "CREATE TABLE t (a INT NOT NULL, b INT NULL, c INT)"
         val sanitized = sanitizeForClickHouse(sql)
+
         sanitized shouldNotContain "NOT NULL"
         sanitized shouldNotContain " NULL"
     }

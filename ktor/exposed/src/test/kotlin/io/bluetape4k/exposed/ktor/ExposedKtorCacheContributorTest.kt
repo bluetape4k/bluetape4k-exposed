@@ -4,13 +4,17 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.should
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
+import io.bluetape4k.logging.KLogging
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -21,6 +25,8 @@ import java.nio.file.Path
 
 class ExposedKtorCacheContributorTest {
 
+    companion object: KLogging()
+
     @Test
     fun `all four factories pin sanitized finite kinds`() = runTest {
         val jdbc = ExposedKtorCacheContributor.jdbcRepository("orders") { healthyReport() }
@@ -29,13 +35,13 @@ class ExposedKtorCacheContributorTest {
         val custom = ExposedKtorCacheContributor.custom("custom-1") { ExposedKtorCacheStatus.DOWN }
 
         jdbc.kind shouldBeEqualTo ExposedKtorCacheKind.JDBC
-        (jdbc.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        jdbc.probe().status shouldBeEqualTo ExposedKtorCacheStatus.UP
         r2dbc.kind shouldBeEqualTo ExposedKtorCacheKind.R2DBC
-        (r2dbc.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        r2dbc.probe().status shouldBeEqualTo ExposedKtorCacheStatus.UP
         snapshot.kind shouldBeEqualTo ExposedKtorCacheKind.SNAPSHOT
-        (snapshot.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.UP
+        snapshot.probe().status shouldBeEqualTo ExposedKtorCacheStatus.UP
         custom.kind shouldBeEqualTo ExposedKtorCacheKind.CUSTOM
-        (custom.probe().status) shouldBeEqualTo ExposedKtorCacheStatus.DOWN
+        custom.probe().status shouldBeEqualTo ExposedKtorCacheStatus.DOWN
     }
 
     @Test
@@ -53,7 +59,7 @@ class ExposedKtorCacheContributorTest {
             val contributor = ExposedKtorCacheContributor.jdbcRepository("orders") {
                 healthyReport().copy(workerState = state)
             }
-            (contributor.probe().status) shouldBeEqualTo status
+            contributor.probe().status shouldBeEqualTo status
         }
 
         val failed = ExposedKtorCacheContributor.jdbcRepository("orders") {
@@ -70,7 +76,7 @@ class ExposedKtorCacheContributorTest {
         sample.snapshotPending shouldBeEqualTo 3.0
         sample.snapshotDropped shouldBeEqualTo 5.0
         sample.snapshotObserverFailures shouldBeEqualTo 7.0
-        (sample.queueDepth.isNaN()).shouldBeTrue()
+        sample.queueDepth.isNaN().shouldBeTrue()
         verify(exactly = 1) { buffer.size }
         verify(exactly = 1) { buffer.droppedCount }
         verify(exactly = 1) { buffer.observerFailureCount }
@@ -84,22 +90,26 @@ class ExposedKtorCacheContributorTest {
         val config = ExposedKtorCacheReadinessConfig(source)
         source += custom("b")
 
-        (config.contributors.map { it.component }) shouldBeEqualTo listOf("a")
+        config.contributors.map { it.component } shouldBeEqualTo listOf("a")
+
         assertFailsWith<UnsupportedOperationException> {
             @Suppress("UNCHECKED_CAST")
             (config.contributors as MutableList<ExposedKtorCacheContributor>).add(custom("c"))
         }
+
         val empty = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig(emptyList())
         }
         empty.cause.shouldBeNull()
+
         val duplicate = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig(listOf(custom("same"), custom("same")))
         }
-        (duplicate.message.orEmpty().contains("index=1")).shouldBeTrue()
-        (duplicate.message.orEmpty().contains("duplicateOf=0")).shouldBeTrue()
-        (duplicate.message.orEmpty().contains("same")).shouldBeFalse()
+        duplicate.message.orEmpty().contains("index=1").shouldBeTrue()
+        duplicate.message.orEmpty().contains("duplicateOf=0").shouldBeTrue()
+        duplicate.message.orEmpty().contains("same").shouldBeFalse()
         duplicate.cause.shouldBeNull()
+
         ExposedKtorCacheReadinessConfig((0 until 16).map { custom("cache_$it") })
         val overLimit = assertFailsWith<IllegalArgumentException> {
             ExposedKtorCacheReadinessConfig((0 until 17).map { custom("cache_$it") })
@@ -120,10 +130,10 @@ class ExposedKtorCacheContributorTest {
         )
         unsafeValues.forEach { raw ->
             val error = assertFailsWith<IllegalArgumentException> { custom(raw) }
-            (error.message.orEmpty().contains("reason=unsafe_component")).shouldBeTrue()
-            (error.message.orEmpty().contains("length=${raw.length}")).shouldBeTrue()
-            (error.message.orEmpty().contains(raw)).shouldBeFalse()
-            (error.message.orEmpty().contains("top-secret")).shouldBeFalse()
+            error.message shouldContain "reason=unsafe_component"
+            error.message shouldContain "length=${raw.length}"
+            error.message shouldNotContain raw
+            error.message shouldNotContain "top-secret"
             error.cause.shouldBeNull()
         }
     }
@@ -142,15 +152,15 @@ class ExposedKtorCacheContributorTest {
             val kdoc = kdocImmediatelyBefore(source, "fun $factory(")
             assertCommonProbeContract(factory, kdoc)
             if (suspends) {
-                (kdoc.contains("non-blocking")).should("$factory non-blocking") { it }
-                (kdoc.contains("cooperate with coroutine cancellation")).should("$factory cancellation") { it }
+                kdoc shouldContain "non-blocking"
+                kdoc shouldContain "cooperate with coroutine cancellation"
             }
         }
 
         val configKdoc = kdocImmediatelyBefore(source, "class ExposedKtorCacheReadinessConfig(")
         assertCommonProbeContract("config", configKdoc)
-        (configKdoc.contains("non-blocking")).should("config non-blocking") { it }
-        (configKdoc.contains("cooperate with coroutine cancellation")).should("config cancellation") { it }
+        configKdoc shouldContain "non-blocking"
+        configKdoc shouldContain "cooperate with coroutine cancellation"
     }
 
     @Test
@@ -160,8 +170,8 @@ class ExposedKtorCacheContributorTest {
                 healthyReport().copy(queueDepth = -1)
             }.probe()
         }.exceptionOrNull()
-        (repositoryError is IllegalArgumentException).shouldBeTrue()
-        (repositoryError?.message.orEmpty().contains("reason=negative_queue_depth")).shouldBeTrue()
+        repositoryError.shouldBeInstanceOf<IllegalArgumentException>()
+        repositoryError.message shouldContain "reason=negative_queue_depth"
 
         val snapshotError = runCatching {
             ExposedKtorCacheContributor.snapshot(
@@ -169,8 +179,8 @@ class ExposedKtorCacheContributorTest {
                 failureBuffer(dropped = -1),
             ).probe()
         }.exceptionOrNull()
-        (snapshotError is IllegalArgumentException).shouldBeTrue()
-        (snapshotError?.message.orEmpty().contains("reason=negative_dropped")).shouldBeTrue()
+        snapshotError.shouldBeInstanceOf<IllegalArgumentException>()
+        snapshotError.message shouldContain "reason=negative_dropped"
     }
 
     private fun custom(component: String) =
@@ -195,7 +205,10 @@ class ExposedKtorCacheContributorTest {
 
     private fun cacheReadinessSource(): String {
         val relative = "ktor/exposed/src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorCacheReadiness.kt"
-        val candidates = listOf(Path.of(relative), Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorCacheReadiness.kt"))
+        val candidates = listOf(
+            Path.of(relative),
+            Path.of("src/main/kotlin/io/bluetape4k/exposed/ktor/ExposedKtorCacheReadiness.kt")
+        )
         return Files.readString(candidates.first(Files::exists))
     }
 

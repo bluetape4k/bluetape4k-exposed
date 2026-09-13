@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.duckdb
 
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.lang.reflect.Proxy
 import java.sql.Connection
@@ -10,6 +11,8 @@ import java.sql.Statement
 import java.util.concurrent.atomic.AtomicReference
 
 class DuckDBConnectionWrapperTest {
+
+    companion object: KLogging()
 
     @Test
     fun `generated key 관련 prepareStatement 오버로드는 기본 prepareStatement 로 위임한다`() {

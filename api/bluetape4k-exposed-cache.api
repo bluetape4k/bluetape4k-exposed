@@ -312,7 +312,7 @@ public abstract interface class io/bluetape4k/exposed/cache/snapshot/ClaimedSnap
 public abstract interface annotation class io/bluetape4k/exposed/cache/snapshot/InternalSnapshotCacheApi : java/lang/annotation/Annotation {
 }
 
-public final class io/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation {
+public final class io/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation : java/io/Serializable {
 	public static final field Companion Lio/bluetape4k/exposed/cache/snapshot/MeasuredInvalidation$Companion;
 	public fun <init> (Ljava/lang/Object;ILjava/lang/String;)V
 	public final fun component1 ()Ljava/lang/Object;
@@ -466,7 +466,7 @@ public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup {
 	public final fun getSnapshot ()Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;
 }
 
-public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup$Companion {
+public final class io/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup$Companion : io/bluetape4k/logging/KLogging {
 	public final fun hit (Lio/bluetape4k/exposed/cache/snapshot/CacheSnapshot;)Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
 	public final fun miss ()Lio/bluetape4k/exposed/cache/snapshot/SnapshotCacheLookup;
 }

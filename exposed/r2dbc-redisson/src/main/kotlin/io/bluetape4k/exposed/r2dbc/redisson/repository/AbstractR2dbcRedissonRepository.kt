@@ -6,9 +6,8 @@ import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcEntityMapWriter
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapWriter
-import io.bluetape4k.exposed.r2dbc.redisson.map.newR2dbcMapCoroutineScope
 import io.bluetape4k.exposed.r2dbc.redisson.map.linkedSupervisorScope
-import io.bluetape4k.exposed.r2dbc.redisson.repository.AbstractR2dbcRedissonRepository.Companion.DEFAULT_BATCH_SIZE
+import io.bluetape4k.exposed.r2dbc.redisson.map.newR2dbcMapCoroutineScope
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.info
@@ -20,9 +19,9 @@ import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.asDeferred

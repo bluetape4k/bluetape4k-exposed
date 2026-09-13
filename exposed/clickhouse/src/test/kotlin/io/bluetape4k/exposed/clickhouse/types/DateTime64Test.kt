@@ -1,13 +1,13 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.ClickHouseTable
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -15,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.fail
 import java.time.Instant
 
 /**
@@ -126,13 +127,13 @@ class DateTime64Test: AbstractClickHouseTest() {
     fun `precision out of range throws`() {
         try {
             DateTime64ColumnType(-1)
-            error("expected IllegalArgumentException")
+            fail("expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             // expected
         }
         try {
             DateTime64ColumnType(10)
-            error("expected IllegalArgumentException")
+            fail("expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             // expected
         }

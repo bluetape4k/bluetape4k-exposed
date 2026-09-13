@@ -1,19 +1,28 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import kotlinx.coroutines.flow.toList
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
@@ -23,16 +32,6 @@ import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.launch
 
 /**
  * [R2dbcExposedEntityMapLoader] 단위 테스트.
@@ -134,8 +133,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
                 val ids = loader.loadAllKeys()
                 ids shouldHaveSize 5
                 ids shouldBeEqualTo ids.sorted()
+            }
         }
-    }
 
     @Test
     fun `loadAllKeysFlow - List API와 keyset stream 결과가 일치한다`() =
@@ -169,7 +168,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
                 commit()
 
                 val sqlStatements = mutableListOf<String>()
-                addLogger(object : SqlLogger {
+                addLogger(object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -200,7 +199,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
                 commit()
 
                 val sqlStatements = mutableListOf<String>()
-                addLogger(object : SqlLogger {
+                addLogger(object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -239,7 +238,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcLettuceTest() {
                     )
 
                 val sqlStatements = mutableListOf<String>()
-                addLogger(object : SqlLogger {
+                addLogger(object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }

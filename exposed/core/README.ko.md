@@ -8,10 +8,10 @@ JetBrains Exposed에서 공통으로 쓰는 컬럼 타입, 테이블 helper, 확
 
 `exposed-core`는 다음을 제공합니다:
 
-- **커스텀 컬럼 타입**: 압축(LZ4/Snappy/Zstd), 직렬화(Kryo/Fory) 기반의 Binary/Blob 컬럼
-- **네트워크 컬럼 타입**: IPv4/IPv6 주소(`inetAddress`), CIDR 블록(`cidr`), PostgreSQL `<<` 연산자
-- **전화번호 컬럼 타입**: E.164 정규화 저장(`phoneNumber`, `phoneNumberString`), Google libphonenumber 기반
-- **컬럼 확장 함수**: 클라이언트 측 ID 생성(`timebasedGenerated`, `snowflakeGenerated`, `ksuidGenerated`, `ulidGenerated` 등)
+- **커스텀 컬럼 타입**: 압축 (LZ4/Snappy/Zstd), 직렬화 (Kryo/Fory) 기반의 Binary/Blob 컬럼
+- **네트워크 컬럼 타입**: IPv4/IPv6 주소 (`inetAddress`), CIDR 블록 (`cidr`), PostgreSQL `<<` 연산자
+- **전화번호 컬럼 타입**: E.164 정규화 저장 (`phoneNumber`, `phoneNumberString`), Google libphonenumber 기반
+- **컬럼 확장 함수**: 클라이언트 측 ID 생성 (`timebasedGenerated`, `snowflakeGenerated`, `ksuidGenerated`, `ulidGenerated` 등)
 - **Kotlin UUID ID 테이블**: Exposed `UuidTable` 기반 `KotlinUuidTable`, V4 기본값과 V7 선택 지원
 - **ResultRow 확장**: `getOrNull`, `toMap` 등 ResultRow 처리 보조
 - **Blob 확장**: `ExposedBlob` 유틸 함수
@@ -89,10 +89,8 @@ object Orders: IntIdTable("orders") {
 
 #### Kotlin UUID ID 테이블
 
-`KotlinUuidTable`은 Exposed의 `kotlin.uuid.Uuid` ID 테이블을 위한 bluetape4k 어댑터입니다. ID는 INSERT 직전에
-클라이언트에서 생성됩니다. 기본 생성 전략은 `UuidVersion.V4`이며, 시간 정렬 가능한 UUID가 필요하면
-`UuidVersion.V7`을 선택합니다. 테이블 수준 버전은 `id` 컬럼에만 적용되므로, 추가 Kotlin UUID 컬럼에는
-Exposed의 컬럼 수준 `autoGenerate(UuidVersion.V4)` 또는 `autoGenerate(UuidVersion.V7)`를 명시합니다.
+`KotlinUuidTable`은 Exposed의 `kotlin.uuid.Uuid` ID 테이블을 위한 bluetape4k 어댑터입니다. ID는 INSERT 직전에 클라이언트에서 생성됩니다. 기본 생성 전략은 `UuidVersion.V4`이며, 시간 정렬 가능한 UUID가 필요하면
+`UuidVersion.V7`을 선택합니다. 테이블 수준 버전은 `id` 컬럼에만 적용되므로, 추가 Kotlin UUID 컬럼에는 Exposed의 컬럼 수준 `autoGenerate(UuidVersion.V4)` 또는 `autoGenerate(UuidVersion.V7)`를 명시합니다.
 `java.util.UUID`를 사용하는 `TimebasedUUIDTable`과는 별도 계층입니다.
 
 ```kotlin
@@ -110,8 +108,7 @@ object EventLinks: Table("event_links") {
 ```
 
 `TimebasedUUIDTable`에서 마이그레이션할 때는 주변 API가 타입 변경을 수용하는 경우에만 `java.util.UUID` 참조를
-`kotlin.uuid.Uuid`로 바꿉니다. 기존 Java UUID 테이블의 스키마와 ABI는 그대로 유지하며, 하나의 Entity 계약에서
-두 UUID 타입을 섞지 않습니다.
+`kotlin.uuid.Uuid`로 바꿉니다. 기존 Java UUID 테이블의 스키마와 ABI는 그대로 유지하며, 하나의 Entity 계약에서 두 UUID 타입을 섞지 않습니다.
 
 ### 2. 압축 컬럼 타입
 
@@ -253,51 +250,42 @@ val page = ExposedCursorPage<UserRecord, Long>(
 )
 ```
 
-JDBC와 R2DBC 저장소 확장은 `LIMIT pageSize + 1`을 사용하는 SELECT 하나만 실행하며 count나 offset
-쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고, `ASC` 계열은 엄격한 `>` 경계,
-`DESC` 계열은 엄격한 `<` 경계를 사용합니다. `IdTable` 기본 키는 null이 아니므로 null 배치 변형은
-방향만 보존합니다. `hasNext == false`이면 `nextCursor`는 항상 null입니다.
+JDBC와 R2DBC 저장소 확장은 `LIMIT pageSize + 1`을 사용하는 SELECT 하나만 실행하며 count나 offset 쿼리를 실행하지 않습니다. `pageSize`는 1부터 10,000까지이고, `ASC` 계열은 엄격한 `>` 경계,
+`DESC` 계열은 엄격한 `<` 경계를 사용합니다. `IdTable` 기본 키는 null이 아니므로 null 배치 변형은 방향만 보존합니다. `hasNext == false`이면 `nextCursor`는 항상 null입니다.
 
-커서의 encode, 서명, 범위 지정, decode는 호출자가 소유하며 다음 요청에서도 같은 정렬과 predicate를
-재사용해야 합니다. 일관된 시점 읽기 격리는 보장하지 않고 기본 predicate가 `Op.TRUE`이므로 활성 조건을
-전달하지 않으면 논리 삭제 행도 보입니다. `Long`, `Int`, `String`, `UUID`, Kotlin `Uuid`처럼
-`Comparable`인 ID를 지원하며 `CompositeID`와 비교할 수 없는 custom ID는 이 확장 범위에서 제외합니다.
-기존 offset 기반 `ExposedPage`/`findPage` API는 변경하지 않습니다.
+커서의 encode, 서명, 범위 지정, decode는 호출자가 소유하며 다음 요청에서도 같은 정렬과 predicate를 재사용해야 합니다. 일관된 시점 읽기 격리는 보장하지 않고 기본 predicate가 `Op.TRUE`이므로 활성 조건을 전달하지 않으면 논리 삭제 행도 보입니다. `Long`, `Int`, `String`, `UUID`, Kotlin `Uuid`처럼
+`Comparable`인 ID를 지원하며 `CompositeID`와 비교할 수 없는 custom ID는 이 확장 범위에서 제외합니다. 기존 offset 기반 `ExposedPage`/`findPage` API는 변경하지 않습니다.
 
-`ExposedCursorPage`는 `java.io.Serializable`을 구현하고 명시적인 `serialVersionUID = 1L`을 사용합니다.
-구체적인 `T` 원소와 `C` 커서, 런타임 content 리스트 구현이 직렬화 가능할 때만 Java serialization을
-사용할 수 있으며 generic 경계로 이 조건을 강제하지는 않습니다. DTO 객체 직렬화는 전송용 불투명
-cursor token의 encode, 서명, 범위 지정, 만료, decode를 대신하지 않으며 이 책임은 계속 호출자에게
-있습니다.
+`ExposedCursorPage`는 `java.io.Serializable`을 구현하고 명시적인 `serialVersionUID = 1L`을 사용합니다. 구체적인 `T` 원소와 `C` 커서, 런타임 content 리스트 구현이 직렬화 가능할 때만 Java serialization을 사용할 수 있으며 generic 경계로 이 조건을 강제하지는 않습니다. DTO 객체 직렬화는 전송용 불투명 cursor token의 encode, 서명, 범위 지정, 만료, decode를 대신하지 않으며 이 책임은 계속 호출자에게 있습니다.
 
 ## 주요 파일/클래스 목록
 
-| 파일                                                 | 설명                                     |
-|----------------------------------------------------|----------------------------------------|
-| `ColumnExtensions.kt`                              | 클라이언트 측 ID 자동 생성 확장 함수                 |
-| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID 테이블과 V4/V7 생성               |
-| `ExposedColumnSupports.kt`                         | 컬럼 타입 관련 지원 함수                         |
-| `ResultRowExtensions.kt`                           | ResultRow 처리 확장 함수                     |
-| `BatchInsertOnConflictDoNothing.kt`                | 중복 무시 배치 삽입                            |
-| `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob 유틸 함수                      |
-| `compress/CompressedBinaryColumnType.kt`           | 압축 Binary 컬럼 타입                        |
-| `compress/CompressedBlobColumnType.kt`             | 압축 Blob 컬럼 타입                          |
-| `serializable/BinarySerializedBinaryColumnType.kt` | 직렬화 Binary 컬럼 타입                       |
-| `serializable/BinarySerializedBlobColumnType.kt`   | 직렬화 Blob 컬럼 타입                         |
-| `ExposedPage.kt`                                   | 페이징 결과 데이터 클래스                         |
-| `ExposedCursorPage.kt`                             | 타입이 있는 keyset/cursor 결과 데이터 클래스      |
+| 파일                                               | 설명                                                   |
+|----------------------------------------------------|--------------------------------------------------------|
+| `ColumnExtensions.kt`                              | 클라이언트 측 ID 자동 생성 확장 함수                   |
+| `dao/id/KotlinUuidTable.kt`                        | Kotlin `Uuid` ID 테이블과 V4/V7 생성                   |
+| `ExposedColumnSupports.kt`                         | 컬럼 타입 관련 지원 함수                               |
+| `ResultRowExtensions.kt`                           | ResultRow 처리 확장 함수                               |
+| `BatchInsertOnConflictDoNothing.kt`                | 중복 무시 배치 삽입                                    |
+| `statements/api/ExposedBlobExtensions.kt`          | ExposedBlob 유틸 함수                                  |
+| `compress/CompressedBinaryColumnType.kt`           | 압축 Binary 컬럼 타입                                  |
+| `compress/CompressedBlobColumnType.kt`             | 압축 Blob 컬럼 타입                                    |
+| `serializable/BinarySerializedBinaryColumnType.kt` | 직렬화 Binary 컬럼 타입                                |
+| `serializable/BinarySerializedBlobColumnType.kt`   | 직렬화 Blob 컬럼 타입                                  |
+| `ExposedPage.kt`                                   | 페이징 결과 데이터 클래스                              |
+| `ExposedCursorPage.kt`                             | 타입이 있는 keyset/cursor 결과 데이터 클래스           |
 | `HasIdentifier.kt`                                 | Deprecated 호환 인터페이스; `Serializable` record 권장 |
-| `dao/id/KsuidTable.kt`                             | KSUID 기본키 테이블                          |
-| `dao/id/KsuidMillisTable.kt`                       | KsuidMillis 기본키 테이블                    |
-| `dao/id/UlidTable.kt`                              | ULID 기본키 테이블                           |
-| `dao/id/SnowflakeIdTable.kt`                       | Snowflake Long 기본키 테이블                 |
-| `dao/id/TimebasedUUIDTable.kt`                     | UUIDv7 기본키 테이블                         |
-| `dao/id/TimebasedUUIDBase62Table.kt`               | UUIDv7 Base62 기본키 테이블                  |
-| `dao/id/SoftDeletedIdTable.kt`                     | 소프트 삭제 기본키 테이블                         |
-| `inet/InetColumnTypes.kt`                          | IPv4/IPv6, CIDR 컬럼 타입                  |
-| `inet/InetExtensions.kt`                           | inetAddress, cidr, isContainedBy 확장 함수 |
-| `phone/PhoneNumberColumnType.kt`                   | 전화번호 컬럼 타입 (E.164 정규화)                 |
-| `phone/PhoneNumberExtensions.kt`                   | phoneNumber, phoneNumberString 확장 함수   |
+| `dao/id/KsuidTable.kt`                             | KSUID 기본키 테이블                                    |
+| `dao/id/KsuidMillisTable.kt`                       | KsuidMillis 기본키 테이블                              |
+| `dao/id/UlidTable.kt`                              | ULID 기본키 테이블                                     |
+| `dao/id/SnowflakeIdTable.kt`                       | Snowflake Long 기본키 테이블                           |
+| `dao/id/TimebasedUUIDTable.kt`                     | UUIDv7 기본키 테이블                                   |
+| `dao/id/TimebasedUUIDBase62Table.kt`               | UUIDv7 Base62 기본키 테이블                            |
+| `dao/id/SoftDeletedIdTable.kt`                     | 소프트 삭제 기본키 테이블                              |
+| `inet/InetColumnTypes.kt`                          | IPv4/IPv6, CIDR 컬럼 타입                              |
+| `inet/InetExtensions.kt`                           | inetAddress, cidr, isContainedBy 확장 함수             |
+| `phone/PhoneNumberColumnType.kt`                   | 전화번호 컬럼 타입 (E.164 정규화)                      |
+| `phone/PhoneNumberExtensions.kt`                   | phoneNumber, phoneNumberString 확장 함수               |
 
 ## Auditable (감사 추적)
 
@@ -369,20 +357,20 @@ object ArticleTable : AuditableLongIdTable("articles") {
 
 #### 2. 컬럼 동작
 
-| 컬럼           | INSERT 시                             | UPDATE 시                          | 비고              |
-|--------------|--------------------------------------|-----------------------------------|-----------------|
-| `created_by` | `UserContext.getCurrentUser()` 자동 설정 | 변경 없음                             | 기본값: "system"   |
-| `created_at` | DB `CURRENT_TIMESTAMP` 자동 설정         | 변경 없음                             | UTC, nullable   |
-| `updated_by` | null                                 | `UserContext.getCurrentUser()` 설정 | Repository에서 관리 |
-| `updated_at` | null                                 | DB `CURRENT_TIMESTAMP` 설정         | Repository에서 관리 |
+| 컬럼         | INSERT 시                                | UPDATE 시                           | 비고                |
+|--------------|------------------------------------------|-------------------------------------|---------------------|
+| `created_by` | `UserContext.getCurrentUser()` 자동 설정 | 변경 없음                           | 기본값: "system"    |
+| `created_at` | DB `CURRENT_TIMESTAMP` 자동 설정         | 변경 없음                           | UTC, nullable       |
+| `updated_by` | null                                     | `UserContext.getCurrentUser()` 설정 | Repository에서 관리 |
+| `updated_at` | null                                     | DB `CURRENT_TIMESTAMP` 설정         | Repository에서 관리 |
 
 #### 3. 구체 테이블 클래스
 
-| 클래스                    | 기본키 타입                            | 사용 시기          |
-|------------------------|-----------------------------------|----------------|
-| `AuditableIntIdTable`  | `Int` (자동증가)                      | 소규모 데이터셋       |
-| `AuditableLongIdTable` | `Long` (자동증가)                     | 대규모 데이터셋, 분산환경 |
-| `AuditableUUIDTable`   | `java.util.UUID` (client-side 생성) | 분산 환경          |
+| 클래스                 | 기본키 타입                         | 사용 시기                 |
+|------------------------|-------------------------------------|---------------------------|
+| `AuditableIntIdTable`  | `Int` (자동증가)                    | 소규모 데이터셋           |
+| `AuditableLongIdTable` | `Long` (자동증가)                   | 대규모 데이터셋, 분산환경 |
+| `AuditableUUIDTable`   | `java.util.UUID` (client-side 생성) | 분산 환경                 |
 
 #### 4. 완전한 예시
 

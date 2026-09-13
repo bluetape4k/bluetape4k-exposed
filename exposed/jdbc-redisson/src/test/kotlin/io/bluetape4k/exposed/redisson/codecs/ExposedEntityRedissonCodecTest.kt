@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.codecs
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.redisson.domain.UserSchema
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -7,7 +8,6 @@ import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.faker.Fakers
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.dao.entityCache
 import org.junit.jupiter.api.Disabled
@@ -40,10 +40,12 @@ class ExposedEntityRedissonCodecTest: AbstractExposedTest() {
 
         RedissonCodecs.Kryo5,
         RedissonCodecs.Fory,
+        RedissonCodecs.FastFory,
         RedissonCodecs.Jdk,
 
         RedissonCodecs.Kryo5Composite,
         RedissonCodecs.ForyComposite,
+        RedissonCodecs.FastForyComposite,
         RedissonCodecs.JdkComposite,
 
         RedissonCodecs.SnappyKryo5,
@@ -52,30 +54,37 @@ class ExposedEntityRedissonCodecTest: AbstractExposedTest() {
 
         RedissonCodecs.SnappyKryo5Composite,
         RedissonCodecs.SnappyForyComposite,
+        RedissonCodecs.SnappyFastForyComposite,
         RedissonCodecs.SnappyJdkComposite,
 
         RedissonCodecs.LZ4Kryo5,
         RedissonCodecs.LZ4Fory,
+        RedissonCodecs.LZ4FastFory,
         RedissonCodecs.LZ4Jdk,
 
         RedissonCodecs.LZ4Kryo5Composite,
         RedissonCodecs.LZ4ForyComposite,
+        RedissonCodecs.LZ4FastForyComposite,
         RedissonCodecs.LZ4JdkComposite,
 
         RedissonCodecs.ZstdKryo5,
         RedissonCodecs.ZstdFory,
+        RedissonCodecs.ZstdFastFory,
         RedissonCodecs.ZstdJdk,
 
         RedissonCodecs.ZstdKryo5Composite,
         RedissonCodecs.ZstdForyComposite,
+        RedissonCodecs.ZstdFastForyComposite,
         RedissonCodecs.ZstdJdkComposite,
 
         RedissonCodecs.GzipKryo5,
         RedissonCodecs.GzipFory,
+        RedissonCodecs.GzipFastFory,
         RedissonCodecs.GzipJdk,
 
         RedissonCodecs.GzipKryo5Composite,
         RedissonCodecs.GzipForyComposite,
+        RedissonCodecs.GzipFastForyComposite,
         RedissonCodecs.GzipJdkComposite,
     )
 

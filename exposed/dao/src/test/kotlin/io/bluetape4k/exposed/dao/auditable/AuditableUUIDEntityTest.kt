@@ -1,23 +1,22 @@
 package io.bluetape4k.exposed.dao.auditable
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.AuditableUUIDTable
 import io.bluetape4k.exposed.core.auditable.UserContext
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.entityCache
-import org.jetbrains.exposed.v1.dao.flushCache
 import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.UUID
+import java.util.*
 
 /**
  * [AuditableUUIDEntity] DAO 통합 테스트입니다.
@@ -50,10 +49,9 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "첫 번째 문서"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Document.findById(doc.id)!!
+            val loaded = Document.findById(doc.id).shouldNotBeNull()
             loaded.createdBy.shouldNotBeNull()
             loaded.createdAt.shouldNotBeNull()
         }
@@ -66,10 +64,9 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "두 번째 문서"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Document.findById(doc.id)!!
+            val loaded = Document.findById(doc.id).shouldNotBeNull()
             loaded.updatedAt.shouldBeNull()
             loaded.updatedBy.shouldBeNull()
         }
@@ -84,13 +81,13 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
                 val doc = Document.new {
                     title = "작성자 지정 문서"
                 }
-                flushCache()
+                entityCache.clear()
                 doc.id
             }
 
             entityCache.clear()
 
-            val loaded = Document.findById(docId)!!
+            val loaded = Document.findById(docId).shouldNotBeNull()
             loaded.createdBy shouldBeEqualTo authorName
         }
     }
@@ -102,16 +99,15 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "수정 전 문서"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Document.findById(doc.id)!!
+            val loaded = Document.findById(doc.id).shouldNotBeNull()
             loaded.title = "수정 후 문서"
             loaded.flush()
 
             entityCache.clear()
 
-            val updated = Document.findById(doc.id)!!
+            val updated = Document.findById(doc.id).shouldNotBeNull()
             updated.updatedBy.shouldNotBeNull()
             updated.title shouldBeEqualTo "수정 후 문서"
         }
@@ -125,7 +121,6 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "시스템 문서"
             }
-            flushCache()
             entityCache.clear()
 
             val loaded = Document.findById(doc.id)!!
@@ -141,7 +136,7 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "UUID 확인 문서"
             }
-            flushCache()
+            entityCache.clear()
 
             doc.id.value.shouldNotBeNull()
         }
@@ -154,7 +149,7 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "equals 테스트"
             }
-            flushCache()
+            entityCache.clear()
 
             val reloaded = Document.findById(doc.id)!!
             doc shouldBeEqualTo reloaded
@@ -167,7 +162,7 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
         withTables(testDB, Documents) {
             val doc1 = Document.new { title = "문서 1" }
             val doc2 = Document.new { title = "문서 2" }
-            flushCache()
+            entityCache.clear()
 
             doc1 shouldNotBeEqualTo doc2
         }
@@ -181,14 +176,13 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "수정 없는 문서"
             }
-            flushCache()
             entityCache.clear()
 
-            val loaded = Document.findById(doc.id)!!
+            val loaded = Document.findById(doc.id).shouldNotBeNull()
             loaded.flush()
             entityCache.clear()
 
-            val reloaded = Document.findById(doc.id)!!
+            val reloaded = Document.findById(doc.id).shouldNotBeNull()
             reloaded.updatedBy.shouldBeNull()
             reloaded.updatedAt.shouldBeNull()
         }
@@ -201,11 +195,10 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
             val doc = Document.new {
                 title = "thread local 문서"
             }
-            flushCache()
             entityCache.clear()
 
             val updatedId = UserContext.withThreadLocalUser("uuid-editor") {
-                val loaded = Document.findById(doc.id)!!
+                val loaded = Document.findById(doc.id).shouldNotBeNull()
                 loaded.title = "edited by thread local"
                 loaded.flush()
                 loaded.id
@@ -213,7 +206,7 @@ class AuditableUUIDEntityTest: AbstractExposedTest() {
 
             entityCache.clear()
 
-            val loaded = Document.findById(updatedId)!!
+            val loaded = Document.findById(updatedId).shouldNotBeNull()
             loaded.updatedBy shouldBeEqualTo "uuid-editor"
             loaded.title shouldBeEqualTo "edited by thread local"
         }

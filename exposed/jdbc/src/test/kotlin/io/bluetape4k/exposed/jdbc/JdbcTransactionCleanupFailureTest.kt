@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
@@ -26,17 +27,21 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** Exposed `1.5.0` JDBC transaction cleanup 실패의 호출자 전달 계약을 검증한다. */
 class JdbcTransactionCleanupFailureTest {
 
-    enum class CleanupBoundary { ROLLBACK, STATEMENT_CLOSE, CONNECTION_CLOSE }
+    enum class CleanupBoundary {
+        ROLLBACK,
+        STATEMENT_CLOSE,
+        CONNECTION_CLOSE
+    }
 
-    companion object {
+    companion object: KLogging() {
         @JvmStatic
         fun cases() = TestDB.enabledDialects()
             .filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
             .flatMap { db -> CleanupBoundary.entries.map { Arguments.of(db, it) } }
     }
 
-    private class PrimaryFailure(val boundary: CleanupBoundary) : IllegalStateException(boundary.name)
-    private class CleanupFailure(val boundary: CleanupBoundary) : IllegalStateException(boundary.name)
+    private class PrimaryFailure(boundary: CleanupBoundary): IllegalStateException(boundary.name)
+    private class CleanupFailure(boundary: CleanupBoundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
@@ -48,6 +53,7 @@ class JdbcTransactionCleanupFailureTest {
         val events = CopyOnWriteArrayList<String>()
         val primary = PrimaryFailure(boundary)
         val cleanup = CleanupFailure(boundary)
+
         Class.forName(testDB.driver)
         val database = instrumentedDatabase(testDB, boundary, events, primary, cleanup)
 
@@ -98,11 +104,11 @@ class JdbcTransactionCleanupFailureTest {
                                     }
                                     result
                                 }
-                                else -> invoke(statement, statementMethod, statementArgs)
+                                else    -> invoke(statement, statementMethod, statementArgs)
                             }
                         }
                     }
-                    "rollback" -> {
+                    "rollback"         -> {
                         events.add("rollback")
                         val result = invoke(connection, method, args)
                         if (boundary == CleanupBoundary.ROLLBACK) {
@@ -111,7 +117,7 @@ class JdbcTransactionCleanupFailureTest {
                         }
                         result
                     }
-                    "close" -> {
+                    "close"            -> {
                         events.add("connection-close")
                         val result = invoke(connection, method, args)
                         if (boundary == CleanupBoundary.CONNECTION_CLOSE) {
@@ -120,7 +126,7 @@ class JdbcTransactionCleanupFailureTest {
                         }
                         result
                     }
-                    else -> invoke(connection, method, args)
+                    else               -> invoke(connection, method, args)
                 }
             }
         },
@@ -130,7 +136,7 @@ class JdbcTransactionCleanupFailureTest {
         },
     )
 
-    private inline fun <reified T : Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
+    private inline fun <reified T: Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
         Proxy.newProxyInstance(target.javaClass.classLoader, arrayOf(T::class.java)) { _, method, args ->
             call(method, args)
         } as T

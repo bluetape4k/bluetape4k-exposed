@@ -16,6 +16,7 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import java.time.LocalDate
 
 class ActorR2dbcRepository: LongR2dbcRepository<ActorRecord> {
+
     companion object: KLoggingChannel()
 
     override val table = ActorTable

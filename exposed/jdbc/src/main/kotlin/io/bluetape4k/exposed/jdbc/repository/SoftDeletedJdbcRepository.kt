@@ -9,7 +9,6 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
@@ -227,7 +226,6 @@ interface IntSoftDeletedJdbcRepository<E: Any, T: SoftDeletedIdTable<Int>>: Soft
  * @param T [SoftDeletedIdTable]<Uuid> 구현체
  * @param E 엔티티 타입
  */
-@OptIn(ExperimentalUuidApi::class)
 interface KotlinUuidSoftDeletedJdbcRepository<E: Any, T: SoftDeletedIdTable<Uuid>>:
     SoftDeletedJdbcRepository<Uuid, E, T>
 
@@ -253,7 +251,6 @@ interface JavaUuidSoftDeletedJdbcRepository<E: Any, T: SoftDeletedIdTable<UUID>>
     message = "Use KotlinUuidSoftDeletedJdbcRepository instead.",
     replaceWith = ReplaceWith("KotlinUuidSoftDeletedJdbcRepository<E, T>"),
 )
-@OptIn(ExperimentalUuidApi::class)
 typealias UuidSoftDeletedJdbcRepository<E, T> = KotlinUuidSoftDeletedJdbcRepository<E, T>
 
 /**

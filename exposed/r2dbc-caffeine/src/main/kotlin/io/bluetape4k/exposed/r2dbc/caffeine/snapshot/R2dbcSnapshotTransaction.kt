@@ -16,7 +16,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.currentOrNull
 import java.io.Serializable
 
 /** 이 루트 R2DBC 트랜잭션이 커밋된 뒤 캐시 전용으로 게시할 [snapshot]을 준비합니다. */
-fun <ID : Any, V : Serializable> R2dbcTransaction.stageSnapshot(
+fun <ID: Any, V: Serializable> R2dbcTransaction.stageSnapshot(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
     snapshot: CacheSnapshot<V>,
@@ -30,7 +30,7 @@ fun <ID : Any, V : Serializable> R2dbcTransaction.stageSnapshot(
 )
 
 /** 이 루트 R2DBC 트랜잭션 안에서 [source]를 매핑하고 커밋 후에만 게시할 분리 결과를 준비합니다. */
-fun <ID : Any, S, V : Serializable> R2dbcTransaction.stageSnapshot(
+fun <ID: Any, S, V: Serializable> R2dbcTransaction.stageSnapshot(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     miss: SnapshotCacheMiss<ID, V>,
     source: S,
@@ -46,7 +46,7 @@ fun <ID : Any, S, V : Serializable> R2dbcTransaction.stageSnapshot(
 )
 
 /** 이 루트 R2DBC 트랜잭션이 커밋된 뒤 수행할 캐시 전용 무효화를 준비합니다. */
-fun <ID : Any, V : Serializable> R2dbcTransaction.stageInvalidation(
+fun <ID: Any, V: Serializable> R2dbcTransaction.stageInvalidation(
     cache: R2dbcCaffeineSnapshotCache<ID, V>,
     id: ID,
 ) {
@@ -54,7 +54,7 @@ fun <ID : Any, V : Serializable> R2dbcTransaction.stageInvalidation(
 }
 
 @InternalSnapshotCacheApi
-private object R2dbcSnapshotTransactionBridge : SnapshotTransactionBridge<R2dbcTransaction> {
+private object R2dbcSnapshotTransactionBridge: SnapshotTransactionBridge<R2dbcTransaction> {
     override fun isRoot(transaction: R2dbcTransaction): Boolean = transaction.outerTransaction == null
 
     override fun isCurrent(transaction: R2dbcTransaction): Boolean =

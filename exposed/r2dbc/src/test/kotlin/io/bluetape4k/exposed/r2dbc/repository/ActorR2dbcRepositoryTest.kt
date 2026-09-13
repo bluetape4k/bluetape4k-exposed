@@ -1,14 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.repository
 
-import io.bluetape4k.exposed.r2dbc.domain.model.ActorRecord
-import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.ActorTable
-import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.withMovieAndActors
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.logging.debug
-import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -18,6 +10,15 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.r2dbc.domain.model.ActorRecord
+import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.ActorTable
+import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.withMovieAndActors
+import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
-import io.bluetape4k.assertions.assertFailsWith
 
 class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
@@ -102,7 +102,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val ids = repository.saveAll(listOf(newActorRecord()))
 
             ids shouldHaveSize 1
-            ids.first().shouldBeGreaterThan(0L)
+            ids.first() shouldBeGreaterThan 0L
             repository.count() shouldBeEqualTo currentCount + 1
             repository.findAllByIds(ids).toList() shouldHaveSize 1
         }
@@ -135,6 +135,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll inserts 10000 actors on H2`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue(testDB == TestDB.H2)
+
         withMovieAndActors(testDB) {
             val currentCount = repository.count()
             val actors = List(10_000) { index ->

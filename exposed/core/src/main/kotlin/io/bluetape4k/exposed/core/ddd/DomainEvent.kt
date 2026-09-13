@@ -34,7 +34,7 @@ import java.time.Instant
  * }
  * ```
  */
-interface DomainEvent<ID : Any> {
+interface DomainEvent<ID: Any>: java.io.Serializable {
 
     /**
      * 이 event를 발생시킨 aggregate의 불투명한 비민감 identifier입니다.

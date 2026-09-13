@@ -29,9 +29,10 @@ fun interface TinkColumnAssociatedDataProvider {
         /**
          * Ciphertext를 안정적인 Exposed table과 column name에 바인딩하는 기본 provider입니다.
          */
-        val TableAndColumn: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider { tableName, columnName ->
-            "bluetape4k-exposed-tink:v1:$tableName:$columnName".toByteArray(Charsets.UTF_8)
-        }
+        val TableAndColumn: TinkColumnAssociatedDataProvider =
+            TinkColumnAssociatedDataProvider { tableName, columnName ->
+                "bluetape4k-exposed-tink:v1:$tableName:$columnName".toByteArray(Charsets.UTF_8)
+            }
     }
 }
 

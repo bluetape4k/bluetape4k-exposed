@@ -10,7 +10,6 @@ import java.io.Serializable
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.time.Duration
-import java.util.LinkedHashMap
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
@@ -26,7 +25,7 @@ import kotlin.concurrent.withLock
  * stage work before that point because Exposed keeps the transaction current throughout ordered callbacks.
  */
 @InternalSnapshotCacheApi
-interface SnapshotTransactionBridge<TX : Transaction> {
+interface SnapshotTransactionBridge<TX: Transaction> {
     /** Returns whether [transaction] is the physical root boundary. */
     fun isRoot(transaction: TX): Boolean
 
@@ -42,7 +41,7 @@ interface SnapshotTransactionBridge<TX : Transaction> {
 
 /** Stages one validated snapshot insertion for the current root transaction. */
 @InternalSnapshotCacheApi
-fun <TX : Transaction, ID : Any, V : Serializable> stageSnapshotMutation(
+fun <TX: Transaction, ID: Any, V: Serializable> stageSnapshotMutation(
     transaction: TX,
     bridge: SnapshotTransactionBridge<TX>,
     store: SnapshotCacheStore<ID, V>,
@@ -60,7 +59,7 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageSnapshotMutation(
 
 /** Maps and stages one validated snapshot insertion for the current root transaction. */
 @InternalSnapshotCacheApi
-fun <TX : Transaction, ID : Any, S, V : Serializable> stageMappedSnapshotMutation(
+fun <TX: Transaction, ID: Any, S, V: Serializable> stageMappedSnapshotMutation(
     transaction: TX,
     bridge: SnapshotTransactionBridge<TX>,
     store: SnapshotCacheStore<ID, V>,
@@ -80,7 +79,7 @@ fun <TX : Transaction, ID : Any, S, V : Serializable> stageMappedSnapshotMutatio
 
 /** Stages one asynchronous invalidation for the current root transaction. */
 @InternalSnapshotCacheApi
-fun <TX : Transaction, ID : Any> stageInvalidationMutation(
+fun <TX: Transaction, ID: Any> stageInvalidationMutation(
     transaction: TX,
     bridge: SnapshotTransactionBridge<TX>,
     store: AsyncSnapshotInvalidationStore<ID>,
@@ -91,7 +90,7 @@ fun <TX : Transaction, ID : Any> stageInvalidationMutation(
 
 /** Stages one local invalidation for the current root transaction. */
 @InternalSnapshotCacheApi
-fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
+fun <TX: Transaction, ID: Any, V: Serializable> stageInvalidationMutation(
     transaction: TX,
     bridge: SnapshotTransactionBridge<TX>,
     store: SnapshotCacheStore<ID, V>,
@@ -108,7 +107,7 @@ fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidationMutation(
 internal class SnapshotTransactionCoordinator(
     private val nanoTimeSource: () -> Long = System::nanoTime,
 ) {
-    fun <TX : Transaction, ID : Any, V : Serializable> stageSnapshot(
+    fun <TX: Transaction, ID: Any, V: Serializable> stageSnapshot(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
         store: SnapshotCacheStore<ID, V>,
@@ -127,7 +126,7 @@ internal class SnapshotTransactionCoordinator(
         return snapshot
     }
 
-    fun <TX : Transaction, ID : Any, S, V : Serializable> stageMappedSnapshot(
+    fun <TX: Transaction, ID: Any, S, V: Serializable> stageMappedSnapshot(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
         store: SnapshotCacheStore<ID, V>,
@@ -148,7 +147,7 @@ internal class SnapshotTransactionCoordinator(
         return snapshot
     }
 
-    fun <TX : Transaction, ID : Any> stageInvalidation(
+    fun <TX: Transaction, ID: Any> stageInvalidation(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
         store: AsyncSnapshotInvalidationStore<ID>,
@@ -162,7 +161,7 @@ internal class SnapshotTransactionCoordinator(
         state.stage(participant, AsyncInvalidationMutation(participant, measured))
     }
 
-    fun <TX : Transaction, ID : Any, V : Serializable> stageInvalidation(
+    fun <TX: Transaction, ID: Any, V: Serializable> stageInvalidation(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
         store: SnapshotCacheStore<ID, V>,
@@ -175,7 +174,7 @@ internal class SnapshotTransactionCoordinator(
         state.stage(participant, LocalInvalidationMutation(participant, id))
     }
 
-    private fun <TX : Transaction> stateFor(
+    private fun <TX: Transaction> stateFor(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
     ): SnapshotTransactionState {
@@ -198,7 +197,7 @@ internal class SnapshotTransactionCoordinator(
         }
     }
 
-    private fun <TX : Transaction> requireOpenRoot(
+    private fun <TX: Transaction> requireOpenRoot(
         transaction: TX,
         bridge: SnapshotTransactionBridge<TX>,
         requireSingleAttempt: Boolean = false,
@@ -224,9 +223,10 @@ private class SnapshotTransactionInterceptor(
     private val state: SnapshotTransactionState,
     /** commit 후 drain phase deadline 계산용 단조 시간 source입니다. */
     private val nanoTimeSource: () -> Long,
-) : StatementInterceptor {
+): StatementInterceptor {
     /** Exposed callback 중복/순서 경합에서 [pending]과 [state] 전이를 직렬화합니다. */
     private val lock = ReentrantLock()
+
     /** `beforeCommit`에서 확정해 `afterCommit`에서 drain할 mutation 묶음입니다. */
     private var pending = PendingSnapshotMutations.EMPTY
 
@@ -271,12 +271,16 @@ private class SnapshotTransactionInterceptor(
 private class SnapshotTransactionState {
     /** staging 상태와 lifecycle 전이를 보호하는 transaction-local lock입니다. */
     private val lock = ReentrantLock()
+
     /** 현재 transaction 경계의 staging lifecycle입니다. */
     private var lifecycle = SnapshotTransactionLifecycle.OPEN
+
     /** store identity별 참여자 호환성/limit/failure-buffer 소유권 기록입니다. */
     private val participants = LinkedHashMap<SnapshotStoreId, ParticipantRecord>()
+
     /** store/id별 최종 mutation을 보관합니다. 같은 key의 mutation은 마지막 값으로 대체됩니다. */
     private val mutations = LinkedHashMap<MutationKey, BufferedSnapshotMutation>()
+
     /** staged mutation들의 추정 weight 합계입니다. replacement 시 이전 weight를 차감합니다. */
     private var totalWeight = 0L
 
@@ -393,7 +397,7 @@ private data class ParticipantRecord(
     /** 이 identity가 async invalidation participant로 참여했는지 여부입니다. */
     val hasAsyncParticipant: Boolean,
 ) {
-    constructor(participant: SnapshotParticipant) : this(
+    constructor(participant: SnapshotParticipant): this(
         participant.storeInstanceToken,
         participant.compatibilityFingerprint,
         participant.limits,
@@ -429,10 +433,10 @@ private sealed interface SnapshotParticipant {
     val failureBuffer: SnapshotCacheFailureBuffer
 }
 
-private class LocalParticipant<ID : Any, V : Serializable>(
+private class LocalParticipant<ID: Any, V: Serializable>(
     /** local put/invalidation을 실제로 적용할 synchronous snapshot store입니다. */
     val store: SnapshotCacheStore<ID, V>,
-) : SnapshotParticipant {
+): SnapshotParticipant {
     override val storeId: SnapshotStoreId = store.storeId
     override val storeInstanceToken: Any = store.storeInstanceToken
     override val compatibilityFingerprint: String = store.compatibilityFingerprint
@@ -448,10 +452,10 @@ private class LocalParticipant<ID : Any, V : Serializable>(
         store.applySnapshots(mutations.map { (it as LocalPutMutation<ID, V>).put }, deadline)
 }
 
-private class AsyncParticipant<ID : Any>(
+private class AsyncParticipant<ID: Any>(
     /** async invalidation을 제출할 backend store입니다. */
     val store: AsyncSnapshotInvalidationStore<ID>,
-) : SnapshotParticipant {
+): SnapshotParticipant {
     override val storeId: SnapshotStoreId = store.storeId
     override val storeInstanceToken: Any = store.storeInstanceToken
     override val compatibilityFingerprint: String = store.compatibilityFingerprint
@@ -469,33 +473,34 @@ private sealed interface BufferedSnapshotMutation {
     val weight: Long
 }
 
-private data class LocalPutMutation<ID : Any, V : Serializable>(
+private data class LocalPutMutation<ID: Any, V: Serializable>(
     /** mutation을 drain할 local participant입니다. */
     override val participant: LocalParticipant<ID, V>,
     /** claim된 miss에서 준비된 guarded put mutation입니다. */
     val put: SnapshotCacheMutation.Put<ID, V>,
-) : BufferedSnapshotMutation {
+): BufferedSnapshotMutation {
     override val id: ID = put.id
+
     /** adapter가 계산한 retained weight 추정치입니다. 없으면 weight 제한 계산에서 0으로 취급합니다. */
     val estimatedWeight: Long? = put.estimatedWeight
     override val weight: Long = estimatedWeight ?: 0L
 }
 
-private data class LocalInvalidationMutation<ID : Any, V : Serializable>(
+private data class LocalInvalidationMutation<ID: Any, V: Serializable>(
     /** invalidation을 drain할 local participant입니다. */
     override val participant: LocalParticipant<ID, V>,
     /** local cache에서 invalidate할 cache identifier입니다. */
     override val id: ID,
-) : BufferedSnapshotMutation {
+): BufferedSnapshotMutation {
     override val weight: Long = 0L
 }
 
-private data class AsyncInvalidationMutation<ID : Any>(
+private data class AsyncInvalidationMutation<ID: Any>(
     /** invalidation을 submit할 async participant입니다. */
     override val participant: AsyncParticipant<ID>,
     /** backend 제출 전에 측정된 encoded invalidation payload입니다. */
     val measured: MeasuredInvalidation<ID>,
-) : BufferedSnapshotMutation {
+): BufferedSnapshotMutation {
     override val id: ID = measured.id
     override val weight: Long = measured.encodedBytes.toLong()
 }
@@ -684,23 +689,26 @@ private fun List<BufferedSnapshotMutation>.groupByStore(): LinkedHashMap<Snapsho
     return grouped
 }
 
-private object NeverExpiringSnapshotCacheDeadline : SnapshotCacheDeadline {
+private object NeverExpiringSnapshotCacheDeadline: SnapshotCacheDeadline {
     override fun remaining(): Duration = Duration.ofNanos(Long.MAX_VALUE)
     override val isExpired: Boolean = false
 }
 
-private fun SnapshotCacheLimits.minimum(other: SnapshotCacheLimits): SnapshotCacheLimits = SnapshotCacheLimits(
-    maxStagedMutations = minOf(maxStagedMutations, other.maxStagedMutations),
-    maxParticipatingStores = minOf(maxParticipatingStores, other.maxParticipatingStores),
-    maxStagedWeight = listOfNotNull(maxStagedWeight, other.maxStagedWeight).minOrNull(),
-    localDrainBudget = listOfNotNull(localDrainBudget, other.localDrainBudget).minOrNull(),
-)
+private fun SnapshotCacheLimits.minimum(other: SnapshotCacheLimits): SnapshotCacheLimits =
+    SnapshotCacheLimits(
+        maxStagedMutations = minOf(maxStagedMutations, other.maxStagedMutations),
+        maxParticipatingStores = minOf(maxParticipatingStores, other.maxParticipatingStores),
+        maxStagedWeight = listOfNotNull(maxStagedWeight, other.maxStagedWeight).minOrNull(),
+        localDrainBudget = listOfNotNull(localDrainBudget, other.localDrainBudget).minOrNull(),
+    )
 
 private class WeakIdentityTerminalTransactions {
     /** weak-reference set과 reference queue 정리를 직렬화합니다. */
     private val lock = ReentrantLock()
+
     /** GC된 terminal transaction reference를 수거하는 queue입니다. */
     private val staleTransactions = ReferenceQueue<Transaction>()
+
     /** 이미 terminal 경계에 도달한 root transaction들의 weak identity set입니다. */
     private val terminalTransactions = HashSet<IdentityWeakTransactionReference>()
 
@@ -729,7 +737,7 @@ private class WeakIdentityTerminalTransactions {
 private class IdentityWeakTransactionReference(
     transaction: Transaction,
     queue: ReferenceQueue<Transaction>? = null,
-) : WeakReference<Transaction>(transaction, queue) {
+): WeakReference<Transaction>(transaction, queue) {
     /** referent가 GC된 뒤에도 hash set 위치를 유지하기 위한 identity hash입니다. */
     private val identityHashCode = System.identityHashCode(transaction)
 

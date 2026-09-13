@@ -4,7 +4,6 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
-import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserTable
 import io.bluetape4k.exposed.r2dbc.tests.TestDB

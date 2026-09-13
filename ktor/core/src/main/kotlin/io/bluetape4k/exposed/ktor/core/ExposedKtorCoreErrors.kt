@@ -8,7 +8,6 @@ import io.ktor.server.plugins.statuspages.StatusPagesConfig
 import io.ktor.server.response.respond
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmName
 
 /** Ktor Exposed core가 소유하는 path 없는 고정 JSON 오류 응답입니다. */
 @Serializable
@@ -27,10 +26,10 @@ enum class ExposedKtorCoreErrorCode {
 }
 
 /** raw cause와 detail을 공개 계약에 포함하지 않는 고정 문구 transaction 오류입니다. */
-class ExposedKtorTransactionException : RuntimeException("Exposed transaction failed")
+class ExposedKtorTransactionException: RuntimeException("Exposed transaction failed")
 
 /** backend, SQL, request detail을 포함하지 않는 고정 문구 readiness timeout입니다. */
-class ExposedKtorReadinessTimeoutException : RuntimeException("Exposed readiness probe timed out")
+class ExposedKtorReadinessTimeoutException: RuntimeException("Exposed readiness probe timed out")
 
 private data class ErrorCatalogEntry(
     val status: HttpStatusCode,

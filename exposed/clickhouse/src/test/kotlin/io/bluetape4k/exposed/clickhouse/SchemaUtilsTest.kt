@@ -1,19 +1,19 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.clickhouse.domain.Events
 import io.bluetape4k.exposed.clickhouse.engine.ClickHouseEngine
-import io.bluetape4k.exposed.clickhouse.functions.toYYYYMM
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
+import io.bluetape4k.exposed.clickhouse.functions.toYYYYMM
 import io.bluetape4k.exposed.clickhouse.types.ClickHouseInt32ColumnType
 import io.bluetape4k.exposed.clickhouse.types.chNullable
 import io.bluetape4k.exposed.clickhouse.types.date32
 import io.bluetape4k.exposed.clickhouse.types.lowCardinalityString
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.shouldNotContain
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.AfterEach
@@ -30,18 +30,24 @@ import org.junit.jupiter.api.TestInstance
  * 3. ENGINE 절 부착
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class SchemaUtilsTest : AbstractClickHouseTest() {
+class SchemaUtilsTest: AbstractClickHouseTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @BeforeEach
     fun setup() {
-        transaction(db) { SchemaUtils.create(Events) }
+        transaction(db) {
+            SchemaUtils.create(Events)
+        }
     }
 
     @AfterEach
     fun teardown() {
-        transaction(db) { runCatching { SchemaUtils.drop(Events) } }
+        transaction(db) {
+            runCatching {
+                SchemaUtils.drop(Events)
+            }
+        }
     }
 
     @Test
@@ -49,6 +55,7 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
         val statements = transaction(db) { Events.createStatement() }
         // CREATE TABLE만 있어야 함 (ALTER/SEQUENCE 없음)
         statements shouldHaveSize 1
+
         val ddl = statements.first()
         ddl shouldContain "CREATE TABLE"
         ddl shouldContain "ENGINE = MergeTree()"
@@ -58,6 +65,7 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
     @Test
     fun `Events createStatement does not include PRIMARY KEY constraint`() {
         val ddl = transaction(db) { Events.createStatement().first() }
+
         // CONSTRAINT pk PRIMARY KEY (...) 형태 없어야 함
         ddl.lowercase() shouldNotContain "primary key"
     }
@@ -93,35 +101,42 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
 
     @Test
     fun `Table with Nullable column DDL is correct`() {
-        val testTable = object : ClickHouseTable("nullable_test") {
+        val testTable = object: ClickHouseTable("nullable_test") {
             val id = long("id")
             val nullableVal = chNullable("nullable_val", ClickHouseInt32ColumnType())
 
             override val engine: ClickHouseEngine = mergeTree { orderBy(id) }
         }
-        val ddl = transaction(db) { testTable.createStatement().first() }
+
+        val ddl = transaction(db) {
+            testTable.createStatement().first()
+        }
         ddl shouldContain "Nullable(Int32)"
         ddl shouldNotContain "NOT NULL"
+
         val hasStandaloneNull = ddl.contains(Regex("\\bNULL\\b"))
         hasStandaloneNull.shouldBeFalse()
     }
 
     @Test
     fun `LowCardinality column DDL is correct`() {
-        val testTable = object : ClickHouseTable("lc_test") {
+        val testTable = object: ClickHouseTable("lc_test") {
             val id = long("id")
             val category = lowCardinalityString("category")
 
             override val engine: ClickHouseEngine = mergeTree { orderBy(id) }
         }
-        val ddl = transaction(db) { testTable.createStatement().first() }
+
+        val ddl = transaction(db) {
+            testTable.createStatement().first()
+        }
         ddl shouldContain "LowCardinality(String)"
         ddl shouldContain "ENGINE = MergeTree()"
     }
 
     @Test
     fun `ClickHouseTable override engine can use typed columns after table initialization`() {
-        val testTable = object : ClickHouseTable("typed_engine_test") {
+        val testTable = object: ClickHouseTable("typed_engine_test") {
             val id = long("id")
             val eventDate = date32("event_date")
 
@@ -132,7 +147,9 @@ class SchemaUtilsTest : AbstractClickHouseTest() {
             }
         }
 
-        val ddl = transaction(db) { testTable.createStatement().first() }
+        val ddl = transaction(db) {
+            testTable.createStatement().first()
+        }
 
         ddl shouldContain "ORDER BY (id)"
         ddl shouldContain "PARTITION BY toYYYYMM(event_date)"

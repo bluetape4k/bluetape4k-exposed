@@ -1,5 +1,11 @@
 package io.bluetape4k.exposed.r2dbc
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
@@ -7,17 +13,9 @@ import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeEmpty
-import io.bluetape4k.assertions.shouldBeTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -53,7 +51,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
                     Thread.currentThread().name
                 }
 
-                threadName.shouldContain("vt-custom-executor")
+                threadName shouldContain "vt-custom-executor"
                 executor.isShutdown.shouldBeFalse()
 
                 val secondThreadName = virtualThreadTransaction(
@@ -63,7 +61,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
                     Thread.currentThread().name
                 }
 
-                secondThreadName.shouldContain("vt-custom-executor")
+                secondThreadName shouldContain "vt-custom-executor"
             } finally {
                 runCatching {
                     executor.shutdown()

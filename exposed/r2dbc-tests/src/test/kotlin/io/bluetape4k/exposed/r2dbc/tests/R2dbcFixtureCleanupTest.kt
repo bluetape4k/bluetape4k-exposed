@@ -2,16 +2,17 @@ package io.bluetape4k.exposed.r2dbc.tests
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
-import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.Schema
 import kotlinx.coroutines.flow.single
+import org.jetbrains.exposed.v1.core.Schema
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.exists
 import org.junit.jupiter.api.Assumptions
@@ -21,14 +22,20 @@ import java.util.concurrent.CancellationException
 class R2dbcFixtureCleanupTest {
     private class BodyFailure(val marker: Int): IllegalArgumentException("body sentinel")
     private class DropFailure(val index: Int): IllegalStateException("drop-$index")
+
     private val selected = TestDB.valueOf(System.getenv("EXPOSED_TEST_DB") ?: "H2").also {
         check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
     }
-    private val fixture = r2dbcTestDbFixture(selected, { configure ->
-        selected.beforeConnection()
-        selected.connect { configure() }
-    })
-    private val table = object: Table("r2dbc_fixture_cleanup") { val id = integer("id") }
+    private val fixture = r2dbcTestDbFixture(
+        key = selected,
+        createDatabase = { configure ->
+            selected.beforeConnection()
+            selected.connect { configure() }
+        }
+    )
+    private val table = object: Table("r2dbc_fixture_cleanup") {
+        val id = integer("id")
+    }
 
     @Test
     fun `생성 도중 실패는 요청 테이블만 정리하고 opt out을 존중한다`() = runSuspendIO {
@@ -37,27 +44,37 @@ class R2dbcFixtureCleanupTest {
             var bodyRan = false
             val broken = object: Table("r2dbc_fixture_partial_create") {
                 val id = integer("id")
+
                 override fun createStatement(): List<String> =
                     super.createStatement() + "INVALID FIXTURE CREATE STATEMENT"
+
                 override fun dropStatement(): List<String> {
                     drops++
                     return super.dropStatement()
                 }
             }
+
             try {
                 assertFailsWith<Exception> {
-                    withTables(fixture, broken, dropTables = dropTables) { bodyRan = true }
+                    withTables(fixture, broken, dropTables = dropTables) {
+                        bodyRan = true
+                    }
                 }
-                bodyRan shouldBeEqualTo false
+                bodyRan.shouldBeFalse()
+
                 if (dropTables) {
                     (drops >= 2) shouldBeEqualTo true
-                    withDb(fixture) { broken.exists() shouldBeEqualTo false }
+                    withDb(fixture) {
+                        broken.exists().shouldBeFalse()
+                    }
                 } else {
                     drops shouldBeEqualTo 1
                     // PostgreSQL은 실패한 DDL을 rollback하므로 잔존 여부가 아닌 drop 미호출을 검증한다.
                 }
             } finally {
-                withDb(fixture) { SchemaUtils.drop(broken) }
+                withDb(fixture) {
+                    SchemaUtils.drop(broken)
+                }
             }
         }
     }
@@ -69,8 +86,13 @@ class R2dbcFixtureCleanupTest {
         retainR2dbcFailure(primary, primary) shouldBeSameInstanceAs primary
         primary.suppressed.size shouldBeEqualTo 0
         withDb(fixture) {
-            cleanupR2dbcFixture(primary, recover = false, suppressOnCancellation = true,
-            ) { throw cancellation }
+            cleanupR2dbcFixture(
+                primary,
+                recover = false,
+                suppressOnCancellation = true,
+            ) {
+                throw cancellation
+            }
         }
         primary.suppressed.single() shouldBeSameInstanceAs cancellation
     }
@@ -78,10 +100,16 @@ class R2dbcFixtureCleanupTest {
     @Test
     fun `본문 성공 뒤 cleanup 실패는 호출자에게 전달한다`() = runSuspendIO {
         val failure = BodyFailure(10)
+
         assertFailsWith<BodyFailure> {
             withDb(fixture) {
-                cleanupR2dbcFixture(null, recover = false, suppressOnCancellation = true,
-                ) { throw failure }
+                cleanupR2dbcFixture(
+                    primary = null,
+                    recover = false,
+                    suppressOnCancellation = true,
+                ) {
+                    throw failure
+                }
             }
         } shouldBeSameInstanceAs failure
     }
@@ -92,28 +120,46 @@ class R2dbcFixtureCleanupTest {
             "MySQL Testcontainers test user cannot create a schema/database"
         }
         val schema = Schema("r2dbc_fixture_schema")
-        assertFailsWith<BodyFailure> { withSchemas(fixture, schema) { throw BodyFailure(4) } }
+        assertFailsWith<BodyFailure> {
+            withSchemas(fixture, schema) {
+                throw BodyFailure(4)
+            }
+        }
+
         coroutineScope {
             val entered = CompletableDeferred<Unit>()
             val job = async {
-                withSchemas(fixture, schema) { entered.complete(Unit); awaitCancellation() }
+                withSchemas(fixture, schema) {
+                    entered.complete(Unit)
+                    awaitCancellation()
+                }
             }
             entered.await()
             job.cancel()
-            assertFailsWith<CancellationException> { job.await() }
+
+            assertFailsWith<CancellationException> {
+                job.await()
+            }
         }
         withDb(fixture) {
             exec("SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE LOWER(SCHEMA_NAME) = 'r2dbc_fixture_schema'") {
                 (it.get(0) as Number).toInt()
-            }.shouldNotBeNull().single() shouldBeEqualTo 0
+            }?.single() shouldBeEqualTo 0
         }
     }
 
     @Test
     fun `본문 실패 뒤 테이블을 정리한다`() = runSuspendIO {
         val failure = BodyFailure(1)
-        assertFailsWith<BodyFailure> { withTables(fixture, table) { throw failure } } shouldBeSameInstanceAs failure
-        withDb(fixture) { table.exists() shouldBeEqualTo false }
+        assertFailsWith<BodyFailure> {
+            withTables(fixture, table) {
+                throw failure
+            }
+        } shouldBeSameInstanceAs failure
+
+        withDb(fixture) {
+            table.exists().shouldBeFalse()
+        }
     }
 
     @Test
@@ -130,13 +176,19 @@ class R2dbcFixtureCleanupTest {
         }
         try {
             assertFailsWith<BodyFailure> {
-                withTables(fixture, broken) { failDrop = true; throw failure }
+                withTables(fixture, broken) {
+                    failDrop = true
+                    throw failure
+                }
             } shouldBeSameInstanceAs failure
+
             cleanup.size shouldBeEqualTo 2
             failure.suppressed.toList() shouldBeEqualTo cleanup
         } finally {
             failDrop = false
-            withDb(fixture) { SchemaUtils.drop(broken) }
+            withDb(fixture) {
+                SchemaUtils.drop(broken)
+            }
         }
     }
 
@@ -145,13 +197,22 @@ class R2dbcFixtureCleanupTest {
         coroutineScope {
             val entered = CompletableDeferred<Unit>()
             val job = async {
-                withTables(fixture, table) { entered.complete(Unit); awaitCancellation() }
+                withTables(fixture, table) {
+                    entered.complete(Unit)
+                    awaitCancellation()
+                }
             }
             entered.await()
             job.cancel()
-            val failure = assertFailsWith<CancellationException> { job.await() }
+
+            val failure = assertFailsWith<CancellationException> {
+                job.await()
+            }
+
             failure.suppressed.size shouldBeEqualTo 0
-            withDb(fixture) { table.exists() shouldBeEqualTo false }
+            withDb(fixture) {
+                table.exists().shouldBeFalse()
+            }
         }
     }
 
@@ -159,9 +220,13 @@ class R2dbcFixtureCleanupTest {
     fun `drop opt out은 테이블을 남긴다`() = runSuspendIO {
         try {
             withTables(fixture, table, dropTables = false) {}
-            withDb(fixture) { table.exists() shouldBeEqualTo true }
+            withDb(fixture) {
+                table.exists().shouldBeTrue()
+            }
         } finally {
-            withDb(fixture) { SchemaUtils.drop(table) }
+            withDb(fixture) {
+                SchemaUtils.drop(table)
+            }
         }
     }
 }

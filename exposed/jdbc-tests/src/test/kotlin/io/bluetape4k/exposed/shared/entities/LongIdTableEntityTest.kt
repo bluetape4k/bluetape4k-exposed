@@ -1,6 +1,9 @@
 package io.bluetape4k.exposed.shared.entities
 
 import io.bluetape4k.ToStringBuilder
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContainSame
 import io.bluetape4k.exposed.shared.entities.LongIdTables.Cities
 import io.bluetape4k.exposed.shared.entities.LongIdTables.City
 import io.bluetape4k.exposed.shared.entities.LongIdTables.People
@@ -12,9 +15,6 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContainSame
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.dao.LongEntity

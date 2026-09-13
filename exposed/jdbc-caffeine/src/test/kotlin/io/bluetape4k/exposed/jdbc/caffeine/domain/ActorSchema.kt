@@ -61,7 +61,7 @@ object ActorSchema: KLogging() {
             private const val serialVersionUID = 1L
         }
 
-        fun withId(id: Long) = copy(id = id)
+        fun withId(newId: Long) = copy(id = newId)
     }
 
     /**

@@ -1,15 +1,16 @@
 package io.bluetape4k.exposed.duckdb
 
-import io.bluetape4k.exposed.duckdb.domain.Events
-import io.bluetape4k.logging.KLogging
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.exposed.duckdb.domain.Events
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -19,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
-import io.bluetape4k.assertions.assertFailsWith
 
 class DuckDBExtensionsTest: AbstractDuckDBTest() {
 

@@ -65,7 +65,7 @@ open class SuspendedExposedEntityMapWriter<ID: Any, E: Any>(
         if (deleteFromDBOnInvalidate) {
             log.debug {
                 "캐시가 Invalidated 되어, DB에서도 삭제합니다... count=${ids.size}, " +
-                    "idType=${ids.firstOrNull()?.javaClass?.simpleName ?: "unknown"}"
+                        "idType=${ids.firstOrNull()?.javaClass?.simpleName ?: "unknown"}"
             }
 
             // Map Key가 String Codec 인데, UUID로 변환을 못함

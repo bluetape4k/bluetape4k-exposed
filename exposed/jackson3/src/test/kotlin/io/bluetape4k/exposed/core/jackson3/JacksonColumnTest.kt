@@ -1,5 +1,9 @@
 package io.bluetape4k.exposed.core.jackson3
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.core.jackson3.JacksonSchema.DataHolder
 import io.bluetape4k.exposed.core.jackson3.JacksonSchema.User
 import io.bluetape4k.exposed.core.jackson3.JacksonSchema.withJacksonArrays
@@ -11,10 +15,6 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.core.Op
@@ -717,6 +717,7 @@ class JacksonColumnTest: AbstractExposedTest() {
 
         // MySQL versions prior to 8.0.13 do not accept default values on JSON columns
         Assumptions.assumeTrue { testDB != TestDB.MYSQL_V5 }
+
         withTables(testDB, tester) {
             testerDatabaseGenerated.insert { }
 

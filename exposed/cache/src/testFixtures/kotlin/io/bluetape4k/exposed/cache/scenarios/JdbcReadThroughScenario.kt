@@ -1,15 +1,15 @@
 package io.bluetape4k.exposed.cache.scenarios
 
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -105,9 +105,9 @@ interface JdbcReadThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
             entities shouldHaveSize repository.table
-                        .selectAll()
-                        .count()
-                        .toInt()
+                .selectAll()
+                .count()
+                .toInt()
         }
     }
 

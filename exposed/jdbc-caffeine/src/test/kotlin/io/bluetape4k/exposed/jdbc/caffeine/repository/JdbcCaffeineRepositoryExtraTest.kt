@@ -2,6 +2,17 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -23,15 +34,7 @@ import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.logging.KLogging
 import io.mockk.every
 import io.mockk.mockk
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldHaveSize
+import kotlinx.coroutines.Job
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -51,14 +54,13 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlinx.coroutines.Job
-import kotlin.coroutines.cancellation.CancellationException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * JDBC Caffeine 레포지토리 추가 커버리지 테스트.
@@ -98,9 +100,9 @@ class JdbcCaffeineRepositoryExtraTest {
             ) { it.queueDepth == 0 && it.lastFlushError == null }
         }
 
-        failure.message.orEmpty().contains("expected=queueDepth=0 && lastFlushError=null").shouldBeTrue()
-        failure.message.orEmpty().contains("queueDepth=1").shouldBeTrue()
-        failure.message.orEmpty().contains("lastFlushError").shouldBeTrue()
+        failure.message shouldContain "expected=queueDepth=0 && lastFlushError=null"
+        failure.message shouldContain "queueDepth=1"
+        failure.message shouldContain "lastFlushError"
     }
 
     @Test
@@ -210,6 +212,7 @@ class JdbcCaffeineRepositoryExtraTest {
         fun `clear - 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) {
             // DB 인스턴스마다 독립된 레포지토리를 사용해야 캐시 오염을 방지할 수 있다
             val repository = newRepository()
+
             withActorTable(testDB) {
                 val id = transaction {
                     ActorTable.select(ActorTable.id).limit(1).first()[ActorTable.id].value
@@ -679,7 +682,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     val failure = assertFailsWith<IllegalStateException> {
                         repository.put(rejected.id, rejected)
                     }
-                    failure.message.orEmpty().contains("INTERRUPTED").shouldBeTrue()
+                    failure.message shouldContain "INTERRUPTED"
                     repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
 
                     val repeatedCloseCompleted = CountDownLatch(1)
@@ -838,9 +841,11 @@ class JdbcCaffeineRepositoryExtraTest {
                     putThread.isAlive.shouldBeFalse()
                     readThread.isAlive.shouldBeFalse()
                     workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+
                     val failure = putFailure.get().shouldNotBeNull()
                     (failure is IllegalStateException).shouldBeTrue()
-                    failure.message.orEmpty().contains("TIMEOUT").shouldBeTrue()
+                    failure.message shouldContain "TIMEOUT"
+
                     repository.cache.getIfPresent(repository.serializeKey(updated.id)).shouldBeNull()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 } finally {
@@ -878,8 +883,8 @@ class JdbcCaffeineRepositoryExtraTest {
             val failure = assertFailsWith<IllegalStateException> {
                 repository.put(rejected.id, rejected)
             }
-            failure.message.orEmpty().contains("STOPPED").shouldBeTrue()
-            failure.message.orEmpty().contains("queue is full").shouldBeFalse()
+            failure.message shouldContain "STOPPED"
+            failure.message shouldNotContain "queue is full"
             repository.validateConsistency().queueDepth shouldBeEqualTo 0
             repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
         }
@@ -933,8 +938,8 @@ class JdbcCaffeineRepositoryExtraTest {
                     val rejection = assertFailsWith<IllegalStateException> {
                         repository.put(rejected.id, rejected)
                     }
-                    rejection.message.orEmpty().contains("queue is full").shouldBeFalse()
-                    rejection.message.orEmpty().contains("closing, closed, or terminal").shouldBeTrue()
+                    rejection.message shouldNotContain "queue is full"
+                    rejection.message shouldContain "closing, closed, or terminal"
                     repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
 
                     releaseCachePuts.release(2)
@@ -988,7 +993,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     val failure = assertFailsWith<IllegalStateException> {
                         repository.put(entities[2].id, entities[2])
                     }
-                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
+                    failure.message shouldContain "queue is full"
                 } finally {
                     releaseFlush.countDown()
                     repository.close()
@@ -1195,6 +1200,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     recoveredReport.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     recoveredReport.lastFlushError.shouldBeNull()
                     commit()
+
                     ActorSchema.findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
                     ActorSchema.findActorById(second.id).shouldNotBeNull().firstName shouldBeEqualTo second.firstName
                 } finally {
@@ -1229,6 +1235,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     terminal.workerState shouldBeEqualTo CacheWorkerState.FAILED
                     terminal.queueDepth shouldBeEqualTo 1
                     attempts.get() shouldBeEqualTo 8
+
                     assertFailsWith<IllegalStateException> {
                         repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
                     }

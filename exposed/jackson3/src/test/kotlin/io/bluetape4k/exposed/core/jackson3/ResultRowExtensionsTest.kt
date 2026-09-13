@@ -1,14 +1,16 @@
 package io.bluetape4k.exposed.core.jackson3
 
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTables
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.Table
@@ -19,14 +21,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import tools.jackson.databind.JsonNode
-import io.bluetape4k.assertions.assertFailsWith
+import java.io.Serializable
 
 class ResultRowExtensionsTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private val expr = mockk<Expression<Any?>>()
     private val row = mockk<ResultRow>()
 
-    private data class Payload(val user: JacksonSchema.User, val active: Boolean)
+    private data class Payload(val user: JacksonSchema.User, val active: Boolean): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     private object JsonTextTable: Table("jackson3_result_row_test") {
         val jsonText = text("json_text")
@@ -54,7 +62,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
             row.getJackson<Payload>(JsonTextTable.jsonText) shouldBeEqualTo payload
             row.getJsonNode(JsonTextTable.jsonText).path("user").path("name").asString() shouldBeEqualTo "tester"
-            row.getJacksonOrNull<Payload>(JsonTextTable.nullableText) shouldBeEqualTo null
+            row.getJacksonOrNull<Payload>(JsonTextTable.nullableText).shouldBeNull()
         }
     }
 

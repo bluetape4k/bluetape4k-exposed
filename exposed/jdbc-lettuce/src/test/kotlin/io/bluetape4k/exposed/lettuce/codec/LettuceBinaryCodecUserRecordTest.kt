@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.lettuce.codec
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.lettuce.domain.UserSchema
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodec
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodecs
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -20,27 +20,31 @@ class LettuceBinaryCodecUserRecordTest {
     companion object: KLogging()
 
     @Suppress("unused")
-    private fun getLettuceBinaryCodecs(): List<LettuceBinaryCodec<UserRecord>> =
-        listOf(
-            LettuceBinaryCodecs.jdk(),
-            LettuceBinaryCodecs.kryo(),
-            LettuceBinaryCodecs.fory(),
-            LettuceBinaryCodecs.gzipJdk(),
-            LettuceBinaryCodecs.gzipKryo(),
-            LettuceBinaryCodecs.gzipFory(),
-            LettuceBinaryCodecs.deflateJdk(),
-            LettuceBinaryCodecs.deflateKryo(),
-            LettuceBinaryCodecs.deflateFory(),
-            LettuceBinaryCodecs.lz4Jdk(),
-            LettuceBinaryCodecs.lz4Kryo(),
-            LettuceBinaryCodecs.lz4Fory(),
-            LettuceBinaryCodecs.snappyJdk(),
-            LettuceBinaryCodecs.snappyKryo(),
-            LettuceBinaryCodecs.snappyFory(),
-            LettuceBinaryCodecs.zstdJdk(),
-            LettuceBinaryCodecs.zstdKryo(),
-            LettuceBinaryCodecs.zstdFory()
-        )
+    private fun getLettuceBinaryCodecs(): List<LettuceBinaryCodec<UserRecord>> = listOf(
+        LettuceBinaryCodecs.jdk(),
+        LettuceBinaryCodecs.kryo(),
+        LettuceBinaryCodecs.fory(),
+        LettuceBinaryCodecs.fastFory(),
+        LettuceBinaryCodecs.gzipJdk(),
+        LettuceBinaryCodecs.gzipKryo(),
+        LettuceBinaryCodecs.gzipFory(),
+        LettuceBinaryCodecs.gzipFastFory(),
+        LettuceBinaryCodecs.deflateJdk(),
+        LettuceBinaryCodecs.deflateKryo(),
+        LettuceBinaryCodecs.deflateFory(),
+        LettuceBinaryCodecs.lz4Jdk(),
+        LettuceBinaryCodecs.lz4Kryo(),
+        LettuceBinaryCodecs.lz4Fory(),
+        LettuceBinaryCodecs.lz4FastFory(),
+        LettuceBinaryCodecs.snappyJdk(),
+        LettuceBinaryCodecs.snappyKryo(),
+        LettuceBinaryCodecs.snappyFory(),
+        LettuceBinaryCodecs.snappyFastFory(),
+        LettuceBinaryCodecs.zstdJdk(),
+        LettuceBinaryCodecs.zstdKryo(),
+        LettuceBinaryCodecs.zstdFory(),
+        LettuceBinaryCodecs.zstdFastFory()
+    )
 
     @ParameterizedTest(name = "codec={0}")
     @MethodSource("getLettuceBinaryCodecs")

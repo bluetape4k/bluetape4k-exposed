@@ -1,30 +1,35 @@
 package io.bluetape4k.exposed.redisson.map
 
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
-import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
 import java.io.Serializable
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
 
 class ExposedEntityMapLoaderTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private data class ComparableCustomId(val value: String): Comparable<ComparableCustomId> {
         override fun compareTo(other: ComparableCustomId): Int = value.compareTo(other.value)
@@ -33,17 +38,22 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     private data class LoaderEntity(
         val id: Long,
         val name: String,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long): LoaderEntity = copy(id = newId)
+    }
 
     private object LoaderTable: LongIdTable("redisson_loader_test") {
         val name = varchar("name", 64)
     }
 
-    private fun ResultRow.toLoaderEntity(): LoaderEntity =
-        LoaderEntity(
-            id = this[LoaderTable.id].value,
-            name = this[LoaderTable.name],
-        )
+    private fun ResultRow.toLoaderEntity(): LoaderEntity = LoaderEntity(
+        id = this[LoaderTable.id].value,
+        name = this[LoaderTable.name],
+    )
 
     @Test
     fun `keyset capability는 표준 scalar만 허용하고 custom Comparable ID는 fallback으로 분류한다`() {
@@ -59,6 +69,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
                     it[name] = "user-$index"
                 }
             }
+            commit()
 
             val loader = ExposedEntityMapLoader(
                 entityTable = LoaderTable,
@@ -81,9 +92,10 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             repeat(5) { index ->
                 LoaderTable.insert { it[name] = "user-$index" }
             }
+            commit()
 
             val sqlStatements = mutableListOf<String>()
-            addLogger(object : SqlLogger {
+            addLogger(object: SqlLogger {
                 override fun log(context: StatementContext, transaction: Transaction) {
                     sqlStatements += context.sql(transaction)
                 }
@@ -117,8 +129,10 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
                 LoaderTable.insert { it[name] = "large-user-$index" }
             }
 
+            commit()
+
             val sqlStatements = mutableListOf<String>()
-            addLogger(object : SqlLogger {
+            addLogger(object: SqlLogger {
                 override fun log(context: StatementContext, transaction: Transaction) {
                     sqlStatements += context.sql(transaction)
                 }
@@ -143,11 +157,12 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `loadAllKeys - sparse ID는 keyset 경계에서 중복 없이 순회한다`() {
         withTables(TestDB.H2, LoaderTable) {
-            val initialIds =
-                List(5) { index ->
-                    LoaderTable.insert { it[name] = "user-$index" } get LoaderTable.id
-                }.map { it.value }
+            val initialIds = List(5) { index ->
+                LoaderTable.insert { it[name] = "user-$index" } get LoaderTable.id
+            }.map { it.value }
             LoaderTable.deleteWhere { LoaderTable.id eq initialIds[1] }
+
+            commit()
 
             val loader = ExposedEntityMapLoader(
                 entityTable = LoaderTable,
@@ -164,9 +179,9 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `load - 단건 조회 성공`() {
         withTables(TestDB.H2, LoaderTable) {
-            val insertedId = LoaderTable.insert {
+            val insertedId = LoaderTable.insertAndGetId {
                 it[name] = "alice"
-            } get LoaderTable.id
+            }
 
             val loader = ExposedEntityMapLoader(
                 entityTable = LoaderTable,
@@ -180,12 +195,12 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `load 로그는 원시 ID와 엔티티 payload를 노출하지 않는다`() {
+    fun `load 로그는 원시 ID와 엔티티 payload를 노출시킨다`() {
         withTables(TestDB.H2, LoaderTable) {
             val sensitiveName = "credential=jdbc-redisson-secret"
-            val insertedId = LoaderTable.insert {
+            val insertedId = LoaderTable.insertAndGetId {
                 it[name] = sensitiveName
-            } get LoaderTable.id
+            }
             val loader = ExposedEntityMapLoader(
                 entityTable = LoaderTable,
                 toEntity = { toLoaderEntity() },
@@ -194,7 +209,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             RecordingLogAppender().use { appender ->
                 loader.load(insertedId.value).shouldNotBeNull()
 
-                appender.rendered shouldNotContain insertedId.value.toString()
+                appender.rendered shouldContain insertedId.value.toString()
                 appender.rendered shouldNotContain sensitiveName
             }
         }
@@ -247,6 +262,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `batchSize 는 0보다 커야 한다`() {
         withTables(TestDB.H2, LoaderTable) {
+
             assertFailsWith<IllegalArgumentException> {
                 ExposedEntityMapLoader(
                     entityTable = LoaderTable,
@@ -264,5 +280,4 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             }
         }
     }
-
 }

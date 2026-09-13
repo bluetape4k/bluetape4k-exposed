@@ -5,9 +5,12 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.flow.single
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Table
@@ -32,7 +35,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder
-import io.r2dbc.spi.R2dbcException
 
 class R2dbcHashedColumnContractTest {
     private val plainText = "fixture-password-not-for-production"
@@ -58,23 +60,39 @@ class R2dbcHashedColumnContractTest {
             "pbkdf2" -> Pbkdf2Hasher()
             else -> SCryptHasher()
         }
+
         val table = Secrets(hasher)
+
         withTables(TestDB.H2, table) {
-            table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+            table.insert {
+                it[id] = 1
+                it[secret] = table.secret.hash(plainText)
+                it[optional] = null
+            }
             val row = table.selectAll().single()
             row[table.optional].shouldBeNull()
+
             val loaded = row[table.secret]
             loaded.matches(plainText).shouldBeTrue()
             loaded.matches("wrong-input").shouldBeFalse()
             loaded.toString() shouldBeEqualTo "Hashed(***)"
+
             val encoded = RawSecrets.selectAll().single()[RawSecrets.secret]
-            (encoded == plainText).shouldBeFalse()
-            encoded.contains(plainText).shouldBeFalse()
+            encoded shouldNotBeEqualTo plainText
+            encoded shouldNotContain plainText
             encoded shouldBeEqualTo loaded.encodedValue
-            table.update { it[secret] = loaded; it[optional] = table.optional.hash(plainText) }
+
+            table.update {
+                it[secret] = loaded
+                it[optional] = table.optional.hash(plainText)
+            }
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
-            table.selectAll().single()[table.optional]?.matches(plainText) shouldBeEqualTo true
-            table.update { it[secret] = Hashed(hasher, encoded); it[optional] = null }
+            table.selectAll().single()[table.optional]?.matches(plainText).shouldBeTrue()
+
+            table.update {
+                it[secret] = Hashed(hasher, encoded)
+                it[optional] = null
+            }
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
         }
     }
@@ -88,16 +106,26 @@ class R2dbcHashedColumnContractTest {
                 calls++
                 return Hashed(this, delegate.hash(plainText).encodedValue)
             }
+
             override fun matches(plainText: String, encodedValue: String): Boolean =
                 delegate.matches(plainText, encodedValue)
         }
         val table = Secrets(custom)
+
         withTables(TestDB.H2, table) {
-            table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+            table.insert {
+                it[id] = 1
+                it[secret] = table.secret.hash(plainText)
+                it[optional] = null
+            }
             val loaded = table.selectAll().single()[table.secret]
             loaded.matches(plainText).shouldBeTrue()
-            table.update { it[secret] = loaded }
+
+            table.update {
+                it[secret] = loaded
+            }
             calls shouldBeEqualTo 1
+
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo loaded.encodedValue
         }
     }
@@ -113,6 +141,7 @@ class R2dbcHashedColumnContractTest {
         val current = DelegatingPasswordEncoder(if (changeAlgorithm) "pbkdf2" else "bcrypt", encoders)
         val table = Secrets(PasswordEncoderHasher(current))
         val oldHash = "{bcrypt}" + oldEncoder.encode(plainText)
+
         withTables(TestDB.H2, table) {
             table.insert {
                 it[id] = 1
@@ -122,14 +151,19 @@ class R2dbcHashedColumnContractTest {
             val loaded = table.selectAll().single()[table.secret]
             current.upgradeEncoding(loaded.encodedValue).shouldBeTrue()
             loaded.matches("wrong-input").shouldBeFalse()
+
             RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo oldHash
+
             if (loaded.matches(plainText) && current.upgradeEncoding(loaded.encodedValue)) {
-                table.update { it[secret] = table.secret.hash(plainText) }
+                table.update {
+                    it[secret] = table.secret.hash(plainText)
+                }
             }
             val upgraded = table.selectAll().single()[table.secret]
             upgraded.matches(plainText).shouldBeTrue()
+
             current.upgradeEncoding(upgraded.encodedValue).shouldBeFalse()
-            (upgraded.encodedValue == oldHash).shouldBeFalse()
+            upgraded.encodedValue shouldNotBeEqualTo oldHash
         }
     }
 
@@ -137,6 +171,7 @@ class R2dbcHashedColumnContractTest {
     fun `SQL logger와 중복 키 예외에 평문이 포함되지 않는다`() = runSuspendIO {
         val table = Secrets(BCryptHasher(4))
         val statements = mutableListOf<String>()
+
         val failure = assertFailsWith<Exception> {
             withTables(TestDB.H2, table) {
                 addLogger(object: SqlLogger {
@@ -146,18 +181,27 @@ class R2dbcHashedColumnContractTest {
                     }
                 })
                 repeat(2) {
-                    table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+                    table.insert {
+                        it[id] = 1
+                        it[secret] = table.secret.hash(plainText)
+                        it[optional] = null
+                    }
                 }
             }
         }
+
         statements.isNotEmpty().shouldBeTrue()
         generateSequence<Throwable>(failure) { it.cause }
             .filterIsInstance<R2dbcException>()
             .any { it.sqlState == "23505" }.shouldBeTrue()
+
         statements.any { it.contains("INSERT", ignoreCase = true) }.shouldBeTrue()
-        statements.joinToString().contains(plainText).shouldBeFalse()
-        failure.stackTraceToString().contains(plainText).shouldBeFalse()
+        statements.joinToString() shouldNotContain plainText
+        failure.stackTraceToString() shouldNotContain plainText
+
         // 검출기가 평문을 포함한 입력을 실제로 거부하는지 별도 대조한다.
-        assertFailsWith<AssertionError> { plainText.contains(plainText).shouldBeFalse() }
+        assertFailsWith<AssertionError> {
+            plainText shouldNotContain plainText
+        }
     }
 }

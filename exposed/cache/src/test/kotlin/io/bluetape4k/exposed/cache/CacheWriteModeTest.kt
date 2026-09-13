@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.cache
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 /**
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
  */
 class CacheWriteModeTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @Test
     fun `CacheWriteMode 열거형은 정확히 3개의 값을 가진다`() {

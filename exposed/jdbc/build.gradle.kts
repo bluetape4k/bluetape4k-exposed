@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("plugin.allopen")
     alias(bt4k.plugins.kotlinx.benchmark)

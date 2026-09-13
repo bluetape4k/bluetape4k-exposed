@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.trino
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
@@ -13,12 +14,14 @@ import org.junit.jupiter.api.Test
  * `createStatement()`는 Exposed 트랜잭션 컨텍스트가 필요하므로
  * Testcontainers Trino 연결을 사용합니다.
  */
-class TrinoTableSanitizeTest : AbstractTrinoTest() {
+class TrinoTableSanitizeTest: AbstractTrinoTest() {
+
+    companion object: KLogging()
 
     /**
      * PrimaryKey를 가진 Trino 테이블 픽스처.
      */
-    private object SimpleTable : TrinoTable("sanitize_simple_tbl") {
+    private object SimpleTable: TrinoTable("sanitize_simple_tbl") {
         val id = long("id")
         val name = varchar("name", 100)
         override val primaryKey = PrimaryKey(id)
@@ -27,7 +30,7 @@ class TrinoTableSanitizeTest : AbstractTrinoTest() {
     /**
      * 표준 Exposed Table: PRIMARY KEY 구문이 DDL에 포함됩니다.
      */
-    private object PlainTable : Table("sanitize_plain_tbl") {
+    private object PlainTable: Table("sanitize_plain_tbl") {
         val id = long("id")
         val name = varchar("name", 100)
         override val primaryKey = PrimaryKey(id)
@@ -36,7 +39,7 @@ class TrinoTableSanitizeTest : AbstractTrinoTest() {
     /**
      * nullable 컬럼을 포함하는 TrinoTable (NULL 키워드 제거 검증용).
      */
-    private object NullableTable : TrinoTable("sanitize_nullable_tbl") {
+    private object NullableTable: TrinoTable("sanitize_nullable_tbl") {
         val id = long("id")
         val description = text("description").nullable()
     }
@@ -44,7 +47,7 @@ class TrinoTableSanitizeTest : AbstractTrinoTest() {
     /**
      * NOT NULL 컬럼만 가진 TrinoTable (NOT NULL 보존 검증용).
      */
-    private object NotNullTable : TrinoTable("sanitize_notnull_tbl") {
+    private object NotNullTable: TrinoTable("sanitize_notnull_tbl") {
         val id = long("id")
         val required = varchar("required", 50)
     }

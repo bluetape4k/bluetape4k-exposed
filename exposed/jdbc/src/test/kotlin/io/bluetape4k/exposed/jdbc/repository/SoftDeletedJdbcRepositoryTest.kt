@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
@@ -7,8 +9,7 @@ import io.bluetape4k.exposed.dao.idHashCode
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -21,6 +22,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
 
 class SoftDeletedJdbcRepositoryTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     object ContactTable: SoftDeletedIdTable<Long>("soft_deleted_table") {
         override val id: Column<EntityID<Long>> = long("id").autoIncrement().entityId()
@@ -105,9 +108,11 @@ class SoftDeletedJdbcRepositoryTest: AbstractExposedTest() {
             val keepId = ContactTable.insertAndGetId {
                 it[name] = "Alice"
             }.value
+
             val deletedId = ContactTable.insertAndGetId {
                 it[name] = "Alice"
             }.value
+
             ContactTable.insertAndGetId {
                 it[name] = "Bob"
             }.value

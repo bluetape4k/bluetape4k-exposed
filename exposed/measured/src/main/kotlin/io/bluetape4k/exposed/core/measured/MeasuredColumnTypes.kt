@@ -56,7 +56,7 @@ class MeasureColumnType<T: Units>(
         is Number     -> fromBaseValue(value.toDouble())
         else          -> error(
             "MeasureColumnType(baseUnit=$baseUnit): DB에서 읽은 값 타입이 지원되지 않습니다. " +
-                "value=$value, type=${value::class.qualifiedName}"
+                    "value=$value, type=${value::class.qualifiedName}"
         )
     }
 
@@ -94,10 +94,8 @@ class TemperatureColumnType: ColumnType<Temperature>() {
     override fun valueFromDB(value: Any): Temperature? = when (value) {
         is Temperature -> value
         is Number      -> Temperature.fromKelvin(value.toDouble())
-        else           -> error(
-            "TemperatureColumnType: DB에서 읽은 값 타입이 지원되지 않습니다. " +
-                "value=$value, type=${value::class.qualifiedName}"
-        )
+        else ->
+            error("TemperatureColumnType: DB에서 읽은 값 타입이 지원되지 않습니다. value=$value, type=${value::class.qualifiedName}")
     }
 
     override fun notNullValueToDB(value: Temperature): Any = value.inKelvin()

@@ -2,8 +2,7 @@
 
 [English](./README.md) | 한국어
 
-PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이터, pgvector 유사도 검색,
-TSTZRANGE 시간 범위 컬럼 타입을 각각 독립적인 컬럼 패밀리로 제공합니다.
+PostgreSQL 전용 Kotlin Exposed 확장 모듈입니다. PostGIS 공간 데이터, pgvector 유사도 검색, TSTZRANGE 시간 범위 컬럼 타입을 각각 독립적인 컬럼 패밀리로 제공합니다.
 
 ## 기능 지원 범위
 
@@ -17,7 +16,7 @@ TSTZRANGE 시간 범위 컬럼 타입을 각각 독립적인 컬럼 패밀리로
 
 ### 1. PostGIS - 공간 데이터
 
-공간 정보(지도, 위치 기반 검색 등)를 저장하고 조회합니다.
+공간 정보 (지도, 위치 기반 검색 등)를 저장하고 조회합니다.
 
 **패키지**: `io.bluetape4k.exposed.postgresql.postgis`
 
@@ -36,7 +35,7 @@ import net.postgis.jdbc.geometry.Point
 import net.postgis.jdbc.geometry.Polygon
 import org.jetbrains.exposed.v1.core.Table
 
-object LocationTable : Table("locations") {
+object LocationTable: Table("locations") {
     val id = integer("id").primaryKey()
     val name = varchar("name", 100)
     val point = geoPoint("point")        // POINT 컬럼
@@ -74,13 +73,16 @@ transaction {
         .toList()
 
     // 두 영역이 겹치는지 확인
-    if (area1.stOverlaps(area2)) { /* ... */ }
+  if (area1.stOverlaps(area2)) { /* ... */
+  }
 
     // 두 영역이 교차하는지 확인
-    if (area1.stIntersects(area2)) { /* ... */ }
+  if (area1.stIntersects(area2)) { /* ... */
+  }
 
     // 두 영역이 분리되어 있는지 확인
-    if (area1.stDisjoint(area2)) { /* ... */ }
+  if (area1.stDisjoint(area2)) { /* ... */
+  }
 
     // 영역의 넓이 계산 (degree² 단위)
     LocationTable
@@ -113,7 +115,7 @@ transaction {
 
 #### 컬럼 타입
 
-- `VectorColumnType(dimension)`: VECTOR(n) 타입으로 FloatArray 저장
+- `VectorColumnType(dimension)`: VECTOR (n) 타입으로 FloatArray 저장
 
 #### 사용 예제
 
@@ -122,7 +124,7 @@ import io.bluetape4k.exposed.postgresql.pgvector.*
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-object DocumentTable : Table("documents") {
+object DocumentTable: Table("documents") {
     val id = integer("id").primaryKey()
     val title = varchar("title", 200)
     val embedding = vector("embedding", 384)  // 384차원 벡터
@@ -191,7 +193,7 @@ data class TimestampRange(
 
 #### 컬럼 타입
 
-- `TstzRangeColumnType`: TSTZRANGE (PostgreSQL) 또는 VARCHAR(120) (H2 등)으로 저장
+- `TstzRangeColumnType`: TSTZRANGE (PostgreSQL) 또는 VARCHAR (120) (H2 등)으로 저장
     - PostgreSQL JDBC literal과 ISO-8601 literal 모두 파싱
     - fractional seconds (`2024-01-01 00:00:00.123456+00`)도 지원
 
@@ -202,7 +204,7 @@ import io.bluetape4k.exposed.postgresql.tsrange.*
 import java.time.Instant
 import org.jetbrains.exposed.v1.core.Table
 
-object EventTable : Table("events") {
+object EventTable: Table("events") {
     val id = integer("id").primaryKey()
     val name = varchar("name", 100)
     val duration = tstzRange("duration")  // [start, end) 시간 범위
@@ -321,11 +323,11 @@ val server = PgvectorServer.Launcher.withExtensions("pg_trgm")
 
 ## 주의사항
 
-- **PostgreSQL 전용**: PostGIS, pgvector, SQL range 연산자는 PostgreSQL dialect에서만 동작합니다.
-  TSTZRANGE 컬럼 타입만 H2 같은 테스트용 dialect에서 `VARCHAR(120)` fallback을 제공합니다.
+- **PostgreSQL
+  전용**: PostGIS, pgvector, SQL range 연산자는 PostgreSQL dialect에서만 동작합니다. TSTZRANGE 컬럼 타입만 H2 같은 테스트용 dialect에서 `VARCHAR(120)` fallback을 제공합니다.
 - **PostGIS 확장**: `PostgisServer` 사용 시 `postgis` 확장이 자동으로 활성화됩니다. 직접 서버에 연결하는 경우
   `CREATE EXTENSION IF NOT EXISTS postgis` 실행이 필요합니다.
-- **pgvector 확장**: `PgvectorServer` 사용 시 `vector` 확장이 자동으로 활성화됩니다. 단, JDBC 드라이버 타입 등록(
+- **pgvector 확장**: `PgvectorServer` 사용 시 `vector` 확장이 자동으로 활성화됩니다. 단, JDBC 드라이버 타입 등록 (
   `PGvector.addVectorType()`)은 연결마다 별도로 필요합니다.
 - **차원 검증**: pgvector 저장 시 벡터 차원이 컬럼 정의와 맞지 않으면 저장 전에 실패합니다.
 

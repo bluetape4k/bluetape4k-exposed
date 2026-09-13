@@ -1,6 +1,8 @@
 package io.bluetape4k.exposed.bigquery
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.junit.jupiter.api.Test
@@ -8,6 +10,8 @@ import java.math.BigDecimal
 import java.time.Instant
 
 class BigQueryResultRowTest {
+
+    companion object: KLogging()
 
     private object ResultRowTable: Table("result_row_test") {
         val region = varchar("region", 32)
@@ -47,8 +51,8 @@ class BigQueryResultRowTest {
             )
         )
 
-        row[ResultRowTable.amount] shouldBeEqualTo null
-        row[ResultRowTable.eventType] shouldBeEqualTo null
+        row[ResultRowTable.amount].shouldBeNull()
+        row[ResultRowTable.eventType].shouldBeNull()
     }
 
     @Test

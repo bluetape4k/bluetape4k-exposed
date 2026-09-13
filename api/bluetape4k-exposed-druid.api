@@ -6,7 +6,8 @@ public final class io/bluetape4k/exposed/druid/DruidAvaticaSerialization : java/
 	public static fun values ()[Lio/bluetape4k/exposed/druid/DruidAvaticaSerialization;
 }
 
-public final class io/bluetape4k/exposed/druid/DruidColumnMetadata {
+public final class io/bluetape4k/exposed/druid/DruidColumnMetadata : java/io/Serializable {
+	public static final field Companion Lio/bluetape4k/exposed/druid/DruidColumnMetadata$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
@@ -25,6 +26,9 @@ public final class io/bluetape4k/exposed/druid/DruidColumnMetadata {
 	public fun hashCode ()I
 	public final fun isNullable ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/bluetape4k/exposed/druid/DruidColumnMetadata$Companion {
 }
 
 public final class io/bluetape4k/exposed/druid/DruidConnectionOptions : java/io/Serializable {

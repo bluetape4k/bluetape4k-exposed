@@ -41,7 +41,7 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
     val reconnectionStrategy: LocalCachedMapOptions.ReconnectionStrategy =
         LocalCachedMapOptions.ReconnectionStrategy.CLEAR,
     val trustedBinaryCache: Boolean = false,
-) : Serializable {
+): Serializable {
 
     init {
         require(nearCacheMaximumSize > 0) {

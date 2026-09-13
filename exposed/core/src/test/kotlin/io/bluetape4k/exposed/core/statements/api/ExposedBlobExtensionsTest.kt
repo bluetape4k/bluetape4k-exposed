@@ -17,8 +17,8 @@ class ExposedBlobExtensionsTest {
     fun `빈 문자열을 ExposedBlob으로 변환하면 bytes 가 비어 있다`() {
         val blob = "".toExposedBlob()
 
-        blob.toUtf8String() shouldBeEqualTo ""
-        blob.toByteArray().toList().shouldBeEmpty()
+        blob.toUtf8String().shouldBeEmpty()
+        blob.toByteArray().shouldBeEmpty()
     }
 
     @Test
@@ -26,14 +26,14 @@ class ExposedBlobExtensionsTest {
         val bytes = byteArrayOf(1, 2, 3, 4)
         val blob = bytes.toExposedBlob()
 
-        blob.toByteArray().toList() shouldBeEqualTo bytes.toList()
+        blob.toByteArray() shouldBeEqualTo bytes
     }
 
     @Test
     fun `빈 ByteArray를 ExposedBlob으로 변환하면 bytes 가 비어 있다`() {
         val blob = ByteArray(0).toExposedBlob()
 
-        blob.toByteArray().toList().shouldBeEmpty()
+        blob.toByteArray().shouldBeEmpty()
     }
 
     @Test
@@ -41,14 +41,14 @@ class ExposedBlobExtensionsTest {
         val bytes = "stream-data".toByteArray()
         val blob = bytes.inputStream().toExposedBlob()
 
-        blob.toInputStream().readBytes().toList() shouldBeEqualTo bytes.toList()
+        blob.toInputStream().readBytes() shouldBeEqualTo bytes
     }
 
     @Test
     fun `빈 InputStream을 ExposedBlob으로 변환하면 bytes 가 비어 있다`() {
         val blob = ByteArray(0).inputStream().toExposedBlob()
 
-        blob.toByteArray().toList().shouldBeEmpty()
+        blob.toByteArray().shouldBeEmpty()
     }
 
     @Test
@@ -56,6 +56,6 @@ class ExposedBlobExtensionsTest {
         val bytes = byteArrayOf(10, 20, 30)
         val blob = bytes.toExposedBlob()
 
-        blob.toInputStream().readBytes().toList() shouldBeEqualTo bytes.toList()
+        blob.toInputStream().readBytes() shouldBeEqualTo bytes
     }
 }

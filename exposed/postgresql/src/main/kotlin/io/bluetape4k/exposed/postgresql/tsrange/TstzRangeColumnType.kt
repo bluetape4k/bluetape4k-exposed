@@ -178,8 +178,7 @@ class TstzRangeColumnType: ColumnType<TimestampRange>() {
                 return LocalDateTime.from(temporal).toInstant(ZoneOffset.from(temporal))
             } catch (e2: Exception) {
                 throw IllegalArgumentException(
-                    "timestamp 문자열을 Instant 로 파싱할 수 없습니다: '$s'. " +
-                        "ISO-8601 또는 PostgreSQL JDBC 포맷이어야 합니다.",
+                    "timestamp 문자열을 Instant 로 파싱할 수 없습니다: '$s'. ISO-8601 또는 PostgreSQL JDBC 포맷이어야 합니다.",
                     e2
                 )
             }

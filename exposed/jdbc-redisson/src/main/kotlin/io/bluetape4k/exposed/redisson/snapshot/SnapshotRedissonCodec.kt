@@ -15,7 +15,7 @@ import org.redisson.client.protocol.Encoder
  * snapshot invalidator에 같은 wrapper instance를 전달하여 두 component가 동일한 key byte를
  * 사용하도록 해야 합니다.
  */
-sealed interface SnapshotRedissonCodec<ID : Any> : Codec {
+sealed interface SnapshotRedissonCodec<ID: Any>: Codec {
     /** Delegate의 serialized value format에 대해 operator가 소유하는 compatibility version입니다. */
     val codecVersion: String
 }
@@ -27,7 +27,7 @@ sealed interface SnapshotRedissonCodec<ID : Any> : Codec {
  * serialization delegate의 trusted-binary 안전성은 각 repository 또는 invalidator consumer가
  * 독립적으로 결정합니다.
  */
-fun <ID : Any> snapshotRedissonCodec(
+fun <ID: Any> snapshotRedissonCodec(
     delegate: Codec,
     codecVersion: String,
     identifierPolicy: SnapshotIdentifierPolicy<ID>,
@@ -60,11 +60,11 @@ private fun SnapshotRedissonCodec<*>.internals(): SnapshotRedissonCodecInternals
     this as? SnapshotRedissonCodecInternals
         ?: throw IllegalArgumentException("Unsupported snapshot Redisson codec implementation.")
 
-private class DefaultSnapshotRedissonCodec<ID : Any>(
+private class DefaultSnapshotRedissonCodec<ID: Any>(
     override val delegateCodec: Codec,
     override val codecVersion: String,
     private val identifierPolicy: CanonicalSnapshotIdentifierPolicy<ID>,
-) : SnapshotRedissonCodec<ID>, SnapshotRedissonCodecInternals, ExposedRedissonDelegatingCodec {
+): SnapshotRedissonCodec<ID>, SnapshotRedissonCodecInternals, ExposedRedissonDelegatingCodec {
 
     override val delegateClassName: String get() = delegateCodec.javaClass.name
     override val canonicalKeyEncodingId: String get() = identifierPolicy.keyEncodingId

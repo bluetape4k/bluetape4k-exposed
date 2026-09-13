@@ -21,11 +21,11 @@ import org.jetbrains.exposed.v1.core.QueryBuilder
  * @property key 최대값 기준 expression.
  * @property columnType value의 컬럼 타입.
  */
-class ArgMax<V : Any, K>(
+class ArgMax<V: Any, K>(
     val value: Expression<V>,
     val key: Expression<K>,
     columnType: IColumnType<V>,
-) : Function<V>(columnType) {
+): Function<V>(columnType) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("argMax(")
         queryBuilder.append(value)
@@ -47,7 +47,7 @@ class ArgMax<V : Any, K>(
  * @param value 반환할 값 컬럼.
  * @param key 최대값 기준 expression.
  */
-fun <V : Any, K> argMax(value: Column<V>, key: Expression<K>): ArgMax<V, K> =
+fun <V: Any, K> argMax(value: Column<V>, key: Expression<K>): ArgMax<V, K> =
     ArgMax(value, key, value.columnType)
 
 /**
@@ -63,11 +63,11 @@ fun <V : Any, K> argMax(value: Column<V>, key: Expression<K>): ArgMax<V, K> =
  * @property key 최소값 기준 expression.
  * @property columnType value의 컬럼 타입.
  */
-class ArgMin<V : Any, K>(
+class ArgMin<V: Any, K>(
     val value: Expression<V>,
     val key: Expression<K>,
     columnType: IColumnType<V>,
-) : Function<V>(columnType) {
+): Function<V>(columnType) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("argMin(")
         queryBuilder.append(value)
@@ -89,7 +89,7 @@ class ArgMin<V : Any, K>(
  * @param value 반환할 값 컬럼.
  * @param key 최소값 기준 expression.
  */
-fun <V : Any, K> argMin(value: Column<V>, key: Expression<K>): ArgMin<V, K> =
+fun <V: Any, K> argMin(value: Column<V>, key: Expression<K>): ArgMin<V, K> =
     ArgMin(value, key, value.columnType)
 
 /**
@@ -113,7 +113,7 @@ fun <V : Any, K> argMin(value: Column<V>, key: Expression<K>): ArgMin<V, K> =
 class Quantile<T>(
     val level: Double,
     val expr: Expression<T>,
-) : Function<Double>(DoubleColumnType()) {
+): Function<Double>(DoubleColumnType()) {
     init {
         require(level in 0.0..1.0) { "quantile level must be in 0.0..1.0, got: $level" }
     }
@@ -156,7 +156,7 @@ fun <T> quantile(level: Double, expr: Expression<T>): Quantile<T> = Quantile(lev
  *
  * @property exprs count distinct 대상 expression 목록.
  */
-class Uniq(vararg val exprs: Expression<*>) : Function<Long>(LongColumnType()) {
+class Uniq(vararg val exprs: Expression<*>): Function<Long>(LongColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("uniq(")
         exprs.forEachIndexed { idx, expr ->
@@ -194,13 +194,17 @@ fun uniq(vararg exprs: Expression<*>): Uniq = Uniq(*exprs)
  *
  * @property exprs count distinct 대상 expression 목록.
  */
-class UniqExact(vararg val exprs: Expression<*>) : Function<Long>(LongColumnType()) {
+class UniqExact(vararg val exprs: Expression<*>): Function<Long>(LongColumnType()) {
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {
         queryBuilder.append("uniqExact(")
+
         exprs.forEachIndexed { idx, expr ->
-            if (idx > 0) queryBuilder.append(", ")
+            if (idx > 0) {
+                queryBuilder.append(", ")
+            }
             queryBuilder.append(expr)
         }
+
         queryBuilder.append(")")
     }
 }

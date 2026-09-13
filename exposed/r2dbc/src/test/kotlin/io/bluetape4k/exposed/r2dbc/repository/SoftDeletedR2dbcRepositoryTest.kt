@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
@@ -7,8 +9,6 @@ import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -34,7 +34,11 @@ class SoftDeletedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
         val name: String,
         val isDeleted: Boolean,
         val id: Long = 0L,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
     fun ResultRow.toContactRecord(): ContactRecord = ContactRecord(
         id = this[ContactTable.id].value,
@@ -80,9 +84,11 @@ class SoftDeletedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val keepId = ContactTable.insertAndGetId {
                 it[name] = "Alice"
             }.value
+
             val deletedId = ContactTable.insertAndGetId {
                 it[name] = "Alice"
             }.value
+
             ContactTable.insertAndGetId {
                 it[name] = "Bob"
             }.value

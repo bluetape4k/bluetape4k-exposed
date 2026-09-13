@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.starrocks.query
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.starrocks.AbstractStarRocksTest
 import io.bluetape4k.exposed.starrocks.domain.Events
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.Test
  * Select smoke tests for StarRocks through Exposed.
  */
 class SelectTest: AbstractStarRocksTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `select event by region`() {
@@ -33,6 +37,7 @@ class SelectTest: AbstractStarRocksTest() {
                 .where { Events.region eq "kr" }
                 .map { it[Events.eventName] }
 
+            log.debug { "names: $names" }
             names shouldBeEqualTo listOf("click")
         }
     }

@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.ktor
 
 import io.bluetape4k.ktor.core.HealthResponse
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -25,7 +24,7 @@ import kotlin.time.TimeSource
     message = "bluetape4k-exposed-ktor-core의 route와 필요한 backend adapter를 사용하세요.",
     level = DeprecationLevel.WARNING,
 )
-/** Exposed 전용 liveness와 readiness route를 추가합니다. */
+        /** Exposed 전용 liveness와 readiness route를 추가합니다. */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
     jdbcBlockingDispatcher: CoroutineDispatcher?,
@@ -53,27 +52,27 @@ fun Route.bluetape4kExposedHealthRoutes(
     message = "bluetape4k-exposed-ktor-core의 route와 필요한 backend adapter를 사용하세요.",
     level = DeprecationLevel.WARNING,
 )
-/**
- * 명시적인 cache contributor와 함께 Exposed liveness와 readiness route를 추가합니다.
- *
- * cache-only readiness에서는 database 인수를 모두 `null`로 둘 수 있습니다. cache contributor는 JDBC와 R2DBC 뒤에서
- * 하나의 shared monotonic [readinessProbeTimeout] deadline 아래 순차 실행됩니다. 지원하는 probe는 호출자 소유의
- * O(1) in-memory, non-blocking, cancellation-cooperative observer입니다. blocking, cancellation-insensitive 또는
- * backend-I/O probe는 지원하지 않으며 coroutine deadline보다 오래 실행될 수 있습니다. 호출자는 route authentication,
- * request concurrency와 rate limit, database, dispatcher, repository, registry와 전체 lifecycle을 소유합니다.
- * 이 helper는 thread, dispatcher, scope, worker, database, repository, registry, cache를 생성하거나 닫지 않습니다.
- * 활성 request 중 supplier가 던진 [CancellationException]은 정제된 `DOWN` 결과가 되며 request context cancellation은
- * 다시 던져 readiness 처리를 종료합니다. response는 검증된 component 이름과 유한 `UP`, `DOWN`, `timeout` 값만 노출하며
- * supplier exception message, cause, cache key, SQL, URL, namespace, credential, measurement는 반환하거나 기록하지 않습니다.
- *
- * Contract: probes and resources are caller-owned, including authentication and request concurrency. This helper
- * creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
- * Timeout contract: `readinessProbeTimeout` is the coroutine wall-clock budget. JDBC readiness always applies
- * `jdbcQueryTimeout`, truncating sub-second durations to whole seconds with a minimum of one, so it overrides
- * `DatabaseConfig.defaultQueryTimeout`. R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and
- * has no separate Ktor query timeout. Unsupported drivers may ignore the statement timeout; cooperative
- * operations still observe the coroutine budget.
- */
+        /**
+         * 명시적인 cache contributor와 함께 Exposed liveness와 readiness route를 추가합니다.
+         *
+         * cache-only readiness에서는 database 인수를 모두 `null`로 둘 수 있습니다. cache contributor는 JDBC와 R2DBC 뒤에서
+         * 하나의 shared monotonic [readinessProbeTimeout] deadline 아래 순차 실행됩니다. 지원하는 probe는 호출자 소유의
+         * O(1) in-memory, non-blocking, cancellation-cooperative observer입니다. blocking, cancellation-insensitive 또는
+         * backend-I/O probe는 지원하지 않으며 coroutine deadline보다 오래 실행될 수 있습니다. 호출자는 route authentication,
+         * request concurrency와 rate limit, database, dispatcher, repository, registry와 전체 lifecycle을 소유합니다.
+         * 이 helper는 thread, dispatcher, scope, worker, database, repository, registry, cache를 생성하거나 닫지 않습니다.
+         * 활성 request 중 supplier가 던진 [CancellationException]은 정제된 `DOWN` 결과가 되며 request context cancellation은
+         * 다시 던져 readiness 처리를 종료합니다. response는 검증된 component 이름과 유한 `UP`, `DOWN`, `timeout` 값만 노출하며
+         * supplier exception message, cause, cache key, SQL, URL, namespace, credential, measurement는 반환하거나 기록하지 않습니다.
+         *
+         * Contract: probes and resources are caller-owned, including authentication and request concurrency.
+         * This helper creates or closes no resources. Responses never expose cache keys, SQL, URLs, or credentials.
+         * Timeout contract: `readinessProbeTimeout` is the coroutine wall-clock budget. JDBC readiness always applies
+         * `jdbcQueryTimeout`, truncating sub-second durations to whole seconds with a minimum of one, so it overrides
+         * `DatabaseConfig.defaultQueryTimeout`. R2DBC readiness inherits `R2dbcDatabaseConfig.defaultQueryTimeout` and
+         * has no separate Ktor query timeout. Unsupported drivers may ignore the statement timeout; cooperative
+         * operations still observe the coroutine budget.
+         */
 fun Route.bluetape4kExposedHealthRoutes(
     jdbcDatabase: Database?,
     jdbcBlockingDispatcher: CoroutineDispatcher?,
@@ -224,7 +223,7 @@ internal suspend fun aggregateExposedKtorReadiness(
                 terminal.sample.status.name
             }
 
-            CacheProbeTerminal.Error -> {
+            CacheProbeTerminal.Error   -> {
                 binding.publishUnavailable(generation)
                 binding.record(ERROR_OUTCOME, attemptStart.elapsedNow().inWholeNanoseconds.coerceAtLeast(0L))
                 HealthResponse.DOWN
@@ -252,9 +251,9 @@ private suspend fun probeCacheContributor(
 }
 
 private sealed interface CacheProbeTerminal {
-    data class Success(val sample: ExposedKtorCacheSample) : CacheProbeTerminal
-    data object Error : CacheProbeTerminal
-    data object Timeout : CacheProbeTerminal
+    data class Success(val sample: ExposedKtorCacheSample): CacheProbeTerminal
+    data object Error: CacheProbeTerminal
+    data object Timeout: CacheProbeTerminal
 }
 
 internal suspend fun probeJdbcReadiness(

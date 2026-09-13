@@ -2,7 +2,7 @@ package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.support.requireNotBlank
 import java.io.Serializable
-import java.util.Properties
+import java.util.*
 
 /**
  * type이 지정된 StarRocks JDBC connection option입니다.

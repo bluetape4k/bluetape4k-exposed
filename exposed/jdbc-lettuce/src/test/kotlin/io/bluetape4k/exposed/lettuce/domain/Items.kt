@@ -12,4 +12,8 @@ data class ItemDto(
     val id: Long,
     val name: String,
     val price: BigDecimal,
-): java.io.Serializable
+): java.io.Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}

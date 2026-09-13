@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
-import io.r2dbc.spi.R2dbcTransientResourceException
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
@@ -9,6 +8,7 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.r2dbc.spi.R2dbcTransientResourceException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,9 +23,9 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.inTopLevelSuspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.params.ParameterizedTest
@@ -47,7 +47,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
             testDB,
             Issue692CustomIdTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }
@@ -111,7 +111,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                 testDB,
                 Issue692CustomIdTable,
                 configure = {
-                    sqlLogger = object : SqlLogger {
+                    sqlLogger = object: SqlLogger {
                         override fun log(context: StatementContext, transaction: Transaction) {
                             val sql = context.sql(transaction)
                             sqlStatements += sql
@@ -200,7 +200,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
             testDB,
             Issue692CustomIdTable,
             configure = {
-                sqlLogger = object : SqlLogger {
+                sqlLogger = object: SqlLogger {
                     override fun log(context: StatementContext, transaction: Transaction) {
                         sqlStatements += context.sql(transaction)
                     }

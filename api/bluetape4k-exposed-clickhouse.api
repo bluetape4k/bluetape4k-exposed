@@ -365,6 +365,7 @@ public final class io/bluetape4k/exposed/clickhouse/engine/ClickHouseSettingName
 	public final fun getMIN_ROWS_FOR_WIDE_PART-gp2mrZw ()Ljava/lang/String;
 	public final fun getSTORAGE_POLICY-gp2mrZw ()Ljava/lang/String;
 	public final fun of-V5W3yuc (Ljava/lang/String;)Ljava/lang/String;
+	public final fun ofName-V5W3yuc (Ljava/lang/String;)Ljava/lang/String;
 	public final fun unsafeRaw-V5W3yuc (Ljava/lang/String;)Ljava/lang/String;
 }
 

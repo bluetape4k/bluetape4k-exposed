@@ -88,20 +88,20 @@ suspend fun example(repo: UserR2dbcLettuceRepository) {
 
 ## Key Methods of R2dbcLettuceRepository
 
-| Method                                | Description                                                        |
-|---------------------------------------|--------------------------------------------------------------------|
-| `suspend findById(id)`                | NearCache → Redis → DB Read-through                                |
-| `suspend findAll(ids)`                | Batch lookup; only missed keys fall through to Redis → DB          |
-| `suspend findAll(limit, offset, ...)` | DB query via R2DBC with results loaded into Redis                  |
-| `suspend findByIdFromDb(id)`          | Bypasses cache, queries DB directly via R2DBC `suspendTransaction` |
-| `suspend findAllFromDb(ids)`          | Bypasses cache, queries DB directly for multiple IDs               |
-| `suspend countFromDb()`               | Total record count from R2DBC DB                                   |
-| `suspend save(id, entity)`            | Stores in Redis + reflects in R2DBC DB according to WriteMode      |
-| `suspend saveAll(entities)`           | Batch save                                                         |
-| `suspend delete(id)`                  | Deletes from both Redis and R2DBC DB simultaneously                |
-| `suspend deleteAll(ids)`              | Batch delete                                                       |
+| Method                                         | Description                                                                |
+|------------------------------------------------|----------------------------------------------------------------------------|
+| `suspend findById(id)`                         | NearCache → Redis → DB Read-through                                        |
+| `suspend findAll(ids)`                         | Batch lookup; only missed keys fall through to Redis → DB                  |
+| `suspend findAll(limit, offset, ...)`          | DB query via R2DBC with results loaded into Redis                          |
+| `suspend findByIdFromDb(id)`                   | Bypasses cache, queries DB directly via R2DBC `suspendTransaction`         |
+| `suspend findAllFromDb(ids)`                   | Bypasses cache, queries DB directly for multiple IDs                       |
+| `suspend countFromDb()`                        | Total record count from R2DBC DB                                           |
+| `suspend save(id, entity)`                     | Stores in Redis + reflects in R2DBC DB according to WriteMode              |
+| `suspend saveAll(entities)`                    | Batch save                                                                 |
+| `suspend delete(id)`                           | Deletes from both Redis and R2DBC DB simultaneously                        |
+| `suspend deleteAll(ids)`                       | Batch delete                                                               |
 | `suspend invalidateByPattern(patterns, count)` | Deletes matching loaded-map keys and refreshes this repository's NearCache |
-| `suspend clearCache()`                | Clears all NearCache + Redis keys (no effect on DB)                |
+| `suspend clearCache()`                         | Clears all NearCache + Redis keys (no effect on DB)                        |
 
 ## LettuceCacheConfig — Write Modes
 
@@ -113,11 +113,7 @@ suspend fun example(repo: UserR2dbcLettuceRepository) {
 
 ## Redis Codec Safety
 
-Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited
-Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data.
-Use `ExposedR2dbcLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for
-your entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are
-fully trusted and not shared with untrusted writers.
+Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data. Use `ExposedR2dbcLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for your entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are fully trusted and not shared with untrusted writers.
 
 ## NearCache Configuration
 
@@ -138,23 +134,18 @@ When NearCache is enabled, the lookup order is: **Caffeine (local) → Redis →
 ## Pattern Invalidation and NearCache
 
 `suspend invalidateByPattern(patterns, count)` treats `patterns` as a pattern below the repository's
-`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing
-keys are deleted first; after a successful deletion, an enabled NearCache clears its own
-`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys
-deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not
-cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a
-whole, entries in that repository's NearCache outside the requested pattern may also be removed;
-other repositories' namespaces are preserved.
+`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing keys are deleted first; after a successful deletion, an enabled NearCache clears its own
+`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a whole, entries in that repository's NearCache outside the requested pattern may also be removed; other repositories' namespaces are preserved.
 
 ## Differences from the JDBC Version
 
-| Aspect                 | exposed-jdbc-lettuce                               | exposed-r2dbc-lettuce            |
-|------------------------|----------------------------------------------------|----------------------------------|
-| DB driver              | JDBC (blocking)                                    | R2DBC (non-blocking)             |
-| Transaction            | `transaction {}` / `suspendedTransactionAsync(IO)` | `suspendTransaction {}`          |
-| `toEntity`             | Regular function (`fun`)                           | Suspend function (`suspend fun`) |
+| Aspect                 | exposed-jdbc-lettuce                               | exposed-r2dbc-lettuce                        |
+|------------------------|----------------------------------------------------|----------------------------------------------|
+| DB driver              | JDBC (blocking)                                    | R2DBC (non-blocking)                         |
+| Transaction            | `transaction {}` / `suspendedTransactionAsync(IO)` | `suspendTransaction {}`                      |
+| `toEntity`             | Regular function (`fun`)                           | Suspend function (`suspend fun`)             |
 | Uses `runBlocking`     | No (`ExposedLettuceSuspendedLoadedMap`)            | No (`ExposedR2dbcLettuceSuspendedLoadedMap`) |
-| Synchronous repository | `JdbcLettuceRepository` provided                   | Not provided (suspend only)      |
+| Synchronous repository | `JdbcLettuceRepository` provided                   | Not provided (suspend only)                  |
 
 ## Key Files / Classes
 

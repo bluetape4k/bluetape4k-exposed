@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.tests
 
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest

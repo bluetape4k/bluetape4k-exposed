@@ -17,11 +17,11 @@ import java.io.Serializable
  * 커서 token의 인코딩·서명·만료·테넌트/권한 범위 및 동일한 정렬·조건 재사용은 여전히
  * 호출자가 책임집니다. DTO 직렬화는 전송용 불투명 cursor token을 대신하지 않습니다.
  */
-data class ExposedCursorPage<T, C : Comparable<C>>(
+data class ExposedCursorPage<T, C: Comparable<C>>(
     val content: List<T>,
     val nextCursor: C?,
     val hasNext: Boolean,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }

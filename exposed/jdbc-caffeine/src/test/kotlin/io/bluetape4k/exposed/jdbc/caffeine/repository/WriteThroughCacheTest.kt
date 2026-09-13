@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -18,8 +18,8 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withCredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction

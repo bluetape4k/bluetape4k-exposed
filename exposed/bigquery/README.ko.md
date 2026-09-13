@@ -3,7 +3,7 @@
 [English](./README.md) | 한국어
 
 JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행하는 모듈입니다. JDBC 드라이버 없이
-`google-api-services-bigquery-v2`를 사용하며, H2(PostgreSQL 모드)를 SQL 생성 전용으로 사용합니다.
+`google-api-services-bigquery-v2`를 사용하며, H2 (PostgreSQL 모드)를 SQL 생성 전용으로 사용합니다.
 
 ## 개요
 
@@ -16,7 +16,9 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 - **BigQueryResultRow**: REST 응답 row를 Exposed column 참조로 읽습니다.
     - 컬럼 이름 조회 시 대소문자를 구분하지 않습니다.
     - `"null"` 문자열과 BigQuery null sentinel은 Kotlin `null`로 처리합니다.
-- **BigQueryQueryOptions**: dry-run, billed-byte 상한, label, priority, location, timeout, query cache, destination table 설정을 적용합니다.
+-
+
+**BigQueryQueryOptions**: dry-run, billed-byte 상한, label, priority, location, timeout, query cache, destination table 설정을 적용합니다.
 - **BigQueryDialect**: `PostgreSQLDialect`를 재사용하되 ALTER COLUMN TYPE처럼 BigQuery와 맞지 않는 동작을 비활성화합니다.
 
 ## 모듈 포지셔닝
@@ -30,13 +32,13 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 ## 지원 범위
 
 | 지원                                  | 미지원                             |
-|-------------------------------------|---------------------------------|
-| SELECT/filter/order/group/aggregate | DAO 완전 호환                       |
-| INSERT/UPDATE/DELETE DML            | JDBC 트랜잭션 의미론                   |
-| CREATE TABLE DDL (타입 변환 포함)         | `transaction {}` 원자성 / rollback |
-| 대용량 결과셋 (`pageToken` 자동 처리)         | SchemaUtils 전체 자동화              |
-| suspend/Flow 비동기 API                | SERIAL/SEQUENCE auto-increment  |
-| Column 기반 타입 변환                     | ALTER COLUMN TYPE               |
+|---------------------------------------|------------------------------------|
+| SELECT/filter/order/group/aggregate   | DAO 완전 호환                      |
+| INSERT/UPDATE/DELETE DML              | JDBC 트랜잭션 의미론               |
+| CREATE TABLE DDL (타입 변환 포함)     | `transaction {}` 원자성 / rollback |
+| 대용량 결과셋 (`pageToken` 자동 처리) | SchemaUtils 전체 자동화            |
+| suspend/Flow 비동기 API               | SERIAL/SEQUENCE auto-increment     |
+| Column 기반 타입 변환                 | ALTER COLUMN TYPE                  |
 
 ## 의존성 추가
 
@@ -144,8 +146,7 @@ with(context) {
 
 ### 6. Query Job Option과 Dry Run
 
-query 비용 제어, label, priority, location, destination table, timeout,
-query cache 동작을 지정해야 할 때는 `BigQueryQueryOptions`를 사용합니다.
+query 비용 제어, label, priority, location, destination table, timeout, query cache 동작을 지정해야 할 때는 `BigQueryQueryOptions`를 사용합니다.
 
 ```kotlin
 import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
@@ -165,22 +166,20 @@ with(context) {
 }
 ```
 
-`validateRawQuery`와 `validateQuery`는 `dryRun=true`를 강제하므로, billable
-query를 실행하지 않고 SQL, 권한, 예상 비용을 BigQuery 서버에서 검증합니다.
-동일한 option은 실제 실행 경로인 `runRawQuery`, `runQuery`,
+`validateRawQuery`와 `validateQuery`는 `dryRun=true`를 강제하므로, billable query를 실행하지 않고 SQL, 권한, 예상 비용을 BigQuery 서버에서 검증합니다. 동일한 option은 실제 실행 경로인 `runRawQuery`, `runQuery`,
 `withBigQuery(...)`에도 전달할 수 있습니다.
 
 ## 타입 변환
 
 BigQuery REST API 응답 → Kotlin 타입 변환:
 
-| BigQuery 타입 | Kotlin 타입                        |
-|-------------|----------------------------------|
-| INT64       | `Long`                           |
-| STRING      | `String`                         |
-| NUMERIC     | `BigDecimal`                     |
-| TIMESTAMP   | `Instant` (초 단위 float 문자열 자동 변환) |
-| nullable    | `null`                           |
+| BigQuery 타입 | Kotlin 타입                                |
+|---------------|--------------------------------------------|
+| INT64         | `Long`                                     |
+| STRING        | `String`                                   |
+| NUMERIC       | `BigDecimal`                               |
+| TIMESTAMP     | `Instant` (초 단위 float 문자열 자동 변환) |
+| nullable      | `null`                                     |
 
 `BigQueryResultRow`는 입력 키와 조회 키를 모두 소문자로 정규화하므로 `row["REGION"]`, `row["region"]` 모두 동일하게 동작합니다. 또한 nullable 컬럼에서 내려오는
 `"null"` / `"NULL"` 문자열과 null sentinel 값은 Kotlin `null`로 처리합니다.
@@ -196,16 +195,16 @@ BigQuery REST API 응답 → Kotlin 타입 변환:
 
 ## 주요 파일/클래스 목록
 
-| 파일                                             | 설명                                                        |
-|------------------------------------------------|-----------------------------------------------------------|
+| 파일                                           | 설명                                                                          |
+|------------------------------------------------|-------------------------------------------------------------------------------|
 | `BigQueryContext.kt`                           | SQL 생성 + BigQuery REST 실행 컨텍스트, DML/DDL 및 페이지 조회 공통 로직 포함 |
-| `BigQueryQueryExecutor.kt`                     | Exposed Query → BigQuery 실행기, 전체 적재/Flow 조회 API 제공        |
-| `BigQueryQueryExecutor.kt` (BigQueryResultRow) | Column 참조 타입 안전 행 접근                                      |
-| `dialect/BigQueryDialect.kt`                   | PostgreSQLDialect 상속 BigQuery 다이얼렉트                       |
+| `BigQueryQueryExecutor.kt`                     | Exposed Query → BigQuery 실행기, 전체 적재/Flow 조회 API 제공                 |
+| `BigQueryQueryExecutor.kt` (BigQueryResultRow) | Column 참조 타입 안전 행 접근                                                 |
+| `dialect/BigQueryDialect.kt`                   | PostgreSQLDialect 상속 BigQuery 다이얼렉트                                    |
 
 ## 테스트
 
-BigQuery 에뮬레이터(`goccy/bigquery-emulator`) 기반 통합 테스트를 제공합니다.
+BigQuery 에뮬레이터 (`goccy/bigquery-emulator`) 기반 통합 테스트를 제공합니다.
 
 로컬 에뮬레이터를 직접 실행하면 Testcontainers 없이 빠르게 테스트할 수 있습니다:
 

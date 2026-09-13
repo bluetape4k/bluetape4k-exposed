@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.lettuce.repository
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.exposed.lettuce.domain.UserCredentialRepository
@@ -14,6 +13,7 @@ import io.bluetape4k.exposed.lettuce.domain.UserSchema.withUserCredentialsTable
 import io.bluetape4k.exposed.lettuce.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.lettuce.repository.scenarios.WriteBehindScenario
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
@@ -32,6 +32,7 @@ import java.util.*
  * - `writeBehindDelay = 300ms`로 설정하여 테스트 시 빠른 flush를 유도한다.
  */
 class WriteBehindCacheTest {
+
     companion object: KLogging()
 
     // -------------------------------------------------------------------------
@@ -45,21 +46,19 @@ class WriteBehindCacheTest {
         override fun withEntityTable(testDB: TestDB, statement: JdbcTransaction.() -> Unit) =
             withUserTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .first()[UserTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserTable
-                    .select(UserTable.id)
-                    .map { it[UserTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserTable
+                .select(UserTable.id)
+                .map { it[UserTable.id].value }
+        }
 
         override fun getNonExistentId() = Long.MIN_VALUE
         override fun updateEmail(entity: UserRecord) =
@@ -85,28 +84,28 @@ class WriteBehindCacheTest {
         AbstractJdbcLettuceTest(),
         WriteBehindScenario<UUID, UserCredentialsRecord> {
 
+        companion object: KLogging()
+
         override fun withEntityTable(testDB: TestDB, statement: JdbcTransaction.() -> Unit) =
             withUserCredentialsTable(testDB, statement)
 
-        override fun getExistingId() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override fun getExistingId() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override fun getExistingIds() =
-            transaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-            }
+        override fun getExistingIds() = transaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+        }
 
         override fun getNonExistentId(): UUID = Uuid.V7.nextId()
         override fun updateEmail(entity: UserCredentialsRecord) =
-            entity.copy(email = Base58.randomString(4) + ".wb-updated@example.com")
+            entity.copy(email = Base58.randomString(8) + ".wb-updated@example.com")
 
         override fun createNewEntity(): UserCredentialsRecord = UserSchema.newUserCredentialsRecord()
     }
@@ -117,7 +116,8 @@ class WriteBehindCacheTest {
             writeBehindDelay = Duration.ofMillis(300),
             writeBehindBatchSize = 50
         )
-        override val repository by lazy { UserCredentialRepository(redisClient, config) }
+        override val repository by lazy {
+            UserCredentialRepository(redisClient, config)
+        }
     }
-
 }

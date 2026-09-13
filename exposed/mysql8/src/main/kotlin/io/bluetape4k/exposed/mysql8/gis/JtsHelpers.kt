@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.mysql8.gis
 
+import io.bluetape4k.support.requireGe
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.LineString
@@ -57,7 +58,7 @@ fun wgs84Point(lng: Double, lat: Double): Point =
 fun wgs84Polygon(vararg points: Pair<Double, Double>): Polygon {
     // JTS LinearRing은 최소 4좌표(3 고유 꼭짓점 + 닫힘 좌표)를 요구한다.
     // 닫힘 좌표는 아래에서 자동으로 추가되므로 입력값은 3개 이상이어야 유효한 Polygon이 된다.
-    require(points.size >= 3) {
+    points.size.requireGe(3) {
         "Polygon을 만들려면 최소 3개의 좌표가 필요합니다. 제공된 좌표 수: ${points.size}"
     }
     val coords = points.map { (lng, lat) -> Coordinate(lng, lat) }.toMutableList()
@@ -108,7 +109,7 @@ fun wgs84LineString(vararg points: Pair<Double, Double>): LineString {
     // JTS LineString은 시작점과 끝점이 구분되어야 하므로 최소 2개의 좌표가 필요하다.
     // 1개 이하로 호출하면 createLineString()이 IllegalArgumentException을 던지는데,
     // 그보다 먼저 사용자 친화적 메시지로 조기에 실패하기 위해 명시적으로 검증한다.
-    require(points.size >= 2) {
+    points.size.requireGe(2) {
         "LineString을 만들려면 최소 2개의 좌표가 필요합니다. 제공된 좌표 수: ${points.size}"
     }
     val coords = points.map { (lng, lat) -> Coordinate(lng, lat) }.toTypedArray()

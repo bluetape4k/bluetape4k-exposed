@@ -8,7 +8,9 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -20,6 +22,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.ActorTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.toActorRecord
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withActorTable
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import io.mockk.every
 import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -39,6 +42,8 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
 
+    companion object: KLogging()
+
     @Test
     fun `awaitHealthReport는 predicate 미충족 timeout을 성공으로 처리하지 않는다`() {
         val finalReport = CacheHealthReport(
@@ -47,7 +52,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
             workerState = CacheWorkerState.RUNNING,
             lastFlushError = IllegalStateException("flush is still pending"),
         )
-        val repository = mockk<JdbcCaffeineRepository<*, *>>() {
+        val repository = mockk<JdbcCaffeineRepository<*, *>> {
             every { validateConsistency() } returns finalReport
         }
 
@@ -58,9 +63,9 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
             ) { it.queueDepth == 0 && it.lastFlushError == null }
         }
 
-        failure.message.orEmpty().contains("expected=queueDepth=0 && lastFlushError=null").shouldBeTrue()
-        failure.message.orEmpty().contains("queueDepth=1").shouldBeTrue()
-        failure.message.orEmpty().contains("lastFlushError").shouldBeTrue()
+        failure.message shouldContain "expected=queueDepth=0 && lastFlushError=null"
+        failure.message shouldContain "queueDepth=1"
+        failure.message shouldContain "lastFlushError"
     }
 
     @Test
@@ -205,8 +210,9 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 val failure = assertFailsWith<IllegalStateException> {
                     repository.put(rejected.id, rejected)
                 }
-                failure.message.orEmpty().contains("queue is full").shouldBeTrue()
-                failure.message.orEmpty().contains("capacity=2").shouldBeTrue()
+                failure.message shouldContain "queue is full"
+                failure.message shouldContain "capacity=2"
+
                 repository.validateConsistency().queueDepth shouldBeEqualTo 2
                 repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
                 releaseFlush.countDown()
@@ -215,7 +221,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                     expected = "queueDepth=0",
                 ) { it.queueDepth == 0 }
 
-                repository.persisted.map { it.id }.contains(rejected.id) shouldBeEqualTo false
+                repository.persisted.map { it.id } shouldNotContain rejected.id
             } finally {
                 releaseFlush.countDown()
                 repository.close()
@@ -289,7 +295,7 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                 val admittedFailure = runCatching { repository.put(first.id, first) }.exceptionOrNull()
                 if (admittedFailure != null) {
                     (admittedFailure is IllegalStateException).shouldBeTrue()
-                    admittedFailure.message.orEmpty().contains("CancellationException").shouldBeTrue()
+                    admittedFailure.message shouldContain "CancellationException"
                 }
                 hookCancelled.await(5, TimeUnit.SECONDS).shouldBeTrue()
 
@@ -297,12 +303,14 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
                     repository = repository,
                     expected = "workerState=FAILED",
                 ) { it.workerState == CacheWorkerState.FAILED }
+
                 failedReport.workerState shouldBeEqualTo CacheWorkerState.FAILED
                 failedReport.lastFlushError.shouldBeNull()
+
                 val rejection = assertFailsWith<IllegalStateException> {
                     repository.put(second.id, second)
                 }
-                rejection.message.orEmpty().contains("workerState=FAILED").shouldBeTrue()
+                rejection.message shouldContain "workerState=FAILED"
                 repository.cache.getIfPresent(repository.serializeKey(second.id)).shouldBeNull()
             } finally {
                 repository.close()

@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val supportedMigrationDriftDatabases = setOf("H2", "POSTGRESQL", "MYSQL_V8")
@@ -17,13 +16,14 @@ val bluetapeAssertionSourceRoots = listOf(
     layout.projectDirectory.dir("src/test/kotlin").asFile,
 )
 
-val verifyBluetapeAssertionImports = tasks.register<VerifyBluetapeAssertionImportsTask>("verifyBluetapeAssertionImports") {
-    group = "verification"
-    description = "Rejects raw assertion imports in jdbc-tests Kotlin sources."
-    sourceRoots.from(bluetapeAssertionSourceRoots)
-    kotlinCompileSources.from(tasks.withType<KotlinCompile>().flatMap { it.inputs.sourceFiles })
-    projectDirectoryPath.set(projectDir.absolutePath)
-}
+val verifyBluetapeAssertionImports =
+    tasks.register<VerifyBluetapeAssertionImportsTask>("verifyBluetapeAssertionImports") {
+        group = "verification"
+        description = "Rejects raw assertion imports in jdbc-tests Kotlin sources."
+        sourceRoots.from(bluetapeAssertionSourceRoots)
+        kotlinCompileSources.from(tasks.withType<KotlinCompile>().flatMap { it.inputs.sourceFiles })
+        projectDirectoryPath.set(projectDir.absolutePath)
+    }
 
 tasks.named<Test>("test") {
     useJUnitPlatform {

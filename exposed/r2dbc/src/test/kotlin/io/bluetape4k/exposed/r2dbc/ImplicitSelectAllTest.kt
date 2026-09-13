@@ -1,17 +1,18 @@
 package io.bluetape4k.exposed.r2dbc
 
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.exposed.r2dbc.tests.withTables
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import io.bluetape4k.logging.info
-import kotlinx.coroutines.flow.single
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.info
+import kotlinx.coroutines.flow.single
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.greater
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
@@ -22,7 +23,6 @@ import org.jetbrains.exposed.v1.r2dbc.statements.api.origin
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
 
 @Suppress("DEPRECATION")
 class ImplicitSelectAllTest: AbstractExposedR2dbcTest() {

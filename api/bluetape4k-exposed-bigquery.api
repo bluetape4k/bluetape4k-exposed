@@ -55,7 +55,7 @@ public final class io/bluetape4k/exposed/bigquery/BigQueryDestinationTable : jav
 public final class io/bluetape4k/exposed/bigquery/BigQueryDestinationTable$Companion {
 }
 
-public final class io/bluetape4k/exposed/bigquery/BigQueryQueryException : java/lang/RuntimeException {
+public final class io/bluetape4k/exposed/bigquery/BigQueryQueryException : io/bluetape4k/exceptions/BluetapeException {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }

@@ -1,12 +1,6 @@
 package io.bluetape4k.exposed.jdbc.repository
 
-import io.bluetape4k.exposed.domain.model.ActorRecord
-import io.bluetape4k.exposed.domain.model.MovieSchema.withMovieAndActors
-import io.bluetape4k.exposed.domain.model.toActorRecord
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.logging.debug
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -17,6 +11,13 @@ import io.bluetape4k.assertions.shouldContainAll
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.domain.model.ActorRecord
+import io.bluetape4k.exposed.domain.model.MovieSchema.withMovieAndActors
+import io.bluetape4k.exposed.domain.model.toActorRecord
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.jdbc.select
@@ -25,9 +26,9 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
-import io.bluetape4k.assertions.assertFailsWith
 
 class ActorJdbcRepositoryTest: AbstractExposedTest() {
+
     companion object: KLogging() {
         fun newActorRecord(): ActorRecord =
             ActorRecord(

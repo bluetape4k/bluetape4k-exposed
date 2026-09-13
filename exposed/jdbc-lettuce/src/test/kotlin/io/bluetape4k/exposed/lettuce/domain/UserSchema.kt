@@ -45,17 +45,22 @@ object UserSchema {
         val lastName: String,
         val email: String,
         val createdAt: Instant = Instant.now(),
-    ): java.io.Serializable
+    ): java.io.Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+
+        fun withId(newId: Long) = copy(id = newId)
+    }
 
     private val lastUserId = atomic(10_000L)
 
-    fun newUserRecord(): UserRecord =
-        UserRecord(
-            id = lastUserId.getAndIncrement(),
-            firstName = faker.name().firstName(),
-            lastName = faker.name().lastName(),
-            email = Base58.randomString(4) + "." + faker.internet().safeEmailAddress()
-        )
+    fun newUserRecord(): UserRecord = UserRecord(
+        id = lastUserId.getAndIncrement(),
+        firstName = faker.name().firstName(),
+        lastName = faker.name().lastName(),
+        email = Base58.randomString(4) + "." + faker.internet().safeEmailAddress()
+    )
 
     /**
      * [UserTable]을 생성하고 초기 데이터를 삽입한 뒤 [statement]를 실행한다 (JDBC 동기 버전).
@@ -135,15 +140,20 @@ object UserSchema {
         val email: String,
         val lastLoginAt: Instant? = null,
         val createdAt: Instant = Instant.now(),
-    ): java.io.Serializable
+    ): java.io.Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
 
-    fun newUserCredentialsRecord(): UserCredentialsRecord =
-        UserCredentialsRecord(
-            id = Uuid.V7.nextId(),
-            loginId = faker.internet().domainWord() + "_" + Base58.randomString(6),
-            email = Base58.randomString(4) + "." + faker.internet().safeEmailAddress(),
-            lastLoginAt = Instant.now().minusSeconds(3600)
-        )
+        fun withId(newId: UUID) = copy(id = newId)
+    }
+
+    fun newUserCredentialsRecord(): UserCredentialsRecord = UserCredentialsRecord(
+        id = Uuid.V7.nextId(),
+        loginId = faker.internet().domainWord() + "_" + Base58.randomString(6),
+        email = Base58.randomString(4) + "." + faker.internet().safeEmailAddress(),
+        lastLoginAt = Instant.now().minusSeconds(3600)
+    )
 
     /**
      * [UserCredentialsTable]을 생성하고 초기 데이터를 삽입한 뒤 [statement]를 실행한다 (JDBC 동기 버전).
@@ -208,25 +218,27 @@ object UserSchema {
 
     /** DB에서 [UserTable]의 모든 레코드를 조회한다. */
     fun findAllUsers(): List<UserRecord> =
-        UserTable.selectAll().map { row ->
-            UserRecord(
-                id = row[UserTable.id].value,
-                firstName = row[UserTable.firstName],
-                lastName = row[UserTable.lastName],
-                email = row[UserTable.email],
-                createdAt = row[UserTable.createdAt]
-            )
-        }
+        UserTable.selectAll()
+            .map { row ->
+                UserRecord(
+                    id = row[UserTable.id].value,
+                    firstName = row[UserTable.firstName],
+                    lastName = row[UserTable.lastName],
+                    email = row[UserTable.email],
+                    createdAt = row[UserTable.createdAt]
+                )
+            }
 
     /** DB에서 [UserCredentialsTable]의 모든 레코드를 조회한다. */
     fun findAllUserCredentials(): List<UserCredentialsRecord> =
-        UserCredentialsTable.selectAll().map { row ->
-            UserCredentialsRecord(
-                id = row[UserCredentialsTable.id].value,
-                loginId = row[UserCredentialsTable.loginId],
-                email = row[UserCredentialsTable.email],
-                lastLoginAt = row[UserCredentialsTable.lastLoginAt],
-                createdAt = row[UserCredentialsTable.createdAt]
-            )
-        }
+        UserCredentialsTable.selectAll()
+            .map { row ->
+                UserCredentialsRecord(
+                    id = row[UserCredentialsTable.id].value,
+                    loginId = row[UserCredentialsTable.loginId],
+                    email = row[UserCredentialsTable.email],
+                    lastLoginAt = row[UserCredentialsTable.lastLoginAt],
+                    createdAt = row[UserCredentialsTable.createdAt]
+                )
+            }
 }

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.tests.migration
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
@@ -8,20 +9,19 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withDb
+import io.bluetape4k.logging.KLogging
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.exists
+import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
-import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.exists
-import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
-import java.util.Locale
+import java.util.*
 
 @Tag("migration-drift")
-@OptIn(ExperimentalDatabaseMigrationApi::class)
 class JdbcMigrationDriftTest: AbstractExposedTest() {
 
     @ParameterizedTest(name = "JDBC additive drift converges on {0}")
@@ -38,6 +38,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                         withLogs = false,
                     )
                     statements.size shouldBeEqualTo 1
+
                     val validated = validateAdditiveStatement(
                         statement = statements.single(),
                         expectedTable = JdbcMigrationEvolved.tableName,
@@ -49,7 +50,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                     MigrationUtils.statementsRequiredForDatabaseMigration(
                         JdbcMigrationEvolved,
                         withLogs = false,
-                    ).isEmpty().shouldBeTrue()
+                    ).shouldBeEmpty()
                 }
             },
             cleanup = {
@@ -77,8 +78,9 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
                     )
 
                     statements.isNotEmpty().shouldBeTrue()
-                    statements.any { isExpectedH2TypeChange(it, JdbcTypeChangeEvolved.tableName, "value") }
-                        .shouldBeTrue()
+                    statements.any {
+                        isExpectedH2TypeChange(it, JdbcTypeChangeEvolved.tableName, "value")
+                    }.shouldBeTrue()
                 }
             },
             cleanup = {
@@ -159,7 +161,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
             }
 
             thrown shouldBeSameInstanceAs primary
-            thrown.suppressed.isEmpty().shouldBeTrue()
+            thrown.suppressed.shouldBeEmpty()
         }
 
         @Test
@@ -208,6 +210,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         val normalized = statement
             .replace(WHITESPACE, " ")
             .trim()
+
         val match = ADDITIVE_STATEMENT.matchEntire(normalized)
 
         require(
@@ -234,6 +237,7 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
             .replace(WHITESPACE, " ")
             .trim()
             .uppercase(Locale.ROOT)
+
         return normalized.startsWith("ALTER TABLE ${expectedTable.uppercase(Locale.ROOT)} ") &&
                 Regex("\\b${Regex.escape(expectedColumn.uppercase(Locale.ROOT))}\\b").containsMatchIn(normalized) &&
                 Regex("\\b(TEXT|CLOB)\\b").containsMatchIn(normalized)
@@ -259,7 +263,8 @@ class JdbcMigrationDriftTest: AbstractExposedTest() {
         primaryFailure?.let { throw it }
     }
 
-    companion object {
+    companion object: KLogging() {
+
         private const val IDENTIFIER_TOKEN = "(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][A-Za-z0-9_]*)"
         private val ADDITIVE_STATEMENT = Regex(
             "^ALTER TABLE ($IDENTIFIER_TOKEN) ADD(?: COLUMN)? ($IDENTIFIER_TOKEN) " +

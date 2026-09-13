@@ -1,14 +1,13 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -29,13 +28,13 @@ import java.io.Serializable
  * - findActivePage 결과가 soft-delete 필터를 올바르게 적용하는지
  * - findDeleted에 추가 predicate 조합 적용
  */
-class SoftDeletedJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
+class SoftDeletedJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ── 테이블 정의 ────────────────────────────────────────────────────────────────
 
-    object EdgeCaseTable : SoftDeletedIdTable<Long>("soft_deleted_edge_items") {
+    object EdgeCaseTable: SoftDeletedIdTable<Long>("soft_deleted_edge_items") {
         override val id: Column<EntityID<Long>> = long("id").autoIncrement().entityId()
         val name = varchar("name", 255)
         val category = varchar("category", 100).default("default")
@@ -49,15 +48,17 @@ class SoftDeletedJdbcRepositoryEdgeCaseTest : AbstractExposedTest() {
         val name: String,
         val category: String = "default",
         val isDeleted: Boolean = false,
-    ) : Serializable {
+    ): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
+
+        fun withId(id: Long) = copy(id = id)
     }
 
     // ── Repository 구현 ─────────────────────────────────────────────────────────────
 
-    val repository = object : LongSoftDeletedJdbcRepository<EdgeCaseRecord, EdgeCaseTable> {
+    val repository = object: LongSoftDeletedJdbcRepository<EdgeCaseRecord, EdgeCaseTable> {
         override val table: EdgeCaseTable = EdgeCaseTable
 
         override fun extractId(entity: EdgeCaseRecord): Long = entity.id

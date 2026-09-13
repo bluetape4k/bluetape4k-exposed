@@ -8,12 +8,12 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.TestDBConfig
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import java.io.PrintWriter
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.sql.Connection
 import java.sql.SQLException
@@ -33,6 +33,13 @@ import javax.sql.DataSource
  * 다음 query recovery를 같은 fixture에서 확인합니다.
  */
 class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
+
+    companion object: KLogging() {
+        private const val HIKARI_TIMEOUT_MS = 5_000L
+        private const val LATCH_TIMEOUT_SECONDS = 5L
+        private const val MARIADB_DRIVER = "org.mariadb.jdbc.Driver"
+        private const val MARIADB_CONNECTION_TYPE = "org.mariadb.jdbc.Connection"
+    }
 
     @Test
     @Suppress("LongMethod")
@@ -167,8 +174,8 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
         generateSequence(failure) { it.cause }.any { cause ->
             val sqlException = cause as? SQLException
             sqlException?.errorCode == 1317 ||
-                sqlException?.sqlState == "70100" ||
-                cause.message.orEmpty().contains("interrupted", ignoreCase = true)
+                    sqlException?.sqlState == "70100" ||
+                    cause.message.orEmpty().contains("interrupted", ignoreCase = true)
         }
 
     private class TrackingDataSource(
@@ -225,10 +232,5 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
         }
     }
 
-    companion object {
-        private const val HIKARI_TIMEOUT_MS = 5_000L
-        private const val LATCH_TIMEOUT_SECONDS = 5L
-        private const val MARIADB_DRIVER = "org.mariadb.jdbc.Driver"
-        private const val MARIADB_CONNECTION_TYPE = "org.mariadb.jdbc.Connection"
-    }
+
 }

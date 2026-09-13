@@ -7,8 +7,7 @@ Provides the Repository pattern, transaction extensions, and query utilities for
 
 ## Opt-in multi-row VALUES
 
-Existing `batchInsert` calls keep the legacy path. Exposed 1.5.0 multi-row SQL is
-available through an additional overload with a required `useMultiRowValues` argument:
+Existing `batchInsert` calls keep the legacy path. Exposed 1.5.0 multi-row SQL is available through an additional overload with a required `useMultiRowValues` argument:
 
 ```kotlin
 // Inside the caller's transaction {}:
@@ -17,23 +16,11 @@ repository.batchInsert(items, useMultiRowValues = true) { item ->
 }
 ```
 
-`false` delegates to the existing overload, including its `ignore` and generated-value
-settings. The repository rejects `true` combined with `ignore=true` before consuming
-input or executing SQL, even for empty input: Exposed 1.5.0 cannot reliably map
-partially ignored multi-row results. Use the legacy path when ignoring conflicts.
+`false` delegates to the existing overload, including its `ignore` and generated-value settings. The repository rejects `true` combined with `ignore=true` before consuming input or executing SQL, even for empty input: Exposed 1.5.0 cannot reliably map partially ignored multi-row results. Use the legacy path when ignoring conflicts.
 
-For multi-row input, collection is bounded to the allowed row count plus one.
-The estimate `rows × table.columns.size` must not exceed 65,535 (SQLite: 32,766).
-This is not an exact bind count or a guarantee for every driver; use smaller chunks
-for expressions with multiple binds or lower driver limits. Valid empty input is
-a no-op. Oversized input is rejected before the binder/INSERT, without rolling back
-earlier work in the caller's transaction. On SQL failure, the caller must roll back.
+For multi-row input, collection is bounded to the allowed row count plus one. The estimate `rows × table.columns.size` must not exceed 65,535 (SQLite: 32,766). This is not an exact bind count or a guarantee for every driver; use smaller chunks for expressions with multiple binds or lower driver limits. Valid empty input is a no-op. Oversized input is rejected before the binder/INSERT, without rolling back earlier work in the caller's transaction. On SQL failure, the caller must roll back.
 
-H2/PostgreSQL tests cover ordinary inserts, nullable values, generated IDs and input
-order. MySQL/Oracle generated-key combinations are not verified; use `false` when
-reliable generated-ID mapping is required. With `shouldReturnGeneratedValues=false`,
-the mapper must not require DB-generated values. `saveAll` is unchanged.
-SQL tuple/parameter-set observations do not establish network round-trips or a speedup.
+H2/PostgreSQL tests cover ordinary inserts, nullable values, generated IDs and input order. MySQL/Oracle generated-key combinations are not verified; use `false` when reliable generated-ID mapping is required. With `shouldReturnGeneratedValues=false`, the mapper must not require DB-generated values. `saveAll` is unchanged. SQL tuple/parameter-set observations do not establish network round-trips or a speedup.
 
 ## Overview
 
@@ -249,8 +236,7 @@ transaction {
 
 ### 6. Typed cursor pagination
 
-Use `findCursorPage` when a stable primary-key position is more useful than an offset and total count.
-The repository still runs inside the caller-owned JDBC `transaction {}`.
+Use `findCursorPage` when a stable primary-key position is more useful than an offset and total count. The repository still runs inside the caller-owned JDBC `transaction {}`.
 
 ```kotlin
 import io.bluetape4k.exposed.jdbc.repository.findCursorPage
@@ -270,16 +256,10 @@ transaction {
 }
 ```
 
-The extension uses the raw `IdTable.id` value and a strict `>`/`<` boundary for ascending/descending
-sort orders. All six `SortOrder` variants are accepted; null-placement variants only keep their direction
-because primary keys are non-null. Each call executes one bounded `SELECT` with `LIMIT pageSize + 1`,
-never a count or offset query, and accepts `pageSize` from 1 through 10,000. `hasNext` and `nextCursor`
+The extension uses the raw `IdTable.id` value and a strict `>`/`<` boundary for ascending/descending sort orders. All six `SortOrder` variants are accepted; null-placement variants only keep their direction because primary keys are non-null. Each call executes one bounded `SELECT` with `LIMIT pageSize + 1`, never a count or offset query, and accepts `pageSize` from 1 through 10,000. `hasNext` and `nextCursor`
 follow the invariant documented by `ExposedCursorPage`.
 
-The caller owns cursor token encoding, signing, expiry, tenant/authorization scope, and reuse of the same
-sort and predicate. There is no single read-view guarantee across calls. The default predicate is `Op.TRUE`, so a
-soft-delete repository must pass its active-row predicate explicitly; `findPage` and Spring Batch keyset
-readers remain separate contracts.
+The caller owns cursor token encoding, signing, expiry, tenant/authorization scope, and reuse of the same sort and predicate. There is no single read-view guarantee across calls. The default predicate is `Op.TRUE`, so a soft-delete repository must pass its active-row predicate explicitly; `findPage` and Spring Batch keyset readers remain separate contracts.
 
 ### 7. Batch insert / Upsert
 
@@ -324,36 +304,35 @@ transaction {
 }
 ```
 
-`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared
-parameters from CTE predicates keep their binding order.
+`withCte()` renders the CTE body and the final SELECT through the same Exposed `QueryBuilder`, so prepared parameters from CTE predicates keep their binding order.
 
 ## JdbcRepository Key Methods
 
-| Method                                | Description                            |
-|---------------------------------------|----------------------------------------|
-| `count()`                             | Total record count                     |
-| `countBy(predicate)`                  | Count matching records                 |
-| `existsById(id)`                      | Check existence by ID                  |
-| `existsBy(predicate)`                 | Check existence by condition           |
-| `findById(id)`                        | Find by ID (throws if not found)       |
-| `findByIdOrNull(id)`                  | Find by ID (returns null if not found) |
-| `findAll(limit, offset, ...)`         | Find all (supports paging and sorting) |
-| `findWithFilters(...)`                | Find with multiple AND conditions      |
-| `findBy(...)`                         | Alias for `findWithFilters`            |
-| `findFirstOrNull(...)`                | First matching entity                  |
-| `findLastOrNull(...)`                 | Last matching entity                   |
-| `findByField(field, value)`           | Find by a specific column value        |
-| `findAllByIds(ids)`                   | Find multiple entities by IDs          |
-| `findPage(pageNumber, pageSize, ...)` | Paginated query                        |
-| `findCursorPage(pageSize, cursor, ...)` | Typed primary-key cursor page       |
-| `deleteById(id)`                      | Delete by ID                           |
-| `deleteByIdIgnore(id)`                | Delete by ID (ignore exceptions)       |
-| `deleteAll(op)`                       | Delete matching records                |
-| `deleteAllByIds(ids)`                 | Delete multiple records by IDs         |
-| `updateById(id, ...)`                 | Update by ID                           |
-| `updateAll(predicate, ...)`           | Bulk update matching records           |
-| `batchInsert(entities, ...)`          | Batch insert                           |
-| `batchUpsert(entities, ...)`          | Batch upsert                           |
+| Method                                  | Description                            |
+|-----------------------------------------|----------------------------------------|
+| `count()`                               | Total record count                     |
+| `countBy(predicate)`                    | Count matching records                 |
+| `existsById(id)`                        | Check existence by ID                  |
+| `existsBy(predicate)`                   | Check existence by condition           |
+| `findById(id)`                          | Find by ID (throws if not found)       |
+| `findByIdOrNull(id)`                    | Find by ID (returns null if not found) |
+| `findAll(limit, offset, ...)`           | Find all (supports paging and sorting) |
+| `findWithFilters(...)`                  | Find with multiple AND conditions      |
+| `findBy(...)`                           | Alias for `findWithFilters`            |
+| `findFirstOrNull(...)`                  | First matching entity                  |
+| `findLastOrNull(...)`                   | Last matching entity                   |
+| `findByField(field, value)`             | Find by a specific column value        |
+| `findAllByIds(ids)`                     | Find multiple entities by IDs          |
+| `findPage(pageNumber, pageSize, ...)`   | Paginated query                        |
+| `findCursorPage(pageSize, cursor, ...)` | Typed primary-key cursor page          |
+| `deleteById(id)`                        | Delete by ID                           |
+| `deleteByIdIgnore(id)`                  | Delete by ID (ignore exceptions)       |
+| `deleteAll(op)`                         | Delete matching records                |
+| `deleteAllByIds(ids)`                   | Delete multiple records by IDs         |
+| `updateById(id, ...)`                   | Update by ID                           |
+| `updateAll(predicate, ...)`             | Bulk update matching records           |
+| `batchInsert(entities, ...)`            | Batch insert                           |
+| `batchUpsert(entities, ...)`            | Batch upsert                           |
 
 ## SoftDeletedJdbcRepository Additional Methods
 
@@ -505,65 +484,58 @@ transaction {
 
 ## Convenience Type Aliases (Standard Repository)
 
-| Interface                         | Primary key type   |
-|-----------------------------------|--------------------|
-| `IntJdbcRepository`               | `Int`              |
-| `LongJdbcRepository`              | `Long`             |
-| `KotlinUuidJdbcRepository`        | `kotlin.uuid.Uuid` |
-| `JavaUuidJdbcRepository`          | `java.util.UUID`   |
-| `StringJdbcRepository`            | `String`           |
-| `IntSoftDeletedJdbcRepository`    | `Int`              |
-| `LongSoftDeletedJdbcRepository`   | `Long`             |
+| Interface                             | Primary key type   |
+|---------------------------------------|--------------------|
+| `IntJdbcRepository`                   | `Int`              |
+| `LongJdbcRepository`                  | `Long`             |
+| `KotlinUuidJdbcRepository`            | `kotlin.uuid.Uuid` |
+| `JavaUuidJdbcRepository`              | `java.util.UUID`   |
+| `StringJdbcRepository`                | `String`           |
+| `IntSoftDeletedJdbcRepository`        | `Int`              |
+| `LongSoftDeletedJdbcRepository`       | `Long`             |
 | `KotlinUuidSoftDeletedJdbcRepository` | `kotlin.uuid.Uuid` |
 | `JavaUuidSoftDeletedJdbcRepository`   | `java.util.UUID`   |
-| `StringSoftDeletedJdbcRepository` | `String`           |
+| `StringSoftDeletedJdbcRepository`     | `String`           |
 
 ### UUID repository naming in 2.0
 
-`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use
-filesystem-safe JVM class names. Update source imports and implementation
-supertypes as follows:
+`kotlin.uuid.Uuid` and `java.util.UUID` repository specializations now use filesystem-safe JVM class names. Update source imports and implementation supertypes as follows:
 
-| 1.x source name                    | 2.0 canonical name                    | Binary compatibility |
-|-----------------------------------|----------------------------------------|----------------------|
-| `UuidJdbcRepository`              | `KotlinUuidJdbcRepository`             | Recompile required   |
-| `UUIDJdbcRepository`              | `JavaUuidJdbcRepository`               | Recompile required   |
-| `UuidSoftDeletedJdbcRepository`  | `KotlinUuidSoftDeletedJdbcRepository` | Recompile required   |
-| `UUIDSoftDeletedJdbcRepository`  | `JavaUuidSoftDeletedJdbcRepository`   | Recompile required   |
+| 1.x source name                 | 2.0 canonical name                    | Binary compatibility |
+|---------------------------------|---------------------------------------|----------------------|
+| `UuidJdbcRepository`            | `KotlinUuidJdbcRepository`            | Recompile required   |
+| `UUIDJdbcRepository`            | `JavaUuidJdbcRepository`              | Recompile required   |
+| `UuidSoftDeletedJdbcRepository` | `KotlinUuidSoftDeletedJdbcRepository` | Recompile required   |
+| `UUIDSoftDeletedJdbcRepository` | `JavaUuidSoftDeletedJdbcRepository`   | Recompile required   |
 
-The 1.x names remain deprecated source-only typealiases in 2.0. They do not
-produce legacy JVM classes, so compiled consumers must be rebuilt against the
-canonical names.
+The 1.x names remain deprecated source-only typealiases in 2.0. They do not produce legacy JVM classes, so compiled consumers must be rebuilt against the canonical names.
 
 ## Key Files and Classes
 
-| File                                                | Description                                    |
-|-----------------------------------------------------|------------------------------------------------|
-| `jdbc/repository/JdbcRepository.kt`                 | JDBC Repository base interface                 |
-| `jdbc/repository/SoftDeletedJdbcRepository.kt`      | Soft Delete Repository                         |
-| `repository/ExposedRepository.kt`                   | (Deprecated) Legacy Repository interface       |
-| `core/SuspendedQuery.kt`                            | Cursor-based batch Flow query                  |
-| `jdbc/VirtualThreadJdbcTransaction.kt`              | Virtual Thread-based JDBC transaction          |
-| `core/transactions/VirtualThreadTransaction.kt`     | (Deprecated) Legacy Virtual Thread transaction |
-| `core/ImplicitSelectAll.kt`                         | Implicit `SELECT *` query                      |
-| `core/TableExtensions.kt`                           | Table metadata extension functions             |
-| `core/SchemaUtilsExtensions.kt`                     | SchemaUtils extension functions                |
+| File                                            | Description                                    |
+|-------------------------------------------------|------------------------------------------------|
+| `jdbc/repository/JdbcRepository.kt`             | JDBC Repository base interface                 |
+| `jdbc/repository/SoftDeletedJdbcRepository.kt`  | Soft Delete Repository                         |
+| `repository/ExposedRepository.kt`               | (Deprecated) Legacy Repository interface       |
+| `core/SuspendedQuery.kt`                        | Cursor-based batch Flow query                  |
+| `jdbc/VirtualThreadJdbcTransaction.kt`          | Virtual Thread-based JDBC transaction          |
+| `core/transactions/VirtualThreadTransaction.kt` | (Deprecated) Legacy Virtual Thread transaction |
+| `core/ImplicitSelectAll.kt`                     | Implicit `SELECT *` query                      |
+| `core/TableExtensions.kt`                       | Table metadata extension functions             |
+| `core/SchemaUtilsExtensions.kt`                 | SchemaUtils extension functions                |
 
 ## MySQL 8 JDBC conformance
 
-`MySQLJdbcParallelKeyEnumerationTest` verifies the JDBC parallel key enumeration
-boundary with MySQL 8 Connector/J, HikariCP, and Testcontainers. The fixture is
-test-only; it does not change the production API, pool configuration, or release
-manual.
+`MySQLJdbcParallelKeyEnumerationTest` verifies the JDBC parallel key enumeration boundary with MySQL 8 Connector/J, HikariCP, and Testcontainers. The fixture is test-only; it does not change the production API, pool configuration, or release manual.
 
-| Contract | Evidence |
-|----------|----------|
-| Sparse IDs and disjoint range ordering | MySQL 8: PASS |
-| Overlap/reverse validation and empty-range no-lease path | MySQL 8: PASS |
-| Hikari pool 1/2/4 exact lease peak with `maxConcurrency=2` | MySQL 8: PASS |
-| `READ_COMMITTED` and `REPEATABLE_READ` two-SELECT fixture | MySQL 8: PASS |
+| Contract                                                            | Evidence      |
+|---------------------------------------------------------------------|---------------|
+| Sparse IDs and disjoint range ordering                              | MySQL 8: PASS |
+| Overlap/reverse validation and empty-range no-lease path            | MySQL 8: PASS |
+| Hikari pool 1/2/4 exact lease peak with `maxConcurrency=2`          | MySQL 8: PASS |
+| `READ_COMMITTED` and `REPEATABLE_READ` two-SELECT fixture           | MySQL 8: PASS |
 | Statement rollback, SQLState `23000`, and lease retry request count | MySQL 8: PASS |
-| Cleanup primary/suppressed failures and caller executor ownership | MySQL 8: PASS |
+| Cleanup primary/suppressed failures and caller executor ownership   | MySQL 8: PASS |
 
 Run the driver-specific test with:
 
@@ -575,30 +547,22 @@ EXPOSED_TEST_DB=MYSQL_V8 TESTCONTAINERS_RYUK_DISABLED=true \
   --no-parallel --max-workers=1 --console=plain
 ```
 
-The H2 unit baseline remains `JdbcParallelKeyEnumerationTest`. The existing
-nightly MySQL job in `.github/workflows/nightly-tests.yml` supplies the Docker
-environment; this conformance class does not claim all MySQL deployments or all
-JDBC drivers are equivalent. Pool size 1 is an intentional under-provisioned
-pressure case, not an operational recommendation. The isolation callback uses
-an internal two-SELECT test seam and does not promise a shared read view for the
-public overload. `SERIALIZABLE`, network faults, and cancellation remain outside
-this issue; see follow-up issues #697 and #690.
+The H2 unit baseline remains `JdbcParallelKeyEnumerationTest`. The existing nightly MySQL job in `.github/workflows/nightly-tests.yml` supplies the Docker environment; this conformance class does not claim all MySQL deployments or all JDBC drivers are equivalent. Pool size 1 is an intentional under-provisioned pressure case, not an operational recommendation. The isolation callback uses an internal two-SELECT test seam and does not promise a shared read view for the public overload. `SERIALIZABLE`, network faults, and cancellation remain outside this issue; see follow-up issues #697 and #690.
 
 ## Performance Benchmarks
 
-JMH benchmark results for `ExposedJdbcBenchmark` (PostgreSQL via Testcontainers, HikariCP pool).
-See [2026-04-21-self-improve.md](./2026-04-21-self-improve.md) for the full optimization history.
+JMH benchmark results for `ExposedJdbcBenchmark` (PostgreSQL via Testcontainers, HikariCP pool). See [2026-04-21-self-improve.md](./2026-04-21-self-improve.md) for the full optimization history.
 
-**Environment**: Java 21, Kotlin 2.3, PostgreSQL 16, HikariCP max=24, @Threads(14), @Warmup(3×3s) + @Measurement(5×5s)
+**Environment**: Java 21, Kotlin 2.3, PostgreSQL 16, HikariCP max=24, @Threads (14), @Warmup (3×3s) + @Measurement (5×5s)
 
-| Benchmark | ops/s |
-|-----------|-------|
-| `singleInsert` | ~14,400 |
-| `singleFindById` | ~15,000 |
-| `singleUpdate` | ~14,300 |
-| `joinQuery` (INNER JOIN + WHERE + LIMIT 100) | ~1,510 |
-| `batchInsert` (batchSize=100) | ~217 |
-| **Total** | **~45,431** |
+| Benchmark                                    | ops/s       |
+|----------------------------------------------|-------------|
+| `singleInsert`                               | ~14,400     |
+| `singleFindById`                             | ~15,000     |
+| `singleUpdate`                               | ~14,300     |
+| `joinQuery` (INNER JOIN + WHERE + LIMIT 100) | ~1,510      |
+| `batchInsert` (batchSize=100)                | ~217        |
+| **Total**                                    | **~45,431** |
 
 ![Exposed JDBC benchmark throughput chart](../../docs/images/readme-charts/exposed-jdbc-benchmark-chart-01.png)
 

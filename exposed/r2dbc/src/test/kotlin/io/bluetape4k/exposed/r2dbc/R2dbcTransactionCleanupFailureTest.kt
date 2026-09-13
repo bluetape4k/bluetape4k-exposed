@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.ConnectionFactories
 import io.r2dbc.spi.ConnectionFactory
@@ -31,17 +32,20 @@ import java.util.concurrent.CopyOnWriteArrayList
 /** Exposed `1.5.0` R2DBC transaction cleanup 실패의 호출자 전달 계약을 검증한다. */
 class R2dbcTransactionCleanupFailureTest {
 
-    enum class CleanupBoundary { ROLLBACK, CONNECTION_CLOSE }
+    enum class CleanupBoundary {
+        ROLLBACK,
+        CONNECTION_CLOSE
+    }
 
-    companion object {
+    companion object: KLoggingChannel() {
         @JvmStatic
         fun cases() = TestDB.enabledDialects()
             .filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
             .flatMap { db -> CleanupBoundary.entries.map { Arguments.of(db, it) } }
     }
 
-    private class PrimaryFailure(val boundary: CleanupBoundary) : IllegalStateException(boundary.name)
-    private class CleanupFailure(val boundary: CleanupBoundary) : IllegalStateException(boundary.name)
+    private class PrimaryFailure(val boundary: CleanupBoundary): IllegalStateException(boundary.name)
+    private class CleanupFailure(val boundary: CleanupBoundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
@@ -80,7 +84,7 @@ class R2dbcTransactionCleanupFailureTest {
         cleanup: Throwable,
     ): R2dbcDatabase {
         val delegate = ConnectionFactories.get(testDB.connection())
-        val factory = object : ConnectionFactory {
+        val factory = object: ConnectionFactory {
             override fun getMetadata() = delegate.metadata
 
             override fun create(): Publisher<out Connection> = Flux.from(delegate.create()).map { connection ->
@@ -108,7 +112,7 @@ class R2dbcTransactionCleanupFailureTest {
                                 completed
                             }
                         }
-                        "close" -> {
+                        "close"           -> {
                             events.add("connection-close")
                             @Suppress("UNCHECKED_CAST")
                             val publisher = invoke(connection, method, args) as Publisher<Void>
@@ -119,7 +123,7 @@ class R2dbcTransactionCleanupFailureTest {
                                 completed
                             }
                         }
-                        else -> invoke(connection, method, args)
+                        else              -> invoke(connection, method, args)
                     }
                 }
             }
@@ -137,7 +141,7 @@ class R2dbcTransactionCleanupFailureTest {
         Mono.error(cleanup)
     }
 
-    private inline fun <reified T : Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
+    private inline fun <reified T: Any> proxy(target: T, crossinline call: (Method, Array<out Any?>?) -> Any?): T =
         Proxy.newProxyInstance(target.javaClass.classLoader, arrayOf(T::class.java)) { _, method, args ->
             call(method, args)
         } as T

@@ -17,7 +17,6 @@ import org.jetbrains.exposed.v1.dao.EntityClass
  * // UserEntity::class.simpleName == "UserEntity"
  * ```
  */
-@Suppress("AbstractClassCanBeConcreteClass")
 abstract class StringEntity(id: EntityID<String>): Entity<String>(id)
 
 
@@ -33,7 +32,6 @@ abstract class StringEntity(id: EntityID<String>): Entity<String>(id)
  * // Users.table == UsersTable
  * ```
  */
-@Suppress("AbstractClassCanBeConcreteClass")
 abstract class StringEntityClass<out E: StringEntity>(
     table: IdTable<String>,
     entityType: Class<E>? = null,

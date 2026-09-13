@@ -3,12 +3,16 @@
 package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
 class SnapshotCacheApiContractTest {
+
+    companion object: KLogging()
 
     @Test
     fun `internal annotation is an error level opt in contract`() {
@@ -16,8 +20,8 @@ class SnapshotCacheApiContractTest {
             .shouldNotBeNull()
             .use { it.readBytes().decodeToString() }
 
-        classBytes.contains("RequiresOptIn").shouldBeEqualTo(true)
-        classBytes.contains("ERROR").shouldBeEqualTo(true)
+        classBytes shouldContain "RequiresOptIn"
+        classBytes shouldContain "ERROR"
     }
 
     @Test
@@ -34,10 +38,10 @@ class SnapshotCacheApiContractTest {
         val facade = Class.forName("io.bluetape4k.exposed.cache.snapshot.SnapshotTransactionCoordinatorKt")
         val signatures = facade.declaredMethods.joinToString("\n") { it.toGenericString() }
 
-        signatures.contains("JdbcTransaction").shouldBeFalse()
-        signatures.contains("R2dbcTransaction").shouldBeFalse()
+        signatures shouldNotContain "JdbcTransaction"
+        signatures shouldNotContain "R2dbcTransaction"
         facade.declaredMethods.count { it.name == "stageInvalidationMutation" } shouldBeEqualTo 2
     }
 
-    private data class Payload(val text: String) : Serializable
+    private data class Payload(val text: String): Serializable
 }

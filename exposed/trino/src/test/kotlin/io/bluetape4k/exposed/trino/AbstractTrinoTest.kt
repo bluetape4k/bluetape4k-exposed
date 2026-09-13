@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import io.bluetape4k.testcontainers.database.TrinoServer
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -76,7 +77,7 @@ abstract class AbstractTrinoTest {
                     return
                 }.onFailure { e ->
                     if (attempt < 14 && e.isNoNodesAvailable()) {
-                        log.warn("Trino not ready (attempt ${attempt + 1}/15), waiting 1s...")
+                        log.warn(e) { "Trino not ready (attempt ${attempt + 1}/15), waiting 1s..." }
                         Thread.sleep(1000L)
                     } else if (!e.isNoNodesAvailable()) {
                         throw e
@@ -134,7 +135,7 @@ abstract class AbstractTrinoTest {
                 }
             }.onFailure { e ->
                 if (attempt < 4 && e.isNoNodesAvailable()) {
-                    log.warn("withEventsTable 재시도 ${attempt + 1}/5: ${e.message}")
+                    log.warn(e) { "withEventsTable 재시도 ${attempt + 1}/5: ${e.message}" }
                     Thread.sleep(1000L)
                 } else {
                     throw e

@@ -1,5 +1,9 @@
 package io.bluetape4k.exposed.core.fastjson2
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.DataHolder
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.User
 import io.bluetape4k.exposed.core.fastjson2.FastjsonSchema.withFastjsonArrays
@@ -11,10 +15,6 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.core.Op

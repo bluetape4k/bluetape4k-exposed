@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.cache.snapshot
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
@@ -29,8 +31,8 @@ class SnapshotReadmeParityTest {
             undocumentedKorean shouldBeEqualTo pair.intentionalUndocumentedApi.keys
             pair.intentionalUndocumentedApi.values.all(String::isNotBlank).shouldBeTrue()
             pair.requiredNames.forEach { requiredName ->
-                (requiredName in english).shouldBeTrue()
-                (requiredName in korean).shouldBeTrue()
+                english shouldContain requiredName
+                korean shouldContain requiredName
             }
         }
     }
@@ -40,7 +42,7 @@ class SnapshotReadmeParityTest {
         README_PAIRS.filter { it.english.contains("jdbc-redisson") }.forEach { pair ->
             listOf(pair.english, pair.korean).forEach { readme ->
                 val source = Files.readString(projectFile(readme))
-                (ROLLOUT_CONTRACT_MARKER in source).shouldBeTrue()
+                source shouldContain ROLLOUT_CONTRACT_MARKER
             }
         }
     }
@@ -103,7 +105,7 @@ class SnapshotReadmeParityTest {
         )
 
         markers.forEach { (readme, marker) ->
-            Files.readString(projectFile(readme)).contains(marker).shouldBeTrue()
+            Files.readString(projectFile(readme)) shouldContain marker
         }
     }
 
@@ -129,7 +131,12 @@ class SnapshotReadmeParityTest {
 
     private fun topLevelPublicDeclarations(source: String): Set<PublicSnapshotDeclaration> = buildSet {
         PUBLIC_TOP_LEVEL_TYPE.findAll(source).forEach { match ->
-            add(PublicSnapshotDeclaration(match.groupValues[1], source.hasInternalApiAnnotationBefore(match.range.first)))
+            add(
+                PublicSnapshotDeclaration(
+                    match.groupValues[1],
+                    source.hasInternalApiAnnotationBefore(match.range.first)
+                )
+            )
         }
         PUBLIC_TOP_LEVEL_FUNCTION.findAll(source).forEach { match ->
             TOP_LEVEL_FUNCTION_NAME.findAll(match.groupValues[1]).lastOrNull()?.value?.let { name ->
@@ -137,7 +144,12 @@ class SnapshotReadmeParityTest {
             }
         }
         PUBLIC_TOP_LEVEL_PROPERTY.findAll(source).forEach { match ->
-            add(PublicSnapshotDeclaration(match.groupValues[1], source.hasInternalApiAnnotationBefore(match.range.first)))
+            add(
+                PublicSnapshotDeclaration(
+                    match.groupValues[1],
+                    source.hasInternalApiAnnotationBefore(match.range.first)
+                )
+            )
         }
     }
 
@@ -157,23 +169,29 @@ class SnapshotReadmeParityTest {
         val internalApi: Boolean,
     )
 
-    companion object {
+    companion object: KLogging() {
+
         private val BLUETAPE_VERSIONED_COORDINATE =
             Regex("""io\.github\.bluetape4k(?:\.[A-Za-z0-9_-]+)*:[A-Za-z0-9_.-]+:[^"')\s]+""")
+
         private val PUBLIC_TOP_LEVEL_TYPE = Regex(
             """(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|data|sealed|enum|annotation|value|fun|open|abstract)\s+)*(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)""",
         )
+
         private val PUBLIC_TOP_LEVEL_FUNCTION = Regex(
             """(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|inline|suspend|operator|infix|tailrec|external)\s+)*fun\s+(?:<[^>\n]+>\s+)?([^\n(]+)\(""",
         )
+
         private val PUBLIC_TOP_LEVEL_PROPERTY = Regex(
             """(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|const|lateinit)\s+)*(?:val|var)\s+([A-Za-z_]\w*)""",
         )
+
         private val TOP_LEVEL_FUNCTION_NAME = Regex("""[A-Za-z_]\w*""")
+
         private const val ROLLOUT_CONTRACT_MARKER =
             "<!-- SNAPSHOT-ROLLOUT-CONTRACT: shadow-warm-only; no-v2-user-reads-or-writes; write-quiesced-cutover; " +
-                "rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; " +
-                "no-cross-namespace-invalidation -->"
+                    "rebuild-v2-from-db; switch-all-traffic; no-overlapping-user-traffic; resume-writes; " +
+                    "no-cross-namespace-invalidation -->"
 
         private val README_PAIRS = listOf(
             ReadmePair(
@@ -234,6 +252,5 @@ class SnapshotReadmeParityTest {
                 ),
             ),
         )
-
     }
 }

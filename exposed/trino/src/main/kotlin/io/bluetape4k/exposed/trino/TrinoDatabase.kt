@@ -3,6 +3,11 @@ package io.bluetape4k.exposed.trino
 import io.bluetape4k.exposed.trino.dialect.TrinoDialect
 import io.bluetape4k.exposed.trino.dialect.TrinoDialectMetadata
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.info
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requireStartsWith
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.DriverManager
@@ -52,7 +57,7 @@ import java.sql.DriverManager
  * - DDL에서는 [org.jetbrains.exposed.v1.core.Table]보다 [TrinoTable]을 사용하여 Trino에
  *   전달하기 전에 `PRIMARY KEY` clause를 제거하십시오.
  */
-object TrinoDatabase : KLogging() {
+object TrinoDatabase: KLogging() {
 
     /**
      * Trino JDBC driver class name입니다.
@@ -67,7 +72,7 @@ object TrinoDatabase : KLogging() {
         Database.registerJdbcDriver("jdbc:trino", DRIVER, TrinoDialect.dialectName)
         DatabaseApi.registerDialect(TrinoDialect.dialectName) { TrinoDialect() }
         Database.registerDialectMetadata(TrinoDialect.dialectName) { TrinoDialectMetadata() }
-        log.debug("Trino dialect registered: ${TrinoDialect.dialectName}")
+        log.info { "Trino dialect registered: ${TrinoDialect.dialectName}" }
     }
 
     /**
@@ -96,21 +101,27 @@ object TrinoDatabase : KLogging() {
     ): Database {
         // A blank host produces "jdbc:trino://:8080//" — an invalid URL that causes
         // an obscure DriverManager exception. Fail early with a clear message.
-        requireNotNull(host.ifBlank { null }) { "host must not be blank." }
+        host.requireNotBlank("host")
+
         // An invalid port only fails at TCP connect time; reject it early.
-        require(port in 1..65535) { "port must be in range 1..65535: $port" }
+        port.requireInRange(1, 65535, "port")
+
         // Trino requires catalog and schema as path segments in the JDBC URL.
-        requireNotNull(catalog.ifBlank { null }) { "catalog must not be blank." }
-        requireNotNull(schema.ifBlank { null }) { "schema must not be blank." }
+        catalog.requireNotBlank("catalog")
+        schema.requireNotBlank("schema")
 
         val url = "jdbc:trino://$host:$port/$catalog/$schema"
+
         return Database.connect(
             getNewConnection = {
                 val props = options.toProperties(user)
                 // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(url, props)
                 runCatching { TrinoConnectionWrapper(raw) }
-                    .getOrElse { e -> raw.runCatching { close() }; throw e }
+                    .getOrElse { e ->
+                        raw.runCatching { close() }
+                        throw e
+                    }
             }
         )
     }
@@ -132,10 +143,13 @@ object TrinoDatabase : KLogging() {
         options: TrinoConnectionOptions = TrinoConnectionOptions(),
     ): Database {
         // A blank URL causes a "No suitable driver" exception from DriverManager.
-        requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl must not be blank." }
+        jdbcUrl.requireNotBlank("jdbcUrl")
+
         // The Trino driver only handles URLs prefixed with "jdbc:trino://".
         // Passing a different DB URL silently fails with an unhelpful "No suitable driver" error.
-        require(jdbcUrl.startsWith("jdbc:trino://")) { "jdbcUrl must start with 'jdbc:trino://': $jdbcUrl" }
+        jdbcUrl.requireStartsWith("jdbc:trino://", "jdbcUrl")
+
+        log.debug { "connect to trino. jdbcUrl=$jdbcUrl" }
 
         return Database.connect(
             getNewConnection = {
@@ -143,7 +157,10 @@ object TrinoDatabase : KLogging() {
                 // Close the raw connection on wrapper construction failure to prevent leaks.
                 val raw = DriverManager.getConnection(jdbcUrl, props)
                 runCatching { TrinoConnectionWrapper(raw) }
-                    .getOrElse { e -> raw.runCatching { close() }; throw e }
+                    .getOrElse { e ->
+                        raw.runCatching { close() }
+                        throw e
+                    }
             }
         )
     }
@@ -174,7 +191,10 @@ object TrinoDatabase : KLogging() {
             getNewConnection = {
                 val raw = dataSource.connection
                 runCatching { TrinoConnectionWrapper(raw) }
-                    .getOrElse { e -> raw.runCatching { close() }; throw e }
+                    .getOrElse { e ->
+                        raw.runCatching { close() }
+                        throw e
+                    }
             }
         )
     }

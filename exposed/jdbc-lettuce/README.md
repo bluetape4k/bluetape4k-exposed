@@ -46,8 +46,7 @@ The sequence view follows the read-through, write-through/write-behind, and inva
 The synchronous repository supports Redis `REMOTE` mode only. Setting
 `nearCacheEnabled=true`, including any `*_WITH_NEAR_CACHE` preset, now throws
 `IllegalArgumentException` before connecting to Redis. Use a remote preset or
-`AbstractSuspendedJdbcLettuceRepository` when a local near cache is required.
-Previously the synchronous flag reported `NEAR_CACHE` without providing one.
+`AbstractSuspendedJdbcLettuceRepository` when a local near cache is required. Previously the synchronous flag reported `NEAR_CACHE` without providing one.
 
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractJdbcLettuceRepository
@@ -94,8 +93,7 @@ repo.delete(1L)                // Deletes from both Redis and DB
 
 ### 2. Coroutine Repository (AbstractSuspendedJdbcLettuceRepository)
 
-Use a `*_WITH_NEAR_CACHE` preset when the coroutine repository should keep a
-local NearCache in front of Redis; the example below enables that path.
+Use a `*_WITH_NEAR_CACHE` preset when the coroutine repository should keep a local NearCache in front of Redis; the example below enables that path.
 
 ```kotlin
 import io.bluetape4k.exposed.lettuce.repository.AbstractSuspendedJdbcLettuceRepository
@@ -123,20 +121,20 @@ suspend fun example(repo: UserSuspendedRepository) {
 
 ## Key Methods of JdbcLettuceRepository
 
-| Method                        | Description                                               |
-|-------------------------------|-----------------------------------------------------------|
-| `findById(id)`                | Cache lookup → DB Read-through on miss                    |
-| `findAll(ids)`                | Batch cache lookup → DB Read-through for missed keys only |
-| `findAll(limit, offset, ...)` | DB query with result loaded into cache                    |
-| `findByIdFromDb(id)`          | Bypasses cache, queries DB directly                       |
-| `findAllFromDb(ids)`          | Bypasses cache, queries DB directly for multiple IDs      |
-| `countFromDb()`               | Total record count from DB                                |
-| `save(id, entity)`            | Stores in Redis + reflects in DB according to WriteMode   |
-| `saveAll(entities)`           | Batch save                                                |
-| `delete(id)`                  | Deletes from both Redis and DB simultaneously             |
-| `deleteAll(ids)`              | Batch delete                                              |
+| Method                                         | Description                                                                |
+|------------------------------------------------|----------------------------------------------------------------------------|
+| `findById(id)`                                 | Cache lookup → DB Read-through on miss                                     |
+| `findAll(ids)`                                 | Batch cache lookup → DB Read-through for missed keys only                  |
+| `findAll(limit, offset, ...)`                  | DB query with result loaded into cache                                     |
+| `findByIdFromDb(id)`                           | Bypasses cache, queries DB directly                                        |
+| `findAllFromDb(ids)`                           | Bypasses cache, queries DB directly for multiple IDs                       |
+| `countFromDb()`                                | Total record count from DB                                                 |
+| `save(id, entity)`                             | Stores in Redis + reflects in DB according to WriteMode                    |
+| `saveAll(entities)`                            | Batch save                                                                 |
+| `delete(id)`                                   | Deletes from both Redis and DB simultaneously                              |
+| `deleteAll(ids)`                               | Batch delete                                                               |
 | `suspend invalidateByPattern(patterns, count)` | Deletes matching loaded-map keys and refreshes this repository's NearCache |
-| `clearCache()`                | Removes all Redis keys (no effect on DB)                  |
+| `clearCache()`                                 | Removes all Redis keys (no effect on DB)                                   |
 
 ## LettuceCacheConfig — Write Modes
 
@@ -146,49 +144,38 @@ suspend fun example(repo: UserSuspendedRepository) {
 | `READ_WRITE_BEHIND`  | On save, writes to Redis immediately; DB is updated asynchronously |
 | `READ_ONLY`          | Stores in Redis only; no DB writes                                 |
 
-Write-behind retries are tracked per entry, even when a failed flush contains
-mixed retry counts. An entry is sent to the dead-letter store only after its
-own retry limit is reached or re-enqueue fails; suspend writers propagate
+Write-behind retries are tracked per entry, even when a failed flush contains mixed retry counts. An entry is sent to the dead-letter store only after its own retry limit is reached or re-enqueue fails; suspend writers propagate
 `CancellationException`.
 
 ## Pattern Invalidation and NearCache
 
 `suspend invalidateByPattern(patterns, count)` treats `patterns` as a pattern below the repository's
-`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing
-keys are deleted first; after a successful deletion, an enabled NearCache clears its own
-`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys
-deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not
-cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a
-whole, entries in that repository's NearCache outside the requested pattern may also be removed;
-other repositories' namespaces are preserved.
+`keyPrefix`. `count` must be positive and is validated before Redis access. The loaded-map backing keys are deleted first; after a successful deletion, an enabled NearCache clears its own
+`nearCacheName` namespace (local front and Redis back). The method returns the number of backing keys deleted. A backing-cache failure or coroutine cancellation is propagated, and the NearCache is not cleared after an unsuccessful backing deletion. Because the NearCache namespace is cleared as a whole, entries in that repository's NearCache outside the requested pattern may also be removed; other repositories' namespaces are preserved.
 
 ## Redis Codec Safety
 
-Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited
-Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data.
-Use `ExposedLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for your
-entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are fully
-trusted and not shared with untrusted writers.
+Repository constructors require an explicit `RedisCodec<String, E>` for values. The inherited Lettuce binary map codec uses LZ4/Fory, so it is not selected by default for repository data. Use `ExposedLettuceCodecs.jackson3(Entity::class.java)` or provide a reviewed codec for your entity type. Fory/Kryo-family binary codecs should be used only when Redis contents are fully trusted and not shared with untrusted writers.
 
 ## Key Files / Classes
 
-| File                                                   | Description                                                               |
-|--------------------------------------------------------|---------------------------------------------------------------------------|
-| `repository/JdbcLettuceRepository.kt`                  | Synchronous cache repository interface                                    |
-| `repository/SuspendedJdbcLettuceRepository.kt`         | Coroutine cache repository interface                                      |
-| `repository/AbstractJdbcLettuceRepository.kt`          | Synchronous abstract implementation (ExposedLettuceLoadedMap-based)       |
+| File                                                   | Description                                                                      |
+|--------------------------------------------------------|----------------------------------------------------------------------------------|
+| `repository/JdbcLettuceRepository.kt`                  | Synchronous cache repository interface                                           |
+| `repository/SuspendedJdbcLettuceRepository.kt`         | Coroutine cache repository interface                                             |
+| `repository/AbstractJdbcLettuceRepository.kt`          | Synchronous abstract implementation (ExposedLettuceLoadedMap-based)              |
 | `repository/AbstractSuspendedJdbcLettuceRepository.kt` | Coroutine abstract implementation (ExposedLettuceSuspendedLoadedMap + NearCache) |
-| `repository/ExposedLettuceCodecs.kt`                   | Explicit value codec helpers for repository Redis values                  |
-| `map/ExposedLettuceLoadedMap.kt`                       | Synchronous loaded map with caller-supplied value codec                   |
-| `map/ExposedLettuceSuspendedLoadedMap.kt`              | Coroutine loaded map with caller-supplied value codec                     |
-| `map/EntityMapLoader.kt`                               | Abstract base class for MapLoader                                         |
-| `map/EntityMapWriter.kt`                               | Abstract base class for MapWriter (with built-in Resilience4j Retry)      |
-| `map/ExposedEntityMapLoader.kt`                        | Exposed DSL-based synchronous MapLoader                                   |
-| `map/ExposedEntityMapWriter.kt`                        | Exposed DSL-based synchronous MapWriter                                   |
-| `map/SuspendedEntityMapLoader.kt`                      | MapLoader based on `suspendedTransactionAsync`                            |
-| `map/SuspendedEntityMapWriter.kt`                      | MapWriter based on `suspendedTransactionAsync` + Retry                    |
-| `map/SuspendedExposedEntityMapLoader.kt`               | Coroutine MapLoader based on Exposed DSL                                  |
-| `map/SuspendedExposedEntityMapWriter.kt`               | Coroutine MapWriter based on Exposed DSL                                  |
+| `repository/ExposedLettuceCodecs.kt`                   | Explicit value codec helpers for repository Redis values                         |
+| `map/ExposedLettuceLoadedMap.kt`                       | Synchronous loaded map with caller-supplied value codec                          |
+| `map/ExposedLettuceSuspendedLoadedMap.kt`              | Coroutine loaded map with caller-supplied value codec                            |
+| `map/EntityMapLoader.kt`                               | Abstract base class for MapLoader                                                |
+| `map/EntityMapWriter.kt`                               | Abstract base class for MapWriter (with built-in Resilience4j Retry)             |
+| `map/ExposedEntityMapLoader.kt`                        | Exposed DSL-based synchronous MapLoader                                          |
+| `map/ExposedEntityMapWriter.kt`                        | Exposed DSL-based synchronous MapWriter                                          |
+| `map/SuspendedEntityMapLoader.kt`                      | MapLoader based on `suspendedTransactionAsync`                                   |
+| `map/SuspendedEntityMapWriter.kt`                      | MapWriter based on `suspendedTransactionAsync` + Retry                           |
+| `map/SuspendedExposedEntityMapLoader.kt`               | Coroutine MapLoader based on Exposed DSL                                         |
+| `map/SuspendedExposedEntityMapWriter.kt`               | Coroutine MapWriter based on Exposed DSL                                         |
 
 ## Testing
 

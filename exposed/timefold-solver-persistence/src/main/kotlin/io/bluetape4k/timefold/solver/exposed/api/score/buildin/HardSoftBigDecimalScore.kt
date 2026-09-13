@@ -55,9 +55,9 @@ fun Table.hardSoftBigDecimalScore(
 class HardSoftBigDecimalScoreColumnType(
     length: Int,
 ): ColumnWithTransform<String, HardSoftBigDecimalScore>(
-        VarCharColumnType(length),
+    VarCharColumnType(length),
     HardSoftBigDecimalScoreTransformer(),
-    )
+)
 
 /**
  * [HardSoftBigDecimalScore]와 데이터베이스 String 값 간의 변환을 수행하는 Transformer 클래스입니다.

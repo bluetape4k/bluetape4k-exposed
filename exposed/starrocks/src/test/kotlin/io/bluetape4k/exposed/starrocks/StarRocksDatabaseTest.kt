@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.exposed.starrocks.dialect.StarRocksDialect
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test
  * Connection and dialect registration tests for [StarRocksDatabase].
  */
 class StarRocksDatabaseTest: AbstractStarRocksTest() {
+
+    companion object: KLogging()
 
     @Test
     fun `db dialect is StarRocksDialect`() {

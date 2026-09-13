@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.jdbc
 
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContainIgnoringCase
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -14,6 +15,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class ImplicitSelectAllTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private object Tester: IntIdTable("implicit_select_all_tester") {
         val name = varchar("name", 50)
@@ -28,8 +31,8 @@ class ImplicitSelectAllTest: AbstractExposedTest() {
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
 
             sql shouldContainIgnoringCase "SELECT * FROM"
-            sql.shouldNotContain(Tester.name.name)
-            sql.shouldNotContain(Tester.amount.name)
+            sql shouldNotContain Tester.name.name
+            sql shouldNotContain Tester.amount.name
         }
     }
 

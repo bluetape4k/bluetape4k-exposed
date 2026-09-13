@@ -2,10 +2,11 @@ package io.bluetape4k.exposed.lettuce.repository
 
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
-import io.bluetape4k.exposed.lettuce.map.ExposedLettuceLoadedMap
 import io.bluetape4k.exposed.lettuce.map.ExposedEntityMapLoader
 import io.bluetape4k.exposed.lettuce.map.ExposedEntityMapWriter
+import io.bluetape4k.exposed.lettuce.map.ExposedLettuceLoadedMap
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
@@ -61,12 +62,13 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
     private val valueCodec: RedisCodec<String, E> = ExposedLettuceCodecs.requireExplicit(),
 ): JdbcLettuceRepository<ID, E> {
+
     companion object: KLogging()
 
     init {
         require(!config.nearCacheEnabled) {
             "AbstractJdbcLettuceRepository does not support nearCacheEnabled; " +
-            "use AbstractSuspendedJdbcLettuceRepository"
+                    "use AbstractSuspendedJdbcLettuceRepository"
         }
         ExposedLettuceCodecs.requireConfigured(valueCodec)
     }
@@ -83,13 +85,15 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
 
     // JdbcCacheRepository 프로퍼티 구현
     override val cacheName: String get() = config.keyPrefix
+
     override val cacheMode: CacheMode
         get() = CacheMode.REMOTE
+
     override val cacheWriteMode: CacheWriteMode
         get() = when (config.writeMode) {
-            WriteMode.NONE          -> CacheWriteMode.READ_ONLY
+            WriteMode.NONE -> CacheWriteMode.READ_ONLY
             WriteMode.WRITE_THROUGH -> CacheWriteMode.WRITE_THROUGH
-            WriteMode.WRITE_BEHIND  -> CacheWriteMode.WRITE_BEHIND
+            WriteMode.WRITE_BEHIND -> CacheWriteMode.WRITE_BEHIND
         }
 
     override val cache: ExposedLettuceLoadedMap<ID, E> by lazy {
@@ -119,23 +123,21 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     // DB 직접 조회 (캐시 우회)
     // -------------------------------------------------------------------------
 
-    override fun findByIdFromDb(id: ID): E? =
-        transaction {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.let { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
-        }
+    override fun findByIdFromDb(id: ID): E? = transaction {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.let { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+    }
 
-    override fun findAllFromDb(ids: Collection<ID>): List<E> =
-        transaction {
-            if (ids.isEmpty()) return@transaction emptyList()
-            table
-                .selectAll()
-                .where { table.id inList ids }
-                .map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
-        }
+    override fun findAllFromDb(ids: Collection<ID>): List<E> = transaction {
+        if (ids.isEmpty()) return@transaction emptyList()
+        table
+            .selectAll()
+            .where { table.id inList ids }
+            .map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+    }
 
     override fun countFromDb(): Long =
         transaction {
@@ -153,28 +155,31 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
     ): List<E> {
-        val entities =
-            transaction {
-                table
-                    .selectAll()
-                    .where(where)
-                    .apply {
-                        orderBy(sortBy, sortOrder)
-                        limit?.let { limit(it) }
-                        offset?.let { offset(it) }
-                    }.map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
-            }
+        log.debug { "findAll: limit=$limit, offset=$offset, sortBy=$sortBy, sortOrder=$sortOrder, where=$where" }
+
+        val entities = transaction {
+            table
+                .selectAll()
+                .where(where)
+                .apply {
+                    orderBy(sortBy, sortOrder)
+                    limit?.let { limit(it) }
+                    offset?.let { offset(it) }
+                }.map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+        }
+
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
         //      DB에서 가져온 결과를 캐시에 적재해 다음 단일 조회(get/getAll)가 캐시를 히트하게 한다.
         //      Redis 장애 시에도 DB 조회 결과를 그대로 반환해야 하므로 예외를 캐치하고 경고만 기록한다.
         val entries = entities.associateBy(::extractId)
-        runCatching { cache.warmAll(entries, JdbcLettuceRepository.DEFAULT_BATCH_SIZE) }
-            .onFailure { e ->
-                log.warn {
-                    "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
-                        .plus(", errorType=${e::class.simpleName}")
-                }
+
+        runCatching {
+            cache.warmAll(entries, JdbcLettuceRepository.DEFAULT_BATCH_SIZE)
+        }.onFailure { e ->
+            log.warn(e) {
+                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
             }
+        }
         return entities
     }
 
@@ -184,8 +189,7 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
      */
     override fun extractId(entity: E): ID {
         error(
-            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
+            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
         )
     }
 

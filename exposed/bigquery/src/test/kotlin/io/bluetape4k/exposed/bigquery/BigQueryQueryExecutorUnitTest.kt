@@ -3,15 +3,17 @@ package io.bluetape4k.exposed.bigquery
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeTrue
 
 /**
  * [BigQueryResultRow] 단위 테스트 — 에뮬레이터 없이 타입 변환 로직만 검증.
  */
 class BigQueryQueryExecutorUnitTest {
+
+    companion object: KLogging()
 
     @Test
     fun `BigQueryResultRow - 키가 없으면 null을 반환한다`() {
@@ -26,7 +28,8 @@ class BigQueryQueryExecutorUnitTest {
         val str = row.toString()
 
         str.shouldNotBeNull()
-        (str.contains("region") && str.contains("kr")).shouldBeTrue()
+        str shouldContain "region"
+        str shouldContain "kr"
     }
 
     @Test
