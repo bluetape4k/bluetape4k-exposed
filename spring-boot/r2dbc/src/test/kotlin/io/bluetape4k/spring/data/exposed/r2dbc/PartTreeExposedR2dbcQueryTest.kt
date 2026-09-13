@@ -1,20 +1,21 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.support.ExposedR2dbcRepositoryFactory
 import kotlinx.coroutines.flow.toList
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -25,6 +26,8 @@ import org.springframework.data.domain.Sort.Direction
 import org.springframework.data.repository.query.QueryLookupStrategy
 
 class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
+
+    companion object: KLoggingChannel()
 
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
@@ -57,6 +60,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByName returns matching rows`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val results = userRepository.findByName("Alice")
             results shouldHaveSize 2
             results.all { it.name == "Alice" }.shouldBeTrue()
@@ -68,6 +72,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByName with Sort applies dynamic sort`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val sort = Sort.by(Direction.DESC, "age")
             val results = userRepository.findByName("Alice", sort)
             results.map { it.age } shouldBeEqualTo listOf(30, 20)
@@ -79,6 +84,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByName with Pageable returns page`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val pageable = PageRequest.of(0, 1, Sort.by(Direction.ASC, "age"))
             val page = userRepository.findByName("Alice", pageable)
             page.totalElements shouldBeEqualTo 2L
@@ -91,6 +97,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByAgeGreaterThan filters rows`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val results = userRepository.findByAgeGreaterThan(25)
             results.all { it.age > 25 }.shouldBeTrue()
             results shouldHaveSize 2
@@ -102,6 +109,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByAgeGreaterThan with Pageable returns slice`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val pageable = PageRequest.of(0, 2, Sort.by(Direction.ASC, "age"))
             val slice = userRepository.findByAgeGreaterThan(10, pageable)
             slice.content.map { it.age } shouldBeEqualTo listOf(20, 25)
@@ -114,6 +122,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByEmailContaining filters by substring`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val results = userRepository.findByEmailContaining("alice")
             results shouldHaveSize 2
             results.all { "alice" in it.email }.shouldBeTrue()
@@ -125,6 +134,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByNameAndAge returns single row`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val user = userRepository.findByNameAndAge("Alice", 30)
             user.shouldNotBeNull()
             user.email shouldBeEqualTo "alice@example.com"

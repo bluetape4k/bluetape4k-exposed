@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 internal class OneShotR2dbcFaultFactory(
     private val delegate: ConnectionFactory,
-) : ConnectionFactory {
+): ConnectionFactory {
 
     private val failureInjected = AtomicBoolean(false)
 
@@ -47,7 +47,7 @@ internal class OneShotR2dbcFaultFactory(
             arrayOf(Connection::class.java),
         ) { _, method, args ->
             when (method.name) {
-                "beginTransaction" -> {
+                "beginTransaction"  -> {
                     beginCount.incrementAndGet()
                     invoke(delegate, method, args)
                 }
@@ -70,12 +70,12 @@ internal class OneShotR2dbcFaultFactory(
                     invoke(delegate, method, args)
                 }
 
-                "close" -> {
+                "close"             -> {
                     closeCount.incrementAndGet()
                     invoke(delegate, method, args)
                 }
 
-                else -> invoke(delegate, method, args)
+                else                -> invoke(delegate, method, args)
             }
         } as Connection
 

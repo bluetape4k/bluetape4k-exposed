@@ -2,10 +2,12 @@ package io.bluetape4k.spring.data.exposed.r2dbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
@@ -25,6 +27,8 @@ import org.springframework.data.domain.ExampleMatcher
  */
 class R2dbcFluentQueryMultiDbTest: AbstractExposedR2dbcRepositoryTest() {
 
+    companion object: KLoggingChannel()
+
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
 
@@ -40,7 +44,7 @@ class R2dbcFluentQueryMultiDbTest: AbstractExposedR2dbcRepositoryTest() {
                 ExampleMatcher.matching().withIgnorePaths("id", "email", "age"),
             )
 
-            userRepository.findOne(example)?.name shouldBeEqualTo "Alice"
+            userRepository.findOne(example).shouldNotBeNull().name shouldBeEqualTo "Alice"
             userRepository.count(example) shouldBeEqualTo 1L
             userRepository.exists(example).shouldBeTrue()
 

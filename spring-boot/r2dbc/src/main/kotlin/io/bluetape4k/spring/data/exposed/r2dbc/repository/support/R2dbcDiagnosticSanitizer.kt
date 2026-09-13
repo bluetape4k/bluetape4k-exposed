@@ -48,9 +48,9 @@ internal object R2dbcDiagnosticSanitizer {
 
     private fun isAllowedTokenCharacter(character: Char): Boolean =
         character in 'a'..'z' ||
-            character in 'A'..'Z' ||
-            character in '0'..'9' ||
-            character in "._-"
+                character in 'A'..'Z' ||
+                character in '0'..'9' ||
+                character in "._-"
 }
 
 /** raw cause를 보관하지 않는 mapping failure입니다. */

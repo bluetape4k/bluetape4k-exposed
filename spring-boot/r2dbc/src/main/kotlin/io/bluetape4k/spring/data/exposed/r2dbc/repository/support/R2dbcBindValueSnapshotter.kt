@@ -18,36 +18,36 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.*
 
 /** QBE bind value를 SQL 실행 전에 detached defensive snapshot으로 복사합니다. */
 internal object R2dbcBindValueSnapshotter {
 
     fun snapshot(value: Any?): Any? = when {
-        value == null -> null
+        value == null            -> null
         value.isImmutableScalar() -> value
         value.isPrimitiveArray() -> snapshotPrimitiveArray(value)
-        value is Array<*> -> value.map(::snapshot).toTypedArray()
-        value is ByteBuffer -> snapshotBuffer(value)
-        value is List<*> -> value.map(::snapshot)
-        value is Set<*> -> value.mapTo(LinkedHashSet(), ::snapshot)
-        value is Collection<*> -> value.map(::snapshot)
-        value is Map<*, *> -> value.entries.associateTo(LinkedHashMap()) { entry ->
+        value is Array<*>        -> value.map(::snapshot).toTypedArray()
+        value is ByteBuffer      -> snapshotBuffer(value)
+        value is List<*>         -> value.map(::snapshot)
+        value is Set<*>          -> value.mapTo(LinkedHashSet(), ::snapshot)
+        value is Collection<*>   -> value.map(::snapshot)
+        value is Map<*, *>       -> value.entries.associateTo(LinkedHashMap()) { entry ->
             snapshot(entry.key) to snapshot(entry.value)
         }
-        else -> unsupported(value)
+        else                     -> unsupported(value)
     }
 
     private fun snapshotPrimitiveArray(value: Any): Any = when (value) {
-        is ByteArray -> value.copyOf()
-        is ShortArray -> value.copyOf()
-        is IntArray -> value.copyOf()
-        is LongArray -> value.copyOf()
-        is FloatArray -> value.copyOf()
+        is ByteArray   -> value.copyOf()
+        is ShortArray  -> value.copyOf()
+        is IntArray    -> value.copyOf()
+        is LongArray   -> value.copyOf()
+        is FloatArray  -> value.copyOf()
         is DoubleArray -> value.copyOf()
-        is CharArray -> value.copyOf()
+        is CharArray   -> value.copyOf()
         is BooleanArray -> value.copyOf()
-        else -> error("Unsupported primitive array")
+        else           -> error("Unsupported primitive array")
     }
 
     private fun Any.isImmutableScalar(): Boolean =

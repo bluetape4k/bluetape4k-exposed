@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
+import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import java.util.concurrent.atomic.AtomicInteger
@@ -24,10 +25,10 @@ class R2dbcPersistentPropertyResolverTest {
 
     @Test
     fun `unknown nested and ambiguous properties fail before getter`() {
-        assertFailsWith<org.springframework.dao.InvalidDataAccessApiUsageException> {
+        assertFailsWith<InvalidDataAccessApiUsageException> {
             resolver.resolve("unknown")
         }
-        assertFailsWith<org.springframework.dao.InvalidDataAccessApiUsageException> {
+        assertFailsWith<InvalidDataAccessApiUsageException> {
             resolver.resolve("address.city")
         }
     }
@@ -57,11 +58,12 @@ class R2dbcPersistentPropertyResolverTest {
         val regex = ExampleMatcher.matching()
             .withIgnorePaths("id", "email", "age")
             .withMatcher("name") { it.regex() }
+
         assertFailsWith<UnsupportedOperationException> {
             resolver.snapshot(Example.of(User(name = "alpha", email = "x", age = 1), regex))
         }
 
-        assertFailsWith<org.springframework.dao.InvalidDataAccessApiUsageException> {
+        assertFailsWith<InvalidDataAccessApiUsageException> {
             @Suppress("UNCHECKED_CAST")
             resolver.snapshot(Example.of("not-a-user") as Example<Any>)
         }

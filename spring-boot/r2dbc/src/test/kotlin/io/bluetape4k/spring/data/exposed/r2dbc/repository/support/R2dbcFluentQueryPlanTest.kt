@@ -7,7 +7,6 @@ import io.bluetape4k.assertions.shouldNotBeSameInstanceAs
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.Sort
-import kotlin.reflect.KClass
 import kotlin.test.Test
 
 class R2dbcFluentQueryPlanTest {
@@ -55,8 +54,14 @@ class R2dbcFluentQueryPlanTest {
 
         plan.limit(0).limit.shouldBeNull()
         plan.project().projectedProperties.shouldBeNull()
-        assertFailsWith<IllegalArgumentException> { plan.limit(-1) }
-        assertFailsWith<IllegalArgumentException> { plan.sortBy(Sort.unsorted()) }
+
+        assertFailsWith<IllegalArgumentException> {
+            plan.limit(-1)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            plan.sortBy(Sort.unsorted())
+        }
     }
 
     private fun testSnapshot() = R2dbcExampleSnapshot(

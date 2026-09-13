@@ -1,13 +1,13 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
@@ -21,12 +21,12 @@ import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import io.bluetape4k.support.requireNotNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
@@ -50,6 +50,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
@@ -82,11 +83,12 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findById returns entity`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val user = createUser("Alice", "alice@example.com", 30)
             val userId = user.id.requireNotNull("user.id")
+
             val found = userRepository.findByIdOrNull(userId)
             found.shouldNotBeNull()
             found.name shouldBeEqualTo "Alice"
@@ -94,18 +96,19 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll as Flow returns all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
             createUser("Bob", "bob@example.com", 25)
+
             val all = userRepository.findAll().toList()
             all shouldHaveSize 2
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `save - SuspendedJobTester 경쟁 상황에서도 모든 엔티티를 저장한다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in TestDB.ALL_H2 + TestDB.ALL_POSTGRES }
 
@@ -119,13 +122,14 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
             SuspendedJobTester()
                 .workers(workerSize)
-                .rounds(1)
+                .rounds(4)
                 .addAll(
                     (1..workerSize).map { index ->
                         suspend {
                             val active = activeWorkers.incrementAndGet()
                             peakWorkers.updateAndGet { current -> maxOf(current, active) }
                             readyWorkers.countDown()
+
                             try {
                                 check(readyWorkers.await(5, TimeUnit.SECONDS)) {
                                     "모든 경쟁 worker가 bounded barrier에 도달하지 못했습니다."
@@ -133,6 +137,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                                 // 경쟁 worker는 fixture의 외부 트랜잭션을 상속하지 않아야
                                 // 각 save 호출이 자체 R2DBC transaction을 사용할 수 있습니다.
                                 TransactionManager.currentOrNull().shouldBeNull()
+
                                 val user = User(
                                     id = null,
                                     name = "Concurrent-$index",
@@ -150,13 +155,13 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 .run()
 
             peakWorkers.get() shouldBeEqualTo workerSize
-            savedIds.distinct() shouldHaveSize workerSize
-            userRepository.count() shouldBeEqualTo workerSize.toLong()
+            savedIds.distinct() shouldHaveSize workerSize * 4
+            userRepository.count() shouldBeEqualTo workerSize.toLong() * 4
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAllList returns all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -173,7 +178,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `streamAll opens its own transaction and streams rows`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -185,7 +190,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO(5.minutes) {
         Assumptions.assumeTrue { testDB in TestDB.ALL_H2 + TestDB.ALL_POSTGRES }
 
@@ -212,7 +217,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @EnabledForJreRange(min = JRE.JAVA_21)
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `streamAll - StructuredTaskScopeTester 병렬 collector 에서도 전체 row 를 유지한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             repeat(3) { index ->
@@ -229,13 +234,12 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 .run()
 
             collectedCounts shouldHaveSize 4
-            collectedCounts.all { it == 3 }.shouldBeTrue()
-            // collectedCounts.forEach { it shouldBeEqualTo 3 }
+            collectedCounts.all { cnt -> cnt == 3 }.shouldBeTrue()
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `count returns correct total`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -245,7 +249,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `existsById returns true when entity exists`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val user = createUser("Alice", "alice@example.com", 30)
@@ -254,7 +258,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `existsById returns false when entity does not exist`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             userRepository.existsById(-1L).shouldBeFalse()
@@ -262,7 +266,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteById removes entity`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val user = createUser("Alice", "alice@example.com", 30)
@@ -273,7 +277,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAll removes all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -284,7 +288,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll with Sort returns sorted list`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Charlie", "charlie@example.com", 35)
@@ -299,7 +303,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll with Pageable returns page`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             repeat(5) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
@@ -310,7 +314,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `count with DSL op filters correctly`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -321,7 +325,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `count with DSL op returns correct count`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -332,7 +336,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `exists with DSL op returns true when found`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -343,7 +347,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Iterable saves all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val users = listOf(
@@ -359,7 +363,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow saves all entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val usersFlow = listOf(
@@ -376,7 +380,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow rolls back on top-level upstream cancellation`(testDB: TestDB) = runSuspendIO {
         withTopLevelUsers(testDB) {
             val upstreamStarted = CompletableDeferred<Unit>()
@@ -395,23 +399,25 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                     }).toList(emitted)
                 }
 
-                withTimeoutOrNull(1_000) { upstreamStarted.await() }.shouldNotBeNull()
+                withTimeoutOrNull(1.seconds) { upstreamStarted.await() }.shouldNotBeNull()
                 job.cancel()
-                assertFailsWith<CancellationException> { job.await() }
+                assertFailsWith<CancellationException> {
+                    job.await()
+                }
             }
 
-            withTimeoutOrNull(1_000) { upstreamCancelled.await() }.shouldNotBeNull()
-            emitted shouldHaveSize 0
+            withTimeoutOrNull(1.seconds) { upstreamCancelled.await() }.shouldNotBeNull()
+            emitted.shouldBeEmpty()
             userRepository.count() shouldBeEqualTo 0L
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow emits only after upstream completes`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             var upstreamCompleted = false
-            val saved = userRepository.saveAll(kotlinx.coroutines.flow.flow {
+            val saved = userRepository.saveAll(flow {
                 emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
                 emit(User(id = null, name = "Bob", email = "bob@example.com", age = 25))
                 upstreamCompleted = true
@@ -425,7 +431,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow keeps committed rows after top-level finite first`(testDB: TestDB) = runSuspendIO {
         withTopLevelUsers(testDB) {
             val first = userRepository.saveAll(
@@ -441,7 +447,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow propagates downstream failure after top-level commit`(testDB: TestDB) = runSuspendIO {
         withTopLevelUsers(testDB) {
             val emitted = mutableListOf<User>()
@@ -464,7 +470,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow reuses the caller transaction when nested transactions are disabled`(testDB: TestDB) =
         runSuspendIO {
             withTables(testDB, Users, configure = { useNestedTransactions = false }) {
@@ -482,25 +488,25 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
         }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow rolls back when input fails`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users, configure = { useNestedTransactions = true }) {
             val emitted = mutableListOf<User>()
             val failure = assertFailsWith<IllegalStateException> {
-                userRepository.saveAll(kotlinx.coroutines.flow.flow {
+                userRepository.saveAll(flow {
                     emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
                     error("upstream failure")
                 }).toList(emitted)
             }
 
             failure.message shouldBeEqualTo "upstream failure"
-            emitted shouldHaveSize 0
+            emitted.shouldBeEmpty()
             userRepository.count() shouldBeEqualTo 0L
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAllById with Iterable returns matching entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val alice = createUser("Alice", "alice@example.com", 30)
@@ -514,7 +520,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAllById with Flow returns matching entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val alice = createUser("Alice", "alice@example.com", 30)
@@ -528,7 +534,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAllById removes specified entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val alice = createUser("Alice", "alice@example.com", 30)
@@ -542,7 +548,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAll with Iterable removes specified entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val alice = createUser("Alice", "alice@example.com", 30)
@@ -555,7 +561,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAll with Flow removes specified entities`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val alice = createUser("Alice", "alice@example.com", 30)
@@ -568,7 +574,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll with DSL op filters correctly`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
@@ -581,7 +587,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findById returns null when entity not found`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             userRepository.findByIdOrNull(-999L).shouldBeNull()
@@ -589,34 +595,35 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `save updates existing entity`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             val user = createUser("Alice", "alice@example.com", 30)
             val userId = user.id.requireNotNull("user.id")
 
-            val updated = userRepository.save(User(id = userId, name = "Alice Updated", email = "alice@example.com", age = 31))
+            val updated = userRepository.save(
+                User(id = userId, name = "Alice Updated", email = "alice@example.com", age = 31)
+            )
             updated.name shouldBeEqualTo "Alice Updated"
 
-            val found = userRepository.findByIdOrNull(userId)
-            found.shouldNotBeNull()
+            val found = userRepository.findByIdOrNull(userId).shouldNotBeNull()
             found.name shouldBeEqualTo "Alice Updated"
             found.age shouldBeEqualTo 31
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAllById with empty list returns empty`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)
             val found = userRepository.findAllById(emptyList()).toList()
-            found shouldHaveSize 0
+            found.shouldBeEmpty()
         }
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll with paging second page returns correct content`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             repeat(7) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
@@ -628,7 +635,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @ParameterizedTest
-    @MethodSource(AbstractExposedR2dbcTest.ENABLE_DIALECTS_METHOD)
+    @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAllById with empty list does nothing`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUser("Alice", "alice@example.com", 30)

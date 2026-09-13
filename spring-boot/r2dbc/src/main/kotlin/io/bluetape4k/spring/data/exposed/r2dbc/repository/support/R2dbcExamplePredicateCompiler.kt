@@ -42,13 +42,13 @@ internal class R2dbcExamplePredicateCompiler(
                 @Suppress("UNCHECKED_CAST")
                 (property.column as org.jetbrains.exposed.v1.core.Column<Any>).eq(value)
             }
-            else -> {
+            else          -> {
                 val literal = literalPattern(value)
                 val pattern = when (stringMatcher) {
                     ExampleMatcher.StringMatcher.CONTAINING -> LikePattern("%${literal.pattern}%", literal.escapeChar)
                     ExampleMatcher.StringMatcher.STARTING -> LikePattern("${literal.pattern}%", literal.escapeChar)
-                    ExampleMatcher.StringMatcher.ENDING -> LikePattern("%${literal.pattern}", literal.escapeChar)
-                    else -> error("Unsupported string matcher reached compiler")
+                    ExampleMatcher.StringMatcher.ENDING   -> LikePattern("%${literal.pattern}", literal.escapeChar)
+                    else                                  -> error("Unsupported string matcher reached compiler")
                 }
                 @Suppress("UNCHECKED_CAST")
                 (property.column as org.jetbrains.exposed.v1.core.Column<String?>).like(pattern)

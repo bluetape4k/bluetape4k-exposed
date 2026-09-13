@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldStartWith
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
@@ -39,8 +40,10 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             // Exposed 1.5.0 expandArgs의 주석 해석 결함과 실제 바인딩 검증을 분리합니다.
             defaultLogger.removeLogger(Slf4jSqlDebugLogger)
             try {
-                userRepository.findWithQuotedMarkersNative("alice@example.com")
-                    .single().email shouldBeEqualTo "alice@example.com"
+                userRepository
+                    .findWithQuotedMarkersNative("alice@example.com")
+                    .single()
+                    .email shouldBeEqualTo "alice@example.com"
             } finally {
                 defaultLogger.addLogger(Slf4jSqlDebugLogger)
             }
@@ -52,12 +55,15 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `JDBC와 같은 ID 결과 계약으로 누락과 NULL을 거부하고 명시적 ID를 읽는다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             assertFailsWith<IllegalArgumentException> {
                 userRepository.findWithoutIdNative("alice@example.com")
             }.message shouldBeEqualTo "@Query method 'findWithoutIdNative' must select entity id column 'id'"
+
             assertFailsWith<IllegalArgumentException> {
                 userRepository.findWithNullIdNative("alice@example.com")
             }.message shouldBeEqualTo "@Query method 'findWithNullIdNative' returned null entity id"
+
             userRepository.findWithExplicitIdNative("alice@example.com")
                 .single().email shouldBeEqualTo "alice@example.com"
         }
@@ -91,6 +97,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 위치 기반 파라미터 바인딩으로 단일 엔티티 조회`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByEmailNative("alice@example.com")
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "Alice"
@@ -141,6 +148,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 파라미터 순서가 역순이어도 올바르게 바인딩된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByEmailAndAgeNative("alice@example.com", 30)
             found shouldHaveSize 1
             found.first().email shouldBeEqualTo "alice@example.com"
@@ -152,6 +160,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - SQL injection 문자열은 값으로 취급되어 우회되지 않는다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val injected = "alice@example.com' OR 1=1 --"
             val found = userRepository.findByEmailNative(injected)
             found.shouldBeEmpty()
@@ -167,6 +176,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 row[email] = "o'hara@example.com"
                 row[age] = 41
             }
+
             val found = userRepository.findByEmailNative("o'hara@example.com")
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "O'Hara"
@@ -178,6 +188,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - placeholder 인덱스가 잘못되면 예외를 던진다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             assertFailsWith<IllegalArgumentException> {
                 userRepository.findByEmailNativeBrokenPlaceholder("alice@example.com")
             }
@@ -189,6 +200,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 동일 placeholder 재사용 시 같은 인자가 재사용된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByEmailNativeDuplicatedPlaceholder("alice@example.com")
             found shouldHaveSize 1
             found.first().email shouldBeEqualTo "alice@example.com"
@@ -200,6 +212,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - Long 타입 숫자 파라미터도 정상 바인딩된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByAgeNativeLong(30L)
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "Alice"
@@ -211,6 +224,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 범위 조건 파라미터를 순서대로 바인딩한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByAgeRangeNative(25, 30)
             found shouldHaveSize 2
             found.all { it.age in 25..30 }.shouldBeTrue()
@@ -224,7 +238,6 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findYoungestTwoNative()
-
             found.map { it.age } shouldBeEqualTo listOf(20, 25)
         }
     }
@@ -236,7 +249,6 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findDistinctIdsNative()
-
             found shouldHaveSize 2
         }
     }
@@ -248,7 +260,6 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findDistinctIdsWithBlockCommentsNative()
-
             found shouldHaveSize 2
         }
     }
@@ -260,7 +271,6 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findIdWithNestedProjectionNative()
-
             found shouldHaveSize 1
         }
     }
@@ -274,7 +284,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             }
 
             error.message shouldBeEqualTo
-                "@Query method 'findOuterProjectionWithNestedIdNative' must select entity id column 'id'"
+                    "@Query method 'findOuterProjectionWithNestedIdNative' must select entity id column 'id'"
         }
     }
 
@@ -286,19 +296,19 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findWrongIdAliasNative()
             }
             wrongAliasError.message shouldBeEqualTo
-                "@Query method 'findWrongIdAliasNative' must select entity id column 'id'"
+                    "@Query method 'findWrongIdAliasNative' must select entity id column 'id'"
 
             val expressionAliasError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findExpressionIdAliasNative()
             }
             expressionAliasError.message shouldBeEqualTo
-                "@Query method 'findExpressionIdAliasNative' must select entity id column 'id'"
+                    "@Query method 'findExpressionIdAliasNative' must select entity id column 'id'"
 
             val commentAliasError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findCommentAliasProjectionNative()
             }
             commentAliasError.message shouldBeEqualTo
-                "@Query method 'findCommentAliasProjectionNative' must select entity id column 'id'"
+                    "@Query method 'findCommentAliasProjectionNative' must select entity id column 'id'"
         }
     }
 
@@ -314,10 +324,10 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                         userRepository.findPostgresDollarQuoteIdProjectionNative()
                     }
                     error.message shouldBeEqualTo
-                        "@Query method 'findPostgresDollarQuoteIdProjectionNative' must select entity id column 'id'"
+                            "@Query method 'findPostgresDollarQuoteIdProjectionNative' must select entity id column 'id'"
                 }
-                TestDB.MYSQL_V8 -> userRepository.findMySqlHashCommentNative().shouldBeEmpty()
-                else -> Unit
+                TestDB.MYSQL_V8   -> userRepository.findMySqlHashCommentNative().shouldBeEmpty()
+                else              -> Unit
             }
         }
     }
@@ -344,9 +354,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findMissingEntityIdNative()
             }
 
-            error.message
-                ?.startsWith("@Query method 'findMissingEntityIdNative' returned unknown entity id '")
-                .shouldBeTrue()
+            error.message shouldStartWith "@Query method 'findMissingEntityIdNative' returned unknown entity id '"
         }
     }
 
@@ -361,7 +369,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             }
 
             error.message shouldBeEqualTo
-                "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
+                    "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
         }
     }
 
@@ -376,7 +384,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             }
 
             error.message shouldBeEqualTo
-                "@Query method 'groupByAgeNative' must select entity id column 'id'"
+                    "@Query method 'groupByAgeNative' must select entity id column 'id'"
         }
     }
 
@@ -388,13 +396,13 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findEmailsProjectionNative()
             }
             projectionError.message shouldBeEqualTo
-                "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
+                    "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
 
             val groupingError = assertFailsWith<IllegalArgumentException> {
                 userRepository.groupByAgeNative()
             }
             groupingError.message shouldBeEqualTo
-                "@Query method 'groupByAgeNative' must select entity id column 'id'"
+                    "@Query method 'groupByAgeNative' must select entity id column 'id'"
         }
     }
 
@@ -403,6 +411,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 10번째 placeholder 인덱스를 올바르게 해석한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
+
             val found = userRepository.findByEmailNativeTenthPlaceholder(
                 "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "alice@example.com"
             )

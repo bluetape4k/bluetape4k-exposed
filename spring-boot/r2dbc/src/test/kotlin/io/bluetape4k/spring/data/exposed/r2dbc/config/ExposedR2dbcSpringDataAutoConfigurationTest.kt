@@ -1,9 +1,11 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.config
 
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBean
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
@@ -17,9 +19,8 @@ class ExposedR2dbcSpringDataAutoConfigurationTest {
     @Test
     fun `registers the common mapping context in an R2DBC-only context`() {
         contextRunner.run { context ->
-            context.getBeansOfType(ExposedMappingContext::class.java).size shouldBeEqualTo 1
-            context.getBean("exposedMappingContext") shouldBeEqualTo
-                context.getBean(ExposedMappingContext::class.java)
+            context.getBeansOfType<ExposedMappingContext>().size shouldBeEqualTo 1
+            context.getBean("exposedMappingContext") shouldBeEqualTo context.getBean<ExposedMappingContext>()
         }
     }
 
@@ -28,10 +29,8 @@ class ExposedR2dbcSpringDataAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(ExistingMappingContextConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType(ExposedMappingContext::class.java).size shouldBeEqualTo 1
-                (
-                    context.getBean("exposedMappingContext") === ExistingMappingContextConfiguration.context
-                ).shouldBeTrue()
+                context.getBeansOfType<ExposedMappingContext>().size shouldBeEqualTo 1
+                context.getBean("exposedMappingContext") shouldBe ExistingMappingContextConfiguration.context
             }
     }
 

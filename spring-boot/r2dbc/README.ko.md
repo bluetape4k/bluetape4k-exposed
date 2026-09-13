@@ -4,9 +4,7 @@
 
 **Exposed R2DBC DSL 기반 코루틴 Spring Data Repository (Spring Boot 4.x / Spring 7)**
 
-Spring Data coroutine repository를 Exposed R2DBC와 연결하는 repository
-브리지입니다. suspend와 `Flow` 시그니처를 유지하면서, 실제 트랜잭션 실행은
-Exposed R2DBC `suspendTransaction` 블록에 위임합니다.
+Spring Data coroutine repository를 Exposed R2DBC와 연결하는 repository 브리지입니다. suspend와 `Flow` 시그니처를 유지하면서, 실제 트랜잭션 실행은 Exposed R2DBC `suspendTransaction` 블록에 위임합니다.
 
 ## Coroutine Repository Wiring
 
@@ -155,15 +153,11 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 }
 ```
 
-파라미터는 prepared statement 플레이스홀더로 바인딩되므로 SQL injection이 방지됩니다.
-SQL 코드 영역만 바인딩하며 문자열·인용 식별자·주석·PostgreSQL dollar-quoted 문자열 안의 `?N`은 보존합니다. 반복 파라미터는 출현 순서대로 바인딩됩니다.
+파라미터는 prepared statement 플레이스홀더로 바인딩되므로 SQL injection이 방지됩니다. SQL 코드 영역만 바인딩하며 문자열·인용 식별자·주석·PostgreSQL dollar-quoted 문자열 안의 `?N`은 보존합니다. 반복 파라미터는 출현 순서대로 바인딩됩니다.
 
 Exposed 1.5.0 디버그 SQL logger의 별도 인자 확장기는 SQL 주석을 인식하지 않습니다. 주석의 `?` 때문에 실행 후 로깅에서 실패할 수 있으며, 이 바인더는 애플리케이션의 logger 설정을 변경하지 않습니다.
 
-raw SQL은 엔티티 ID 컬럼을 매핑된 컬럼명으로 조회해야 합니다. 엔티티는 Exposed로 다시
-로드한 뒤 SQL이 반환한 ID 순서대로 정렬하므로 `ORDER BY`, `LIMIT`, JOIN 쿼리의 정렬 순서가 유지됩니다.
-JOIN에서는 필요에 따라 `SELECT u.id AS id FROM users u JOIN ...`처럼 엔티티 ID에 매핑된
-컬럼명을 alias로 지정하세요.
+raw SQL은 엔티티 ID 컬럼을 매핑된 컬럼명으로 조회해야 합니다. 엔티티는 Exposed로 다시 로드한 뒤 SQL이 반환한 ID 순서대로 정렬하므로 `ORDER BY`, `LIMIT`, JOIN 쿼리의 정렬 순서가 유지됩니다. JOIN에서는 필요에 따라 `SELECT u.id AS id FROM users u JOIN ...`처럼 엔티티 ID에 매핑된 컬럼명을 alias로 지정하세요.
 
 > **제약**: 엔티티 ID를 조회하지 않는 scalar projection이나 grouping 쿼리는 엔티티 쿼리가
 > 아니므로 명확한 `IllegalArgumentException`을 던집니다. Projection이나 집계 결과가 필요하면
@@ -172,27 +166,22 @@ JOIN에서는 필요에 따라 `SELECT u.id AS id FROM users u JOIN ...`처럼 �
 ### 7. Actuator Cache Health
 
 Spring Boot Actuator와 `bluetape4k-exposed-r2dbc-caffeine`이 classpath에 있으면
-`exposedR2dbcCacheHealthIndicator`가 reactive health indicator로 자동 등록됩니다.
-이 indicator는 suspend cache consistency check 결과에서 cache mode, queue depth,
-`workerState`, 마지막 flush error를 노출합니다.
-호환되는 R2DBC Caffeine repository bean이 없으면 indicator를 등록하지 않으므로
+`exposedR2dbcCacheHealthIndicator`가 reactive health indicator로 자동 등록됩니다. 이 indicator는 suspend cache consistency check 결과에서 cache mode, queue depth,
+`workerState`, 마지막 flush error를 노출합니다. 호환되는 R2DBC Caffeine repository bean이 없으면 indicator를 등록하지 않으므로
 `repositoryCount=0`인 선택적 `UP` component를 만들지 않습니다.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-| Report | Actuator status |
-|---|---|
-| Flush error가 없고 `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
-| Flush error가 없고 `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
-| Flush error 또는 `workerState=FAILED` | `DOWN` |
+| Report                                         | Actuator status |
+|------------------------------------------------|-----------------|
+| Flush error가 없고 `workerState=NOT_APPLICABLE | IDLE            |RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING       | STOPPED`        | `OUT_OF_SERVICE` |
+| Flush error 또는 `workerState=FAILED`          | `DOWN`          |
 
-비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 reactive
-indicator를 자동으로 찾습니다. Ktor는 `ExposedKtorCacheContributor`를 명시적으로
-등록해야 하며, `DRAINING`, `FAILED`, `STOPPED`를 redacted detail의 readiness
-`DOWN`으로 매핑합니다. Actuator management endpoint 접근 정책과 Ktor route 보안
-정책은 별도로 관리하세요.
+비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 reactive indicator를 자동으로 찾습니다. Ktor는 `ExposedKtorCacheContributor`를 명시적으로 등록해야 하며, `DRAINING`, `FAILED`, `STOPPED`를 redacted detail의 readiness
+`DOWN`으로 매핑합니다. Actuator management endpoint 접근 정책과 Ktor route 보안 정책은 별도로 관리하세요.
 
 ### 8. 페이징 조회
 
@@ -225,6 +214,7 @@ val exists = userRepository.exists { Users.email eq "alice@example.com" }
 ```
 
 <!-- r2dbc-coroutine-fluent-query:START -->
+
 ### 10. Coroutine Query by Example 및 FluentQuery
 
 <!-- contract-key:coroutine-only -->
@@ -246,8 +236,7 @@ val exists = userRepository.exists { Users.email eq "alice@example.com" }
 <!-- contract-key:terminal-retry-delegated -->
 
 coroutine-native Query by Example API가 필요하면
-`ExposedR2dbcQueryByExampleRepository`를 사용하세요. 이 계약은 `suspend`와
-Kotlin `Flow`만 노출하며 Reactor `Mono`/`Flux`는 포함하지 않습니다.
+`ExposedR2dbcQueryByExampleRepository`를 사용하세요. 이 계약은 `suspend`와 Kotlin `Flow`만 노출하며 Reactor `Mono`/`Flux`는 포함하지 않습니다.
 
 ```kotlin
 interface UserRepository : ExposedR2dbcQueryByExampleRepository<User, Long> {
@@ -281,32 +270,18 @@ val names: Flow<NameView> = userRepository.findBy(example) { query ->
 }
 ```
 
-지원하는 matcher는 exact/default, `CONTAINING`, `STARTING`, `ENDING`이며 명시적
-null 포함을 지원합니다. Regex, ignore-case, 중첩 property, open/SpEL
-projection, 부분 domain projection은 SQL 실행 전에 실패합니다. `findOne`과
-fluent `one()`은 strict cardinality를 사용합니다. 결과가 없으면 `null`, 하나면
-반환하고, 여러 개면 `IncorrectResultSizeDataAccessException`을 던집니다.
+지원하는 matcher는 exact/default, `CONTAINING`, `STARTING`, `ENDING`이며 명시적 null 포함을 지원합니다. Regex, ignore-case, 중첩 property, open/SpEL projection, 부분 domain projection은 SQL 실행 전에 실패합니다. `findOne`과 fluent `one()`은 strict cardinality를 사용합니다. 결과가 없으면 `null`, 하나면 반환하고, 여러 개면 `IncorrectResultSizeDataAccessException`을 던집니다.
 
-Fluent plan은 immutable입니다. property를 지정한 `project()`는 closed
-projection의 required source property와 정확히 일치해야 하며, 빈 호출은 필요한
-property 자동 선택으로 초기화합니다. closed interface, Kotlin constructor type,
-Java record는 필요한 컬럼만 조회합니다. `first()`, `one()`, `all()`, `page()`,
-`slice()`, `count()`, `exists()`는 `Pageable` 우선순위와 ID-only 존재 확인을
-포함한 각 terminal semantics를 유지합니다.
+Fluent plan은 immutable입니다. property를 지정한 `project()`는 closed projection의 required source property와 정확히 일치해야 하며, 빈 호출은 필요한 property 자동 선택으로 초기화합니다. closed interface, Kotlin constructor type, Java record는 필요한 컬럼만 조회합니다. `first()`, `one()`, `all()`, `page()`,
+`slice()`, `count()`, `exists()`는 `Pageable` 우선순위와 ID-only 존재 확인을 포함한 각 terminal semantics를 유지합니다.
 
-`Flow`는 cold이므로 같은 flow를 두 번 collect하면 서로 독립적인 transaction이
-두 번 실행됩니다. query는 현재 coroutine context에서 collect할 때 실행됩니다.
-다른 database를 선택하려면 `suspendTransaction(database) { flow.collect { ... } }`
+`Flow`는 cold이므로 같은 flow를 두 번 collect하면 서로 독립적인 transaction이 두 번 실행됩니다. query는 현재 coroutine context에서 collect할 때 실행됩니다. 다른 database를 선택하려면 `suspendTransaction(database) { flow.collect { ... } }`
 안에서 collect하세요. 호출자가 소유한 활성 Exposed transaction은 재사용하며,
-`useNestedTransactions=true`인 경우 SQL 실행 전에 거부합니다. `findBy` callback
-scope에서는 query를 만들고 terminal을 호출할 수 있으며, cancellation 시 원래
+`useNestedTransactions=true`인 경우 SQL 실행 전에 거부합니다. `findBy` callback scope에서는 query를 만들고 terminal을 호출할 수 있으며, cancellation 시 원래
 `CancellationException`을 유지하고 transaction lease를 해제합니다.
 
-top-level streaming은 row 중복 재방출을 막기 위해 `maxAttempts = 1`을 사용합니다.
-non-streaming terminal의 retry, backoff, timeout과 outer transaction 설정은 Exposed와
-호출자에게 위임합니다. 지원하지 않는 matcher/projection/sort는
-`UnsupportedOperationException` 또는 `InvalidDataAccessApiUsageException`으로
-실패하며, mapping 실패는 sanitized `MappingException`, cardinality 위반은
+top-level streaming은 row 중복 재방출을 막기 위해 `maxAttempts = 1`을 사용합니다. non-streaming terminal의 retry, backoff, timeout과 outer transaction 설정은 Exposed와 호출자에게 위임합니다. 지원하지 않는 matcher/projection/sort는
+`UnsupportedOperationException` 또는 `InvalidDataAccessApiUsageException`으로 실패하며, mapping 실패는 sanitized `MappingException`, cardinality 위반은
 `IncorrectResultSizeDataAccessException`으로 보고합니다.
 
 <!-- r2dbc-coroutine-fluent-query:END -->
@@ -504,22 +479,9 @@ fun saveAll(entityStream: Flow<User>): Flow<User>
 suspend fun deleteAllById(ids: Iterable<Long>)
 ```
 
-`saveAll(entityStream: Flow<User>)`는 cold `Flow`입니다. 하나의 Exposed 트랜잭션에서
-엔티티를 순차 저장하고 transaction block이 끝날 때까지 저장 결과를 보관합니다.
-최상위에서 호출하면 입력 수집 block이 정상 완료될 때 트랜잭션을 커밋한 뒤 저장 결과를
-방출하며, 입력 수집 중 취소나 예외가 발생하면 롤백하고 결과를 방출하지 않습니다.
-commit 이후 downstream collector에서 취소나 예외가 발생해도 이미 완료된 트랜잭션은
-롤백할 수 없고 남은 결과 방출만 중단될 수 있습니다. 이미 활성화된 outer transaction을
-재사용하는 경우 nested block이 반환된 뒤 outer transaction 커밋 전에 결과를 방출할 수
-있습니다. 최종 commit/rollback 경계는 호출자가 소유하므로 외부 side effect는 outer
-scope가 성공한 뒤에 수행해야 합니다. Repository가 소유한 최상위
-`saveAll(Flow)`와 `saveAll(Iterable)`은 `maxAttempts = 1`을 명시하므로 데이터베이스
-예외를 재수집이나 재순회 없이 호출자에게 전파합니다. 호출자가 active outer
-transaction으로 감싸면 해당 트랜잭션의 retry 정책은 caller가 소유하므로, outer block이
-재시도될 수 있는 경우 replayable하고 side effect가 없는 입력을 제공하세요. 반환된
-`Flow`를 collect해야 작업이 시작됩니다. 하나의 atomic transaction 안에서 결과를
-구체화하므로 입력이 크거나 끝나지 않으면 메모리를 점유하고 트랜잭션을 오래 유지할
-수 있습니다. chunked 저장은 별도 API 범위입니다.
+`saveAll(entityStream: Flow<User>)`는 cold `Flow`입니다. 하나의 Exposed 트랜잭션에서 엔티티를 순차 저장하고 transaction block이 끝날 때까지 저장 결과를 보관합니다. 최상위에서 호출하면 입력 수집 block이 정상 완료될 때 트랜잭션을 커밋한 뒤 저장 결과를 방출하며, 입력 수집 중 취소나 예외가 발생하면 롤백하고 결과를 방출하지 않습니다. commit 이후 downstream collector에서 취소나 예외가 발생해도 이미 완료된 트랜잭션은 롤백할 수 없고 남은 결과 방출만 중단될 수 있습니다. 이미 활성화된 outer transaction을 재사용하는 경우 nested block이 반환된 뒤 outer transaction 커밋 전에 결과를 방출할 수 있습니다. 최종 commit/rollback 경계는 호출자가 소유하므로 외부 side effect는 outer scope가 성공한 뒤에 수행해야 합니다. Repository가 소유한 최상위
+`saveAll(Flow)`와 `saveAll(Iterable)`은 `maxAttempts = 1`을 명시하므로 데이터베이스 예외를 재수집이나 재순회 없이 호출자에게 전파합니다. 호출자가 active outer transaction으로 감싸면 해당 트랜잭션의 retry 정책은 caller가 소유하므로, outer block이 재시도될 수 있는 경우 replayable하고 side effect가 없는 입력을 제공하세요. 반환된
+`Flow`를 collect해야 작업이 시작됩니다. 하나의 atomic transaction 안에서 결과를 구체화하므로 입력이 크거나 끝나지 않으면 메모리를 점유하고 트랜잭션을 오래 유지할 수 있습니다. chunked 저장은 별도 API 범위입니다.
 
 ## 테스트 작성
 
@@ -659,12 +621,7 @@ userRepository.saveAll(inputUsers)
     .collect { savedUser -> /* 저장된 엔티티 처리 */ }
 ```
 
-`saveAll(Flow)` 오버로드는 collect할 때만 시작합니다. 입력을 모두 소비하고 저장한 뒤
-결과를 방출하므로 collector가 입력 저장 속도를 제어하는 API는 아닙니다.
-Repository-owned 최상위 호출은 데이터베이스 예외를 자동 재시도하지 않으며, active
-outer transaction은 caller-owned 정책에 따라 재시도할 수 있습니다. row-by-row 조회
-스트리밍에는 `streamAll()`을 사용하세요. 이 오버로드는 하나의 atomic transaction을
-유지하며 chunked 쓰기는 제공하지 않습니다.
+`saveAll(Flow)` 오버로드는 collect할 때만 시작합니다. 입력을 모두 소비하고 저장한 뒤 결과를 방출하므로 collector가 입력 저장 속도를 제어하는 API는 아닙니다. Repository-owned 최상위 호출은 데이터베이스 예외를 자동 재시도하지 않으며, active outer transaction은 caller-owned 정책에 따라 재시도할 수 있습니다. row-by-row 조회 스트리밍에는 `streamAll()`을 사용하세요. 이 오버로드는 하나의 atomic transaction을 유지하며 chunked 쓰기는 제공하지 않습니다.
 
 ### toDomain과 toPersistValues 구현 필수
 
@@ -707,12 +664,8 @@ suspend fun complexOperation() {
 }
 ```
 
-`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)`는 소스·바이너리
-호환성만을 위해 유지하며 deprecated 상태입니다. 이 어댑터는 Spring 트랜잭션
-인터셉터를 우회하므로 기본값이 아닌 값을 지정하면 저장소 등록 단계에서 거부하며,
-Exposed `R2dbcDatabase`를 선택하지 않습니다. 데이터베이스가 여러 개라면
-`suspendTransaction(database) { ... }`에서 대상을 명시하고, 스트리밍 API 자체에서
-선택해야 한다면 `streamAll(database)`을 사용하세요.
+`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)`는 소스·바이너리 호환성만을 위해 유지하며 deprecated 상태입니다. 이 어댑터는 Spring 트랜잭션 인터셉터를 우회하므로 기본값이 아닌 값을 지정하면 저장소 등록 단계에서 거부하며, Exposed `R2dbcDatabase`를 선택하지 않습니다. 데이터베이스가 여러 개라면
+`suspendTransaction(database) { ... }`에서 대상을 명시하고, 스트리밍 API 자체에서 선택해야 한다면 `streamAll(database)`을 사용하세요.
 
 ## 성능 최적화
 
@@ -769,7 +722,7 @@ suspend fun getUser(id: Long) {
 suspend fun getUser(): User? = userRepository.findByIdOrNull(1)
 ```
 
-### "Flow를 toList() 없이 사용"
+### "Flow를 toList () 없이 사용"
 
 Response로 Stream 반환:
 
