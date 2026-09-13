@@ -11,13 +11,12 @@ tasks.named<ProcessResources>("processResources") {
     }
 }
 
-val requiredBatchSchemaResources = listOf("h2", "mysql", "postgresql").flatMap { backend ->
-    listOf("preflight", "migrate", "postflight").map { phase ->
-        "schema/$backend/V001__active_job_execution_key_$phase.sql"
-    }
-}
-
 tasks.named<Jar>("jar") {
+    val requiredBatchSchemaResources = listOf("h2", "mysql", "postgresql").flatMap { backend ->
+        listOf("preflight", "migrate", "postflight").map { phase ->
+            "schema/$backend/V001__active_job_execution_key_$phase.sql"
+        }
+    }
     doLast {
         ZipFile(archiveFile.get().asFile).use { archive ->
             val missing = requiredBatchSchemaResources.filter { archive.getEntry(it) == null }

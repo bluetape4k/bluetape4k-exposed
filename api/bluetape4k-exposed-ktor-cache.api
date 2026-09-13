@@ -2,7 +2,7 @@ public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor 
 	public static final field Companion Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor$Companion;
 }
 
-public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor$Companion {
+public final class io/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor$Companion : io/bluetape4k/logging/KLogging {
 	public final fun custom (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
 	public final fun jdbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;
 	public final fun r2dbcRepository (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/bluetape4k/exposed/ktor/cache/ExposedKtorCacheContributor;

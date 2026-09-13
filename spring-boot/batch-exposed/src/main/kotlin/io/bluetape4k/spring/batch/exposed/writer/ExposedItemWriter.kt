@@ -2,6 +2,7 @@ package io.bluetape4k.spring.batch.exposed.writer
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requireLe
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.vendors.SQLiteDialect
@@ -64,7 +65,7 @@ class ExposedItemWriter<T: Any>(
             val dialect = TransactionManager.current().db.dialect
             val parameterLimit = if (dialect is SQLiteDialect) 32_766 else 65_535
 
-            require((items.size.toLong() * columns.toLong()) <= parameterLimit.toLong()) {
+            (items.size.toLong() * columns.toLong()).requireLe(parameterLimit.toLong()) {
                 "Multi-row VALUES limit exceeded: rows=${items.size}, columns=$columns, parameterLimit=$parameterLimit"
             }
 

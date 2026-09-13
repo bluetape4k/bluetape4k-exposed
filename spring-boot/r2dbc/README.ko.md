@@ -176,8 +176,8 @@ bluetape4k.exposed.cache.health.enabled=true
 
 | Report                                         | Actuator status |
 |------------------------------------------------|-----------------|
-| Flush error가 없고 `workerState=NOT_APPLICABLE | IDLE            |RUNNING` | `UP` |
-| Flush error가 없고 `workerState=DRAINING       | STOPPED`        | `OUT_OF_SERVICE` |
+| Flush error가 없고 `workerState=NOT_APPLICABLE\|IDLE\|RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING\|STOPPED`        | `OUT_OF_SERVICE` |
 | Flush error 또는 `workerState=FAILED`          | `DOWN`          |
 
 비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 reactive indicator를 자동으로 찾습니다. Ktor는 `ExposedKtorCacheContributor`를 명시적으로 등록해야 하며, `DRAINING`, `FAILED`, `STOPPED`를 redacted detail의 readiness

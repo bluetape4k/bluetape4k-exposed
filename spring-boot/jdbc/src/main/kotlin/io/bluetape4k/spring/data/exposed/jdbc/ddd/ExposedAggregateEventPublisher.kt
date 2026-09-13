@@ -1,7 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.ddd
 
 import io.bluetape4k.exposed.core.ddd.AggregateRoot
-import io.bluetape4k.logging.KLogging
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.context.ApplicationEventPublisher
@@ -43,8 +42,6 @@ private val safeCorrelation = Regex("[A-Za-z0-9._:-]{1,128}")
 class ExposedAggregateEventPublisher(
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
-
-    companion object: KLogging()
 
     /**
      * [aggregate]의 현재 event snapshot을 Spring에 전달하고 transaction 완료 시까지 유지합니다.
@@ -93,8 +90,6 @@ class ExposedAggregateEventPublisher(
 internal class AggregateEventTransactionSynchronization(
     internal val owner: ExposedAggregateEventPublisher,
 ): TransactionSynchronization {
-
-    companion object: KLogging()
 
     private val registrations = IdentityHashMap<AggregateRoot<*>, Registration>()
     private var poison: IllegalStateException? = null

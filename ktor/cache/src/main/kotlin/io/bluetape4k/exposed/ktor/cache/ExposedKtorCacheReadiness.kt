@@ -143,7 +143,7 @@ private class CacheReadinessProbe(
     override suspend fun probe(timeout: Duration): ExposedKtorReadinessOutcome {
         require(timeout.isFinite() && timeout.isPositive()) { "timeout must be finite and positive." }
         log.debug { "Probing ExposedKtorCacheContributor for component: $component" }
-        
+
         return try {
             contributor.sample().status.toReadinessOutcome()
         } catch (cancellation: CancellationException) {
@@ -173,7 +173,7 @@ internal class ExposedKtorCacheSample(
     companion object: KLogging() {
         fun fromReport(report: CacheHealthReport): ExposedKtorCacheSample {
             report.queueDepth.requirePositiveNumber { "Cache queue depth must be positive." }
-            
+
             val status = when {
                 report.lastFlushError != null -> ExposedKtorCacheStatus.DOWN
                 report.workerState in setOf(

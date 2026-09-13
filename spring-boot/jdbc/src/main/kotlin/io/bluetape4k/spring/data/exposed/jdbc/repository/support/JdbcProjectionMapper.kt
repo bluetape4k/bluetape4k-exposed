@@ -20,7 +20,9 @@ internal interface JdbcProjectionShape<R: Any> {
     fun map(rowIndex: Int, values: Map<String, Any?>): R
 }
 
-internal inline fun <reified R: Any> JdbcProjectionMapper.shape(explicitProperties: Collection<String>? = null): JdbcProjectionShape<R> =
+internal inline fun <reified R: Any> JdbcProjectionMapper.shape(
+    explicitProperties: Collection<String>? = null,
+): JdbcProjectionShape<R> =
     shape(R::class.java, explicitProperties)
 
 internal class JdbcProjectionMapper(

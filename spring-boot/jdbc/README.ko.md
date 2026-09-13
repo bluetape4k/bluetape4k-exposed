@@ -104,8 +104,8 @@ bluetape4k.exposed.cache.health.enabled=true
 
 | Report                                         | Actuator status |
 |------------------------------------------------|-----------------|
-| Flush error가 없고 `workerState=NOT_APPLICABLE | IDLE            |RUNNING` | `UP` |
-| Flush error가 없고 `workerState=DRAINING       | STOPPED`        | `OUT_OF_SERVICE` |
+| Flush error가 없고 `workerState=NOT_APPLICABLE\|IDLE\|RUNNING` | `UP` |
+| Flush error가 없고 `workerState=DRAINING\|STOPPED`        | `OUT_OF_SERVICE` |
 | Flush error 또는 `workerState=FAILED`          | `DOWN`          |
 
 비활성화하려면 이 property를 `false`로 설정하세요. Spring Boot는 indicator를 자동으로 찾습니다. Ktor는 자동으로 찾지 않습니다. 애플리케이션이

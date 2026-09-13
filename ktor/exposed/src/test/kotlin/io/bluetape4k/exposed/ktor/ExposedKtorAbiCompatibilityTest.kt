@@ -283,7 +283,8 @@ class ExposedKtorAbiCompatibilityTest {
                 "<init>",
                 "(Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;" +
                         "Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJ" +
-                        "Lio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V",
+                        "Lio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/" +
+                        "DefaultConstructorMarker;)V",
             ),
             AbiMember(
                 INSTALLER_CLASS,

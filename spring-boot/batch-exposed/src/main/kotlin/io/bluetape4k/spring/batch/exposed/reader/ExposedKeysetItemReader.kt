@@ -139,7 +139,8 @@ open class ExposedKeysetItemReader<T: Any>(
     ) {
         fun isBefore(other: CursorPosition): Boolean =
             key < other.key ||
-                    (key == other.key && tieBreaker != null && other.tieBreaker != null && tieBreaker < other.tieBreaker)
+                    (key == other.key && tieBreaker != null && other.tieBreaker != null
+                            && tieBreaker < other.tieBreaker)
     }
 
     private var minId: Long = 0L
@@ -172,7 +173,7 @@ open class ExposedKeysetItemReader<T: Any>(
         } else {
             minId - 1
         }
-        log.debug { "${table.tableName}에서 $minId 부터 $maxId 까지 읽을 예정. lastKey=$lastKey" }
+        log.debug { "Keyset reader opened (table=${table.tableName})" }
 
         lastTieBreaker = tieBreaker?.let {
             check(!executionContext.containsKey(LAST_KEY) || executionContext.containsKey(LAST_TIE_BREAKER)) {

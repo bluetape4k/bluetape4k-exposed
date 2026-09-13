@@ -1,0 +1,37 @@
+{
+  "issue": 867,
+  "path": "rowbinary",
+  "run": 1,
+  "warmupIterations": 2,
+  "measurementIterations": 5,
+  "measurementScope": "bounded in-memory provider fixture; logical row counts are scenario labels",
+  "provenance": {
+    "implementationSha": "local",
+    "gitDirty": true,
+    "driverArtifact": "com.clickhouse:clickhouse-jdbc:0.9.9",
+    "jdk": "25.0.4.1",
+    "os": "Mac OS X",
+    "architecture": "aarch64",
+    "container": "not-run"
+  },
+  "records": [
+    {"rowCount":10000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[501083,478791,489750,434959,435458],"medianElapsedNs":478791,"medianRowsPerSecond":4277440.469850,"firstByteNs":478791,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":290912},
+    {"rowCount":10000,"maxRowsPerFlush":256,"rowShape":"wide","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[1142625,1099417,1104500,1117417,761458],"medianElapsedNs":1104500,"medianRowsPerSecond":1854232.684473,"firstByteNs":1104500,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":933512},
+    {"rowCount":10000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[189834,180458,181750,176584,173916],"medianElapsedNs":180458,"medianRowsPerSecond":11348901.129349,"firstByteNs":180458,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":290912},
+    {"rowCount":10000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[377875,495459,406375,374000,393500],"medianElapsedNs":393500,"medianRowsPerSecond":5204574.332910,"firstByteNs":393500,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":933520},
+    {"rowCount":10000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[122250,136875,126834,131625,120875],"medianElapsedNs":126834,"medianRowsPerSecond":16147089.897031,"firstByteNs":126834,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":298312},
+    {"rowCount":10000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"rowbinary","logicalRows":10000,"measuredRows":2048,"rawElapsedNs":[172208,173583,167333,173583,170208],"medianElapsedNs":172208,"medianRowsPerSecond":11892595.001394,"firstByteNs":172208,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":344296},
+    {"rowCount":100000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[108209,108708,110084,104375,104750],"medianElapsedNs":108209,"medianRowsPerSecond":18926336.995998,"firstByteNs":108209,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":292368},
+    {"rowCount":100000,"maxRowsPerFlush":256,"rowShape":"wide","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[178750,187041,192792,186209,182708],"medianElapsedNs":186209,"medianRowsPerSecond":10998394.277398,"firstByteNs":186209,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":290912},
+    {"rowCount":100000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[152708,163875,114375,111417,102625],"medianElapsedNs":114375,"medianRowsPerSecond":17906010.928962,"firstByteNs":114375,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":292368},
+    {"rowCount":100000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[165084,195666,170125,175792,159250],"medianElapsedNs":170125,"medianRowsPerSecond":12038207.200588,"firstByteNs":170125,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":294200},
+    {"rowCount":100000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[95500,99834,102292,95833,101042],"medianElapsedNs":99834,"medianRowsPerSecond":20514053.328525,"firstByteNs":99834,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":291344},
+    {"rowCount":100000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"rowbinary","logicalRows":100000,"measuredRows":2048,"rawElapsedNs":[159667,157334,165958,180750,167500],"medianElapsedNs":165958,"medianRowsPerSecond":12340471.685607,"firstByteNs":165958,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":290912},
+    {"rowCount":1000000,"maxRowsPerFlush":256,"rowShape":"narrow","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[109833,107958,100708,115500,108125],"medianElapsedNs":108125,"medianRowsPerSecond":18941040.462428,"firstByteNs":108125,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":292368},
+    {"rowCount":1000000,"maxRowsPerFlush":256,"rowShape":"wide","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[176167,164292,167333,181458,162500],"medianElapsedNs":167333,"medianRowsPerSecond":12239068.205315,"firstByteNs":167333,"acceptedCount":40,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":292368},
+    {"rowCount":1000000,"maxRowsPerFlush":1024,"rowShape":"narrow","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[101333,103292,107042,114084,101250],"medianElapsedNs":103292,"medianRowsPerSecond":19827285.753011,"firstByteNs":103292,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":293104},
+    {"rowCount":1000000,"maxRowsPerFlush":1024,"rowShape":"wide","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[186750,158292,164917,163917,168500],"medianElapsedNs":164917,"medianRowsPerSecond":12418368.027553,"firstByteNs":164917,"acceptedCount":10,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":290912},
+    {"rowCount":1000000,"maxRowsPerFlush":4096,"rowShape":"narrow","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[96417,105209,106459,100458,93875],"medianElapsedNs":100458,"medianRowsPerSecond":20386629.238090,"firstByteNs":100458,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":349264},
+    {"rowCount":1000000,"maxRowsPerFlush":4096,"rowShape":"wide","path":"rowbinary","logicalRows":1000000,"measuredRows":2048,"rawElapsedNs":[155542,152583,164084,158250,149750],"medianElapsedNs":155542,"medianRowsPerSecond":13166861.683661,"firstByteNs":155542,"acceptedCount":5,"acceptedCountMayBeIncomplete":false,"peakHeapBytes":298312}
+  ]
+}

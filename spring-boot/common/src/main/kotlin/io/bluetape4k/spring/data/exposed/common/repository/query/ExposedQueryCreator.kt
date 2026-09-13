@@ -1,6 +1,5 @@
 package io.bluetape4k.spring.data.exposed.common.repository.query
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.repository.support.toSnakeCase
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
@@ -33,7 +32,7 @@ class ExposedQueryCreator(
     private val table: Table,
 ): AbstractQueryCreator<Op<Boolean>, Op<Boolean>>(tree, accessor) {
 
-    companion object: KLogging() {
+    companion object {
         /** LIKE 패턴에서 사용자가 입력한 와일드카드 문자를 이스케이프합니다. */
         fun escapeLikeWildcards(value: String): String =
             value
@@ -86,7 +85,8 @@ class ExposedQueryCreator(
             Part.Type.NOT_CONTAINING              ->
                 (column as Column<String>).notLike("%${escapeLikeWildcards(iterator.next() as String)}%")
             Part.Type.IN                          -> (column as Column<Any>).inList(iterator.next() as Collection<Any>)
-            Part.Type.NOT_IN                      -> (column as Column<Any>).notInList(iterator.next() as Collection<Any>)
+            Part.Type.NOT_IN                      ->
+                (column as Column<Any>).notInList(iterator.next() as Collection<Any>)
             Part.Type.TRUE                        -> (column as Column<Boolean>).eq(true)
             Part.Type.FALSE                       -> (column as Column<Boolean>).eq(false)
             Part.Type.EXISTS                      -> column.isNotNull()

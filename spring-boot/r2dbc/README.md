@@ -174,8 +174,8 @@ bluetape4k.exposed.cache.health.enabled=true
 
 | Report                                         | Actuator status |
 |------------------------------------------------|-----------------|
-| No flush error and `workerState=NOT_APPLICABLE | IDLE            |RUNNING` | `UP` |
-| No flush error and `workerState=DRAINING       | STOPPED`        | `OUT_OF_SERVICE` |
+| No flush error and `workerState=NOT_APPLICABLE\|IDLE\|RUNNING` | `UP` |
+| No flush error and `workerState=DRAINING\|STOPPED`        | `OUT_OF_SERVICE` |
 | Flush error or `workerState=FAILED`            | `DOWN`          |
 
 Set the property to `false` to disable the indicator. Spring Boot discovers the reactive indicator automatically. Ktor requires an explicit

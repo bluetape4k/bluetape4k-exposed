@@ -121,7 +121,9 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
                 PreparedMatcher(stringMatcher) { value -> specifier.transformValue(value) },
             )
             if (previous != null) {
-                throw InvalidDataAccessApiUsageException("QBE matcher defines the same property more than once through aliases.")
+                throw InvalidDataAccessApiUsageException(
+                    "QBE matcher defines the same property more than once through aliases."
+                )
             }
         }
         return matcherByLogicalName
@@ -188,7 +190,8 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
             ExampleMatcher.StringMatcher.CONTAINING -> LikePattern("%${literal.pattern}%", literal.escapeChar)
             ExampleMatcher.StringMatcher.STARTING -> LikePattern("${literal.pattern}%", literal.escapeChar)
             ExampleMatcher.StringMatcher.ENDING   -> LikePattern("%${literal.pattern}", literal.escapeChar)
-            else                                  -> error("Unsupported matcher reached condition compilation: $stringMatcher")
+            else                                  ->
+                error("Unsupported matcher reached condition compilation: $stringMatcher")
         }
         @Suppress("UNCHECKED_CAST")
         return (property.column as Column<String?>).like(pattern)

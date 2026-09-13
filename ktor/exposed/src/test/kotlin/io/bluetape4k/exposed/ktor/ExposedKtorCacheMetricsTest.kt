@@ -208,7 +208,8 @@ class ExposedKtorCacheMetricsTest {
         }
 
         error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
-        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo CacheMeterFailureReason.REGISTRATION_FAILED
+        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo
+            CacheMeterFailureReason.REGISTRATION_FAILED
         registry.meters.shouldBeEmpty()
     }
 
@@ -221,7 +222,8 @@ class ExposedKtorCacheMetricsTest {
             registerExposedKtorCacheMetrics(registry, config("orders"))
         }
         error.message shouldBeEqualTo "Cache metric installation failed: reason=registration_failed."
-        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo CacheMeterFailureReason.REGISTRATION_FAILED
+        (error.cause as CacheMeterInstallationFailure).reason shouldBeEqualTo
+            CacheMeterFailureReason.REGISTRATION_FAILED
         registry.meters.map { it.id } shouldBeEqualTo listOf(unrelated.id)
     }
 
