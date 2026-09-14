@@ -296,7 +296,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -327,7 +327,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -404,7 +404,7 @@ jobs:
     if: ${{ needs.changes.outputs.benchmark == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -517,7 +517,7 @@ jobs:
     if: ${{ needs.changes.outputs.core == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -563,7 +563,7 @@ jobs:
     if: ${{ needs.changes.outputs.serialization == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -616,7 +616,7 @@ jobs:
     if: ${{ needs.changes.outputs.tink == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -662,7 +662,7 @@ jobs:
     if: ${{ needs.changes.outputs.jdbc == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -727,7 +727,7 @@ jobs:
     if: ${{ needs.changes.outputs.r2dbc == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -780,7 +780,7 @@ jobs:
     if: ${{ needs.changes.outputs.ktor == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -852,7 +852,7 @@ jobs:
     if: ${{ needs.changes.outputs.ktor == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -889,7 +889,7 @@ jobs:
     if: ${{ needs.changes.outputs['spring-boot'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -946,7 +946,7 @@ jobs:
     if: ${{ needs.changes.outputs['spring-modulith'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -992,7 +992,7 @@ jobs:
     if: ${{ needs.changes.outputs.lettuce == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1046,7 +1046,7 @@ jobs:
     if: ${{ needs.changes.outputs.redisson == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1100,7 +1100,7 @@ jobs:
     if: ${{ needs.changes.outputs.measured == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1146,7 +1146,7 @@ jobs:
     if: ${{ needs.changes.outputs['postgresql-module'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1194,7 +1194,7 @@ jobs:
     if: ${{ needs.changes.outputs['mysql8-module'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1242,7 +1242,7 @@ jobs:
     if: ${{ needs.changes.outputs.duckdb == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1288,7 +1288,7 @@ jobs:
     if: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1333,7 +1333,7 @@ jobs:
     if: ${{ needs.changes.outputs['jdbc-caffeine'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1379,7 +1379,7 @@ jobs:
     if: ${{ needs.changes.outputs['r2dbc-caffeine'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1426,7 +1426,7 @@ jobs:
     if: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs['jdbc-caffeine'] == 'true' || needs.changes.outputs['r2dbc-caffeine'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1458,7 +1458,7 @@ jobs:
     if: ${{ needs.changes.outputs.druid == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1499,7 +1499,7 @@ jobs:
     if: ${{ needs.changes.outputs.clickhouse == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1547,7 +1547,7 @@ jobs:
     if: ${{ needs.changes.outputs.trino == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1595,7 +1595,7 @@ jobs:
     if: ${{ needs.changes.outputs.starrocks == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1643,7 +1643,7 @@ jobs:
     if: ${{ needs.changes.outputs.cockroachdb == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1691,7 +1691,7 @@ jobs:
     if: ${{ needs.changes.outputs.bigquery == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1739,7 +1739,7 @@ jobs:
     if: ${{ needs.changes.outputs.examples == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1800,7 +1800,7 @@ jobs:
     if: ${{ needs.changes.outputs.timefold == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1847,7 +1847,7 @@ jobs:
     if: ${{ needs.changes.outputs['spring-boot-batch'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
@@ -1901,7 +1901,7 @@ jobs:
           python-version: '3.11'
       - name: Test benchmark sidecar validators
         run: python3 -m unittest discover -s scripts/batch -p 'test_*.py'
-      - uses: actions/setup-java@v6.0.0
+      - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
