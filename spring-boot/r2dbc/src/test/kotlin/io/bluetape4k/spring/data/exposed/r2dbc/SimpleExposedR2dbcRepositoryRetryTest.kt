@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldHaveSize
@@ -8,6 +9,7 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
@@ -39,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /** Retry-boundary regression tests for both `saveAll` overloads. */
 class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest() {
+
+    companion object: KLoggingChannel()
 
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
@@ -141,7 +145,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 faultFactory.rollbackCount.get() shouldBeGreaterThan 0
                 faultFactory.closeCount.get() shouldBeEqualTo 1
                 collectionCount.get() shouldBeEqualTo 1
-                userRepository.findAll().toList() shouldHaveSize 0
+                userRepository.findAll().toList().shouldBeEmpty()
                 userRepository.count() shouldBeEqualTo 0L
             }
         }
@@ -172,7 +176,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 faultFactory.rollbackCount.get() shouldBeGreaterThan 0
                 faultFactory.closeCount.get() shouldBeEqualTo 1
                 sideEffectCount.get() shouldBeEqualTo 1
-                userRepository.findAll().toList() shouldHaveSize 0
+                userRepository.findAll().toList().shouldBeEmpty()
                 userRepository.count() shouldBeEqualTo 0L
             }
         }
@@ -214,7 +218,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 faultFactory.rollbackCount.get() shouldBeGreaterThan 0
                 faultFactory.closeCount.get() shouldBeEqualTo 1
                 collectionCount.get() shouldBeEqualTo 1
-                userRepository.findAll().toList() shouldHaveSize 0
+                userRepository.findAll().toList().shouldBeEmpty()
                 userRepository.count() shouldBeEqualTo 0L
             }
         }
@@ -227,7 +231,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
 
             withRetryFaultDatabase(testDB, maxAttempts = 2) { faultFactory ->
                 val iterationCount = AtomicInteger(0)
-                val users = object : Iterable<User> {
+                val users = object: Iterable<User> {
                     override fun iterator(): Iterator<User> {
                         iterationCount.incrementAndGet()
                         return listOf(
@@ -248,7 +252,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 faultFactory.rollbackCount.get() shouldBeGreaterThan 0
                 faultFactory.closeCount.get() shouldBeEqualTo 1
                 iterationCount.get() shouldBeEqualTo 1
-                userRepository.findAll().toList() shouldHaveSize 0
+                userRepository.findAll().toList().shouldBeEmpty()
                 userRepository.count() shouldBeEqualTo 0L
             }
         }
@@ -284,12 +288,16 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 outerAttemptCount.get() shouldBeEqualTo 2
                 collectionCount.get() shouldBeEqualTo 2
                 commitCountsAtEmission shouldBeEqualTo listOf(0, 0, 1, 1)
+
                 saved shouldHaveSize 2
                 saved.map { it.name } shouldBeEqualTo listOf("Retry-Alice", "Retry-Bob")
+
                 val savedIds = saved.map { it.id.requireNotNull("saved.id") }
                 savedIds.distinct() shouldHaveSize 2
+
                 val stored = userRepository.findAll().toList()
                 stored.map { it.id.requireNotNull("stored.id") }.toSet() shouldBeEqualTo savedIds.toSet()
+
                 userRepository.count() shouldBeEqualTo 2L
             }
         }
@@ -304,7 +312,7 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 val outerAttemptCount = AtomicInteger(0)
                 val iterationCount = AtomicInteger(0)
                 val commitCountsAtEmission = mutableListOf<Int>()
-                val users = object : Iterable<User> {
+                val users = object: Iterable<User> {
                     override fun iterator(): Iterator<User> {
                         iterationCount.incrementAndGet()
                         return listOf(
@@ -330,12 +338,16 @@ class SimpleExposedR2dbcRepositoryRetryTest: AbstractExposedR2dbcRepositoryTest(
                 outerAttemptCount.get() shouldBeEqualTo 2
                 iterationCount.get() shouldBeEqualTo 2
                 commitCountsAtEmission shouldBeEqualTo listOf(0, 0, 1, 1)
+
                 saved shouldHaveSize 2
                 saved.map { it.name } shouldBeEqualTo listOf("Retry-Alice", "Retry-Bob")
+
                 val savedIds = saved.map { it.id.requireNotNull("saved.id") }
                 savedIds.distinct() shouldHaveSize 2
+
                 val stored = userRepository.findAll().toList()
                 stored.map { it.id.requireNotNull("stored.id") }.toSet() shouldBeEqualTo savedIds.toSet()
+
                 userRepository.count() shouldBeEqualTo 2L
             }
         }

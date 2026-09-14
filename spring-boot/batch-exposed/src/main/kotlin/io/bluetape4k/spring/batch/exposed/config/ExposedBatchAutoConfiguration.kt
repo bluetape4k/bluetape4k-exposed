@@ -3,10 +3,10 @@ package io.bluetape4k.spring.batch.exposed.config
 import io.bluetape4k.logging.KLogging
 import org.springframework.batch.core.job.Job
 import org.springframework.boot.autoconfigure.AutoConfiguration
-import org.springframework.boot.batch.autoconfigure.BatchAutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.batch.autoconfigure.BatchAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.core.task.SimpleAsyncTaskExecutor
@@ -32,7 +32,7 @@ import java.time.Duration
 @EnableConfigurationProperties(ExposedBatchProperties::class)
 class ExposedBatchAutoConfiguration {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * partition batch 실행에 사용하는 기본 [TaskExecutor]입니다.

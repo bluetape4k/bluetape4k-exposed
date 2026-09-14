@@ -11,13 +11,14 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.health.contributor.Health
 import org.springframework.boot.health.contributor.ReactiveHealthIndicator
 import org.springframework.boot.health.contributor.Status
 import org.springframework.boot.test.context.FilteredClassLoader
-import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import java.io.Serializable
 
@@ -31,7 +32,7 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(HealthyRepositoryConfiguration::class.java)
             .run { context ->
-                val health = context.getBean("exposedR2dbcCacheHealthIndicator", ReactiveHealthIndicator::class.java)
+                val health = context.getBean<ReactiveHealthIndicator>("exposedR2dbcCacheHealthIndicator")
                     .health()
                     .block()
 
@@ -121,7 +122,7 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
 
                 health.status shouldBeEqualTo expectedStatus
                 health.details["error"] shouldBeEqualTo
-                    if (left.lastFlushError != null || right.lastFlushError != null) failure.toString() else null
+                        if (left.lastFlushError != null || right.lastFlushError != null) failure.toString() else null
             }
         }
     }

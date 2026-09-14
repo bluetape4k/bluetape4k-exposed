@@ -1,14 +1,17 @@
 package io.bluetape4k.spring.data.exposed.common.repository.query
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.UserEntity
 import org.junit.jupiter.api.Test
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory
-import org.springframework.data.repository.core.support.DefaultRepositoryMetadata
 import org.springframework.data.repository.Repository
+import org.springframework.data.repository.core.support.DefaultRepositoryMetadata
 import org.springframework.data.repository.query.QueryMethod
 
 class ParameterMetadataProviderTest {
+
+    companion object: KLogging()
 
     private val metadata = DefaultRepositoryMetadata(ParameterQueryRepository::class.java)
     private val projectionFactory = SpelAwareProxyProjectionFactory()

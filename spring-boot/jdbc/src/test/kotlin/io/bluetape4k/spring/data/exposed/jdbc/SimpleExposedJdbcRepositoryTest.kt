@@ -1,16 +1,17 @@
 package io.bluetape4k.spring.data.exposed.jdbc
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.jdbc.deleteAll
@@ -24,7 +25,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 @Transactional
@@ -69,7 +70,9 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun `findAll - MultithreadingTester 병렬 조회에서도 같은 개수를 반환한다`() {
-        repeat(5) { i -> createUser("Parallel$i", "parallel$i@example.com", 20 + i) }
+        repeat(5) { i ->
+            createUser("Parallel$i", "parallel$i@example.com", 20 + i)
+        }
         val readCount = AtomicInteger(0)
 
         MultithreadingTester()
@@ -197,7 +200,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun `findAll with paging - StructuredTaskScopeTester 병렬 조회에서도 totalElements 가 유지된다`() {
         repeat(6) { i -> createUser("Structured$i", "structured$i@example.com", 30 + i) }
-        val totals = Collections.synchronizedList(mutableListOf<Long>())
+        val totals = CopyOnWriteArrayList<Long>()
 
         StructuredTaskScopeTester()
             .rounds(4)
@@ -208,7 +211,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
             .run()
 
         totals shouldHaveSize 4
-        totals.forEach { it shouldBeEqualTo 6L }
+        totals.all { it == 6L }.shouldBeTrue()
     }
 
     @Test
@@ -225,8 +228,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     fun `extractId returns value for existing entity`() {
         val user = createUser("Alice", "alice@example.com", 30)
         val id = userJdbcRepository.extractId(user)
-        id.shouldNotBeNull()
-        id shouldBeEqualTo user.id.value
+        id.shouldNotBeNull() shouldBeEqualTo user.id.value
     }
 
     @Test
@@ -242,7 +244,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findAllById with empty list returns empty`() {
         createUser("Alice", "alice@example.com", 30)
         val found = userJdbcRepository.findAllById(emptyList())
-        found shouldHaveSize 0
+        found.shouldBeEmpty()
     }
 
     @Test
@@ -267,7 +269,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
         repeat(3) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
         val page = userJdbcRepository.findAll(PageRequest.of(5, 3))
 
-        page.content shouldHaveSize 0
+        page.content.shouldBeEmpty()
         page.totalElements shouldBeEqualTo 3L
     }
 }

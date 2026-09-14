@@ -26,7 +26,7 @@ listOf(
                     useVersion(springBootVersion)
                     because("spring-boot 모듈: Spring Boot 4 baseline 유지")
                 }
-                "org.springframework" -> {
+                "org.springframework"      -> {
                     // spring-batch 6.x 가 요구하는 Spring Framework 7.x 보장
                     if (requested.name.startsWith("spring-") &&
                         !requested.name.contains("security") &&
@@ -74,6 +74,7 @@ dependencies {
     testImplementation(project(":bluetape4k-exposed-jdbc-tests")) {
         exclude(group = "org.jetbrains.exposed", module = "exposed-spring-boot-starter")
     }
+
     // JDK 25 테스트 런타임과 StructuredTaskScope provider의 classfile/preview 호환성을 맞춘다.
     testImplementation(bt4k.bluetape4k.virtualthread.jdk25)
     testImplementation("org.springframework.boot:spring-boot-starter-test")

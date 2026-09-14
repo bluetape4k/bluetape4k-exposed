@@ -1,9 +1,13 @@
 package io.bluetape4k.spring.data.exposed.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.UserNameRecord
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
@@ -19,10 +23,10 @@ import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 
 class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
+
+    companion object: KLoggingChannel()
 
     @Autowired
     private lateinit var userRepository: UserR2dbcRepository
@@ -41,7 +45,7 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
             val flow = userRepository.findAll(example)
             val alice = userRepository.findOne(example)
 
-            alice?.name shouldBeEqualTo "Alice"
+            alice.shouldNotBeNull().name shouldBeEqualTo "Alice"
             flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
             flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
             userRepository.count(example) shouldBeEqualTo 1L
@@ -120,7 +124,9 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
                 ExampleMatcher.matching().withIgnorePaths("id", "name", "email", "age"),
             )
 
-            assertFailsWith<IncorrectResultSizeDataAccessException> { userRepository.findOne(example) }
+            assertFailsWith<IncorrectResultSizeDataAccessException> {
+                userRepository.findOne(example)
+            }
             assertFailsWith<IncorrectResultSizeDataAccessException> {
                 userRepository.findBy(example) { query -> query.one() }
             }

@@ -1,17 +1,20 @@
 package io.bluetape4k.spring.data.exposed.common.mapping
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
-import java.util.concurrent.ConcurrentLinkedQueue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class ExposedMappingContextTest {
+
+    companion object: KLogging()
 
     private lateinit var context: ExposedMappingContext
 

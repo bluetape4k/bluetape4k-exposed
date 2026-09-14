@@ -13,12 +13,14 @@ class R2dbcDiagnosticSanitizerTest {
 
         token.any { it.code < 0x20 }.shouldBeFalse()
         token.any { it in "=;" }.shouldBeFalse()
+
         R2dbcDiagnosticSanitizer.propertyToken("x".repeat(256)).length shouldBeEqualTo 128
     }
 
     @Test
     fun `operation labels are fixed allowlist values`() {
         R2dbcDiagnosticSanitizer.operationLabel(R2dbcQbeOperation.FIND_ONE) shouldBeEqualTo "find-one"
+
         assertFailsWith<IllegalArgumentException> {
             R2dbcDiagnosticSanitizer.validateOperationLabel("user-provided-label")
         }

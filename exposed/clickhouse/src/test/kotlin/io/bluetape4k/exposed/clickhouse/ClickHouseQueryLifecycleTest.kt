@@ -71,7 +71,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     private class SqlFailure(marker: String): SQLException(marker)
     private class MarkerCancellation(marker: String): CancellationException(marker)
 
-    private inner class Fixture(
+    private class Fixture(
         private val jdbcOptions: String = "",
         driverClassName: String? = null,
     ): AutoCloseable {

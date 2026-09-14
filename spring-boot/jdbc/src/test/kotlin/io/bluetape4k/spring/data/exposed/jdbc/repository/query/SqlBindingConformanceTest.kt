@@ -2,6 +2,9 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
 import io.mockk.every
 import io.mockk.mockk
@@ -14,6 +17,9 @@ import java.lang.reflect.InvocationTargetException
  * 방언별 SQL 실행 여부는 별도 repository 통합 테스트가 검증합니다.
  */
 class SqlBindingConformanceTest {
+
+    companion object: KLogging()
+
     private val query = run {
         val method = mockk<ExposedQueryMethod>()
         every { method.getAnnotatedQuery() } returns "SELECT id FROM sample"
@@ -44,7 +50,7 @@ class SqlBindingConformanceTest {
         val values = Array<Any?>(10) { "value-${it + 1}" }
         fragments.forEach { fragment ->
             bind("SELECT $fragment, ?10, ?2, ?10, ?1", values) shouldBeEqualTo
-                ("SELECT $fragment, ?, ?, ?, ?" to listOf("value-10", "value-2", "value-10", "value-1"))
+                    ("SELECT $fragment, ?, ?, ?, ?" to listOf("value-10", "value-2", "value-10", "value-1"))
         }
         bind("SELECT ?1, ?1", arrayOf(null)) shouldBeEqualTo ("SELECT ?, ?" to listOf(null, null))
     }
@@ -52,9 +58,11 @@ class SqlBindingConformanceTest {
     @Test
     fun `실제 인덱스가 범위 밖이면 기존 adapter 진단을 유지한다`() {
         listOf("?0", "?2", "?2147483647").forEach { marker ->
-            val error = assertFailsWith<InvocationTargetException> { bind("SELECT $marker", arrayOf("one")) }
-            (error.cause is IllegalArgumentException) shouldBeEqualTo true
-            (error.cause?.message?.startsWith("Query placeholder index out of bounds:") == true) shouldBeEqualTo true
+            val error = assertFailsWith<InvocationTargetException> {
+                bind("SELECT $marker", arrayOf("one"))
+            }
+            error.cause.shouldBeInstanceOf<IllegalArgumentException>()
+            error.cause?.message?.startsWith("Query placeholder index out of bounds:").shouldBeTrue()
         }
     }
 }

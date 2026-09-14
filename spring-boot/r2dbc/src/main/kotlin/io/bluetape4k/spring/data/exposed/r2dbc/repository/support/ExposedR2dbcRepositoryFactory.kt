@@ -66,7 +66,7 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
      */
     override fun <T: Any> getRepository(
         repositoryInterface: Class<T>,
-        fragments: RepositoryComposition.RepositoryFragments
+        fragments: RepositoryComposition.RepositoryFragments,
     ): T {
         val impl = createRepositoryImplementation(repositoryInterface)
         return createDirectProxy(repositoryInterface, impl) as T
@@ -155,7 +155,7 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
         "toString" -> "ExposedSuspendRepository(${repositoryInterface.simpleName})"
         "hashCode" -> System.identityHashCode(proxy)
         "equals" -> proxy === args?.firstOrNull()
-        else -> null
+        else     -> null
     }
 
     private fun findImplementationMethod(implClass: Class<*>, method: Method): Method? = try {
@@ -188,7 +188,7 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
                 }
                 DeclaredExposedR2dbcQuery(qMethod, queryMapper)
             }
-            QueryLookupStrategy.Key.CREATE -> PartTreeExposedR2dbcQuery(qMethod, queryMapper)
+            QueryLookupStrategy.Key.CREATE             -> PartTreeExposedR2dbcQuery(qMethod, queryMapper)
             QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND ->
                 if (qMethod.isAnnotatedQuery) DeclaredExposedR2dbcQuery(qMethod, queryMapper)
                 else PartTreeExposedR2dbcQuery(qMethod, queryMapper)

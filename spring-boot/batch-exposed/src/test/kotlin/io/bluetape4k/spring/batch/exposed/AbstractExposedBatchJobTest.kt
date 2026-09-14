@@ -42,7 +42,7 @@ import javax.sql.DataSource
 @ActiveProfiles("test")
 abstract class AbstractExposedBatchJobTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * Spring Boot 앱 + 자동 구성 진입점.
@@ -69,7 +69,7 @@ abstract class AbstractExposedBatchJobTest {
         @Bean
         @Primary
         fun springTransactionManager(dataSource: DataSource): PlatformTransactionManager =
-            SpringTransactionManager(dataSource, DatabaseConfig {}, false)
+            SpringTransactionManager(dataSource, DatabaseConfig {}, showSql = false)
     }
 
     @Autowired

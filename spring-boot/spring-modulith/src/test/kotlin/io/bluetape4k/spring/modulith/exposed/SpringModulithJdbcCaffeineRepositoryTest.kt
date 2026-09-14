@@ -9,22 +9,24 @@ import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
+import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
-import org.jetbrains.exposed.v1.core.DatabaseConfig
+import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
+import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
-import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.springframework.beans.factory.SmartInitializingSingleton
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.builder.SpringApplicationBuilder
@@ -46,7 +48,7 @@ import javax.sql.DataSource
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
 
-    companion object {
+    companion object: KLogging() {
         @JvmStatic
         fun enabledDialects(): Set<TestDB> = setOf(TestDB.H2_MYSQL)
     }
@@ -55,9 +57,10 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `write-through publishes through real Spring application event path`(testDB: TestDB) {
         withApplicationContext(testDB, CacheWriteMode.WRITE_THROUGH) { context ->
-            val repository = context.getBean(CacheActorRepository::class.java)
-            val listenerState = context.getBean(CacheActorListenerState::class.java)
-            val txManager = context.getBean("springTransactionManager", PlatformTransactionManager::class.java)
+            val repository = context.getBean<CacheActorRepository>()
+            val listenerState = context.getBean<CacheActorListenerState>()
+            val txManager = context.getBean<PlatformTransactionManager>("springTransactionManager")
+
             val actor = repository.findAllFromDb(emptyList()).let {
                 transaction { repository.table.selectAll().first().let { row -> with(repository) { row.toEntity() } } }
             }
@@ -77,17 +80,18 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
     @MethodSource("enabledDialects")
     fun `write-behind publishes through real Spring application event path after flush`(testDB: TestDB) {
         withApplicationContext(testDB, CacheWriteMode.WRITE_BEHIND) { context ->
-            val repository = context.getBean(CacheActorRepository::class.java)
-            val listenerState = context.getBean(CacheActorListenerState::class.java)
-            val actor =
-                transaction {
-                    repository.table.selectAll().first().let { row -> with(repository) { row.toEntity() } }
-                }
+            val repository = context.getBean<CacheActorRepository>()
+            val listenerState = context.getBean<CacheActorListenerState>()
+
+            val actor = transaction {
+                repository.table.selectAll().first().let { row -> with(repository) { row.toEntity() } }
+            }
             val updated = actor.copy(name = "event-write-behind")
 
             repository.put(actor.id, updated)
 
             listenerState.receivedLatch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+
             awaitCondition { repository.validateConsistency().queueDepth == 0 }
             listenerState.events shouldHaveSize 1
             listenerState.events.single().actorId shouldBeEqualTo actor.id
@@ -153,8 +157,8 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
             CacheActorTable(environment.getRequiredProperty("test.cache.actor.table-name"))
 
         @Bean
-        fun cacheActorSchemaInitializer(table: CacheActorTable): org.springframework.beans.factory.SmartInitializingSingleton =
-            org.springframework.beans.factory.SmartInitializingSingleton {
+        fun cacheActorSchemaInitializer(table: CacheActorTable): SmartInitializingSingleton =
+            SmartInitializingSingleton {
                 transaction {
                     SchemaUtils.create(table)
                     table.insert {
@@ -169,18 +173,17 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
             table: CacheActorTable,
             events: org.springframework.context.ApplicationEventPublisher,
             txManager: PlatformTransactionManager,
-        ): CacheActorRepository =
-            CacheActorRepository(
-                table = table,
-                config = LocalCacheConfig(
-                    keyPrefix = "spring-modulith-cache-event-test",
-                    writeMode = CacheWriteMode.valueOf(environment.getRequiredProperty("test.cache.actor.write-mode")),
-                    writeBehindBatchSize = 1,
-                    writeBehindQueueCapacity = 16,
-                ),
-                events = events,
-                transactionOperations = TransactionTemplate(txManager),
-            )
+        ): CacheActorRepository = CacheActorRepository(
+            table = table,
+            config = LocalCacheConfig(
+                keyPrefix = "spring-modulith-cache-event-test",
+                writeMode = CacheWriteMode.valueOf(environment.getRequiredProperty("test.cache.actor.write-mode")),
+                writeBehindBatchSize = 1,
+                writeBehindQueueCapacity = 16,
+            ),
+            events = events,
+            transactionOperations = TransactionTemplate(txManager),
+        )
 
         @Bean
         fun cacheActorListenerState(): CacheActorListenerState =
@@ -224,7 +227,6 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
         events,
         transactionOperations,
     ) {
-
         override fun ResultRow.toEntity(): CacheActorRecord =
             CacheActorRecord(
                 id = this[table.id].value,

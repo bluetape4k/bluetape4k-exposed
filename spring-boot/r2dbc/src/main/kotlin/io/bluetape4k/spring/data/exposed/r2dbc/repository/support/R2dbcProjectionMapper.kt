@@ -46,7 +46,7 @@ internal class R2dbcProjectionMapper(
                     projectionFactory.createProjection(resultType.java, values) as T
                 }
                 resultType.java.isRecord -> instantiateRecord(resultType.java, values) as T
-                else -> instantiateKotlin(resultType, values) as T
+                else                     -> instantiateKotlin(resultType, values) as T
             }
         } catch (unsupported: UnsupportedOperationException) {
             throw unsupported
@@ -64,8 +64,8 @@ internal class R2dbcProjectionMapper(
         return when {
             !explicitProperties.isNullOrEmpty() -> explicitProperties.distinct()
             resultType.java.isInterface -> closedInterfaceProperties(resultType)
-            resultType.java.isRecord -> resultType.java.recordComponents.map { it.name }
-            else -> resultType.primaryConstructor?.parameters?.mapNotNull { it.name }
+            resultType.java.isRecord    -> resultType.java.recordComponents.map { it.name }
+            else                        -> resultType.primaryConstructor?.parameters?.mapNotNull { it.name }
                 ?: throw UnsupportedOperationException("Projection requires a named constructor")
         }
     }

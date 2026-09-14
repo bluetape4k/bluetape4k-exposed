@@ -126,7 +126,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         while (index < length) {
             val char = this[index]
             when {
-                dollarQuote != null -> {
+                dollarQuote != null                                  -> {
                     val delimiter = requireNotNull(dollarQuote)
                     if (startsWith(delimiter, index)) {
                         sanitized.append(delimiter)
@@ -136,7 +136,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
                         sanitized.append(char)
                     }
                 }
-                quote != null -> {
+                quote != null                                        -> {
                     sanitized.append(char)
                     if (char == '\\' && getOrNull(index + 1) != null) {
                         sanitized.append(this[++index])
@@ -155,23 +155,23 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
                     sanitized.append(delimiter)
                     index += delimiter.length - 1
                 }
-                char == '\'' || char == '"' || char == '`' -> {
+                char == '\'' || char == '"' || char == '`'           -> {
                     quote = char
                     sanitized.append(char)
                 }
                 (char == '-' && getOrNull(index + 1) == '-') ||
-                    (char == '#' && getOrNull(index + 1) != '>') -> {
+                        (char == '#' && getOrNull(index + 1) != '>') -> {
                     index = indexOf('\n', index + 2).takeIf { it >= 0 } ?: length
                     sanitized.append('\n')
                 }
-                char == '/' && getOrNull(index + 1) == '*' -> {
+                char == '/' && getOrNull(index + 1) == '*'           -> {
                     val commentEnd = indexOf("*/", index + 2)
                     val end = if (commentEnd >= 0) commentEnd + 2 else length
                     sanitized.append(' ')
                     substring(index, end).forEach { if (it == '\n') sanitized.append('\n') }
                     index = end - 1
                 }
-                else -> sanitized.append(char)
+                else                                                 -> sanitized.append(char)
             }
             index++
         }
@@ -184,7 +184,8 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         if (end < 0) return null
         val tag = substring(index + 1, end)
         val validTag = tag.isEmpty() ||
-            ((tag.first().isLetter() || tag.first() == '_') && tag.drop(1).all { it.isLetterOrDigit() || it == '_' })
+                ((tag.first().isLetter() || tag.first() == '_') && tag.drop(1)
+                    .all { it.isLetterOrDigit() || it == '_' })
         return if (validTag) substring(index, end + 1) else null
     }
 
@@ -199,14 +200,14 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         while (index < sql.length) {
             val char = sql[index]
             when {
-                dollarQuote != null -> {
+                dollarQuote != null                                      -> {
                     val delimiter = requireNotNull(dollarQuote)
                     if (sql.startsWith(delimiter, index)) {
                         index += delimiter.length - 1
                         dollarQuote = null
                     }
                 }
-                quote != null -> {
+                quote != null                                            -> {
                     if (char == '\\' && sql.getOrNull(index + 1) != null) {
                         index++
                     } else if (char == quote) {
@@ -218,19 +219,19 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
                     dollarQuote = delimiter
                     index += delimiter.length - 1
                 }
-                char == '-' && sql.getOrNull(index + 1) == '-' -> {
+                char == '-' && sql.getOrNull(index + 1) == '-'           -> {
                     index = sql.indexOf('\n', index + 2).takeIf { it >= 0 } ?: sql.length
                     continue
                 }
-                char == '/' && sql.getOrNull(index + 1) == '*' -> {
+                char == '/' && sql.getOrNull(index + 1) == '*'           -> {
                     val commentEnd = sql.indexOf("*/", index + 2)
                     index = if (commentEnd >= 0) commentEnd + 2 else sql.length
                     continue
                 }
-                char == '\'' || char == '"' || char == '`' -> quote = char
-                char == '(' -> depth++
-                char == ')' -> depth--
-                depth == 0 && sql.isKeywordAt(index, "SELECT") -> {
+                char == '\'' || char == '"' || char == '`'               -> quote = char
+                char == '('                                              -> depth++
+                char == ')'                                              -> depth--
+                depth == 0 && sql.isKeywordAt(index, "SELECT")           -> {
                     selectStart = index + "SELECT".length
                     index = selectStart
                     continue
@@ -266,7 +267,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         while (index < selectedColumns.length) {
             val char = selectedColumns[index]
             when {
-                dollarQuote != null -> {
+                dollarQuote != null                                                  -> {
                     val delimiter = requireNotNull(dollarQuote)
                     if (selectedColumns.startsWith(delimiter, index)) {
                         index += delimiter.length - 1
@@ -274,17 +275,17 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
                     }
                 }
                 quote != null && char == '\\' && selectedColumns.getOrNull(index + 1) != null -> index++
-                quote != null && char == quote -> quote = null
-                quote != null -> Unit
+                quote != null && char == quote                                       -> quote = null
+                quote != null                                                        -> Unit
                 char == '$' && selectedColumns.dollarQuoteDelimiterAt(index) != null -> {
                     val delimiter = requireNotNull(selectedColumns.dollarQuoteDelimiterAt(index))
                     dollarQuote = delimiter
                     index += delimiter.length - 1
                 }
-                char == '\'' || char == '"' || char == '`' -> quote = char
-                char == '(' -> depth++
-                char == ')' -> depth--
-                char == ',' && depth == 0 -> {
+                char == '\'' || char == '"' || char == '`'                           -> quote = char
+                char == '('                                                          -> depth++
+                char == ')'                                                          -> depth--
+                char == ',' && depth == 0                                            -> {
                     items += selectedColumns.substring(start, index)
                     start = index + 1
                 }

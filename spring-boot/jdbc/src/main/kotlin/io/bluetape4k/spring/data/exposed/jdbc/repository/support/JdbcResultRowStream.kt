@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.InternalApi
@@ -15,15 +16,14 @@ import org.springframework.dao.DataAccessResourceFailureException
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import java.sql.ResultSet
 import java.sql.SQLException
-import java.util.Spliterator
-import java.util.Spliterators
+import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.stream.Stream
 import java.util.stream.StreamSupport
 
 @OptIn(InternalApi::class)
-internal object JdbcResultRowStream {
+internal object JdbcResultRowStream: KLogging() {
 
     fun <R: Any> open(
         transaction: JdbcTransaction,
@@ -119,9 +119,8 @@ internal object JdbcResultRowStream {
             if (state.get() != LeaseState.OPEN) {
                 throw InvalidDataAccessApiUsageException("JDBC FluentQuery stream is already closed.")
             }
-            if (Thread.currentThread().threadId() != ownerThreadId ||
-                TransactionManager.currentOrNull() !== transaction
-            ) {
+            if (Thread.currentThread().threadId() != ownerThreadId
+                || TransactionManager.currentOrNull() !== transaction) {
                 throw InvalidDataAccessApiUsageException(
                     "JDBC FluentQuery stream must be consumed on its owner thread inside the originating transaction.",
                 )
@@ -186,7 +185,7 @@ internal object JdbcResultRowStream {
                     )
                     LeaseState.OPEN,
                     LeaseState.CLOSE_FAILED,
-                    -> if (state.compareAndSet(current, LeaseState.CLOSING)) return true
+                                      -> if (state.compareAndSet(current, LeaseState.CLOSING)) return true
                 }
             }
         }

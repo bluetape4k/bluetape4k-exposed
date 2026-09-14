@@ -1,18 +1,18 @@
 package io.bluetape4k.spring.data.exposed.jdbc.mapping
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class ExposedMappingContextTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private lateinit var context: ExposedMappingContext
 
@@ -39,6 +39,7 @@ class ExposedMappingContextTest {
     fun `persistent entity for UserEntity has companion entityClass`() {
         val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
         entity.shouldNotBeNull()
+
         val entityClass = entity.getEntityClass()
         entityClass.shouldNotBeNull()
     }
@@ -54,6 +55,7 @@ class ExposedMappingContextTest {
     @Test
     fun `persistent entity for plain data class has null table`() {
         data class PlainClass(val id: Long, val name: String)
+
         val entity = context.getRequiredPersistentEntity(PlainClass::class.java)
         entity.shouldNotBeNull()
         entity.getTable().shouldBeNull()

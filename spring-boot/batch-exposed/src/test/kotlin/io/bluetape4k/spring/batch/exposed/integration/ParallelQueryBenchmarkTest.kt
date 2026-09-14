@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.batch.exposed.integration
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.info
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchJobTest
@@ -13,17 +14,16 @@ import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
 import io.bluetape4k.spring.batch.exposed.reader.ExposedKeysetItemReader
 import io.bluetape4k.spring.batch.exposed.support.virtualThreadPartitionTaskExecutor
 import io.bluetape4k.spring.batch.exposed.writer.ExposedItemWriter
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.job.Job
 import org.springframework.batch.core.job.parameters.JobParametersBuilder
-import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.launch.JobOperator
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler
 import org.springframework.batch.core.repository.JobRepository
+import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
@@ -45,9 +45,9 @@ import kotlin.system.measureTimeMillis
  * ```
  */
 @Tag("benchmark")
-class ParallelQueryBenchmarkTest : AbstractExposedBatchJobTest() {
+class ParallelQueryBenchmarkTest: AbstractExposedBatchJobTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @TestConfiguration
     class JobConfig(
@@ -75,7 +75,7 @@ class ParallelQueryBenchmarkTest : AbstractExposedBatchJobTest() {
 
         @Bean(name = ["benchmarkPartitionHandler"])
         fun partitionHandler(): TaskExecutorPartitionHandler = TaskExecutorPartitionHandler().apply {
-            setStep(workerStep())
+            step = workerStep()
             setTaskExecutor(virtualThreadPartitionTaskExecutor(concurrencyLimit = 8))
             gridSize = 8
         }

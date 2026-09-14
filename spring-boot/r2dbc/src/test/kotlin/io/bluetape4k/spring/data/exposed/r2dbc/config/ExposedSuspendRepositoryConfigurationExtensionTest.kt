@@ -3,8 +3,9 @@ package io.bluetape4k.spring.data.exposed.r2dbc.config
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.EnableExposedR2dbcRepositories
-import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.ExposedSuspendRepositoryConfigurationExtension
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.ExposedR2dbcRepositoriesRegistrar
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.ExposedSuspendRepositoryConfigurationExtension
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.DefaultListableBeanFactory
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
@@ -13,7 +14,6 @@ import org.springframework.core.env.StandardEnvironment
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.type.AnnotationMetadata
 import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource
-import org.junit.jupiter.api.Test
 
 class ExposedSuspendRepositoryConfigurationExtensionTest {
 

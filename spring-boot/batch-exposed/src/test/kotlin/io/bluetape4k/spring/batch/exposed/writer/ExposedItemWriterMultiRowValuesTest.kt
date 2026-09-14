@@ -6,7 +6,9 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Table
@@ -37,19 +39,19 @@ import java.sql.SQLException
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExposedItemWriterMultiRowValuesTest {
 
-    companion object {
+    companion object: KLogging() {
         @JvmStatic
         fun multiRowDialects() = TestDB.enabledDialects().filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
     }
 
-    private object Rows : Table("spring_batch_multi_rows") {
+    private object Rows: Table("spring_batch_multi_rows") {
         val id = long("id").autoIncrement()
         val name = varchar("name", 80).uniqueIndex()
         val note = varchar("note", 80).nullable()
         override val primaryKey = PrimaryKey(id)
     }
 
-    private data class Row(val name: String, val note: String? = null) : java.io.Serializable {
+    private data class Row(val name: String, val note: String? = null): java.io.Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -58,7 +60,11 @@ class ExposedItemWriterMultiRowValuesTest {
     @Test
     fun `multi-row opt-in 생성자는 기존 JVM 생성자와 함께 제공한다`() {
         val signatures = ExposedItemWriter::class.java.constructors.map { it.parameterTypes.toList() }
-        signatures.find { it == listOf(Table::class.java, Function2::class.java) }.shouldNotBeNull()
+
+        signatures.find {
+            it == listOf(Table::class.java, Function2::class.java)
+        }.shouldNotBeNull()
+
         signatures.find {
             it == listOf(Table::class.java, Boolean::class.javaPrimitiveType, Function2::class.java)
         }.shouldNotBeNull()
@@ -106,7 +112,7 @@ class ExposedItemWriterMultiRowValuesTest {
             }
             tx.executeWithoutResult {
                 Rows.selectAll().orderBy(Rows.id).map { it[Rows.note] } shouldBeEqualTo
-                    listOf(null, "nullable-note", null, "nullable-note", null, "nullable-note")
+                        listOf(null, "nullable-note", null, "nullable-note", null, "nullable-note")
             }
         }
     }
@@ -141,7 +147,7 @@ class ExposedItemWriterMultiRowValuesTest {
                 }
                 bound shouldBeEqualTo 0
                 log.entries shouldHaveSize 0
-                failure.message.orEmpty().contains("secret-payload").shouldBeFalse()
+                failure.message shouldNotContain "secret-payload"
                 Rows.selectAll().count() shouldBeEqualTo maxRows.toLong()
             }
         }
@@ -249,8 +255,9 @@ class ExposedItemWriterMultiRowValuesTest {
     }
 
     /** Exposed StatementContext 수이며 JDBC 왕복 횟수나 성능 배수를 의미하지 않는다. */
-    private class InsertLog : SqlLogger {
+    private class InsertLog: SqlLogger {
         class Entry(val sql: String, val argumentCount: Int, val generatedValues: Boolean)
+
         val entries = mutableListOf<Entry>()
 
         override fun log(context: StatementContext, transaction: Transaction) {

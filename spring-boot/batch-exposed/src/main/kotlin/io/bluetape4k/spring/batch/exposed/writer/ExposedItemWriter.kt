@@ -39,41 +39,52 @@ import org.springframework.batch.infrastructure.item.ItemWriter
  * @param useMultiRowValues multi-row VALUES 사용 여부. 기존 생성자는 false이다.
  * @param insertBody `batchInsert` 람다
  */
-class ExposedItemWriter<T : Any>(
+class ExposedItemWriter<T: Any>(
     private val table: Table,
     private val useMultiRowValues: Boolean,
     private val insertBody: BatchInsertStatement.(T) -> Unit,
-) : ItemWriter<T> {
+): ItemWriter<T> {
 
     /** 기존 Kotlin trailing-lambda 호출과 JVM 생성자를 유지한다. */
     constructor(
         table: Table,
         insertBody: BatchInsertStatement.(T) -> Unit,
-    ) : this(table, false, insertBody)
+    ): this(table, false, insertBody)
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     override fun write(chunk: Chunk<out T>) {
         if (chunk.isEmpty) return
 
         val items = chunk.items
 
+        log.debug { "${items.size}건 batchInsert 시작... (table=${table.tableName})" }
+
         if (useMultiRowValues) {
             val columns = table.columns.size
             val dialect = TransactionManager.current().db.dialect
             val parameterLimit = if (dialect is SQLiteDialect) 32_766 else 65_535
+
             (items.size.toLong() * columns.toLong()).requireLe(parameterLimit.toLong()) {
                 "Multi-row VALUES limit exceeded: rows=${items.size}, columns=$columns, parameterLimit=$parameterLimit"
             }
-            table.batchInsert(items, useMultiRowValues = true, shouldReturnGeneratedValues = false) { item ->
+
+            table.batchInsert(
+                data = items,
+                useMultiRowValues = true,
+                shouldReturnGeneratedValues = false
+            ) { item ->
                 insertBody(item)
             }
         } else {
-            table.batchInsert(items, shouldReturnGeneratedValues = false) { item ->
+            table.batchInsert(
+                data = items,
+                shouldReturnGeneratedValues = false
+            ) { item ->
                 insertBody(item)
             }
         }
 
-        log.debug { "${items.size}건 batchInsert 완료 (table=${table.tableName})" }
+        log.debug { "${items.size}건 batchInsert 완료. (table=${table.tableName})" }
     }
 }

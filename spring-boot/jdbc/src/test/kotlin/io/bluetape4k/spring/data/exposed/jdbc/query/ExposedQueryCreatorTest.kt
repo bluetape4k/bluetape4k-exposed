@@ -1,14 +1,14 @@
 package io.bluetape4k.spring.data.exposed.jdbc.query
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryCreator
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryCreator
 import org.junit.jupiter.api.Test
 
 class ExposedQueryCreatorTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     @Test
     fun `escapeLikeWildcards escapes percent`() {

@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentProperty
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.Entity
@@ -19,11 +20,17 @@ internal interface JdbcProjectionShape<R: Any> {
     fun map(rowIndex: Int, values: Map<String, Any?>): R
 }
 
+internal inline fun <reified R: Any> JdbcProjectionMapper.shape(
+    explicitProperties: Collection<String>? = null,
+): JdbcProjectionShape<R> =
+    shape(R::class.java, explicitProperties)
+
 internal class JdbcProjectionMapper(
     private val domainType: Class<*>,
     private val projectionFactory: ProjectionFactory,
     private val propertyResolver: JdbcPersistentPropertyResolver,
 ) {
+    companion object: KLogging()
 
     fun <R: Any> shape(
         resultType: Class<R>,
@@ -53,7 +60,7 @@ internal class JdbcProjectionMapper(
         if (!projectionInformation.isClosed) {
             throw UnsupportedOperationException(
                 "Open or SpEL projection '${resultType.name}' is not supported by JDBC FluentQuery; " +
-                    "use a closed getter interface, Kotlin data class, or Java record.",
+                        "use a closed getter interface, Kotlin data class, or Java record.",
             )
         }
 
@@ -90,7 +97,7 @@ internal class JdbcProjectionMapper(
         if (inputProperties != constructorNames) {
             throw UnsupportedOperationException(
                 "Projection constructor inputs for '${resultType.name}' are not deterministic; " +
-                    "use one preferred constructor whose named inputs match the projection properties.",
+                        "use one preferred constructor whose named inputs match the projection properties.",
             )
         }
 
@@ -125,14 +132,14 @@ internal class JdbcProjectionMapper(
         if (preferred.parameters.isEmpty()) {
             throw UnsupportedOperationException(
                 "Projection type '${resultType.name}' must have at least one named constructor input; " +
-                    "declare a closed projection with one or more mapped properties.",
+                        "declare a closed projection with one or more mapped properties.",
             )
         }
         return preferred.parameters.map { parameter ->
             if (!parameter.hasName()) {
                 throw UnsupportedOperationException(
                     "Projection constructor for '${resultType.name}' must expose parameter names; " +
-                        "compile with Java '-parameters' or use Kotlin constructor metadata.",
+                            "compile with Java '-parameters' or use Kotlin constructor metadata.",
                 )
             }
             parameter.requiredName
@@ -196,19 +203,19 @@ internal class JdbcProjectionMapper(
         PreferredConstructorDiscoverer.discover<R, ExposedPersistentProperty>(resultType)
             ?: throw UnsupportedOperationException(
                 "Projection type '${resultType.name}' must have one preferred named constructor; " +
-                    "use a Kotlin data class or Java record with deterministic component names.",
+                        "use a Kotlin data class or Java record with deterministic component names.",
             )
 
     private fun boxed(type: Class<*>): Class<*> = when (type) {
         Boolean::class.javaPrimitiveType -> Boolean::class.javaObjectType
-        Byte::class.javaPrimitiveType -> Byte::class.javaObjectType
-        Char::class.javaPrimitiveType -> Char::class.javaObjectType
-        Short::class.javaPrimitiveType -> Short::class.javaObjectType
-        Int::class.javaPrimitiveType -> Int::class.javaObjectType
-        Long::class.javaPrimitiveType -> Long::class.javaObjectType
-        Float::class.javaPrimitiveType -> Float::class.javaObjectType
+        Byte::class.javaPrimitiveType   -> Byte::class.javaObjectType
+        Char::class.javaPrimitiveType   -> Char::class.javaObjectType
+        Short::class.javaPrimitiveType  -> Short::class.javaObjectType
+        Int::class.javaPrimitiveType    -> Int::class.javaObjectType
+        Long::class.javaPrimitiveType   -> Long::class.javaObjectType
+        Float::class.javaPrimitiveType  -> Float::class.javaObjectType
         Double::class.javaPrimitiveType -> Double::class.javaObjectType
-        else -> type
+        else                            -> type
     }
 
     private fun <R: Any> shape(

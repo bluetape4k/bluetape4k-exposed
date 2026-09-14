@@ -40,7 +40,7 @@ annotation class EnableExposedR2dbcRepositories(
      */
     @Deprecated(
         message = "R2DBC 저장소는 transactionManagerRef로 Exposed R2dbcDatabase를 선택하지 않습니다. " +
-            "명시적인 suspendTransaction(database) 경계 또는 streamAll(database)를 사용하세요.",
+                "명시적인 suspendTransaction(database) 경계 또는 streamAll(database)를 사용하세요.",
     )
     val transactionManagerRef: String = "springTransactionManager",
     val namedQueriesLocation: String = "",

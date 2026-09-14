@@ -25,9 +25,7 @@ class UserEntity(id: EntityID<Long>): LongEntity(id) {
     var age: Int by Users.age
 
     override fun equals(other: Any?): Boolean = idEquals(other)
-
     override fun hashCode(): Int = idHashCode()
-
     override fun toString(): String = entityToStringBuilder()
         .add("name", name)
         .add("email", email)

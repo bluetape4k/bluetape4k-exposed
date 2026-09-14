@@ -2,8 +2,10 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
@@ -16,6 +18,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.dao.InvalidDataAccessApiUsageException
 
 class JdbcPersistentPropertyResolverTest {
+
+    companion object: KLogging()
 
     @Test
     fun `logical and snake case names resolve to the same column`() {
@@ -33,14 +37,20 @@ class JdbcPersistentPropertyResolverTest {
         resolved.logicalName shouldBeEqualTo "name"
         resolved.column shouldBeEqualTo Users.name
         resolved.valueType shouldBeEqualTo String::class.java
+
         persistentEntity.filter { it.name == "name" } shouldHaveSize 1
     }
 
     @Test
     fun `unknown nested and ambiguous names fail deterministically`() {
         val resolver = resolverFor(UserEntity::class.java)
-        assertFailsWith<InvalidDataAccessApiUsageException> { resolver.resolve("missing") }
-        assertFailsWith<InvalidDataAccessApiUsageException> { resolver.resolve("address.city") }
+
+        assertFailsWith<InvalidDataAccessApiUsageException> {
+            resolver.resolve("missing")
+        }
+        assertFailsWith<InvalidDataAccessApiUsageException> {
+            resolver.resolve("address.city")
+        }
         assertFailsWith<InvalidDataAccessApiUsageException> {
             resolverFor(AmbiguousEntity::class.java).resolve("display_name")
         }
@@ -54,13 +64,13 @@ class JdbcPersistentPropertyResolverTest {
             resolverFor(UserEntity::class.java).resolve(property)
         }
 
-        failure.message.orEmpty().contains('\n').shouldBeFalse()
-        failure.message.orEmpty().contains('\r').shouldBeFalse()
-        failure.message.orEmpty().contains('\t').shouldBeFalse()
-        failure.message.orEmpty().contains('\u2028').shouldBeFalse()
-        failure.message.orEmpty().contains('\u2029').shouldBeFalse()
-        failure.message.orEmpty().contains('\u202E').shouldBeFalse()
-        (failure.message.orEmpty().length <= 256) shouldBeEqualTo true
+        failure.message shouldNotContain "\n"
+        failure.message shouldNotContain "\r"
+        failure.message shouldNotContain "\t"
+        failure.message shouldNotContain "\u2028"
+        failure.message shouldNotContain "\u2029"
+        failure.message shouldNotContain "\u202E"
+        failure.message.orEmpty().length shouldBeLessOrEqualTo 256
     }
 
     private fun resolverFor(type: Class<*>): JdbcPersistentPropertyResolver =
@@ -74,6 +84,7 @@ internal object Profiles: LongIdTable("projection_profiles") {
 
 internal class ProfileEntity(id: EntityID<Long>): LongEntity(id) {
     companion object: LongEntityClass<ProfileEntity>(Profiles)
+
     var displayName: String by Profiles.displayName
 }
 
@@ -84,7 +95,9 @@ internal object AmbiguousProfiles: LongIdTable("ambiguous_projection_profiles") 
 
 internal class AmbiguousEntity(id: EntityID<Long>): LongEntity(id) {
     companion object: LongEntityClass<AmbiguousEntity>(AmbiguousProfiles)
+
     var displayName: String by AmbiguousProfiles.displayName
+
     @Suppress("VariableNaming")
     var display_name: String by AmbiguousProfiles.alternateName
 }

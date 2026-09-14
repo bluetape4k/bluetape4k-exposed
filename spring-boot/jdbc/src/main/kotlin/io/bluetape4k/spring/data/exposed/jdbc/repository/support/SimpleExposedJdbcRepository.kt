@@ -25,7 +25,6 @@ import org.springframework.data.repository.query.FluentQuery
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
-import java.util.WeakHashMap
 import java.util.function.Function
 import java.util.stream.Stream
 
@@ -238,6 +237,7 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
                 "JDBC FluentQuery requires an active caller-owned Exposed transaction.",
             )
         val scope = JdbcFluentQueryScope.open(transaction)
+
         @Suppress("UNCHECKED_CAST")
         val plan = JdbcFluentQueryPlan.create(
             example = example as Example<E>,

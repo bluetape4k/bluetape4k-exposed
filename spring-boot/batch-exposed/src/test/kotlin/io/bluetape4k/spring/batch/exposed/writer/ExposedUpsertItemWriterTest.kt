@@ -1,16 +1,19 @@
 package io.bluetape4k.spring.batch.exposed.writer
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.TargetRecord
 import io.bluetape4k.spring.batch.exposed.TargetTable
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.batch.infrastructure.item.Chunk
 
-class ExposedUpsertItemWriterTest : AbstractExposedBatchTest() {
+class ExposedUpsertItemWriterTest: AbstractExposedBatchTest() {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -21,11 +24,15 @@ class ExposedUpsertItemWriterTest : AbstractExposedBatchTest() {
                 this[TargetTable.transformedValue] = it.transformedValue
             }
 
-            val items = (1..5).map { TargetRecord("name-$it", it * 2) }
+            val items = (1..5).map {
+                TargetRecord("name-$it", it * 2)
+            }
             writer.write(Chunk(items))
             TargetTable.selectAll().count() shouldBeEqualTo 5L
 
-            val updatedItems = (1..5).map { TargetRecord("name-$it", it * 100) }
+            val updatedItems = (1..5).map {
+                TargetRecord("name-$it", it * 100)
+            }
             writer.write(Chunk(updatedItems))
             TargetTable.selectAll().count() shouldBeEqualTo 5L
 

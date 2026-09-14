@@ -11,7 +11,7 @@ final class ExposedJdbcRepositoryJavaConsumerFixture {
     }
 
     static <E extends Entity<ID>, ID> SimpleExposedJdbcRepository<E, ID> createRepository(
-        ExposedEntityInformation<E, ID> entityInformation
+            ExposedEntityInformation<E, ID> entityInformation
     ) {
         return new SimpleExposedJdbcRepository<>(entityInformation);
     }

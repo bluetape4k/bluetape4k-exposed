@@ -2,12 +2,12 @@ package io.bluetape4k.exposed.ktor.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessBackend
 import io.bluetape4k.exposed.ktor.core.ExposedKtorReadinessOutcome
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.exposed.tests.TestDB
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -26,13 +26,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.concurrent.Executors
 import java.sql.SQLException
+import java.util.concurrent.Executors
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ExposedKtorJdbcContractTest : AbstractExposedTest() {
+class ExposedKtorJdbcContractTest: AbstractExposedTest() {
 
     @Test
     fun `jdbc status pages redact database exception details`() = testApplication {
@@ -49,10 +49,10 @@ class ExposedKtorJdbcContractTest : AbstractExposedTest() {
         val response = client.get("/jdbc/private")
         response.status shouldBeEqualTo HttpStatusCode.ServiceUnavailable
         val body = response.bodyAsText()
-        body.contains("EXPOSED_DATABASE_UNAVAILABLE").shouldBeTrue()
-        body.contains("top-secret").shouldBeFalse()
-        body.contains("jdbc:h2").shouldBeFalse()
-        body.contains("/jdbc/private").shouldBeFalse()
+        body shouldContain "EXPOSED_DATABASE_UNAVAILABLE"
+        body shouldNotContain "top-secret"
+        body shouldNotContain "jdbc:h2"
+        body shouldNotContain "/jdbc/private"
     }
 
     @ParameterizedTest
@@ -64,7 +64,6 @@ class ExposedKtorJdbcContractTest : AbstractExposedTest() {
         try {
             val probe = exposedKtorJdbcReadinessProbe(database, dispatcher, component = "orders")
             runBlocking { probe.probe(5.seconds) } shouldBeEqualTo ExposedKtorReadinessOutcome.UP
-            Unit
         } finally {
             dispatcher.close()
             executor.shutdownNow()
@@ -85,7 +84,6 @@ class ExposedKtorJdbcContractTest : AbstractExposedTest() {
             probe.backend shouldBeEqualTo ExposedKtorReadinessBackend.JDBC
             probe.component shouldBeEqualTo "orders"
             runBlocking { probe.probe(2.seconds) } shouldBeEqualTo ExposedKtorReadinessOutcome.UP
-            Unit
         } finally {
             dispatcher.close()
             executor.shutdownNow()

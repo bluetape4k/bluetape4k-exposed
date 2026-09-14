@@ -4,9 +4,7 @@ English | [한국어](./README.ko.md)
 
 **Exposed R2DBC DSL-based Coroutine Spring Data Repository (Spring Boot 4.x / Spring 7)**
 
-Provides an Exposed R2DBC repository bridge for Spring Data coroutine
-repositories. It keeps suspend and `Flow` signatures intact while delegating
-transactional execution to Exposed R2DBC `suspendTransaction` blocks.
+Provides an Exposed R2DBC repository bridge for Spring Data coroutine repositories. It keeps suspend and `Flow` signatures intact while delegating transactional execution to Exposed R2DBC `suspendTransaction` blocks.
 
 ## Coroutine Repository Wiring
 
@@ -42,7 +40,8 @@ interface ExposedR2dbcRepository<R : Any, ID : Any> : CoroutineCrudRepository<R,
 - **Flow support**: Large-dataset streaming with backpressure
 - **Pagination**: Suspend-based paginated retrieval
 - **Exposed DSL integration**: R2DBC conditional queries
-- **PartTree derived queries**: Spring Data method-name queries such as `findByName`, `countByAge`, `existsByEmail`, and `deleteByName`
+- **PartTree derived
+  queries**: Spring Data method-name queries such as `findByName`, `countByAge`, `existsByEmail`, and `deleteByName`
 
 ### 2. Domain Object Mapping
 
@@ -155,15 +154,11 @@ interface UserRepository : ExposedR2dbcRepository<User, Long> {
 }
 ```
 
-Parameters are bound as prepared-statement placeholders, so SQL injection is prevented.
-Only SQL code is bound; quoted strings/identifiers, comments, and PostgreSQL dollar-quoted strings retain literal `?N` text. Repeated parameters are bound in occurrence order.
+Parameters are bound as prepared-statement placeholders, so SQL injection is prevented. Only SQL code is bound; quoted strings/identifiers, comments, and PostgreSQL dollar-quoted strings retain literal `?N` text. Repeated parameters are bound in occurrence order.
 
 Exposed 1.5.0's debug SQL logger separately expands arguments and does not recognize SQL comments. A `?` in a comment can therefore fail logging after execution; this binder does not change the application's logger configuration.
 
-The raw SQL must select the entity ID column under its mapped column name. Entities are reloaded
-through Exposed and returned in the exact ID order produced by the SQL, so `ORDER BY`, `LIMIT`,
-and join ordering are preserved. In joins, alias the selected entity ID to its mapped name when
-needed, for example `SELECT u.id AS id FROM users u JOIN ...`.
+The raw SQL must select the entity ID column under its mapped column name. Entities are reloaded through Exposed and returned in the exact ID order produced by the SQL, so `ORDER BY`, `LIMIT`, and join ordering are preserved. In joins, alias the selected entity ID to its mapped name when needed, for example `SELECT u.id AS id FROM users u JOIN ...`.
 
 > **Limitation**: Scalar projections and grouping queries that do not select the entity ID are not
 > entity queries and fail with a clear `IllegalArgumentException`. Use a dedicated row mapper or
@@ -171,28 +166,20 @@ needed, for example `SELECT u.id AS id FROM users u JOIN ...`.
 
 ### 7. Actuator Cache Health
 
-When Spring Boot Actuator and `bluetape4k-exposed-r2dbc-caffeine` are on the
-classpath, auto-configuration registers `exposedR2dbcCacheHealthIndicator` as a
-reactive health indicator. It reports cache mode, queue depth, `workerState`,
-and the last flush error from suspend cache consistency checks.
-The indicator is not registered when no compatible R2DBC Caffeine repository bean exists, avoiding a misleading
-optional `UP` component with `repositoryCount=0`.
+When Spring Boot Actuator and `bluetape4k-exposed-r2dbc-caffeine` are on the classpath, auto-configuration registers `exposedR2dbcCacheHealthIndicator` as a reactive health indicator. It reports cache mode, queue depth, `workerState`, and the last flush error from suspend cache consistency checks. The indicator is not registered when no compatible R2DBC Caffeine repository bean exists, avoiding a misleading optional `UP` component with `repositoryCount=0`.
 
 ```properties
 bluetape4k.exposed.cache.health.enabled=true
 ```
 
-| Report | Actuator status |
-|---|---|
-| No flush error and `workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP` |
-| No flush error and `workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE` |
-| Flush error or `workerState=FAILED` | `DOWN` |
+| Report                                         | Actuator status |
+|------------------------------------------------|-----------------|
+| No flush error and `workerState=NOT_APPLICABLE\|IDLE\|RUNNING` | `UP` |
+| No flush error and `workerState=DRAINING\|STOPPED`        | `OUT_OF_SERVICE` |
+| Flush error or `workerState=FAILED`            | `DOWN`          |
 
-Set the property to `false` to disable the indicator. Spring Boot discovers the
-reactive indicator automatically. Ktor requires an explicit
-`ExposedKtorCacheContributor` and maps `DRAINING`, `FAILED`, and `STOPPED` to
-readiness `DOWN` with redacted details. Keep Actuator management-endpoint access
-policy separate from the Ktor route security policy.
+Set the property to `false` to disable the indicator. Spring Boot discovers the reactive indicator automatically. Ktor requires an explicit
+`ExposedKtorCacheContributor` and maps `DRAINING`, `FAILED`, and `STOPPED` to readiness `DOWN` with redacted details. Keep Actuator management-endpoint access policy separate from the Ktor route security policy.
 
 ### 8. Paginated Retrieval
 
@@ -225,6 +212,7 @@ val exists = userRepository.exists { Users.email eq "alice@example.com" }
 ```
 
 <!-- r2dbc-coroutine-fluent-query:START -->
+
 ### 10. Coroutine Query by Example and FluentQuery
 
 <!-- contract-key:coroutine-only -->
@@ -245,8 +233,7 @@ val exists = userRepository.exists { Users.email eq "alice@example.com" }
 <!-- contract-key:streaming-retry-no-duplicate -->
 <!-- contract-key:terminal-retry-delegated -->
 
-Use `ExposedR2dbcQueryByExampleRepository` when a repository needs a
-coroutine-native Query by Example API. It exposes only `suspend` and Kotlin
+Use `ExposedR2dbcQueryByExampleRepository` when a repository needs a coroutine-native Query by Example API. It exposes only `suspend` and Kotlin
 `Flow`; Reactor `Mono`/`Flux` is not part of this contract.
 
 ```kotlin
@@ -282,30 +269,17 @@ val names: Flow<NameView> = userRepository.findBy(example) { query ->
 ```
 
 The supported matcher forms are exact/default, `CONTAINING`, `STARTING`, and
-`ENDING`, with explicit null inclusion. Regex, ignore-case, nested properties,
-open/SpEL projections, and partial domain projections fail before SQL. `findOne`
-and fluent `one()` use strict cardinality: zero rows return `null`, one row is
-returned, and multiple rows raise `IncorrectResultSizeDataAccessException`.
+`ENDING`, with explicit null inclusion. Regex, ignore-case, nested properties, open/SpEL projections, and partial domain projections fail before SQL. `findOne`
+and fluent `one()` use strict cardinality: zero rows return `null`, one row is returned, and multiple rows raise `IncorrectResultSizeDataAccessException`.
 
-Fluent plans are immutable. Non-empty `project()` must exactly match the closed
-projection's required source properties; an empty call resets to automatic
-selection. A closed interface, Kotlin constructor type, or Java record is selected
-only from the required columns. `first()`, `one()`, `all()`, `page()`, `slice()`,
+Fluent plans are immutable. Non-empty `project()` must exactly match the closed projection's required source properties; an empty call resets to automatic selection. A closed interface, Kotlin constructor type, or Java record is selected only from the required columns. `first()`, `one()`, `all()`, `page()`, `slice()`,
 `count()`, and `exists()` keep their documented terminal semantics, including
 `Pageable` precedence and ID-only existence checks.
 
-`Flow` is cold and the query is collected inside the current coroutine context, so
-collecting the same flow twice executes two independent transactions. A
-caller-owned active Exposed transaction is reused; to choose another database,
-collect inside `suspendTransaction(database) { flow.collect { ... } }`.
-`useNestedTransactions=true` is rejected before SQL. Callback scope is valid for
-building and invoking a terminal inside `findBy`; cancellation preserves the
-original `CancellationException` and releases the transaction lease.
+`Flow` is cold and the query is collected inside the current coroutine context, so collecting the same flow twice executes two independent transactions. A caller-owned active Exposed transaction is reused; to choose another database, collect inside `suspendTransaction(database) { flow.collect { ... } }`.
+`useNestedTransactions=true` is rejected before SQL. Callback scope is valid for building and invoking a terminal inside `findBy`; cancellation preserves the original `CancellationException` and releases the transaction lease.
 
-Top-level streaming uses `maxAttempts = 1` so a row emitted before a driver error
-is never duplicated. Non-streaming terminal retry, backoff, timeout, and outer
-transaction settings remain delegated to Exposed and the caller. Unsupported
-matcher/projection/sort usage raises `UnsupportedOperationException` or
+Top-level streaming uses `maxAttempts = 1` so a row emitted before a driver error is never duplicated. Non-streaming terminal retry, backoff, timeout, and outer transaction settings remain delegated to Exposed and the caller. Unsupported matcher/projection/sort usage raises `UnsupportedOperationException` or
 `InvalidDataAccessApiUsageException`; mapping failures are sanitized
 `MappingException` values and cardinality violations are
 `IncorrectResultSizeDataAccessException`.
@@ -505,22 +479,8 @@ fun saveAll(entityStream: Flow<User>): Flow<User>
 suspend fun deleteAllById(ids: Iterable<Long>)
 ```
 
-`saveAll(entityStream: Flow<User>)` is a cold `Flow`. It persists entities sequentially in
-one Exposed transaction and retains the saved results until that transaction block
-completes. At top level, normal completion commits the transaction before any saved result
-is emitted; cancellation or an exception while collecting the input rolls it back and emits no
-result. A downstream cancellation or exception after commit cannot roll back the completed
-transaction and only stops remaining result emission. When an active
-outer transaction is reused, the nested block may return and emit results before the outer
-transaction commits; the caller owns that final commit or rollback boundary, so defer
-external side effects until the outer scope succeeds. Repository-owned top-level
-`saveAll(Flow)` and `saveAll(Iterable)` explicitly use `maxAttempts = 1`, so a database
-exception is propagated without recollecting or re-iterating the input. If the caller wraps
-the operation in an active outer transaction, that transaction's retry policy remains
-caller-owned; use a replayable, side-effect-free input when the outer block may retry.
-Because the results are materialized inside one atomic transaction, large or unbounded
-inputs can hold memory and keep the transaction open; chunked persistence requires a
-separate API.
+`saveAll(entityStream: Flow<User>)` is a cold `Flow`. It persists entities sequentially in one Exposed transaction and retains the saved results until that transaction block completes. At top level, normal completion commits the transaction before any saved result is emitted; cancellation or an exception while collecting the input rolls it back and emits no result. A downstream cancellation or exception after commit cannot roll back the completed transaction and only stops remaining result emission. When an active outer transaction is reused, the nested block may return and emit results before the outer transaction commits; the caller owns that final commit or rollback boundary, so defer external side effects until the outer scope succeeds. Repository-owned top-level
+`saveAll(Flow)` and `saveAll(Iterable)` explicitly use `maxAttempts = 1`, so a database exception is propagated without recollecting or re-iterating the input. If the caller wraps the operation in an active outer transaction, that transaction's retry policy remains caller-owned; use a replayable, side-effect-free input when the outer block may retry. Because the results are materialized inside one atomic transaction, large or unbounded inputs can hold memory and keep the transaction open; chunked persistence requires a separate API.
 
 ## Writing Tests
 
@@ -659,12 +619,8 @@ userRepository.saveAll(inputUsers)
     .collect { savedUser -> /* process each saved entity */ }
 ```
 
-The `saveAll(Flow)` overload starts only when collected. It consumes the input and persists
-all entities before emitting the saved results, so the collector does not control the input
-persistence rate. A repository-owned top-level call does not retry a database exception;
-an active outer transaction may retry according to its caller-owned policy. Use
-`streamAll()` for row-by-row read streaming; this overload intentionally keeps one atomic
-transaction and does not provide chunked writes.
+The `saveAll(Flow)` overload starts only when collected. It consumes the input and persists all entities before emitting the saved results, so the collector does not control the input persistence rate. A repository-owned top-level call does not retry a database exception; an active outer transaction may retry according to its caller-owned policy. Use
+`streamAll()` for row-by-row read streaming; this overload intentionally keeps one atomic transaction and does not provide chunked writes.
 
 ### Implementing toDomain and toPersistValues
 
@@ -708,13 +664,8 @@ suspend fun complexOperation() {
 }
 ```
 
-`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)` is retained only
-for source and binary compatibility and is deprecated. This adapter bypasses
-Spring's transaction interceptor, so a non-default value is rejected during
-repository registration and never selects an Exposed `R2dbcDatabase`. For
-multiple databases, choose the target explicitly with
-`suspendTransaction(database) { ... }`; use `streamAll(database)` when the
-streaming API itself owns the database choice.
+`@EnableExposedR2dbcRepositories(transactionManagerRef = ...)` is retained only for source and binary compatibility and is deprecated. This adapter bypasses Spring's transaction interceptor, so a non-default value is rejected during repository registration and never selects an Exposed `R2dbcDatabase`. For multiple databases, choose the target explicitly with
+`suspendTransaction(database) { ... }`; use `streamAll(database)` when the streaming API itself owns the database choice.
 
 ## Performance Optimization
 
@@ -771,7 +722,7 @@ suspend fun getUser(id: Long) {
 suspend fun getUser(): User? = userRepository.findByIdOrNull(1)
 ```
 
-### "Using Flow without toList()"
+### "Using Flow without toList ()"
 
 Return a stream as the response:
 

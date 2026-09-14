@@ -1,12 +1,12 @@
 package io.bluetape4k.spring.data.exposed.jdbc.ddd
 
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
 import io.bluetape4k.exposed.core.ddd.DomainEvent
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.config.EnableExposedJdbcRepositories
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -18,6 +18,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
@@ -32,13 +33,13 @@ import java.io.Serializable
 import java.time.Instant
 import javax.sql.DataSource
 
-object Orders : LongIdTable("issue_323_orders") {
+object Orders: LongIdTable("issue_323_orders") {
     val description = varchar("description", 200)
 }
 
 @ExposedEntity
-class OrderEntity(id: EntityID<Long>) : LongEntity(id) {
-    companion object : LongEntityClass<OrderEntity>(Orders) {
+class OrderEntity(id: EntityID<Long>): LongEntity(id) {
+    companion object: LongEntityClass<OrderEntity>(Orders) {
         fun from(aggregate: OrderAggregate): OrderEntity = new {
             description = aggregate.description
         }
@@ -47,19 +48,19 @@ class OrderEntity(id: EntityID<Long>) : LongEntity(id) {
     var description: String by Orders.description
 }
 
-interface OrderRepository : ExposedJdbcRepository<OrderEntity, Long>
+interface OrderRepository: ExposedJdbcRepository<OrderEntity, Long>
 
 class OrderAggregate(
     override val id: Long,
     val description: String,
-) : AbstractAggregateRoot<Long>() {
+): AbstractAggregateRoot<Long>() {
     fun recordCreated(): OrderCreated = OrderCreated(id).also(::recordDomainEvent)
 }
 
 data class OrderCreated(
     override val aggregateId: Long,
     override val occurredAt: Instant = Instant.parse("2026-07-11T00:00:00Z"),
-) : DomainEvent<Long>, Serializable {
+): DomainEvent<Long>, Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -141,7 +142,7 @@ class MultiManagerDocumentationExampleTest {
             seed(context, "firstTransactionManager", 1)
             seed(context, "secondTransactionManager", 2)
 
-            context.getBean(OrderRepository::class.java).count() shouldBeEqualTo 2L
+            context.getBean<OrderRepository>().count() shouldBeEqualTo 2L
         }
     }
 
@@ -151,7 +152,7 @@ class MultiManagerDocumentationExampleTest {
             seed(context, "firstTransactionManager", 1)
             seed(context, "secondTransactionManager", 2)
 
-            context.getBean(OrderRepository::class.java).deleteAll()
+            context.getBean<OrderRepository>().deleteAll()
 
             count(context, "firstTransactionManager") shouldBeEqualTo 1L
             count(context, "secondTransactionManager") shouldBeEqualTo 0L
@@ -164,11 +165,11 @@ class MultiManagerDocumentationExampleTest {
             prepareSchemas(context)
             val aggregate = OrderAggregate(1L, "committed").apply { recordCreated() }
 
-            context.getBean(OrderCommandService::class.java).save(aggregate)
+            context.getBean<OrderCommandService>().save(aggregate)
 
             count(context, "firstTransactionManager") shouldBeEqualTo 0L
             count(context, "secondTransactionManager") shouldBeEqualTo 1L
-            aggregate.domainEvents().isEmpty().shouldBeTrue()
+            aggregate.domainEvents().shouldBeEmpty()
         }
     }
 
@@ -178,7 +179,7 @@ class MultiManagerDocumentationExampleTest {
             prepareSchemas(context)
             val aggregate = OrderAggregate(2L, "rolled-back").apply { recordCreated() }
 
-            context.getBean(OrderCommandService::class.java).save(aggregate, rollback = true)
+            context.getBean<OrderCommandService>().save(aggregate, rollback = true)
 
             count(context, "firstTransactionManager") shouldBeEqualTo 0L
             count(context, "secondTransactionManager") shouldBeEqualTo 0L
@@ -204,17 +205,19 @@ class MultiManagerDocumentationExampleTest {
     }
 
     private fun seed(context: AnnotationConfigApplicationContext, managerName: String, rows: Int) {
-        val manager = context.getBean(managerName, PlatformTransactionManager::class.java)
+        val manager = context.getBean<PlatformTransactionManager>(managerName)
         TransactionTemplate(manager).executeWithoutResult {
             SchemaUtils.create(Orders)
             repeat(rows) { index ->
-                Orders.insert { it[description] = "$managerName-$index" }
+                Orders.insert {
+                    it[description] = "$managerName-$index"
+                }
             }
         }
     }
 
     private fun count(context: AnnotationConfigApplicationContext, managerName: String): Long {
-        val manager = context.getBean(managerName, PlatformTransactionManager::class.java)
-        return requireNotNull(TransactionTemplate(manager).execute { Orders.selectAll().count() })
+        val manager = context.getBean<PlatformTransactionManager>(managerName)
+        return TransactionTemplate(manager).execute { Orders.selectAll().count() }
     }
 }

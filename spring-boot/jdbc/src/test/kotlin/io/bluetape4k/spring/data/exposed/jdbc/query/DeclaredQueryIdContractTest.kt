@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc.query
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.DeclaredExposedQuery
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryMethod
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
@@ -18,12 +19,15 @@ import org.junit.jupiter.api.Test
 
 class DeclaredQueryIdContractTest {
 
+    companion object: KLogging()
+
     object Accounts: LongIdTable("query_id_contract", "account_id") {
         val name = varchar("name", 64)
     }
 
     class Account(id: EntityID<Long>): LongEntity(id) {
         companion object: LongEntityClass<Account>(Accounts)
+
         var name by Accounts.name
     }
 
@@ -31,7 +35,8 @@ class DeclaredQueryIdContractTest {
         val method = mockk<ExposedQueryMethod>()
         every { method.getAnnotatedQuery() } returns sql
         every { method.name } returns "query"
-        return DeclaredExposedQuery(method, ExposedEntityInformationImpl<Account, Long>(Account::class.java))
+
+        return DeclaredExposedQuery(method, ExposedEntityInformationImpl(Account::class.java))
             .execute(emptyArray())
     }
 
@@ -66,7 +71,7 @@ class DeclaredQueryIdContractTest {
             "SELECT name FROM query_id_contract WHERE 1 = 0",
         ).forEach { sql ->
             assertFailsWith<IllegalArgumentException> { execute(sql) }.message shouldBeEqualTo
-                "@Query method 'query' must select entity id column 'account_id'"
+                    "@Query method 'query' must select entity id column 'account_id'"
         }
     }
 

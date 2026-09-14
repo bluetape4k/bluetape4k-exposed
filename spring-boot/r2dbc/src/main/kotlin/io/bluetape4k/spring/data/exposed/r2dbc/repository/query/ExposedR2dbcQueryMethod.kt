@@ -28,9 +28,9 @@ internal class ExposedR2dbcQueryMethod(
 
     private val queryAnnotation: Query? = sourceMethod.getAnnotation(Query::class.java)
 
-    /** @Query 어노테이션 존재 여부 */
+    /** `@Query` 어노테이션 존재 여부 */
     val isAnnotatedQuery: Boolean get() = queryAnnotation != null
 
-    /** @Query 어노테이션의 SQL 문자열 (없으면 null) */
+    /** `@Query` 어노테이션의 SQL 문자열 (없으면 null) */
     fun getAnnotatedQuery(): String? = queryAnnotation?.value
 }

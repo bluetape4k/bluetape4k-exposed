@@ -2,10 +2,7 @@
 
 English | [한국어](./README.ko.md)
 
-Spring Data Commons SPI for the bluetape4k Exposed JDBC and R2DBC adapters.
-This module contains backend-neutral annotations, mapping metadata, derived-query planning,
-and `Sort` conversion. It does not open database connections, start transactions, or depend
-on a JDBC/R2DBC adapter.
+Spring Data Commons SPI for the bluetape4k Exposed JDBC and R2DBC adapters. This module contains backend-neutral annotations, mapping metadata, derived-query planning, and `Sort` conversion. It does not open database connections, start transactions, or depend on a JDBC/R2DBC adapter.
 
 ## Installation
 
@@ -30,7 +27,4 @@ JDBC execution, transaction management, and `ExposedEntityInformation` remain in
 
 ## Dependency boundary
 
-Applications that use only R2DBC can depend on the common module and the R2DBC adapter without
-bringing the JDBC adapter or `spring-jdbc` into the runtime graph. Existing JDBC package symbols
-are retained by the JDBC artifact as deprecated compatibility facades; new code should import
-the common packages above.
+Applications that use only R2DBC can depend on the common module and the R2DBC adapter without bringing the JDBC adapter or `spring-jdbc` into the runtime graph. Existing JDBC package symbols are retained by the JDBC artifact as deprecated compatibility facades; new code should import the common packages above.

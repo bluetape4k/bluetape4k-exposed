@@ -15,11 +15,11 @@
     </appender>
     <!-- formatter:on -->
 
-    <logger name="Exposed" level="DEBUG"/>
     <logger name="io.bluetape4k.spring.modulith.exposed" level="DEBUG"/>
     <logger name="io.bluetape4k" level="DEBUG"/>
-    <logger name="org.jetbrains.exposed" level="DEBUG"/>
     <logger name="org.springframework.modulith" level="DEBUG"/>
+    <logger name="org.jetbrains.exposed" level="DEBUG"/>
+    <logger name="Exposed" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="console"/>

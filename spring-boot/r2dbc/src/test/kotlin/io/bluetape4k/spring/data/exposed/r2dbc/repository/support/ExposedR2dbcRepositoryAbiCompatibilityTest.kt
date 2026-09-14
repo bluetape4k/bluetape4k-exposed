@@ -1,22 +1,21 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.UserNameRecord
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineFluentQuery
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineQueryByExampleExecutor
-import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
+import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.Sort
-import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
 
 /**
@@ -35,7 +34,8 @@ class ExposedR2dbcRepositoryAbiCompatibilityTest {
 
     @Test
     fun `public descriptors match the checked snapshot`() {
-        val expected = javaClass.getResourceAsStream("/abi/exposed-r2dbc-repository-public.txt").shouldNotBeNull()
+        val expected = javaClass
+            .getResourceAsStream("/abi/exposed-r2dbc-repository-public.txt").shouldNotBeNull()
             .bufferedReader()
             .lineSequence()
             .filter { it.isNotBlank() && !it.startsWith("#") }
@@ -43,20 +43,26 @@ class ExposedR2dbcRepositoryAbiCompatibilityTest {
             .groupBy({ it[0] }, { "${it[1]} ${it[2]}" })
             .mapValues { (_, members) -> members.sorted() }
 
-        declaredDescriptors(ExposedR2dbcRepository::class.java) shouldBeEqualTo
-            expected[ExposedR2dbcRepository::class.java.name]
-        declaredDescriptors(ExposedCoroutineQueryByExampleExecutor::class.java) shouldBeEqualTo
-            expected[ExposedCoroutineQueryByExampleExecutor::class.java.name]
-        declaredDescriptors(ExposedCoroutineFluentQuery::class.java) shouldBeEqualTo
-            expected[ExposedCoroutineFluentQuery::class.java.name]
+        declaredDescriptors<ExposedR2dbcRepository<*, *>>() shouldBeEqualTo
+                expected[ExposedR2dbcRepository::class.java.name]
+
+        declaredDescriptors<ExposedCoroutineQueryByExampleExecutor<*>>() shouldBeEqualTo
+                expected[ExposedCoroutineQueryByExampleExecutor::class.java.name]
+
+        declaredDescriptors<ExposedCoroutineFluentQuery<*>>() shouldBeEqualTo
+                expected[ExposedCoroutineFluentQuery::class.java.name]
 
         val constructors = SimpleExposedR2dbcRepository::class.java.declaredConstructors
             .filter { Modifier.isPublic(it.modifiers) }
         constructors.size shouldBeEqualTo 1
         constructors.map { "<init> ${constructorDescriptor(it)}" } shouldBeEqualTo
-            expected[SimpleExposedR2dbcRepository::class.java.name]
-        (SimpleExposedR2dbcRepository::class.java.constructors.single().parameterCount == 4).shouldBeTrue()
+                expected[SimpleExposedR2dbcRepository::class.java.name]
+
+        SimpleExposedR2dbcRepository::class.java.constructors.single().parameterCount shouldBeEqualTo 4
     }
+
+    private inline fun <reified T: Any> declaredDescriptors(): List<String> =
+        declaredDescriptors(T::class.java)
 
     private fun declaredDescriptors(type: Class<*>): List<String> =
         type.declaredMethods
@@ -69,23 +75,23 @@ class ExposedR2dbcRepositoryAbiCompatibilityTest {
 
     private fun methodDescriptor(parameters: Array<Class<*>>, returnType: Class<*>): String =
         parameters.joinToString(separator = "", prefix = "(", postfix = ")") { it.jvmDescriptor() } +
-            returnType.jvmDescriptor()
+                returnType.jvmDescriptor()
 
     private fun Class<*>.jvmDescriptor(): String = when {
         isPrimitive -> when (this) {
-            java.lang.Void.TYPE -> "V"
+            java.lang.Void.TYPE    -> "V"
             java.lang.Boolean.TYPE -> "Z"
-            java.lang.Byte.TYPE -> "B"
+            java.lang.Byte.TYPE    -> "B"
             java.lang.Character.TYPE -> "C"
-            java.lang.Short.TYPE -> "S"
+            java.lang.Short.TYPE   -> "S"
             java.lang.Integer.TYPE -> "I"
-            java.lang.Long.TYPE -> "J"
-            java.lang.Float.TYPE -> "F"
-            java.lang.Double.TYPE -> "D"
-            else -> error("unknown primitive: $this")
+            java.lang.Long.TYPE    -> "J"
+            java.lang.Float.TYPE   -> "F"
+            java.lang.Double.TYPE  -> "D"
+            else                   -> error("unknown primitive: $this")
         }
-        isArray -> name.replace('.', '/')
-        else -> "L${name.replace('.', '/')};"
+        isArray     -> name.replace('.', '/')
+        else        -> "L${name.replace('.', '/')};"
     }
 }
 

@@ -38,7 +38,7 @@ private class JdbcReadinessProbe(
     private val blockingDispatcher: CoroutineDispatcher,
     private val jdbcQueryTimeout: Duration,
     override val component: String,
-) : ExposedKtorCooperativeReadinessProbe {
+): ExposedKtorCooperativeReadinessProbe {
     override val backend: ExposedKtorReadinessBackend = ExposedKtorReadinessBackend.JDBC
 
     @Suppress("TooGenericExceptionCaught")

@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("plugin.spring")
 }
@@ -32,7 +31,6 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(libs.micrometer.core)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.h2.v2)

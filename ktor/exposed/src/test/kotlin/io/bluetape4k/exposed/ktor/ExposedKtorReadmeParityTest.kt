@@ -49,7 +49,7 @@ class ExposedKtorReadmeParityTest {
     @Test
     fun `cache migration and Spring Actuator mappings remain source equivalent`() {
         listOf("exposed/cache/README.md", "exposed/cache/README.ko.md").forEach { path ->
-            val text = read(path)
+            val text = read(path).replace(Regex("[\\t ]+"), " ")
             CACHE_TERMS.forEach { term ->
                 text shouldContain term
             }
@@ -66,7 +66,7 @@ class ExposedKtorReadmeParityTest {
             "spring-boot/jdbc/README.md",
             "spring-boot/r2dbc/README.md",
         ).forEach { path ->
-            val text = read(path)
+            val text = read(path).replace(Regex("[\\t ]+"), " ")
             ACTUATOR_TERMS.forEach { term ->
                 text shouldContain term
             }
@@ -78,7 +78,7 @@ class ExposedKtorReadmeParityTest {
             "spring-boot/jdbc/README.ko.md",
             "spring-boot/r2dbc/README.ko.md",
         ).forEach { path ->
-            val text = read(path)
+            val text = read(path).replace(Regex("[\\t ]+"), " ")
             ACTUATOR_TERMS.forEach { term ->
                 text shouldContain term
             }
@@ -156,15 +156,15 @@ class ExposedKtorReadmeParityTest {
             "기존 Boolean으로는 이 상태들을 구분할 수 없습니다",
         )
         private val ACTUATOR_ENGLISH_FRAGMENTS = listOf(
-            "`workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP`",
-            "`workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE`",
+            "`workerState=NOT_APPLICABLE\\|IDLE\\|RUNNING` | `UP`",
+            "`workerState=DRAINING\\|STOPPED` | `OUT_OF_SERVICE`",
             "Flush error or `workerState=FAILED` | `DOWN`",
             "explicit",
             "`ExposedKtorCacheContributor`",
         )
         private val ACTUATOR_KOREAN_FRAGMENTS = listOf(
-            "`workerState=NOT_APPLICABLE|IDLE|RUNNING` | `UP`",
-            "`workerState=DRAINING|STOPPED` | `OUT_OF_SERVICE`",
+            "`workerState=NOT_APPLICABLE\\|IDLE\\|RUNNING` | `UP`",
+            "`workerState=DRAINING\\|STOPPED` | `OUT_OF_SERVICE`",
             "Flush error 또는 `workerState=FAILED` | `DOWN`",
             "명시적으로",
             "`ExposedKtorCacheContributor`",

@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.common.mapping
 
 import io.bluetape4k.spring.data.exposed.common.repository.support.toSnakeCase
+import io.bluetape4k.support.equalsIgnoreCase
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
 import org.springframework.data.mapping.Association
@@ -22,8 +23,8 @@ class DefaultExposedPersistentProperty(
     override fun getColumn(): Column<*>? {
         val currentTable = table ?: return null
         return currentTable.columns.firstOrNull { column ->
-            column.name.equals(name, ignoreCase = true) ||
-                column.name.equals(toSnakeCase(name), ignoreCase = true)
+            column.name.equalsIgnoreCase(name) ||
+                    column.name.equalsIgnoreCase(toSnakeCase(name))
         }
     }
 

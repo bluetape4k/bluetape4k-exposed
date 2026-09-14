@@ -12,9 +12,9 @@
         </encoder>
     </appender>
 
-    <logger name="Exposed" level="DEBUG"/>
-    <logger name="org.jetbrains.exposed" level="DEBUG"/>
     <logger name="io.bluetape4k.spring.batch" level="DEBUG"/>
+    <logger name="org.jetbrains.exposed" level="DEBUG"/>
+    <!--    <logger name="Exposed" level="DEBUG"/>-->
 
     <root level="INFO">
         <appender-ref ref="Console"/>

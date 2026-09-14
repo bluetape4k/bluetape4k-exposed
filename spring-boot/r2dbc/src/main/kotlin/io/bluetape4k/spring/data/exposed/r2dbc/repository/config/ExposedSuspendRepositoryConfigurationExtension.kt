@@ -43,7 +43,7 @@ class ExposedSuspendRepositoryConfigurationExtension: RepositoryConfigurationExt
         val transactionManagerRef = source.attributes.getString("transactionManagerRef")
         require(transactionManagerRef == DEFAULT_TRANSACTION_MANAGER_REF) {
             "R2DBC 저장소는 transactionManagerRef='$transactionManagerRef'를 지원하지 않습니다. " +
-                "명시적인 suspendTransaction(database) 경계 또는 streamAll(database)를 사용하세요."
+                    "명시적인 suspendTransaction(database) 경계 또는 streamAll(database)를 사용하세요."
         }
     }
 

@@ -65,7 +65,7 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
         if (config.writeMode == CacheWriteMode.READ_ONLY) {
             log.warn {
                 "Spring Modulith cache event publication is disabled in READ_ONLY mode. " +
-                    "cacheName=$cacheName"
+                        "cacheName=$cacheName"
             }
         }
     }
@@ -97,8 +97,8 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
             } catch (e: Exception) {
                 log.warn(e) {
                     "Cache event mapping failed. " +
-                        "cacheName=$cacheName, mode=$cacheWriteMode, idType=${id::class.qualifiedName}, " +
-                        "exceptionType=${e::class.qualifiedName}"
+                            "cacheName=$cacheName, mode=$cacheWriteMode, idType=${id::class.qualifiedName}, " +
+                            "exceptionType=${e::class.qualifiedName}"
                 }
                 return
             }
@@ -106,7 +106,7 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
         if (event == null) {
             log.debug {
                 "Cache event publication skipped. " +
-                    "cacheName=$cacheName, mode=$cacheWriteMode, idType=${id::class.qualifiedName}"
+                        "cacheName=$cacheName, mode=$cacheWriteMode, idType=${id::class.qualifiedName}"
             }
             return
         }
@@ -115,15 +115,15 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
             publishEvent(event)
             log.debug {
                 "Cache event published. " +
-                    "cacheName=$cacheName, mode=$cacheWriteMode, eventType=${event::class.qualifiedName}"
+                        "cacheName=$cacheName, mode=$cacheWriteMode, eventType=${event::class.qualifiedName}"
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             log.warn(e) {
                 "Cache event publication failed. " +
-                    "cacheName=$cacheName, mode=$cacheWriteMode, eventType=${event::class.qualifiedName}, " +
-                    "exceptionType=${e::class.qualifiedName}"
+                        "cacheName=$cacheName, mode=$cacheWriteMode, eventType=${event::class.qualifiedName}, " +
+                        "exceptionType=${e::class.qualifiedName}"
             }
         }
     }

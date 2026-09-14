@@ -2,16 +2,17 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.spring.data.exposed.jdbc.AbstractExposedJdbcRepositoryTest
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
+import io.bluetape4k.spring.data.exposed.jdbc.AbstractExposedJdbcRepositoryTest
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.JdbcExamplePredicateCompiler
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.JdbcPersistentPropertyResolver
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.dao.LongEntity
 import org.jetbrains.exposed.v1.dao.LongEntityClass
 import org.jetbrains.exposed.v1.jdbc.deleteAll
@@ -24,10 +25,12 @@ import org.junit.jupiter.api.Test
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
+
+    companion object: KLogging()
 
     @BeforeEach
     fun createCompilerTable() {
@@ -40,7 +43,9 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
 
     @AfterEach
     fun clearCompilerTable() {
-        transaction { QbeProfiles.deleteAll() }
+        transaction {
+            QbeProfiles.deleteAll()
+        }
     }
 
     @Test
@@ -90,7 +95,9 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
                     Optional.of(value.orElseThrow().toString())
                 }
 
-            val matches = QbeProfileEntity.find { compiler().compile(Example.of(probe, matcher)) }.toList()
+            val matches = QbeProfileEntity
+                .find { compiler().compile(Example.of(probe, matcher)) }
+                .toList()
 
             calls.get() shouldBeEqualTo 1
             matches shouldHaveSize 1
@@ -111,7 +118,10 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
 
             val ignoredAlias = ExampleMatcher.matchingAll()
                 .withIgnorePaths("name", "nickname", "age", "display_name")
-            QbeProfileEntity.find { compiler().compile(Example.of(probe, ignoredAlias)) }.toList() shouldHaveSize 3
+
+            QbeProfileEntity
+                .find { compiler().compile(Example.of(probe, ignoredAlias)) }
+                .toList() shouldHaveSize 3
         }
     }
 
@@ -224,15 +234,15 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
             )
         }
 
-        throwableGraph(failure).contains("sensitive getter payload").shouldBeFalse()
-        failure.message.orEmpty().contains('\n').shouldBeFalse()
+        throwableGraph(failure) shouldNotContain "sensitive getter payload"
+        failure.message shouldNotContain "\n"
     }
 
     private fun compiler(): JdbcExamplePredicateCompiler<QbeProfileEntity, Long> {
         @Suppress("UNCHECKED_CAST")
         val persistentEntity: ExposedPersistentEntity<QbeProfileEntity> =
             ExposedMappingContext().getRequiredPersistentEntity(QbeProfileEntity::class.java)
-                as ExposedPersistentEntity<QbeProfileEntity>
+                    as ExposedPersistentEntity<QbeProfileEntity>
         return JdbcExamplePredicateCompiler(
             persistentEntity = persistentEntity,
             propertyResolver = JdbcPersistentPropertyResolver(persistentEntity),

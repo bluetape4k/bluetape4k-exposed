@@ -1,4 +1,3 @@
-
 plugins {
     kotlin("plugin.spring")
 }
@@ -136,8 +135,8 @@ val checkSpringBootR2dbcAssertionStyle = tasks.register("checkSpringBootR2dbcAss
                 val rule = when {
                     legacyImport.containsMatchIn(line) -> "legacy assertion import"
                     fullyQualifiedCall.containsMatchIn(line) -> "fully-qualified legacy assertion call"
-                    legacyCall.containsMatchIn(line) -> "legacy assertion call"
-                    else -> null
+                    legacyCall.containsMatchIn(line)   -> "legacy assertion call"
+                    else                               -> null
                 }
                 if (rule != null) {
                     val relativePath = root.toPath().relativize(sourceFile.toPath())

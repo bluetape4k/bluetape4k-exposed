@@ -23,9 +23,9 @@ import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
  * }
  * ```
  */
-abstract class AbstractExposedBatchTest : AbstractExposedTest() {
+abstract class AbstractExposedBatchTest: AbstractExposedTest() {
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         @JvmStatic
         fun enableDialects() = TestDB.enabledDialects()
     }

@@ -48,7 +48,7 @@ internal class R2dbcFluentQueryExecutor<R: Any> internal constructor(
     init {
         require(
             constructionMode == R2dbcQbeConstructionMode.DIRECT ||
-                constructionMode == R2dbcQbeConstructionMode.FACTORY,
+                    constructionMode == R2dbcQbeConstructionMode.FACTORY,
         )
     }
 
@@ -144,9 +144,9 @@ internal class R2dbcFluentQueryExecutor<R: Any> internal constructor(
             total = when {
                 pageable.isUnpaged && pagePlan.limit == null -> content.size.toLong()
                 !pageable.isUnpaged &&
-                    content.size < pageable.pageSize &&
-                    pagePlan.limit == null -> pageable.offset + content.size
-                else -> countInCurrentTransaction(pagePlan)
+                        content.size < pageable.pageSize &&
+                        pagePlan.limit == null -> pageable.offset + content.size
+                else                           -> countInCurrentTransaction(pagePlan)
             }
         }
         return PageImpl(content, pageable, total)
@@ -286,7 +286,10 @@ internal class R2dbcFluentQueryExecutor<R: Any> internal constructor(
     }
 }
 
-internal enum class R2dbcQbeConstructionMode { FACTORY, DIRECT }
+internal enum class R2dbcQbeConstructionMode {
+    FACTORY,
+    DIRECT
+}
 
 internal class R2dbcFluentQueryScope {
     private val active = java.util.concurrent.atomic.AtomicBoolean(true)
@@ -327,7 +330,7 @@ internal class ExposedCoroutineFluentQueryImpl<R: Any> internal constructor(
         scope.validate()
         @Suppress("UNCHECKED_CAST")
         return ExposedCoroutineFluentQueryImpl(executor, plan.asType(resultType), scope) as
-            io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineFluentQuery<T>
+                io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineFluentQuery<T>
     }
 
     override fun project(

@@ -17,7 +17,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * 취소와 [Error]는 그대로 전달하고, 일반 예외는 [ExposedKtorTransactionException]의 원인으로 보존합니다.
  * 실패 경로의 메트릭 기록 예외는 주원인의 `suppressed`에 추가합니다.
  */
-@Suppress("TooGenericExceptionCaught", "ThrowsCount")
+@Suppress("TooGenericExceptionCaught", "ThrowsCount", "UnusedReceiverParameter")
 suspend fun <T> ApplicationCall.exposedR2dbcTransaction(
     db: R2dbcDatabase,
     meterRegistry: MeterRegistry? = null,
@@ -53,7 +53,7 @@ private fun Timer.Sample.stopSuccessfulTransaction(registry: MeterRegistry?) {
     } catch (metricFailure: Exception) {
         TransactionMetricLog.log.warn(metricFailure) {
             "Exposed Ktor transaction metric recording failed after a successful transaction. " +
-                "backend=r2dbc, exceptionType=${metricFailure::class.qualifiedName}"
+                    "backend=r2dbc, exceptionType=${metricFailure::class.qualifiedName}"
         }
     }
 }
@@ -90,6 +90,6 @@ private fun Timer.Sample.stopTransaction(
     )
 }
 
-private object TransactionMetricLog : KLogging()
+private object TransactionMetricLog: KLogging()
 
 private const val CORE_TRANSACTION_METER_NAME = "bluetape4k.exposed.ktor.core.transaction"

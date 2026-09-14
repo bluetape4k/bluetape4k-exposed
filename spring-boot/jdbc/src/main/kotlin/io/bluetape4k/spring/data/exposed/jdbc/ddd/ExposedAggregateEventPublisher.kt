@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.Ordered
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import java.util.IdentityHashMap
+import java.util.*
 
 private val logger = LoggerFactory.getLogger(ExposedAggregateEventPublisher::class.java)
 private val correlationKeys = listOf("traceId", "spanId", "requestId")
@@ -48,7 +48,7 @@ class ExposedAggregateEventPublisher(
      *
      * @throws IllegalStateException transaction 또는 aggregate lifecycle 계약을 위반한 경우
      */
-    fun <ID : Any> publishAfterSave(aggregate: AggregateRoot<ID>) {
+    fun <ID: Any> publishAfterSave(aggregate: AggregateRoot<ID>) {
         val currentSynchronization = currentSynchronization()
         currentSynchronization?.rejectReserved(aggregate)
 
@@ -89,7 +89,7 @@ class ExposedAggregateEventPublisher(
 
 internal class AggregateEventTransactionSynchronization(
     internal val owner: ExposedAggregateEventPublisher,
-) : TransactionSynchronization {
+): TransactionSynchronization {
 
     private val registrations = IdentityHashMap<AggregateRoot<*>, Registration>()
     private var poison: IllegalStateException? = null

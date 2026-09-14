@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentProperty
 import org.jetbrains.exposed.v1.core.Column
@@ -13,9 +14,9 @@ internal data class JdbcResolvedProperty(
     val persistentProperty: ExposedPersistentProperty,
 )
 
-internal class JdbcPersistentPropertyResolver(
-    persistentEntity: ExposedPersistentEntity<*>,
-) {
+internal class JdbcPersistentPropertyResolver(persistentEntity: ExposedPersistentEntity<*>) {
+
+    companion object: KLogging()
 
     private val properties: List<JdbcResolvedProperty> = buildList {
         persistentEntity.forEach { property ->
@@ -40,9 +41,9 @@ internal class JdbcPersistentPropertyResolver(
 
         val matches = properties.filter { property ->
             property.logicalName == propertyName ||
-                toSnakeCase(property.logicalName) == propertyName ||
-                property.column.name == propertyName ||
-                toCamelCase(property.column.name) == propertyName
+                    toSnakeCase(property.logicalName) == propertyName ||
+                    property.column.name == propertyName ||
+                    toCamelCase(property.column.name) == propertyName
         }
 
         matches.singleOrNull()?.let { return it }

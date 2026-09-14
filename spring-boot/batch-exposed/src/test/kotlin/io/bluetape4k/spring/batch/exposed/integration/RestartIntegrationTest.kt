@@ -1,5 +1,7 @@
 package io.bluetape4k.spring.batch.exposed.integration
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchJobTest
 import io.bluetape4k.spring.batch.exposed.SourceRecord
@@ -12,8 +14,6 @@ import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
 import io.bluetape4k.spring.batch.exposed.reader.ExposedKeysetItemReader
 import io.bluetape4k.spring.batch.exposed.support.virtualThreadPartitionTaskExecutor
 import io.bluetape4k.spring.batch.exposed.writer.ExposedUpsertItemWriter
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterThan
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.batch.core.BatchStatus
 import org.springframework.batch.core.job.Job
 import org.springframework.batch.core.job.parameters.JobParametersBuilder
-import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.launch.JobOperator
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler
 import org.springframework.batch.core.repository.JobRepository
+import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
@@ -43,9 +43,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - 2차 실행: 동일 파라미터로 재시작, lastKey 이후부터 재개 → [BatchStatus.COMPLETED]
  * - 최종 Target 1000건 (중복 없음)
  */
-class RestartIntegrationTest : AbstractExposedBatchJobTest() {
+class RestartIntegrationTest: AbstractExposedBatchJobTest() {
 
-    companion object : KLogging() {
+    companion object: KLogging() {
         /**
          * 첫 번째 실행에서 실패를 유도하고, 두 번째 실행에서 성공하도록 토글합니다.
          * companion object 로 선언하여 [JobConfig] (static nested class) 에서 참조 가능.
@@ -84,7 +84,7 @@ class RestartIntegrationTest : AbstractExposedBatchJobTest() {
 
         @Bean(name = ["restartPartitionHandler"])
         fun partitionHandler(): TaskExecutorPartitionHandler = TaskExecutorPartitionHandler().apply {
-            setStep(workerStep())
+            step = workerStep()
             setTaskExecutor(virtualThreadPartitionTaskExecutor(concurrencyLimit = 2))
             gridSize = 2
         }

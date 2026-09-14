@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.common.mapping
 
 import io.bluetape4k.spring.data.exposed.common.repository.support.toSnakeCase
+import io.bluetape4k.support.equalsIgnoreCase
 import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
 import org.springframework.data.mapping.context.AbstractMappingContext
@@ -13,25 +14,27 @@ class ExposedMappingContext:
 
     override fun <T: Any> createPersistentEntity(
         typeInformation: TypeInformation<T>,
-    ): DefaultExposedPersistentEntity<T> = DefaultExposedPersistentEntity(typeInformation).also { entity ->
-        val table = entity.getTable() ?: return@also
-        BeanUtils.getPropertyDescriptors(typeInformation.type)
-            .asSequence()
-            .filter { descriptor -> descriptor.readMethod?.declaringClass == typeInformation.type }
-            .filter { descriptor ->
-                table.columns.any { column ->
-                    column.name == descriptor.name ||
-                        column.name.equals(toSnakeCase(descriptor.name), ignoreCase = true)
+    ): DefaultExposedPersistentEntity<T> =
+        DefaultExposedPersistentEntity(typeInformation).also { entity ->
+            val table = entity.getTable() ?: return@also
+
+            BeanUtils.getPropertyDescriptors(typeInformation.type)
+                .asSequence()
+                .filter { descriptor -> descriptor.readMethod?.declaringClass == typeInformation.type }
+                .filter { descriptor ->
+                    table.columns.any { column ->
+                        column.name == descriptor.name || column.name.equalsIgnoreCase(toSnakeCase(descriptor.name))
+                    }
                 }
-            }
-            .map { descriptor -> Property.of(typeInformation, descriptor) }
-            .map { property -> DefaultExposedPersistentProperty(property, entity, SimpleTypeHolder.DEFAULT) }
-            .forEach(entity::addPersistentProperty)
-    }
+                .map { descriptor -> Property.of(typeInformation, descriptor) }
+                .map { property -> DefaultExposedPersistentProperty(property, entity, SimpleTypeHolder.DEFAULT) }
+                .forEach(entity::addPersistentProperty)
+        }
 
     override fun createPersistentProperty(
         property: Property,
         owner: DefaultExposedPersistentEntity<*>,
         simpleTypeHolder: SimpleTypeHolder,
-    ): ExposedPersistentProperty = DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
+    ): ExposedPersistentProperty =
+        DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
 }

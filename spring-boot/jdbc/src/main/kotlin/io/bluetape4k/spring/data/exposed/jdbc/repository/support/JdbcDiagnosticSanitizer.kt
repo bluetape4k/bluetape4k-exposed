@@ -11,8 +11,8 @@ private const val MAX_DIAGNOSTIC_VALUE_LENGTH = 128
 internal fun safeDiagnosticValue(value: String): String = buildString {
     value.forEach { character ->
         val unsafeCategory = character.category == CharCategory.FORMAT ||
-            character.category == CharCategory.LINE_SEPARATOR ||
-            character.category == CharCategory.PARAGRAPH_SEPARATOR
+                character.category == CharCategory.LINE_SEPARATOR ||
+                character.category == CharCategory.PARAGRAPH_SEPARATOR
         if (!character.isISOControl() && !unsafeCategory && length < MAX_DIAGNOSTIC_VALUE_LENGTH) {
             append(character)
         }

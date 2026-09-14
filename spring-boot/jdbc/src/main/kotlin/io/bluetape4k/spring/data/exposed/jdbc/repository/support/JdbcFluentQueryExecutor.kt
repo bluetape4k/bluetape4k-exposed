@@ -17,9 +17,9 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.support.PageableExecutionUtils
-import org.springframework.transaction.interceptor.TransactionAspectSupport
 import org.springframework.transaction.NoTransactionException
-import java.util.Optional
+import org.springframework.transaction.interceptor.TransactionAspectSupport
+import java.util.*
 import java.util.stream.Stream
 
 private const val DEFAULT_STREAM_FETCH_SIZE = 100
@@ -117,6 +117,7 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
         }
         if (plan.hasLimit) query.limit(plan.limit)
         query.fetchSize(transaction.db.defaultFetchSize?.takeIf { it > 0 } ?: DEFAULT_STREAM_FETCH_SIZE)
+
         return JdbcResultRowStream.open(transaction, query, mapper)
     }
 
@@ -199,17 +200,17 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
             field is Column<*> && field.table == table
         } && query.set.fields.toSet() == table.columns.toSet()
         val unsupportedShape = query.distinct ||
-            query.distinctOn != null ||
-            query.groupedByColumns.isNotEmpty() ||
-            query.having != null ||
-            query.orderByExpressions.isNotEmpty() ||
-            query.limit != null ||
-            query.offset > 0 ||
-            query.isForUpdate()
+                query.distinctOn != null ||
+                query.groupedByColumns.isNotEmpty() ||
+                query.having != null ||
+                query.orderByExpressions.isNotEmpty() ||
+                query.limit != null ||
+                query.offset > 0 ||
+                query.isForUpdate()
         if (!rootColumnsOnly || unsupportedShape) {
             throw UnsupportedOperationException(
                 "JDBC FluentQuery supports only root-table filter-only EntityClass.searchQuery shapes; " +
-                    "move joins, grouping, distinct, ordering, paging, or locking to a declared query.",
+                        "move joins, grouping, distinct, ordering, paging, or locking to a declared query.",
             )
         }
     }
@@ -247,25 +248,25 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
             if (order.isIgnoreCase || order.nullHandling != Sort.NullHandling.NATIVE) {
                 throw InvalidDataAccessApiUsageException(
                     "FluentQuery sort options ignoreCase/nullHandling are not supported for " +
-                        "'${safeDiagnosticValue(order.property)}'.",
+                            "'${safeDiagnosticValue(order.property)}'.",
                 )
             }
             resolveColumn(order.property) to
-                if (order.isAscending) SortOrder.ASC else SortOrder.DESC
+                    if (order.isAscending) SortOrder.ASC else SortOrder.DESC
         }.toList().toTypedArray()
     }
 
     private fun effectiveLimit(planLimit: Int, terminalLimit: Int?): Int? = when {
         terminalLimit == null -> planLimit.takeIf { it > 0 }
         planLimit == 0 -> terminalLimit
-        else -> minOf(planLimit, terminalLimit)
+        else           -> minOf(planLimit, terminalLimit)
     }
 
     private fun resolveTableColumn(propertyName: String): Column<*> =
         table.columns.singleOrNull { column ->
             column.name == propertyName ||
-                column.name == toSnakeCase(propertyName) ||
-                toCamelCase(column.name) == propertyName
+                    column.name == toSnakeCase(propertyName) ||
+                    toCamelCase(column.name) == propertyName
         } ?: throw InvalidDataAccessApiUsageException(
             "FluentQuery sort property '${safeDiagnosticValue(propertyName)}' is unknown or ambiguous.",
         )

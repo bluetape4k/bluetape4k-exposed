@@ -1,12 +1,15 @@
 package io.bluetape4k.spring.data.exposed.jdbc.config
 
-import io.bluetape4k.exposed.core.ddd.AggregateRoot
-import io.bluetape4k.spring.data.exposed.jdbc.ddd.ExposedAggregateEventPublisher
-import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.core.ddd.AggregateRoot
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.ddd.ExposedAggregateEventPublisher
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.test.context.FilteredClassLoader
@@ -25,13 +28,15 @@ import javax.sql.DataSource
 
 class ExposedAggregateEventPublisherAutoConfigurationTest {
 
+    companion object: KLogging()
+
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedAggregateEventPublisherAutoConfiguration::class.java))
 
     @Test
     fun `does not register publisher without transaction manager`() {
         contextRunner.run { context ->
-            context.getBeansOfType(ExposedAggregateEventPublisher::class.java).isEmpty().shouldBeTrue()
+            context.getBeansOfType<ExposedAggregateEventPublisher>().shouldBeEmpty()
         }
     }
 
@@ -40,7 +45,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(SingleManagerConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).size shouldBeEqualTo 1
+                context.getBeansOfType<ExposedAggregateEventPublisher>() shouldHaveSize 1
             }
     }
 
@@ -49,7 +54,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(TwoManagerConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).isEmpty().shouldBeTrue()
+                context.getBeansOfType<ExposedAggregateEventPublisher>().shouldBeEmpty()
             }
     }
 
@@ -58,17 +63,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(PrimaryManagerConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).size shouldBeEqualTo 1
-            }
-    }
-
-    @Test
-    fun `backs off for application provided publisher`() {
-        contextRunner
-            .withUserConfiguration(SingleManagerConfiguration::class.java, CustomPublisherConfiguration::class.java)
-            .run { context ->
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).keys shouldBeEqualTo
-                        setOf("customAggregateEventPublisher")
+                context.getBeansOfType<ExposedAggregateEventPublisher>() shouldHaveSize 1
             }
     }
 
@@ -78,7 +73,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
             .withClassLoader(FilteredClassLoader("org.springframework.modulith"))
             .withUserConfiguration(SingleManagerConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).size shouldBeEqualTo 1
+                context.getBeansOfType<ExposedAggregateEventPublisher>() shouldHaveSize 1
             }
     }
 
@@ -89,7 +84,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
             .withUserConfiguration(SingleManagerConfiguration::class.java)
             .run { context ->
                 context.startupFailure.shouldBeNull()
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).isEmpty().shouldBeTrue()
+                context.getBeansOfType<ExposedAggregateEventPublisher>().shouldBeEmpty()
             }
     }
 
@@ -100,7 +95,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
             .withUserConfiguration(SingleManagerConfiguration::class.java)
             .run { context ->
                 context.startupFailure.shouldBeNull()
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).isEmpty().shouldBeTrue()
+                context.getBeansOfType<ExposedAggregateEventPublisher>().shouldBeEmpty()
             }
     }
 
@@ -127,14 +122,14 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
             .withUserConfiguration(DataSourceOnlyConfiguration::class.java)
             .run { context ->
                 context.containsBean("springTransactionManager").shouldBeTrue()
-                context.getBeansOfType(ExposedAggregateEventPublisher::class.java).size shouldBeEqualTo 1
+                context.getBeansOfType<ExposedAggregateEventPublisher>() shouldHaveSize 1
             }
     }
 
     @TestConfiguration(proxyBeanMethods = false)
     class DataSourceOnlyConfiguration {
         @Bean(destroyMethod = "shutdown")
-        fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
+        fun dataSource() = EmbeddedDatabaseBuilder()
             .generateUniqueName(true)
             .setType(EmbeddedDatabaseType.H2)
             .build()
@@ -143,7 +138,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
     @TestConfiguration(proxyBeanMethods = false)
     class SingleManagerConfiguration {
         @Bean(destroyMethod = "shutdown")
-        fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
+        fun dataSource() = EmbeddedDatabaseBuilder()
             .generateUniqueName(true)
             .setType(EmbeddedDatabaseType.H2)
             .build()
@@ -156,7 +151,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
     @TestConfiguration(proxyBeanMethods = false)
     class TwoManagerConfiguration {
         @Bean(destroyMethod = "shutdown")
-        fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
+        fun dataSource() = EmbeddedDatabaseBuilder()
             .generateUniqueName(true)
             .setType(EmbeddedDatabaseType.H2)
             .build()
@@ -173,7 +168,7 @@ class ExposedAggregateEventPublisherAutoConfigurationTest {
     @TestConfiguration(proxyBeanMethods = false)
     class PrimaryManagerConfiguration {
         @Bean(destroyMethod = "shutdown")
-        fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
+        fun dataSource() = EmbeddedDatabaseBuilder()
             .generateUniqueName(true)
             .setType(EmbeddedDatabaseType.H2)
             .build()

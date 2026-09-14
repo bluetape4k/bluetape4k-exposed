@@ -2,6 +2,8 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.query
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldStartWith
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -40,7 +42,7 @@ class SqlBindingConformanceTest {
         val values = Array<Any?>(10) { "value-${it + 1}" }
         fragments.forEach { fragment ->
             bind("SELECT $fragment, ?10, ?2, ?10, ?1", values) shouldBeEqualTo
-                ("SELECT $fragment, ?, ?, ?, ?" to listOf("value-10", "value-2", "value-10", "value-1"))
+                    ("SELECT $fragment, ?, ?, ?, ?" to listOf("value-10", "value-2", "value-10", "value-1"))
         }
         bind("SELECT ?1, ?1", arrayOf(null)) shouldBeEqualTo ("SELECT ?, ?" to listOf(null, null))
     }
@@ -48,9 +50,11 @@ class SqlBindingConformanceTest {
     @Test
     fun `실제 인덱스가 범위 밖이면 기존 adapter 진단을 유지한다`() {
         listOf("?0", "?2", "?2147483647").forEach { marker ->
-            val error = assertFailsWith<InvocationTargetException> { bind("SELECT $marker", arrayOf("one")) }
-            (error.cause is IllegalArgumentException) shouldBeEqualTo true
-            (error.cause?.message?.startsWith("Query placeholder index out of bounds:") == true) shouldBeEqualTo true
+            val error = assertFailsWith<InvocationTargetException> {
+                bind("SELECT $marker", arrayOf("one"))
+            }
+            error.cause.shouldBeInstanceOf<IllegalArgumentException>()
+            error.cause?.message shouldStartWith "Query placeholder index out of bounds:"
         }
     }
 }

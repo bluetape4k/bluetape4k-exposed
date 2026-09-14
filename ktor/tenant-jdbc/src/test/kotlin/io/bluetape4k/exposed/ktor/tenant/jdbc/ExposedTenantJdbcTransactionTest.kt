@@ -32,8 +32,8 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -291,17 +291,17 @@ class ExposedTenantJdbcTransactionTest {
 
             coroutineScope {
                 val request = async { client.get("/cancel/a") }
-                withTimeout(5_000) { transactionStarted.await() }
-                val serverRequest = withTimeout(5_000) { requestJob.await() }
+                withTimeout(timeMillis = 5_000) { transactionStarted.await() }
+                val serverRequest = withTimeout(timeMillis = 5_000) { requestJob.await() }
                 serverRequest.cancelAndJoin()
                 serverRequest.isCancelled.shouldBeTrue()
-                withTimeout(5_000) { transactionCompleted.await() }
+                withTimeout(timeMillis = 5_000) { transactionCompleted.await() }
                 request.cancelAndJoin()
             }
 
             client.get("/tenant/b").bodyAsText() shouldBeEqualTo "tenant-b"
             client.get("/tenant/a").bodyAsText() shouldBeEqualTo "tenant-a"
-            resolverInputs.toList() shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
+            resolverInputs shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
             assertTransactionMetrics(meterRegistry)
         } finally {
             dispatcher.close()
@@ -314,6 +314,7 @@ class ExposedTenantJdbcTransactionTest {
             .tag("outcome", "cancelled")
             .timer()
             .count() shouldBeEqualTo 1L
+
         meterRegistry.get("bluetape4k.exposed.ktor.core.transaction")
             .tag("backend", "jdbc")
             .tag("outcome", "success")
@@ -348,16 +349,19 @@ class ExposedTenantJdbcTransactionTest {
     }
 
     private fun newDispatcher(prefix: String = "tenant-jdbc"): kotlinx.coroutines.ExecutorCoroutineDispatcher =
-        Executors.newFixedThreadPool(2) { runnable -> Thread(runnable, "$prefix-${THREAD_ID.incrementAndGet()}") }
-            .asCoroutineDispatcher()
+        Executors.newFixedThreadPool(2) { runnable ->
+            Thread(runnable, "$prefix-${THREAD_ID.incrementAndGet()}")
+        }.asCoroutineDispatcher()
 
     private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
-        config().meterFilter(object : MeterFilter {
-            override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
-        })
+        config().meterFilter(
+            object: MeterFilter {
+                override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+            }
+        )
     }
 
-    private object TenantMarkers : Table("tenant_markers") {
+    private object TenantMarkers: Table("tenant_markers") {
         val marker = varchar("marker", 64)
     }
 

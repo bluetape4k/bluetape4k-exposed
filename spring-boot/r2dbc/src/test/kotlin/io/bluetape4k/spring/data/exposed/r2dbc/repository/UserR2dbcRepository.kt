@@ -76,7 +76,7 @@ interface UserR2dbcRepository: ExposedR2dbcQueryByExampleRepository<User, Long> 
 
     @Query(
         "SELECT candidate.id FROM $USERS_TABLE_NAME source " +
-            "LEFT JOIN $USERS_TABLE_NAME candidate ON 1 = 0 WHERE source.email = ?1"
+                "LEFT JOIN $USERS_TABLE_NAME candidate ON 1 = 0 WHERE source.email = ?1"
     )
     suspend fun findWithNullIdNative(email: String): List<User>
 

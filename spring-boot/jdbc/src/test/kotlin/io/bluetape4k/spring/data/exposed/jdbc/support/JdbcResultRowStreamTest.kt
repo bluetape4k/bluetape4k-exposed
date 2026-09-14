@@ -2,9 +2,11 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.AbstractExposedJdbcRepositoryTest
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
@@ -23,6 +25,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
 
+    companion object: KLogging()
+
     @Test
     fun `exhaustion closes result set and statement exactly once`() {
         withCountingStream { stream, counters ->
@@ -40,7 +44,10 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
             counters.next.get() shouldBeEqualTo 0
             stream.close()
             stream.close()
-            assertFailsWith<InvalidDataAccessApiUsageException> { iterator.next() }
+
+            assertFailsWith<InvalidDataAccessApiUsageException> {
+                iterator.next()
+            }
             counters.next.get() shouldBeEqualTo 0
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
@@ -50,7 +57,9 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     @Test
     fun `mapper failure closes both resources exactly once`() {
         withCountingStream(mapper = { _, _ -> error("mapping failed") }) { stream, counters ->
-            assertFailsWith<IllegalStateException> { stream.findFirst() }
+            assertFailsWith<IllegalStateException> {
+                stream.findFirst()
+            }
             counters.next.get() shouldBeEqualTo 1
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
@@ -60,7 +69,9 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     @Test
     fun `mapper error closes both resources before propagating`() {
         withCountingStream(mapper = { _, _ -> throw AssertionError("fatal mapping failure") }) { stream, counters ->
-            assertFailsWith<AssertionError> { stream.findFirst() }
+            assertFailsWith<AssertionError> {
+                stream.findFirst()
+            }
             counters.next.get() shouldBeEqualTo 1
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
@@ -70,7 +81,9 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     @Test
     fun `short circuit closes result set and statement exactly once`() {
         withCountingStream { stream, counters ->
-            stream.use { it.findFirst().orElseThrow() shouldBeEqualTo "Alice" }
+            stream.use {
+                it.findFirst().orElseThrow() shouldBeEqualTo "Alice"
+            }
             counters.next.get() shouldBeEqualTo 1
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
@@ -80,8 +93,10 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     @Test
     fun `statement lookup failure is redacted after releasing the result set`() {
         withCountingStream(statementAccessible = false) { stream, counters ->
-            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.close() }
-            throwableGraph(failure).contains("statement closed").shouldBeFalse()
+            val failure = assertFailsWith<DataAccessResourceFailureException> {
+                stream.close()
+            }
+            throwableGraph(failure) shouldNotContain "statement closed"
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 0
         }
@@ -91,6 +106,7 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     fun `wrong thread consumption leaves the owner lease open`() {
         withCountingStream { stream, counters ->
             val observed = AtomicReference<Throwable>()
+
             MultithreadingTester()
                 .workers(1)
                 .rounds(1)
@@ -117,10 +133,13 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     fun `cursor advance failure uses a stable data access exception and closes resources`() {
         val driverFailure = SQLException("sensitive SQL: select secret_column", "42000", 1234)
         withCountingStream(nextFailure = driverFailure) { stream, counters ->
-            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.findFirst() }
-            throwableGraph(failure).contains("sensitive SQL").shouldBeFalse()
-            (failure.cause as SQLException).sqlState shouldBeEqualTo "42000"
-            failure.cause?.cause shouldBeEqualTo null
+            val failure = assertFailsWith<DataAccessResourceFailureException> {
+                stream.findFirst()
+            }
+
+            throwableGraph(failure) shouldNotContain "sensitive SQL"
+            failure.cause.shouldBeInstanceOf<SQLException>().sqlState shouldBeEqualTo "42000"
+            failure.cause?.cause.shouldBeNull()
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
         }
@@ -130,10 +149,13 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
     fun `row materialization failure redacts the driver cause and closes resources`() {
         val driverFailure = SQLException("sensitive SQL: select secret_column", "S1000", 9876)
         withCountingStream(getObjectFailure = driverFailure) { stream, counters ->
-            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.findFirst() }
-            throwableGraph(failure).contains("sensitive SQL").shouldBeFalse()
-            (failure.cause as SQLException).sqlState shouldBeEqualTo "S1000"
-            failure.cause?.cause shouldBeEqualTo null
+            val failure = assertFailsWith<DataAccessResourceFailureException> {
+                stream.findFirst()
+            }
+
+            throwableGraph(failure) shouldNotContain "sensitive SQL"
+            failure.cause.shouldBeInstanceOf<SQLException>().sqlState shouldBeEqualTo "S1000"
+            failure.cause?.cause.shouldBeNull()
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
         }
@@ -145,12 +167,16 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
             resultSetCloseFailure = SQLException("sensitive result-set close"),
             statementCloseFailure = SQLException("sensitive statement close"),
         ) { stream, counters ->
-            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.close() }
-            throwableGraph(failure).contains("sensitive").shouldBeFalse()
+            val failure = assertFailsWith<DataAccessResourceFailureException> {
+                stream.close()
+            }
+            throwableGraph(failure) shouldNotContain "sensitive"
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
 
-            assertFailsWith<InvalidDataAccessApiUsageException> { Users.select(Users.name).toList() }
+            assertFailsWith<InvalidDataAccessApiUsageException> {
+                Users.select(Users.name).toList()
+            }
         }
     }
 
@@ -160,8 +186,11 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
             resultSetCloseFailure = IllegalStateException("sensitive result-set close"),
             statementCloseFailure = IllegalStateException("sensitive statement close"),
         ) { stream, counters ->
-            val failure = assertFailsWith<DataAccessResourceFailureException> { stream.close() }
-            throwableGraph(failure).contains("sensitive").shouldBeFalse()
+
+            val failure = assertFailsWith<DataAccessResourceFailureException> {
+                stream.close()
+            }
+            throwableGraph(failure) shouldNotContain "sensitive"
             counters.resultSetClose.get() shouldBeEqualTo 1
             counters.statementClose.get() shouldBeEqualTo 1
         }
@@ -220,16 +249,16 @@ class JdbcResultRowStreamTest: AbstractExposedJdbcRepositoryTest() {
         ) { _, method, args ->
             when (method.name) {
                 "getStatement" -> statementFor(statementProxy, statementAccessible)
-                "next" -> {
+                "next"      -> {
                     counters.next.incrementAndGet()
                     nextResult(delegate, nextFailure)
                 }
                 "getObject" -> resultObject(delegate, method, args, getObjectFailure)
-                "close" -> {
+                "close"     -> {
                     closeResultSet(delegate, counters, resultSetCloseFailure)
                     null
                 }
-                else -> method.invoke(delegate, *(args ?: emptyArray()))
+                else        -> method.invoke(delegate, *(args ?: emptyArray()))
             }
         } as ResultSet
     }

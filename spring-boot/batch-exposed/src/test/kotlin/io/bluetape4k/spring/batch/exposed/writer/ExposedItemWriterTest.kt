@@ -1,16 +1,19 @@
 package io.bluetape4k.spring.batch.exposed.writer
 
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.TargetRecord
 import io.bluetape4k.spring.batch.exposed.TargetTable
-import io.bluetape4k.assertions.shouldBeEqualTo
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.batch.infrastructure.item.Chunk
 
-class ExposedItemWriterTest : AbstractExposedBatchTest() {
+class ExposedItemWriterTest: AbstractExposedBatchTest() {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)

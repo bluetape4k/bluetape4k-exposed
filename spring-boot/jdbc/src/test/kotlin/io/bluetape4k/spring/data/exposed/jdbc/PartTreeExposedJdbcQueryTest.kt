@@ -1,8 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc
 
-import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
-import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
-import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
@@ -10,13 +8,16 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
-import org.jetbrains.exposed.v1.jdbc.deleteAll
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
+import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
+import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
+import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -25,18 +26,23 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
 
+    companion object: KLogging()
+
     @Autowired
     private lateinit var userJdbcRepository: UserJdbcRepository
 
     @AfterEach
     fun tearDown() {
-        transaction { Users.deleteAll() }
+        transaction {
+            Users.deleteAll()
+        }
     }
 
     @Test
     fun `@Query native - 문자열과 주석의 placeholder는 바인딩하지 않는다`() {
         createUsers()
-        // Exposed 1.5.0 expandArgs는 주석의 ?도 소비하므로 이 테스트의 logger만 제외합니다.
+
+        // Exposed 1.5.0 expandArgs는 주석의 `?`도 소비하므로 이 테스트의 logger만 제외합니다.
         val logger = TransactionManager.current().defaultLogger
         logger.removeLogger(Slf4jSqlDebugLogger)
         try {

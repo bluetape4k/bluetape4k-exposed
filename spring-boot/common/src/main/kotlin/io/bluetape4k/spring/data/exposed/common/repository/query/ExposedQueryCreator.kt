@@ -57,39 +57,40 @@ class ExposedQueryCreator(
             ?: error("Column '$columnName' not found in table '${table.tableName}'")
 
         return when (part.type) {
-            Part.Type.SIMPLE_PROPERTY -> (column as Column<Any>).eq(iterator.next())
-            Part.Type.NEGATING_SIMPLE_PROPERTY -> (column as Column<Any>).neq(iterator.next())
+            Part.Type.SIMPLE_PROPERTY             -> (column as Column<Any>).eq(iterator.next())
+            Part.Type.NEGATING_SIMPLE_PROPERTY    -> (column as Column<Any>).neq(iterator.next())
             Part.Type.GREATER_THAN, Part.Type.AFTER ->
                 (column as Column<Comparable<Any>>).greater(iterator.next() as Comparable<Any>)
-            Part.Type.GREATER_THAN_EQUAL ->
+            Part.Type.GREATER_THAN_EQUAL          ->
                 (column as Column<Comparable<Any>>).greaterEq(iterator.next() as Comparable<Any>)
             Part.Type.LESS_THAN, Part.Type.BEFORE ->
                 (column as Column<Comparable<Any>>).less(iterator.next() as Comparable<Any>)
-            Part.Type.LESS_THAN_EQUAL ->
+            Part.Type.LESS_THAN_EQUAL             ->
                 (column as Column<Comparable<Any>>).lessEq(iterator.next() as Comparable<Any>)
-            Part.Type.BETWEEN -> {
+            Part.Type.BETWEEN                     -> {
                 val first = iterator.next() as Comparable<Any>
                 val second = iterator.next() as Comparable<Any>
                 (column as Column<Comparable<Any>>).between(first, second)
             }
-            Part.Type.IS_NULL -> column.isNull()
-            Part.Type.IS_NOT_NULL -> column.isNotNull()
-            Part.Type.LIKE -> (column as Column<String>).like(iterator.next() as String)
-            Part.Type.NOT_LIKE -> (column as Column<String>).notLike(iterator.next() as String)
-            Part.Type.STARTING_WITH ->
+            Part.Type.IS_NULL                     -> column.isNull()
+            Part.Type.IS_NOT_NULL                 -> column.isNotNull()
+            Part.Type.LIKE                        -> (column as Column<String>).like(iterator.next() as String)
+            Part.Type.NOT_LIKE                    -> (column as Column<String>).notLike(iterator.next() as String)
+            Part.Type.STARTING_WITH               ->
                 (column as Column<String>).like("${escapeLikeWildcards(iterator.next() as String)}%")
-            Part.Type.ENDING_WITH ->
+            Part.Type.ENDING_WITH                 ->
                 (column as Column<String>).like("%${escapeLikeWildcards(iterator.next() as String)}")
-            Part.Type.CONTAINING ->
+            Part.Type.CONTAINING                  ->
                 (column as Column<String>).like("%${escapeLikeWildcards(iterator.next() as String)}%")
-            Part.Type.NOT_CONTAINING ->
+            Part.Type.NOT_CONTAINING              ->
                 (column as Column<String>).notLike("%${escapeLikeWildcards(iterator.next() as String)}%")
-            Part.Type.IN -> (column as Column<Any>).inList(iterator.next() as Collection<Any>)
-            Part.Type.NOT_IN -> (column as Column<Any>).notInList(iterator.next() as Collection<Any>)
-            Part.Type.TRUE -> (column as Column<Boolean>).eq(true)
-            Part.Type.FALSE -> (column as Column<Boolean>).eq(false)
-            Part.Type.EXISTS -> column.isNotNull()
-            else -> error("Unsupported Part.Type: ${part.type}")
+            Part.Type.IN                          -> (column as Column<Any>).inList(iterator.next() as Collection<Any>)
+            Part.Type.NOT_IN                      ->
+                (column as Column<Any>).notInList(iterator.next() as Collection<Any>)
+            Part.Type.TRUE                        -> (column as Column<Boolean>).eq(true)
+            Part.Type.FALSE                       -> (column as Column<Boolean>).eq(false)
+            Part.Type.EXISTS                      -> column.isNotNull()
+            else                                  -> error("Unsupported Part.Type: ${part.type}")
         }
     }
 }

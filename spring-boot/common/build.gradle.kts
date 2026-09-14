@@ -24,6 +24,8 @@ dependencies {
     api(libs.exposed.dao)
     compileOnly("org.springframework:spring-context")
 
+    api(bt4k.bluetape4k.core)
+
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(project(":bluetape4k-exposed-dao"))

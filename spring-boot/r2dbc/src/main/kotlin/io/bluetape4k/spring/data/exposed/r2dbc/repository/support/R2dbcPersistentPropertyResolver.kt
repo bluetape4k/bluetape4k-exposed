@@ -7,7 +7,7 @@ import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import java.lang.reflect.InvocationTargetException
-import java.util.Optional
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
@@ -43,9 +43,9 @@ internal class R2dbcPersistentPropertyResolver(
 
         val matches = properties.filter { property ->
             property.logicalName == propertyName ||
-                toSnakeCase(property.logicalName) == propertyName ||
-                property.column.name == propertyName ||
-                toCamelCase(property.column.name) == propertyName
+                    toSnakeCase(property.logicalName) == propertyName ||
+                    property.column.name == propertyName ||
+                    toCamelCase(property.column.name) == propertyName
         }
         return matches.singleOrNull()
             ?: throw invalidProperty(
@@ -88,7 +88,7 @@ internal class R2dbcPersistentPropertyResolver(
             if (specifier.ignoreCase == true) {
                 throw UnsupportedOperationException(
                     "Ignore-case QBE matching is not supported for property " +
-                        "'${R2dbcDiagnosticSanitizer.propertyToken(resolved.logicalName)}'.",
+                            "'${R2dbcDiagnosticSanitizer.propertyToken(resolved.logicalName)}'.",
                 )
             }
             if (put(resolved.logicalName, specifier) != null) {
@@ -136,7 +136,7 @@ internal class R2dbcPersistentPropertyResolver(
                     ignoreCase = false,
                     includeNull = true,
                 )
-            else -> null
+            else                  -> null
         }
     }
 
@@ -167,14 +167,14 @@ internal class R2dbcPersistentPropertyResolver(
         matcher: ExampleMatcher.StringMatcher,
     ) {
         val message = when {
-            matcher == ExampleMatcher.StringMatcher.REGEX ->
+            matcher == ExampleMatcher.StringMatcher.REGEX                            ->
                 "Regex QBE matching is not supported for property " +
-                    "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
-            matcher !in SUPPORTED_STRING_MATCHERS -> "Unsupported QBE string matcher"
+                        "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
+            matcher !in SUPPORTED_STRING_MATCHERS                                    -> "Unsupported QBE string matcher"
             matcher !in EXACT_STRING_MATCHERS && property.valueType != String::class ->
                 "String QBE matcher requires a String property " +
-                    "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
-            else -> null
+                        "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
+            else                                                                     -> null
         }
         if (message != null) throw UnsupportedOperationException(message)
     }
@@ -199,8 +199,8 @@ internal class R2dbcPersistentPropertyResolver(
         } else {
             val candidates = table.columns.filter { column ->
                 column.name == propertyName ||
-                    column.name == toSnakeCase(propertyName) ||
-                    toCamelCase(column.name) == propertyName
+                        column.name == toSnakeCase(propertyName) ||
+                        toCamelCase(column.name) == propertyName
             }
             candidates.singleOrNull()
         }

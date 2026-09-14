@@ -24,7 +24,7 @@ class DefaultExposedPersistentProperty(
         val currentTable = table ?: return null
         return currentTable.columns.firstOrNull { column ->
             column.name.equals(name, ignoreCase = true) ||
-                column.name.equals(toSnakeCase(name), ignoreCase = true)
+                    column.name.equals(toSnakeCase(name), ignoreCase = true)
         }
     }
 
