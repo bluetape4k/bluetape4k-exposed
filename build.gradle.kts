@@ -1154,56 +1154,22 @@ val productionAbiCheckTasks = productionAbiProjects.map { project ->
 val productionAbiUpdateTasks = productionAbiProjects.map { project ->
     project.tasks.named("updateKotlinAbi")
 }
+val productionAbiBaselineFiles = rootProject.fileTree("api") {
+    include("*.api")
+}
+val productionAbiActualFiles = productionAbiProjects.map { project ->
+    project.layout.buildDirectory.file("kotlin/abi/${project.name}.api")
+}
 val productionAbiReport = layout.buildDirectory.file("abi/reports/production-abi.txt")
 
-tasks.register("checkProductionAbi") {
+tasks.register<CheckProductionAbiTask>("checkProductionAbi") {
     group = "verification"
     description = "Checks the fail-closed ABI baseline for every published JVM module."
+    expectedProjects.set(productionAbiProjects.map(Project::getName))
+    baselineFiles.from(productionAbiBaselineFiles)
+    actualDumpFiles.from(productionAbiActualFiles)
+    reportFile.set(productionAbiReport)
     dependsOn(productionAbiCheckTasks)
-    doLast {
-        val expectedProjects = productionAbiProjects.map(Project::getName).toSet()
-        val baselineFiles = rootProject.layout.projectDirectory.dir("api").asFile
-            .listFiles()
-            .orEmpty()
-            .filter { it.isFile && it.extension == "api" }
-        val baselineProjects = baselineFiles
-            .map { it.name.removeSuffix(".api") }
-            .toSet()
-        val emptyBaselineProjects = baselineFiles
-            .filter { it.length() == 0L }
-            .map { it.name.removeSuffix(".api") }
-            .toSet()
-        val actualProjects = productionAbiProjects
-            .map { project ->
-                project.layout.buildDirectory.file("kotlin/abi/${project.name}.api").get().asFile
-            }
-            .filter { it.isFile && it.length() > 0L }
-            .map { it.name.removeSuffix(".api") }
-            .toSet()
-
-        val result = validateProductionAbiInventory(
-            expectedProjects = expectedProjects,
-            baselineProjects = baselineProjects,
-            actualProjects = actualProjects,
-            emptyBaselineProjects = emptyBaselineProjects,
-        )
-        result.requireValid()
-
-        productionAbiReport.get().asFile.apply {
-            parentFile.mkdirs()
-            writeText(
-                buildString {
-                    appendLine("modules=${expectedProjects.size}/${expectedProjects.size}")
-                    appendLine("baselines=${baselineProjects.size}/${expectedProjects.size}")
-                    appendLine("actualDumps=${actualProjects.size}/${expectedProjects.size}")
-                    appendLine("orphanBaselines=${result.orphanBaselines.size}")
-                    appendLine("orphanActuals=${result.orphanActuals.size}")
-                    appendLine("emptyBaselines=${result.emptyBaselineProjects.size}")
-                    expectedProjects.sorted().forEach { appendLine(it) }
-                },
-            )
-        }
-    }
 }
 
 tasks.register("updateProductionAbiBaseline") {
