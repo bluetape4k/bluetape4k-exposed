@@ -350,6 +350,26 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
+      - name: Run buildSrc configuration-cache TestKit regression
+        run: |
+          ./gradlew -p buildSrc test \
+            --tests CheckProductionAbiConfigurationCacheTest \
+            --no-configuration-cache --no-daemon
+          test -s buildSrc/build/test-results/test/TEST-CheckProductionAbiConfigurationCacheTest.xml
+          grep -F 'checkProductionAbi stores and reuses configuration cache' \
+            buildSrc/build/test-results/test/TEST-CheckProductionAbiConfigurationCacheTest.xml
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+      - name: Upload buildSrc configuration-cache test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: buildsrc-configuration-cache-test-results
+          path: buildSrc/build/test-results/test/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Validate publication POMs
         run: |
           ./gradlew generateMetadataFileForBluetapeExposedPublication \
