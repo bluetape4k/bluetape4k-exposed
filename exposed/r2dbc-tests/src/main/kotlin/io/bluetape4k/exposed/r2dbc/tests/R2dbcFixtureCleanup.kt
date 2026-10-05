@@ -17,16 +17,8 @@ internal fun retainR2dbcFailure(primary: Throwable?, cleanup: Throwable): Throwa
     return primary
 }
 
-/** 요청 대상의 사전 정리 실패 중 취소만 전파한다. */
-internal suspend fun r2dbcPreDrop(drop: suspend () -> Unit) {
-    try {
-        drop()
-    } catch (failure: CancellationException) {
-        throw failure
-    } catch (_: Throwable) {
-        // 사전 정리 실패는 뒤따르는 생성 단계에서 실제 상태를 검증한다.
-    }
-}
+/** `SchemaUtils.drop`이 dialect별 대상 없음 처리를 수행하므로 사전 정리 실패를 그대로 전파한다. */
+internal suspend fun r2dbcPreDrop(drop: suspend () -> Unit) = drop()
 
 /** 취소 후 필수 정리만 보호하며 withTables의 기존 취소 예외 정책을 유지한다. */
 internal suspend fun R2dbcTransaction.cleanupR2dbcFixture(
