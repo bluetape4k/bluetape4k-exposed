@@ -38,9 +38,16 @@ val rootLibs = libs
 val rootBt4k = bt4k
 val bt4kCatalog = extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>().named("bt4k")
 fun bt4kLibrary(alias: String) = bt4kCatalog.findLibrary(alias).get()
+// Remove these local overrides after the pinned central catalog contains the patched releases.
+val securityVersionOverrides = mapOf(
+    "jackson" to "2.22.3",
+    "jackson3" to "3.2.3",
+)
+
 fun bt4kVersion(alias: String): String {
     val version = bt4kCatalog.findVersion(alias).get()
-    return version.requiredVersion
+    return securityVersionOverrides[alias]
+        ?: version.requiredVersion
         .ifBlank { version.preferredVersion }
         .ifBlank { version.strictVersion }
 }
@@ -313,6 +320,7 @@ subprojects {
             mavenBom(bt4kLibrary("netty-bom").get().toString())
         }
         dependencies {
+            dependency("org.freemarker:freemarker:2.3.35")
             // <central-catalog-local-aliases>
             dependency("ai.timefold.solver:timefold-solver-benchmark:${bt4kVersion("timefold-solver")}")
             dependency("ai.timefold.solver:timefold-solver-core:${bt4kVersion("timefold-solver")}")
