@@ -13,6 +13,8 @@
   `Job dependencies not found in the dependency snapshot`을 보고했습니다.
 - 같은 SHA의 dependency submission run
   [#34837074281](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/34837074281)은 성공했고,
+  run log도 `Dependency results for the repo have been successfully updated`라고
+  기록했습니다.
   보존 artifact의 SHA/ref는 동일하며, 1,247개 resolved node가 포함된
   `settings.gradle.kts` 단일 manifest 안에 오류 로그에 나온 group/artifact가
   여러 version으로 존재합니다. 그러므로 해당 실행의 artifact만으로는 오류 이름의
