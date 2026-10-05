@@ -27,7 +27,21 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: refs/heads/develop
+          ref: ${{ github.sha }}
+
+      - name: Verify snapshot source revision
+        shell: bash
+        run: |
+          checked_out_sha="$(git rev-parse HEAD)"
+          if [[ "$checked_out_sha" != "$GITHUB_SHA" ]]; then
+            echo "::error::Dependency snapshot source $checked_out_sha does not match event SHA $GITHUB_SHA"
+            exit 1
+          fi
+          {
+            echo "## Dependency snapshot source"
+            echo "- commit: \`$checked_out_sha\`"
+            echo "- ref: \`$GITHUB_REF\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
