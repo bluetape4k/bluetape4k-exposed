@@ -11,7 +11,10 @@ internal fun Properties.applyRawProperties(options: ClickHouseV2Options) {
 internal fun Properties.applyTypedProperties(options: ClickHouseV2Options) {
     listOfNotNull(
         property("connection_timeout", options.connectionTimeoutMillis),
-        property("socket_timeout", options.socketOperationTimeoutMillis),
+        property(
+            "socket_timeout",
+            options.socketOperationTimeoutMillis ?: DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS,
+        ),
         property("connection_request_timeout", options.connectionRequestTimeoutMillis),
         property("connection_ttl", options.connectionTtlMillis),
         property("http_keep_alive_timeout", options.httpKeepAliveTimeoutMillis),

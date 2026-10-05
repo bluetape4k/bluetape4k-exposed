@@ -53,8 +53,9 @@ The typed fields map to V2 properties such as `connection_timeout`,
 only where the driver defines it as its default. The default
 `ClickHouseV2Options` and the legacy `ClickHouseDatabase.connect` overloads
 apply `socket_timeout=10000` as a finite fail-safe for blocking
-`ResultSet.next()` reads. Set `socketOperationTimeoutMillis` explicitly for a
-different finite bound. Explicit `0` selects the ClickHouse driver default
+`ResultSet.next()` reads. `socketOperationTimeoutMillis = null` keeps that same
+finite default; set a positive value for a different finite bound. Explicit `0`
+selects the ClickHouse driver default
 (`socket_timeout=0`, unlimited), so the caller must own another finite
 deadline when choosing it. Pool limits and buffer sizes must be positive.
 

@@ -18,6 +18,11 @@ class ClickHouseV2OptionsTest {
         val defaultProperties = ClickHouseV2Options().toEffectiveProperties("default", "")
         defaultProperties.getProperty("socket_timeout") shouldBeEqualTo "10000"
 
+        val nullProperties = ClickHouseV2Options(
+            socketOperationTimeoutMillis = null,
+        ).toEffectiveProperties("default", "")
+        nullProperties.getProperty("socket_timeout") shouldBeEqualTo "10000"
+
         val driverDefaultProperties = ClickHouseV2Options(
             socketOperationTimeoutMillis = 0,
         ).toEffectiveProperties("default", "")

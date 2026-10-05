@@ -50,8 +50,9 @@ typed field는 `connection_timeout`, `socket_timeout`,
 압축/재시도 설정, `query_id`, `clickhouse_setting_<name>` 같은 V2 property로
 변환됩니다. timeout 값은 milliseconds 단위입니다. 기본 `ClickHouseV2Options`와
 기존 `ClickHouseDatabase.connect` overload는 blocking `ResultSet.next()`의 대기를
-유한하게 제한하도록 `socket_timeout=10000`을 적용합니다. 다른 유한 상한은
-`socketOperationTimeoutMillis`에 명시하세요. `0`을 명시하면 ClickHouse driver
+유한하게 제한하도록 `socket_timeout=10000`을 적용합니다.
+`socketOperationTimeoutMillis = null`도 같은 유한 기본값을 유지하며, 다른 유한
+상한은 양수를 지정하세요. `0`을 명시하면 ClickHouse driver
 default(`socket_timeout=0`, 무제한)를 선택하므로 caller가 별도 유한 deadline을
 소유해야 합니다. pool limit와 buffer 크기는 양수여야 합니다.
 

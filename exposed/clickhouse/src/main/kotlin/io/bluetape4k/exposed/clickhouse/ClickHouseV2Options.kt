@@ -145,8 +145,9 @@ class ClickHouseV2Options(
     /**
      * JDBC `socket_timeout` 값(밀리초)입니다.
      *
-     * 기본값은 driver의 무제한 `0` 대신 유한한 fail-safe 상한을 적용합니다. `0`을
-     * 명시하면 driver default를 선택하므로, caller가 별도 유한 deadline을 소유해야 합니다.
+     * 기본값과 명시적 `null`은 driver의 무제한 `0` 대신 유한한 fail-safe 상한으로
+     * 정규화됩니다. `0`을 명시하면 driver default를 선택하므로, caller가 별도 유한
+     * deadline을 소유해야 합니다.
      */
     val socketOperationTimeoutMillis: Int? = DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS,
     val connectionRequestTimeoutMillis: Long? = null,
@@ -301,9 +302,11 @@ class ClickHouseV2Options(
     }
 
     private fun typedPropertyKeys(): Set<String> {
+        val socketTimeoutMillis =
+            socketOperationTimeoutMillis ?: DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS
         val keys = listOf(
             connectionTimeoutMillis to "connection_timeout",
-            socketOperationTimeoutMillis to "socket_timeout",
+            socketTimeoutMillis to "socket_timeout",
             connectionRequestTimeoutMillis to "connection_request_timeout",
             connectionTtlMillis to "connection_ttl",
             httpKeepAliveTimeoutMillis to "http_keep_alive_timeout",
