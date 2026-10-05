@@ -56,7 +56,29 @@ configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }
 
+val issue882LegacyR2dbcTests by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+repositories {
+    ivy {
+        name = "issue882ReleasedR2dbcTests"
+        url = uri("https://repo.maven.apache.org/maven2/io/github/bluetape4k/exposed/bluetape4k-exposed-r2dbc-tests")
+        patternLayout {
+            artifact("[revision]/bluetape4k-exposed-r2dbc-tests-[revision].[ext]")
+        }
+        metadataSources {
+            artifact()
+        }
+    }
+}
+
 dependencies {
+    add(issue882LegacyR2dbcTests.name, "io.github.bluetape4k.exposed.fixture:released-r2dbc-tests:2.0.0@jar") {
+        isTransitive = false
+    }
+
     implementation(platform(bt4k.spring.boot4.dependencies))
     // Exposed
     implementation(platform(bt4k.exposed.bom))
@@ -110,4 +132,16 @@ dependencies {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
         exclude(module = "mockito-core")
     }
+}
+
+val compileIssue882LegacyConsumer by tasks.registering(JavaCompile::class) {
+    source(fileTree("src/test/legacy-consumer/java") { include("**/*.java") })
+    classpath = files(issue882LegacyR2dbcTests, configurations.getByName("testCompileClasspath"))
+    destinationDirectory.set(layout.buildDirectory.dir("classes/java/issue882LegacyConsumer"))
+    options.encoding = "UTF-8"
+}
+
+tasks.named<Test>("test") {
+    dependsOn(compileIssue882LegacyConsumer)
+    classpath = classpath.plus(files(compileIssue882LegacyConsumer.flatMap { it.destinationDirectory }))
 }
