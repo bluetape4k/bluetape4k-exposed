@@ -22,10 +22,6 @@ public final class R2dbc200Consumer extends R2dbcExposedTestBase {
     }
 
     public String addIfNotExists() {
-        try {
-            return addIfNotExistsIfSupported();
-        } catch (IllegalStateException noTransactionIsBound) {
-            return "linked-without-transaction";
-        }
+        return addIfNotExistsIfSupported();
     }
 }
