@@ -1686,7 +1686,7 @@ jobs:
       - name: Test exposed-clickhouse
         run: |
           for attempt in 1 2 3 4 5 6 7 8; do
-            ./gradlew :bluetape4k-exposed-clickhouse:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-clickhouse:test -PclickhouseV2Integration=true --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 8 ] && sleep 60 || exit 1
           done
@@ -1694,6 +1694,28 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
           DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Verify ClickHouse RowBinary integration ran
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          result = Path("exposed/clickhouse/build/test-results/test/TEST-io.bluetape4k.exposed.clickhouse.ClickHouseRowBinaryIntegrationTest.xml")
+          if not result.is_file():
+              sys.exit(f"Missing ClickHouse RowBinary JUnit result: {result}")
+
+          root = ET.parse(result).getroot()
+          cases = list(root.iter("testcase"))
+          skipped = sum(case.find("skipped") is not None for case in cases)
+          failures = sum(case.find("failure") is not None for case in cases)
+          errors = sum(case.find("error") is not None for case in cases)
+          executed = len(cases) - skipped
+          print(f"RowBinary testcases={len(cases)} executed={executed} skipped={skipped} failures={failures} errors={errors}")
+          if executed == 0 or skipped != 0 or failures != 0 or errors != 0:
+              sys.exit("ClickHouse RowBinary integration did not pass as an executed test")
+          PY
       - name: Generate Kover XML report
         if: always()
         run: ./gradlew :bluetape4k-exposed-clickhouse:koverXmlReport --no-configuration-cache --no-daemon -x test
@@ -1703,7 +1725,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-results-clickhouse
-          path: '**/build/test-results/test/*.xml'
+          path: exposed/clickhouse/build/test-results/test/*.xml
+          if-no-files-found: error
           retention-days: 14
       - name: Upload coverage report
         if: always()
