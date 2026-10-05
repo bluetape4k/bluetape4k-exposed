@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.awaitility.kotlin.await
 import org.jetbrains.exposed.v1.core.CustomFunction
 import org.jetbrains.exposed.v1.core.LongColumnType
@@ -416,13 +417,17 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 decimalLiteral("1".toBigDecimal()),
             )
             val emitted = AtomicInteger()
+            val started = System.nanoTime()
             val failure = assertFailsWith<SQLException> {
-                queryFlow(
-                    fixture.database,
-                    query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
-                    mapper = { emitted.incrementAndGet(); it[Numbers.number] },
-                ).toList()
+                withTimeout(3_000) {
+                    queryFlow(
+                        fixture.database,
+                        query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
+                        mapper = { emitted.incrementAndGet(); it[Numbers.number] },
+                    ).toList()
+                }
             }
+            ((System.nanoTime() - started) / 1_000_000).shouldBeLessThan(3_000L)
 
             failure.shouldBeInstanceOf<ExposedSQLException>()
             failure.cause.shouldBeInstanceOf<BatchUpdateException>()

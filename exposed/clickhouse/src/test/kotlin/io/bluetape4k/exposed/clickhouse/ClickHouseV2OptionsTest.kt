@@ -14,6 +14,17 @@ import java.time.ZoneId
 class ClickHouseV2OptionsTest {
 
     @Test
+    fun `기본 V2 options는 유한한 socket timeout을 적용하고 명시적 zero는 driver default를 선택한다`() {
+        val defaultProperties = ClickHouseV2Options().toEffectiveProperties("default", "")
+        defaultProperties.getProperty("socket_timeout") shouldBeEqualTo "10000"
+
+        val driverDefaultProperties = ClickHouseV2Options(
+            socketOperationTimeoutMillis = 0,
+        ).toEffectiveProperties("default", "")
+        driverDefaultProperties.getProperty("socket_timeout") shouldBeEqualTo "0"
+    }
+
+    @Test
     fun `typed values map to V2 properties with millisecond units`() {
         val options = ClickHouseV2Options(
             connectionTimeoutMillis = 1_500L,

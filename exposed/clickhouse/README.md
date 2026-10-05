@@ -50,8 +50,13 @@ The typed fields map to V2 properties such as `connection_timeout`,
 `socket_timeout`, `connection_request_timeout`, `connection_ttl`,
 `http_keep_alive_timeout`, compression/retry settings, `query_id`, and
 `clickhouse_setting_<name>`. Timeout values use milliseconds; `0` is accepted
-only where the driver defines it as its default, while pool limits and buffer
-sizes must be positive.
+only where the driver defines it as its default. The default
+`ClickHouseV2Options` and the legacy `ClickHouseDatabase.connect` overloads
+apply `socket_timeout=10000` as a finite fail-safe for blocking
+`ResultSet.next()` reads. Set `socketOperationTimeoutMillis` explicitly for a
+different finite bound. Explicit `0` selects the ClickHouse driver default
+(`socket_timeout=0`, unlimited), so the caller must own another finite
+deadline when choosing it. Pool limits and buffer sizes must be positive.
 
 `authentication` is a one-of value: `Basic`, `AccessToken`, or `BearerToken`.
 Basic authentication uses the `user`/`password` arguments. Token modes require
@@ -292,7 +297,7 @@ queryFlow(database,
 
 The new overload is cold: each collection creates an independent transaction, connection and Query. It does not inherit an outer transaction or connection-local tenant/security state. Put authorization predicates in the query and use the caller's appropriately secured Database. The mapper must be short, must not execute extra SQL, and must return detached values rather than lazy DAO/resource-backed values. Never share a mutable Query between collections.
 
-The producer keeps at most one pending mapped item, in addition to the item being consumed. Driver buffers and downstream `buffer()` are outside this bound. No application-level query retry or row replay occurs; driver request retries are a separate configuration. Completion, failure and cancellation wait for internal resource cleanup. Cancellation does not interrupt a blocking JDBC call immediately: callers must configure finite connection-acquisition, socket and query timeouts. The caller owns the Database, pool and dispatcher; the helper never closes them. ClickHouse DML atomicity is not provided.
+The producer keeps at most one pending mapped item, in addition to the item being consumed. Driver buffers and downstream `buffer()` are outside this bound. No application-level query retry or row replay occurs; driver request retries are a separate configuration. Completion, failure and cancellation wait for internal resource cleanup. The default connection socket bound is finite (`10000` ms), but cancellation does not interrupt a blocking JDBC call immediately and does not guarantee remote query termination. Callers that override the socket bound or set it to `0` must configure finite connection-acquisition, socket and query timeouts at their own boundary. The caller owns the Database, pool and dispatcher; the helper never closes them. ClickHouse DML atomicity is not provided.
 
 This helper logs lifecycle-only events, not SQL, bindings, rows or exception payloads. Exposed and driver logs have their own policies. Paging or `queryList` may still be more appropriate when the caller needs detached bulk results or short-lived connections.
 

@@ -7,6 +7,9 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.LinkedHashMap
 
+/** ClickHouse JDBC V2 blocking socket read의 fail-safe 기본 상한입니다. */
+internal const val DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS = 10_000
+
 /**
  * ClickHouse JDBC V2 인증 방식을 나타냅니다.
  *
@@ -139,7 +142,13 @@ data class ClickHouseV2TlsOptions(
  */
 class ClickHouseV2Options(
     val connectionTimeoutMillis: Long? = null,
-    val socketOperationTimeoutMillis: Int? = null,
+    /**
+     * JDBC `socket_timeout` 값(밀리초)입니다.
+     *
+     * 기본값은 driver의 무제한 `0` 대신 유한한 fail-safe 상한을 적용합니다. `0`을
+     * 명시하면 driver default를 선택하므로, caller가 별도 유한 deadline을 소유해야 합니다.
+     */
+    val socketOperationTimeoutMillis: Int? = DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS,
     val connectionRequestTimeoutMillis: Long? = null,
     val connectionTtlMillis: Long? = null,
     val httpKeepAliveTimeoutMillis: Long? = null,
