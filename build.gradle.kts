@@ -38,9 +38,17 @@ val rootLibs = libs
 val rootBt4k = bt4k
 val bt4kCatalog = extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>().named("bt4k")
 fun bt4kLibrary(alias: String) = bt4kCatalog.findLibrary(alias).get()
+// Remove these local overrides after the pinned central catalog contains the patched releases.
+val securityVersionOverrides = mapOf(
+    "jackson" to "2.22.3",
+    "jackson3" to "3.2.3",
+)
+rootProject.extra["securityVersionOverrides"] = securityVersionOverrides
+
 fun bt4kVersion(alias: String): String {
     val version = bt4kCatalog.findVersion(alias).get()
-    return version.requiredVersion
+    return securityVersionOverrides[alias]
+        ?: version.requiredVersion
         .ifBlank { version.preferredVersion }
         .ifBlank { version.strictVersion }
 }
@@ -313,6 +321,7 @@ subprojects {
             mavenBom(bt4kLibrary("netty-bom").get().toString())
         }
         dependencies {
+            dependency("org.freemarker:freemarker:2.3.35")
             // <central-catalog-local-aliases>
             dependency("ai.timefold.solver:timefold-solver-benchmark:${bt4kVersion("timefold-solver")}")
             dependency("ai.timefold.solver:timefold-solver-core:${bt4kVersion("timefold-solver")}")
@@ -1184,6 +1193,43 @@ tasks.register("updateProductionAbiBaseline") {
         check(baselineFiles.size == productionAbiProjects.size) {
             "Production ABI baseline must contain ${productionAbiProjects.size} non-empty files, " +
                 "found ${baselineFiles.size}"
+        }
+    }
+}
+
+tasks.register("verifyJacksonSecurityPublicationMetadata") {
+    group = "verification"
+    description = "Verifies that published Jackson modules declare patched Jackson BOM versions."
+    dependsOn(
+        ":bluetape4k-exposed-jackson2:generateMetadataFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson2:generatePomFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson3:generateMetadataFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson3:generatePomFileForBluetapeExposedPublication",
+    )
+    doLast {
+        listOf(
+            Triple("exposed/jackson2", "com.fasterxml.jackson", "2.22.3"),
+            Triple("exposed/jackson3", "tools.jackson", "3.2.3"),
+        ).forEach { (modulePath, group, patchedVersion) ->
+            val publicationDir = rootProject.file("$modulePath/build/publications/BluetapeExposed")
+            val metadata = publicationDir.resolve("module.json").readText()
+            val pom = publicationDir.resolve("pom-default.xml").readText()
+            val moduleBomVersions = Regex(
+                "\"group\"\\s*:\\s*\"${Regex.escape(group)}\"\\s*,\\s*" +
+                    "\"module\"\\s*:\\s*\"jackson-bom\"\\s*,\\s*" +
+                    "\"version\"\\s*:\\s*\\{\\s*\"requires\"\\s*:\\s*\"([^\"]+)\""
+            ).findAll(metadata).map { it.groupValues[1] }.toList()
+            val pomBomVersions = Regex(
+                "<groupId>${Regex.escape(group)}</groupId>\\s*" +
+                    "<artifactId>jackson-bom</artifactId>\\s*<version>([^<]+)</version>"
+            ).findAll(pom).map { it.groupValues[1] }.toList()
+
+            check(moduleBomVersions.isNotEmpty() && moduleBomVersions.all { it == patchedVersion }) {
+                "$modulePath Gradle metadata jackson-bom versions were $moduleBomVersions; expected $patchedVersion"
+            }
+            check(pomBomVersions.isNotEmpty() && pomBomVersions.all { it == patchedVersion }) {
+                "$modulePath POM jackson-bom versions were $pomBomVersions; expected $patchedVersion"
+            }
         }
     }
 }
