@@ -24,12 +24,82 @@ dependencies {
     api(libs.exposed.dao)
     compileOnly("org.springframework:spring-context")
 
-    api(bt4k.bluetape4k.core)
-
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(project(":bluetape4k-exposed-dao"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(bt4k.mockk)
     testImplementation(bt4k.h2.v2)
+}
+
+val commonPublicationDirectory = layout.buildDirectory.dir("publications/BluetapeExposed")
+val checkCommonPublicationDependencyBoundary = tasks.register("checkCommonPublicationDependencyBoundary") {
+    group = "verification"
+    description = "Checks that the common publication does not expose bluetape4k-core."
+    dependsOn(
+        "generateMetadataFileForBluetapeExposedPublication",
+        "generatePomFileForBluetapeExposedPublication",
+    )
+
+    doLast {
+        val publicationDirectory = commonPublicationDirectory.get().asFile
+        val metadataFile = publicationDirectory.resolve("module.json")
+        val pomFile = publicationDirectory.resolve("pom-default.xml")
+        check(metadataFile.isFile && pomFile.isFile) {
+            "Common publication metadata is missing: ${metadataFile.absolutePath}, ${pomFile.absolutePath}"
+        }
+
+        val metadataRoot = groovy.json.JsonSlurper().parse(metadataFile) as? Map<*, *>
+            ?: error("Common Gradle Module Metadata root must be an object")
+        val variants = metadataRoot["variants"] as? List<*>
+            ?: error("Common Gradle Module Metadata variants are missing")
+        val metadataCoordinates = variants.flatMap { rawVariant ->
+            val variant = rawVariant as? Map<*, *>
+                ?: error("Common Gradle Module Metadata variant must be an object")
+            listOf("dependencies", "dependencyConstraints").flatMap { dependencyKey ->
+                val rawDependencies = variant[dependencyKey] ?: return@flatMap emptyList()
+                val dependencies = rawDependencies as? List<*>
+                    ?: error("Common Gradle Module Metadata $dependencyKey must be an array")
+                dependencies.map { rawDependency ->
+                    val dependency = rawDependency as? Map<*, *>
+                        ?: error("Common Gradle Module Metadata dependency must be an object")
+                    val group = dependency["group"]?.toString()?.trim()
+                        ?.takeIf { it.isNotBlank() }
+                        ?: error("Common Gradle Module Metadata dependency group is missing")
+                    val module = dependency["module"]?.toString()?.trim()
+                        ?.takeIf { it.isNotBlank() }
+                        ?: error("Common Gradle Module Metadata dependency module is missing")
+                    "$group:$module"
+                }
+            }
+        }.toSet()
+
+        val pomDocument = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            .apply { isNamespaceAware = true }
+            .newDocumentBuilder()
+            .parse(pomFile)
+        val dependencyNodes = pomDocument.getElementsByTagNameNS("*", "dependency")
+        val pomCoordinates = (0 until dependencyNodes.length).mapNotNull { index ->
+            val dependency = dependencyNodes.item(index) as? org.w3c.dom.Element ?: return@mapNotNull null
+            val group = dependency.getElementsByTagNameNS("*", "groupId").item(0)?.textContent?.trim()
+            val module = dependency.getElementsByTagNameNS("*", "artifactId").item(0)?.textContent?.trim()
+            if (group.isNullOrBlank() || module.isNullOrBlank()) null else "$group:$module"
+        }.toSet()
+
+        val forbiddenCoordinate = "io.github.bluetape4k:bluetape4k-core"
+        val metadataViolations = metadataCoordinates.filter { it == forbiddenCoordinate }
+        val pomViolations = pomCoordinates.filter { it == forbiddenCoordinate }
+        check(metadataViolations.isEmpty() && pomViolations.isEmpty()) {
+            "Common publication exposes $forbiddenCoordinate: " +
+                    "module.json=$metadataViolations, pom.xml=$pomViolations"
+        }
+        logger.lifecycle(
+            "Common publication dependency boundary passed: " +
+                    "module.json and pom-default.xml omit $forbiddenCoordinate",
+        )
+    }
+}
+
+tasks.named("check") {
+    dependsOn(checkCommonPublicationDependencyBoundary)
 }
