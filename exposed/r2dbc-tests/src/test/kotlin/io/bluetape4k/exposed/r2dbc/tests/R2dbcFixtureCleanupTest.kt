@@ -15,6 +15,8 @@ import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.exists
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
@@ -75,6 +77,43 @@ class R2dbcFixtureCleanupTest {
                 withDb(fixture) {
                     SchemaUtils.drop(broken)
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `사전 drop 실패는 sentinel 행이 남은 테이블에서 본문을 실행하지 않는다`() = runSuspendIO {
+        var failDrop = true
+        val broken = object: Table("r2dbc_fixture_predrop_failure") {
+            val id = integer("id")
+
+            override fun dropStatement(): List<String> {
+                if (failDrop) throw DropFailure(0)
+                return super.dropStatement()
+            }
+        }
+        try {
+            withDb(fixture) {
+                SchemaUtils.create(broken)
+                broken.insert { it[id] = 42 }
+                commit()
+            }
+
+            var bodyRan = false
+            assertFailsWith<DropFailure> {
+                withTables(fixture, broken) {
+                    bodyRan = true
+                }
+            }
+            bodyRan.shouldBeFalse()
+
+            withDb(fixture) {
+                broken.selectAll().single()[broken.id] shouldBeEqualTo 42
+            }
+        } finally {
+            failDrop = false
+            withDb(fixture) {
+                SchemaUtils.drop(broken)
             }
         }
     }
