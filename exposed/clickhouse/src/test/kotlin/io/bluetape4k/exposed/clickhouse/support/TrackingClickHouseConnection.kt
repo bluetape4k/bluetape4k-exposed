@@ -19,6 +19,7 @@ internal class JdbcObservation {
     val queryTimeouts = AtomicInteger()
     val cancels = AtomicInteger()
     val next = AtomicInteger()
+    val nextInFlight = AtomicInteger()
     var beforeNext: () -> Unit = {}
     var afterNext: () -> Unit = {}
     var resultCloseFailure: Throwable? = null
@@ -116,10 +117,15 @@ internal class TrackingClickHouseConnection(
             when (method.name) {
                 "next" -> {
                     observed.beforeNext()
-                    val value = invokeJdbc(result, method, args)
-                    observed.next.incrementAndGet()
-                    observed.afterNext()
-                    value
+                    observed.nextInFlight.incrementAndGet()
+                    try {
+                        val value = invokeJdbc(result, method, args)
+                        observed.next.incrementAndGet()
+                        observed.afterNext()
+                        value
+                    } finally {
+                        observed.nextInFlight.decrementAndGet()
+                    }
                 }
                 "close" -> {
                     if (closed.compareAndSet(false, true)) {

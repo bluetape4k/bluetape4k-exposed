@@ -71,6 +71,9 @@ object ClickHouseDatabase: KLogging() {
      *
      * **주의**: ClickHouse는 트랜잭션을 지원하지 않습니다. 모든 statement는 autocommit 모드로 실행되며,
      * 블록 중간에서 실패해도 이미 실행된 DML statement는 rollback되지 않습니다.
+     * 기본 연결은 blocking `ResultSet.next()`의 대기를 제한하도록 `socket_timeout=10000`을 적용합니다.
+     * V2 options overload에서 `socketOperationTimeoutMillis=null`은 같은 유한 기본값으로 정규화됩니다.
+     * 다른 유한 상한을 지정하거나 `0`으로 driver default를 선택할 수 있습니다.
      *
      * @param host ClickHouse host입니다. 기본값은 `localhost`입니다.
      * @param port ClickHouse HTTP port입니다. 기본값은 `8123`입니다.
@@ -100,6 +103,10 @@ object ClickHouseDatabase: KLogging() {
                 val props = Properties().apply {
                     setProperty("user", user)
                     setProperty("password", password)
+                    setProperty(
+                        "socket_timeout",
+                        DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS.toString(),
+                    )
                 }
                 // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
                 val raw = DriverManager.getConnection(url, props)
@@ -119,6 +126,9 @@ object ClickHouseDatabase: KLogging() {
      *
      * **주의**: ClickHouse는 트랜잭션을 지원하지 않습니다. 모든 statement는 autocommit 모드로 실행되며,
      * 블록 중간에서 실패해도 이미 실행된 DML statement는 rollback되지 않습니다.
+     * 기본 연결은 blocking `ResultSet.next()`의 대기를 제한하도록 `socket_timeout=10000`을 적용합니다.
+     * V2 options overload에서 `socketOperationTimeoutMillis=null`은 같은 유한 기본값으로 정규화됩니다.
+     * 다른 유한 상한을 지정하거나 `0`으로 driver default를 선택할 수 있습니다.
      *
      * @param jdbcUrl ClickHouse JDBC URL입니다. 예: `jdbc:clickhouse://host:8123/default`
      * @param user 로그인 사용자입니다. 기본값은 `default`입니다.
@@ -142,6 +152,10 @@ object ClickHouseDatabase: KLogging() {
                 val props = Properties().apply {
                     setProperty("user", user)
                     setProperty("password", password)
+                    setProperty(
+                        "socket_timeout",
+                        DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS.toString(),
+                    )
                 }
                 // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
                 val raw = DriverManager.getConnection(jdbcUrl, props)
