@@ -29,8 +29,15 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
 
     object FailingCleanupTable: IntIdTable("utility_r2dbc_cleanup_failure_table") {
         val name = varchar("name", 64)
+        private val dropAttempts = AtomicInteger()
 
-        override fun dropStatement(): List<String> = error("forced cleanup failure")
+        fun resetDropAttempts() {
+            dropAttempts.set(0)
+        }
+
+        override fun dropStatement(): List<String> =
+            if (dropAttempts.incrementAndGet() == 1) super.dropStatement()
+            else error("forced cleanup failure")
     }
 
     object CancellationCleanupTable: IntIdTable("utility_r2dbc_cancellation_cleanup_table") {
@@ -100,6 +107,7 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
 
     @Test
     fun `withTables 는 statement 실패 아래 cleanup 실패를 suppressed 로 보존한다`() = runSuspendIO {
+        FailingCleanupTable.resetDropAttempts()
         val failure = assertFailsWith<IllegalStateException> {
             withTables(TestDB.H2, FailingCleanupTable) {
                 throw IllegalStateException("statement failure")
