@@ -1,5 +1,6 @@
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.detekt.gradle.plugin.getSupportedKotlinVersion
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
 import org.gradle.api.tasks.compile.JavaCompile
@@ -198,6 +199,15 @@ subprojects {
     pluginManager.withPlugin("dev.detekt") {
         extensions.configure<DetektExtension> {
             baseline.set(project.layout.projectDirectory.file("config/detekt/baseline.xml"))
+        }
+        // Detekt는 플러그인을 빌드한 Kotlin 컴파일러 버전으로 실행해야 합니다.
+        configurations.matching { it.name == "detekt" }.configureEach {
+            resolutionStrategy.eachDependency {
+                if (requested.group == "org.jetbrains.kotlin") {
+                    useVersion(getSupportedKotlinVersion())
+                    because("Detekt must run with the Kotlin compiler version it was built against")
+                }
+            }
         }
     }
 
