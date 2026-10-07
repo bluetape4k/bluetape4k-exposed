@@ -38,17 +38,9 @@ val rootLibs = libs
 val rootBt4k = bt4k
 val bt4kCatalog = extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>().named("bt4k")
 fun bt4kLibrary(alias: String) = bt4kCatalog.findLibrary(alias).get()
-// Remove these local overrides after the pinned central catalog contains the patched releases.
-val securityVersionOverrides = mapOf(
-    "jackson" to "2.22.3",
-    "jackson3" to "3.2.3",
-)
-rootProject.extra["securityVersionOverrides"] = securityVersionOverrides
-
 fun bt4kVersion(alias: String): String {
     val version = bt4kCatalog.findVersion(alias).get()
-    return securityVersionOverrides[alias]
-        ?: version.requiredVersion
+    return version.requiredVersion
         .ifBlank { version.preferredVersion }
         .ifBlank { version.strictVersion }
 }
@@ -316,12 +308,12 @@ subprojects {
             mavenBom(rootBt4k.junit.bom.get().toString())
             mavenBom(rootBt4k.micrometer.bom.get().toString())
             mavenBom("org.testcontainers:testcontainers-bom:${bt4kVersion("testcontainers")}")
-            mavenBom("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson")}")
+            mavenBom("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson2")}")
             mavenBom("tools.jackson:jackson-bom:${bt4kVersion("jackson3")}")
             mavenBom(bt4kLibrary("netty-bom").get().toString())
         }
         dependencies {
-            dependency("org.freemarker:freemarker:2.3.35")
+            dependency(bt4kLibrary("freemarker").get().toString())
             // <central-catalog-local-aliases>
             dependency("ai.timefold.solver:timefold-solver-benchmark:${bt4kVersion("timefold-solver")}")
             dependency("ai.timefold.solver:timefold-solver-core:${bt4kVersion("timefold-solver")}")
@@ -348,28 +340,28 @@ subprojects {
             dependency("aws.sdk.kotlin:sqs:${bt4kVersion("aws-kotlin")}")
             dependency("aws.sdk.kotlin:sts:${bt4kVersion("aws-kotlin")}")
             dependency("com.esotericsoftware:reflectasm:${bt4kVersion("reflectasm")}")
-            dependency("com.fasterxml.jackson.core:jackson-core:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.core:jackson-databind:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-avro:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-guava:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-joda:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr353:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-blackbird:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-jsonSchema:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-kotlin:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-parameter:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-parameter-names:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson")}")
+            dependency("com.fasterxml.jackson.core:jackson-core:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.core:jackson-databind:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-avro:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-guava:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-joda:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr353:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-blackbird:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-jsonSchema:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-kotlin:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-parameter:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-parameter-names:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson2")}")
             dependency("com.google.protobuf:protobuf-java-util:${bt4kVersion("protobuf")}")
             dependency("com.google.protobuf:protobuf-kotlin:${bt4kVersion("protobuf")}")
             dependency("com.google.protobuf:protoc:${bt4kVersion("protobuf")}")

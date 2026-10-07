@@ -1,12 +1,9 @@
-@Suppress("UNCHECKED_CAST")
-val securityVersionOverrides = rootProject.extra["securityVersionOverrides"] as Map<String, String>
-
 configurations {
     testImplementation.get().extendsFrom(compileOnly.get(), runtimeOnly.get())
 }
 
 dependencies {
-    api(platform("com.fasterxml.jackson:jackson-bom:${securityVersionOverrides.getValue("jackson")}"))
+    api(platform(bt4k.jackson2.bom))
     api(platform(bt4k.kotlinx.coroutines.bom))
     // Exposed
     implementation(platform(bt4k.exposed.bom))
