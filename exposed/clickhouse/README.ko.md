@@ -48,8 +48,13 @@ val database = ClickHouseDatabase.connect(
 typed field는 `connection_timeout`, `socket_timeout`,
 `connection_request_timeout`, `connection_ttl`, `http_keep_alive_timeout`,
 압축/재시도 설정, `query_id`, `clickhouse_setting_<name>` 같은 V2 property로
-변환됩니다. timeout 값은 milliseconds 단위이며 driver가 default로 정의한 경우에만
-`0`을 허용합니다. pool limit와 buffer 크기는 양수여야 합니다.
+변환됩니다. timeout 값은 milliseconds 단위입니다. 기본 `ClickHouseV2Options`와
+기존 `ClickHouseDatabase.connect` overload는 blocking `ResultSet.next()`의 대기를
+유한하게 제한하도록 `socket_timeout=10000`을 적용합니다.
+`socketOperationTimeoutMillis = null`도 같은 유한 기본값을 유지하며, 다른 유한
+상한은 양수를 지정하세요. `0`을 명시하면 ClickHouse driver
+default(`socket_timeout=0`, 무제한)를 선택하므로 caller가 별도 유한 deadline을
+소유해야 합니다. pool limit와 buffer 크기는 양수여야 합니다.
 
 `authentication`은 `Basic`, `AccessToken`, `BearerToken` 중 하나입니다.
 Basic 인증은 `user`/`password` 인자를 사용합니다. token mode는 placeholder인
@@ -275,7 +280,7 @@ queryFlow(database,
 
 새 overload는 수집할 때마다 독립 트랜잭션·연결·Query를 생성합니다. 외부 트랜잭션과 연결 지역 tenant/보안 상태를 상속하지 않습니다. 권한 조건을 쿼리에 명시하고 적절한 접근 권한의 Database를 전달하세요. mapper는 짧게 실행하며 추가 SQL을 실행하지 않고, 지연 DAO나 자원 의존 값 대신 트랜잭션과 무관한 값을 반환해야 합니다. 변경 가능한 Query를 여러 수집에서 공유하지 마세요.
 
-생산자는 소비 중인 항목 외에 전달 대기 중인 항목 하나만 유지합니다. 드라이버 버퍼와 downstream `buffer()`는 이 상한 밖입니다. 헬퍼는 쿼리를 재시도하거나 행을 재전송하지 않으며, 드라이버 요청 재시도는 별도 설정입니다. 완료·실패·취소는 내부 자원 정리를 기다립니다. 취소가 블로킹 JDBC를 즉시 중단하지 않으므로 호출자가 유한한 연결 획득·소켓·조회 timeout을 설정해야 합니다. Database·풀·디스패처는 호출자 소유이며 헬퍼가 닫지 않습니다. ClickHouse DML 원자성은 보장하지 않습니다.
+생산자는 소비 중인 항목 외에 전달 대기 중인 항목 하나만 유지합니다. 드라이버 버퍼와 downstream `buffer()`는 이 상한 밖입니다. 헬퍼는 쿼리를 재시도하거나 행을 재전송하지 않으며, 드라이버 요청 재시도는 별도 설정입니다. 완료·실패·취소는 내부 자원 정리를 기다립니다. 기본 연결의 socket 상한은 유한(`10000` ms)이지만 취소가 블로킹 JDBC를 즉시 중단하거나 원격 query 종료를 보장하지는 않습니다. socket 상한을 override하거나 `0`으로 설정하는 caller는 자신의 경계에서 유한한 연결 획득·소켓·조회 timeout을 설정해야 합니다. Database·풀·디스패처는 호출자 소유이며 헬퍼가 닫지 않습니다. ClickHouse DML 원자성은 보장하지 않습니다.
 
 헬퍼는 수명 관련 이벤트만 기록하며 SQL·바인딩·행·예외 내용은 기록하지 않습니다. Exposed와 드라이버 로그 정책은 별개입니다. 전체 결과를 독립 값으로 한 번에 받아야 하거나 연결 점유를 짧게 유지하려면 페이지 조회 또는 `queryList`를 선택하세요.
 

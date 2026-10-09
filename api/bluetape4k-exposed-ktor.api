@@ -2,6 +2,7 @@ public final class io/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig {
 	public static final field Companion Lio/bluetape4k/exposed/ktor/Bluetape4kExposedKtorConfig$Companion;
 	public static final field DEFAULT_HEALTH_PATH Ljava/lang/String;
 	public static final field DEFAULT_READINESS_PATH Ljava/lang/String;
+	public fun <init> ()V
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lorg/jetbrains/exposed/v1/r2dbc/R2dbcDatabase;ZZLjava/lang/String;Ljava/lang/String;JJLio/micrometer/core/instrument/MeterRegistry;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getHealthPath ()Ljava/lang/String;

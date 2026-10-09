@@ -16,12 +16,14 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.clickhouse.support.JdbcObservation
 import io.bluetape4k.exposed.clickhouse.support.ClickHouseQueryObservation
+import io.bluetape4k.exposed.clickhouse.support.BlockingClickHouseHttpServer
 import io.bluetape4k.exposed.clickhouse.support.QueryObservationOutcome
 import io.bluetape4k.exposed.clickhouse.support.TrackingClickHouseConnection
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.info
+import org.jetbrains.exposed.v1.core.QueryBuilder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.awaitility.kotlin.await
 import org.jetbrains.exposed.v1.core.CustomFunction
 import org.jetbrains.exposed.v1.core.LongColumnType
@@ -38,6 +41,7 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.decimalLiteral
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
@@ -63,7 +67,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
 
     companion object: KLogging()
 
-    private object Numbers: Table("system.numbers") {
+    internal object Numbers: Table("system.numbers") {
         val number = long("number")
     }
 
@@ -71,13 +75,14 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     private class SqlFailure(marker: String): SQLException(marker)
     private class MarkerCancellation(marker: String): CancellationException(marker)
 
-    private class Fixture(
+    internal class Fixture(
         private val jdbcOptions: String = "",
         driverClassName: String? = null,
+        connectionUrl: String? = null,
     ): AutoCloseable {
         val observed = JdbcObservation()
         val pool = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default$jdbcOptions"
+            jdbcUrl = connectionUrl ?: "jdbc:clickhouse://${clickhouse.host}:${clickhouse.port}/default$jdbcOptions"
             driverClassName?.let { this.driverClassName = it }
             username = clickhouse.username
             password = clickhouse.password
@@ -416,13 +421,17 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                 decimalLiteral("1".toBigDecimal()),
             )
             val emitted = AtomicInteger()
+            val started = System.nanoTime()
             val failure = assertFailsWith<SQLException> {
-                queryFlow(
-                    fixture.database,
-                    query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
-                    mapper = { emitted.incrementAndGet(); it[Numbers.number] },
-                ).toList()
+                withTimeout(3_000) {
+                    queryFlow(
+                        fixture.database,
+                        query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
+                        mapper = { emitted.incrementAndGet(); it[Numbers.number] },
+                    ).toList()
+                }
             }
+            ((System.nanoTime() - started) / 1_000_000).shouldBeLessThan(3_000L)
 
             failure.shouldBeInstanceOf<ExposedSQLException>()
             failure.cause.shouldBeInstanceOf<BatchUpdateException>()
@@ -436,6 +445,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             fixture.assertReleased()
         }
     }
+
 
     @Test
     fun `기본 ClickHouseDriver는 catalog V2 경로와 버전을 사용한다`() = runSuspendIO {
@@ -799,4 +809,50 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             it[Numbers.number]
         },
     )
+}
+
+class ClickHouseV2BlockingCancellationTest: AbstractClickHouseTest() {
+    @Test
+    fun `V2 blocking ResultSet next 취소는 유한하게 정리하고 연결을 재사용한다`() = runSuspendIO {
+        BlockingClickHouseHttpServer().use { server ->
+            ClickHouseQueryLifecycleTest.Fixture(
+                connectionUrl = "jdbc:clickhouse://127.0.0.1:${server.port}/default?socket_timeout=200&compress=0",
+            ).use { fixture ->
+                fun blockingQuery() = object: Query(ClickHouseQueryLifecycleTest.Numbers.selectAll().set, null) {
+                    override fun prepareSQL(builder: QueryBuilder): String =
+                        "SELECT number FROM system.numbers LIMIT 1"
+                }
+                val job = launch {
+                    queryFlow(
+                        fixture.database,
+                        query = { blockingQuery() },
+                        mapper = { it[ClickHouseQueryLifecycleTest.Numbers.number] },
+                    ).toList()
+                }
+
+                try {
+                    await
+                        .atMost(Duration.ofSeconds(5))
+                        .pollInterval(Duration.ofMillis(20))
+                        .untilSuspending { fixture.observed.nextInFlight.get() == 1 }
+
+                    val started = System.nanoTime()
+                    job.cancel()
+                    withTimeout(3_000) { job.join() }
+                    ((System.nanoTime() - started) / 1_000_000).shouldBeLessThan(3_000L)
+                } finally {
+                    job.cancelAndJoin()
+                }
+
+                fixture.observed.nextInFlight.get() shouldBeEqualTo 0
+                fixture.assertReleased()
+                fixture.rows(limit = 1).toList() shouldBeEqualTo listOf(0L)
+                fixture.assertReleased()
+                check(server.queryRequestCount == 2) {
+                    "queryRequests=${server.queryRequestCount}, requests=${server.requestLines}"
+                }
+            }
+        }
+    }
+
 }

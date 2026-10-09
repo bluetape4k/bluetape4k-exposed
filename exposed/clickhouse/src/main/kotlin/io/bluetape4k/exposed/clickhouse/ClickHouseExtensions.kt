@@ -49,8 +49,11 @@ suspend fun <T> queryList(
  *
  * [query]는 매번 새 Query를 반환해야 하며 [mapper]는 짧게 실행하고 트랜잭션 밖에서도
  * 유효한 값을 반환해야 합니다. 추가 SQL이나 지연 로딩 자원을 mapper에서 사용하지 마세요.
- * 취소는 블로킹 JDBC 호출을 즉시 중단하지 않습니다. 호출자가 유한한 연결 획득·소켓·조회
- * timeout을 설정해야 합니다. 정상 완료와 취소 모두 내부 자원 정리가 끝난 후 반환합니다.
+ * 기본 ClickHouse 연결은 `socket_timeout=10000`을 적용해 blocking `ResultSet.next()`의
+ * 대기를 유한하게 제한합니다. 취소가 blocking JDBC 호출을 즉시 중단하는 것은 아니며,
+ * [ClickHouseV2Options.socketOperationTimeoutMillis]에 `0`을 명시하면 driver의 무제한
+ * default를 선택하므로 caller가 별도 유한 deadline을 소유해야 합니다. 정상 완료와 취소
+ * 모두 내부 자원 정리가 끝난 후 반환합니다.
  * 데이터베이스·풀·디스패처는 호출자 소유이며 이 함수가 닫지 않습니다.
  * ClickHouse의 DML 원자성이나 롤백은 보장하지 않습니다.
  *

@@ -1,5 +1,6 @@
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.extensions.DetektExtension
+import dev.detekt.gradle.plugin.getSupportedKotlinVersion
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
 import org.gradle.api.tasks.compile.JavaCompile
@@ -103,7 +104,7 @@ allprojects {
     configurations.matching { it.name.startsWith("dokka") }.configureEach {
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jsoup" && requested.name == "jsoup") {
-                useVersion("1.23.1")
+                useVersion(bt4kVersion("jsoup"))
                 because("CVE-2026-71497: Dokka tooling must use the first patched jsoup release")
             }
         }
@@ -198,6 +199,15 @@ subprojects {
     pluginManager.withPlugin("dev.detekt") {
         extensions.configure<DetektExtension> {
             baseline.set(project.layout.projectDirectory.file("config/detekt/baseline.xml"))
+        }
+        // Detekt는 플러그인을 빌드한 Kotlin 컴파일러 버전으로 실행해야 합니다.
+        configurations.matching { it.name == "detekt" }.configureEach {
+            resolutionStrategy.eachDependency {
+                if (requested.group == "org.jetbrains.kotlin") {
+                    useVersion(getSupportedKotlinVersion())
+                    because("Detekt must run with the Kotlin compiler version it was built against")
+                }
+            }
         }
     }
 
@@ -308,11 +318,12 @@ subprojects {
             mavenBom(rootBt4k.junit.bom.get().toString())
             mavenBom(rootBt4k.micrometer.bom.get().toString())
             mavenBom("org.testcontainers:testcontainers-bom:${bt4kVersion("testcontainers")}")
-            mavenBom("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson")}")
+            mavenBom("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson2")}")
             mavenBom("tools.jackson:jackson-bom:${bt4kVersion("jackson3")}")
             mavenBom(bt4kLibrary("netty-bom").get().toString())
         }
         dependencies {
+            dependency(bt4kLibrary("freemarker").get().toString())
             // <central-catalog-local-aliases>
             dependency("ai.timefold.solver:timefold-solver-benchmark:${bt4kVersion("timefold-solver")}")
             dependency("ai.timefold.solver:timefold-solver-core:${bt4kVersion("timefold-solver")}")
@@ -339,28 +350,28 @@ subprojects {
             dependency("aws.sdk.kotlin:sqs:${bt4kVersion("aws-kotlin")}")
             dependency("aws.sdk.kotlin:sts:${bt4kVersion("aws-kotlin")}")
             dependency("com.esotericsoftware:reflectasm:${bt4kVersion("reflectasm")}")
-            dependency("com.fasterxml.jackson.core:jackson-core:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.core:jackson-databind:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-avro:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-guava:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-joda:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr353:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-blackbird:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-jsonSchema:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-kotlin:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-parameter:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson.module:jackson-module-parameter-names:${bt4kVersion("jackson")}")
-            dependency("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson")}")
+            dependency("com.fasterxml.jackson.core:jackson-core:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.core:jackson-databind:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-avro:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-properties:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-guava:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-joda:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.datatype:jackson-datatype-jsr353:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-blackbird:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-jsonSchema:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-kotlin:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-parameter:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson.module:jackson-module-parameter-names:${bt4kVersion("jackson2")}")
+            dependency("com.fasterxml.jackson:jackson-bom:${bt4kVersion("jackson2")}")
             dependency("com.google.protobuf:protobuf-java-util:${bt4kVersion("protobuf")}")
             dependency("com.google.protobuf:protobuf-kotlin:${bt4kVersion("protobuf")}")
             dependency("com.google.protobuf:protoc:${bt4kVersion("protobuf")}")
@@ -1184,6 +1195,43 @@ tasks.register("updateProductionAbiBaseline") {
         check(baselineFiles.size == productionAbiProjects.size) {
             "Production ABI baseline must contain ${productionAbiProjects.size} non-empty files, " +
                 "found ${baselineFiles.size}"
+        }
+    }
+}
+
+tasks.register("verifyJacksonSecurityPublicationMetadata") {
+    group = "verification"
+    description = "Verifies that published Jackson modules declare patched Jackson BOM versions."
+    dependsOn(
+        ":bluetape4k-exposed-jackson2:generateMetadataFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson2:generatePomFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson3:generateMetadataFileForBluetapeExposedPublication",
+        ":bluetape4k-exposed-jackson3:generatePomFileForBluetapeExposedPublication",
+    )
+    doLast {
+        listOf(
+            Triple("exposed/jackson2", "com.fasterxml.jackson", "2.22.3"),
+            Triple("exposed/jackson3", "tools.jackson", "3.2.3"),
+        ).forEach { (modulePath, group, patchedVersion) ->
+            val publicationDir = rootProject.file("$modulePath/build/publications/BluetapeExposed")
+            val metadata = publicationDir.resolve("module.json").readText()
+            val pom = publicationDir.resolve("pom-default.xml").readText()
+            val moduleBomVersions = Regex(
+                "\"group\"\\s*:\\s*\"${Regex.escape(group)}\"\\s*,\\s*" +
+                    "\"module\"\\s*:\\s*\"jackson-bom\"\\s*,\\s*" +
+                    "\"version\"\\s*:\\s*\\{\\s*\"requires\"\\s*:\\s*\"([^\"]+)\""
+            ).findAll(metadata).map { it.groupValues[1] }.toList()
+            val pomBomVersions = Regex(
+                "<groupId>${Regex.escape(group)}</groupId>\\s*" +
+                    "<artifactId>jackson-bom</artifactId>\\s*<version>([^<]+)</version>"
+            ).findAll(pom).map { it.groupValues[1] }.toList()
+
+            check(moduleBomVersions.isNotEmpty() && moduleBomVersions.all { it == patchedVersion }) {
+                "$modulePath Gradle metadata jackson-bom versions were $moduleBomVersions; expected $patchedVersion"
+            }
+            check(pomBomVersions.isNotEmpty() && pomBomVersions.all { it == patchedVersion }) {
+                "$modulePath POM jackson-bom versions were $pomBomVersions; expected $patchedVersion"
+            }
         }
     }
 }
