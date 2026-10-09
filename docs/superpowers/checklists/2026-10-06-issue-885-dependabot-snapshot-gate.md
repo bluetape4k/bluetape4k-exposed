@@ -2,9 +2,9 @@
 
 상태: 원인 미확정 · provenance guard 로컬 검증 완료 · hosted 재검증 대기
 
-저장소: `bluetape4k/bluetape4k-exposed`  
-기준 브랜치: `develop`  
-작업 브랜치: `fix/issue-885-dependabot-snapshots`
+- 저장소: `bluetape4k/bluetape4k-exposed`
+- 기준 브랜치: `develop`
+- 작업 브랜치: `fix/issue-885-dependabot-snapshots`
 
 ## 확인된 현상과 원인 경계
 
