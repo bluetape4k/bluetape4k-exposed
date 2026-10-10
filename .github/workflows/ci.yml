@@ -30,6 +30,7 @@ env:
   JAVA_VERSION: '25'
   JAVA_DISTRIBUTION: 'temurin'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  # Required by the central adoption checker; the resolver below asserts this matches settings.gradle.kts.
   BLUETAPE4K_DEPENDENCIES_CATALOG_REF: '198147fd6ca2992fae32e175bd5f3d396c497096'
 
 jobs:
@@ -288,14 +289,51 @@ jobs:
     if: ${{ needs.changes.outputs['docs-only'] != 'true' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
-        with:
-          repository: bluetape4k/bluetape4k-dependencies
-          ref: ${{ env.BLUETAPE4K_DEPENDENCIES_CATALOG_REF }}
-          path: .catalog/bluetape4k-dependencies
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Resolve immutable catalog reference from Gradle settings
+        id: catalog-ref
+        shell: bash
+        run: |
+          catalog_ref="$(python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+
+          settings = pathlib.Path("settings.gradle.kts").read_text()
+          declaration_count = len(re.findall(
+              r'(?m)^val bluetape4kDependenciesCatalogRef\s*=', settings
+          ))
+          declaration = re.compile(
+              r'(?m)^val bluetape4kDependenciesCatalogRef = providers\.gradleProperty\('
+              r'"bluetape4kDependenciesCatalogRef"\)\n'
+              r'[ \t]+\.orElse\(providers\.environmentVariable\('
+              r'"BLUETAPE4K_DEPENDENCIES_CATALOG_REF"\)\)\n'
+              r'[ \t]+\.orElse\("(?P<ref>[0-9a-f]{40}|[0-9a-f]{64})"\)'
+          )
+          matches = list(declaration.finditer(settings))
+          if declaration_count != 1 or len(matches) != 1:
+              raise SystemExit(
+                  "Expected one exact bluetape4kDependenciesCatalogRef declaration "
+                  "in settings.gradle.kts"
+              )
+          settings_ref = matches[0].group("ref")
+          workflow_ref = os.environ["BLUETAPE4K_DEPENDENCIES_CATALOG_REF"]
+          if settings_ref != workflow_ref:
+              raise SystemExit(
+                  "Workflow catalog ref differs from settings.gradle.kts: "
+                  f"workflow={workflow_ref}, settings={settings_ref}"
+              )
+          print(settings_ref)
+          PY
+          )"
+          printf 'ref=%s\n' "$catalog_ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          repository: bluetape4k/bluetape4k-dependencies
+          ref: ${{ steps.catalog-ref.outputs.ref }}
+          path: .catalog/bluetape4k-dependencies
       - uses: actions/setup-java@v6.0.1
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -305,7 +343,9 @@ jobs:
           gradle-version: wrapper
           cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Verify immutable catalog checkout
-        run: test "$(git -C .catalog/bluetape4k-dependencies rev-parse HEAD)" = "$BLUETAPE4K_DEPENDENCIES_CATALOG_REF"
+        env:
+          CATALOG_REF: ${{ steps.catalog-ref.outputs.ref }}
+        run: test "$(git -C .catalog/bluetape4k-dependencies rev-parse HEAD)" = "$CATALOG_REF"
       - name: Check central catalog adoption
         run: |
           python3 .catalog/bluetape4k-dependencies/scripts/sync-shared-versions.py \
@@ -317,6 +357,10 @@ jobs:
         env:
           BLUETAPE4K_DEPENDENCIES_CATALOG_PATH: ${{ github.workspace }}/.catalog/bluetape4k-dependencies/gradle/libs.versions.toml
         run: ./gradlew help --no-daemon
+      - name: Verify security dependency snapshot alignment
+        env:
+          BLUETAPE4K_DEPENDENCIES_CATALOG_PATH: ${{ github.workspace }}/.catalog/bluetape4k-dependencies/gradle/libs.versions.toml
+        run: ./gradlew verifyCentralDependencySnapshotAlignment --no-daemon --no-configuration-cache
 
   build:
     name: Build (compile only)
