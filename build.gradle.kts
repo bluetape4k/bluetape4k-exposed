@@ -3,12 +3,73 @@ import dev.detekt.gradle.extensions.DetektExtension
 import dev.detekt.gradle.plugin.getSupportedKotlinVersion
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
+import java.util.Collections
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
+import org.gradle.api.artifacts.VersionCatalogsExtension
+
+buildscript {
+    val centralCatalog = project.extensions.getByType<VersionCatalogsExtension>().named("bt4k")
+    fun centralVersion(alias: String): String = centralCatalog.findVersion(alias).get().requiredVersion
+    fun centralLibraryVersion(alias: String): String {
+        val version = centralCatalog.findLibrary(alias).get().get().versionConstraint
+        return version.requiredVersion.ifBlank { version.preferredVersion }.ifBlank { version.strictVersion }
+    }
+
+    val jackson2Version = centralVersion("jackson2")
+    val jackson3Version = centralVersion("jackson3")
+    val jacksonAnnotationsVersion = centralVersion("jackson-annotations")
+    val freemarkerVersion = centralLibraryVersion("freemarker")
+    val jsoupVersion = centralLibraryVersion("jsoup")
+    val mariaDbVersion = centralLibraryVersion("mariadb-java-client")
+    val bouncycastleBcpgVersion = centralLibraryVersion("bouncycastle-bcpg")
+    val bouncycastleBcpkixVersion = centralLibraryVersion("bouncycastle-bcpkix")
+    val bouncycastleBcprovVersion = centralLibraryVersion("bouncycastle-bcprov")
+    val lz4Version = centralLibraryVersion("at-yawk-lz4-java")
+    val centralSecurityVersions = mapOf(
+        "at.yawk.lz4:lz4-java" to lz4Version,
+        "com.fasterxml.jackson.core:jackson-annotations" to jacksonAnnotationsVersion,
+        "com.fasterxml.jackson.core:jackson-core" to jackson2Version,
+        "com.fasterxml.jackson.core:jackson-databind" to jackson2Version,
+        "org.bouncycastle:bcpg-jdk18on" to bouncycastleBcpgVersion,
+        "org.bouncycastle:bcpkix-jdk18on" to bouncycastleBcpkixVersion,
+        "org.bouncycastle:bcprov-jdk18on" to bouncycastleBcprovVersion,
+        "org.bouncycastle:bcutil-jdk18on" to bouncycastleBcpgVersion,
+        "org.freemarker:freemarker" to freemarkerVersion,
+        "org.jsoup:jsoup" to jsoupVersion,
+        "org.mariadb.jdbc:mariadb-java-client" to mariaDbVersion,
+        "tools.jackson.core:jackson-core" to jackson3Version,
+        "tools.jackson.core:jackson-databind" to jackson3Version,
+    )
+    fun configureBuildscriptClasspath(targetProject: org.gradle.api.Project) {
+        targetProject.buildscript.configurations.configureEach {
+            resolutionStrategy.eachDependency {
+                val coordinate = "${requested.group}:${requested.name}"
+                val centralVersion = centralSecurityVersions[coordinate] ?: when {
+                    requested.group?.startsWith("com.fasterxml.jackson") == true -> jackson2Version
+                    requested.group?.startsWith("tools.jackson") == true -> jackson3Version
+                    else -> null
+                }
+                if (centralVersion != null) {
+                    useVersion(centralVersion)
+                    because("Build plugin classpaths must use bluetape4k-dependencies catalog versions")
+                }
+            }
+        }
+    }
+    configureBuildscriptClasspath(project)
+    project.gradle.beforeProject {
+        val candidateProject = this
+        if (candidateProject.path != project.path) {
+            configureBuildscriptClasspath(candidateProject)
+        }
+    }
+
+}
 
 plugins {
     base
@@ -44,6 +105,213 @@ fun bt4kVersion(alias: String): String {
     return version.requiredVersion
         .ifBlank { version.preferredVersion }
         .ifBlank { version.strictVersion }
+}
+
+val centralDependencySnapshotVersions = mapOf(
+    "at.yawk.lz4:lz4-java" to bt4kLibrary("at-yawk-lz4-java").get().versionConstraint.requiredVersion,
+    "com.fasterxml.jackson.core:jackson-annotations" to bt4kLibrary("jackson-annotations").get().versionConstraint.requiredVersion,
+    "com.fasterxml.jackson.core:jackson-core" to bt4kVersion("jackson2"),
+    "com.fasterxml.jackson.core:jackson-databind" to bt4kVersion("jackson2"),
+    "org.bouncycastle:bcpg-jdk18on" to bt4kLibrary("bouncycastle-bcpg").get().versionConstraint.requiredVersion,
+    "org.bouncycastle:bcpkix-jdk18on" to bt4kLibrary("bouncycastle-bcpkix").get().versionConstraint.requiredVersion,
+    "org.bouncycastle:bcprov-jdk18on" to bt4kLibrary("bouncycastle-bcprov").get().versionConstraint.requiredVersion,
+    "org.bouncycastle:bcutil-jdk18on" to bt4kLibrary("bouncycastle-bcpg").get().versionConstraint.requiredVersion,
+    "org.freemarker:freemarker" to bt4kLibrary("freemarker").get().versionConstraint.requiredVersion,
+    "org.jsoup:jsoup" to bt4kLibrary("jsoup").get().versionConstraint.requiredVersion,
+    "org.mariadb.jdbc:mariadb-java-client" to bt4kLibrary("mariadb-java-client").get().versionConstraint.requiredVersion,
+    "tools.jackson.core:jackson-core" to bt4kVersion("jackson3"),
+    "tools.jackson.core:jackson-databind" to bt4kVersion("jackson3"),
+)
+
+fun Project.configureCentralDependencySnapshotResolution() {
+    configurations.configureEach {
+        resolutionStrategy.eachDependency {
+            val coordinate = "${requested.group}:${requested.name}"
+            val centralVersion = centralDependencySnapshotVersions[coordinate]
+            if (centralVersion != null) {
+                useVersion(centralVersion)
+                because("Resolved dependency graphs must use bluetape4k-dependencies catalog versions")
+            }
+        }
+    }
+}
+
+val observedCentralDependencyCoordinates = Collections.synchronizedSet(mutableSetOf<String>())
+val centralDependencySnapshotProjectChecks = allprojects.map { candidateProject ->
+    candidateProject.tasks.register("verifyCentralDependencySnapshotAlignmentProject") {
+        group = "verification"
+        description = "Verifies catalog versions selected in this project's security-sensitive dependency graph."
+
+        doLast {
+            val configurationsToInspect = mutableListOf<org.gradle.api.artifacts.Configuration>()
+            candidateProject.buildscript.configurations
+                .filter { configuration -> configuration.isCanBeResolved }
+                .forEach(configurationsToInspect::add)
+            candidateProject.configurations
+                .filter { configuration -> configuration.isCanBeResolved }
+                .forEach(configurationsToInspect::add)
+
+            val distinctConfigurations = configurationsToInspect.distinct()
+            check(distinctConfigurations.isNotEmpty()) {
+                "No resolvable dependency configurations found for ${candidateProject.path}"
+            }
+            val mismatches = mutableListOf<String>()
+            distinctConfigurations.forEach { configuration ->
+                configuration.incoming.resolutionResult.allDependencies.forEach { dependency ->
+                    val requested = dependency.requested as? org.gradle.api.artifacts.component.ModuleComponentSelector
+                        ?: return@forEach
+                    val coordinate = "${requested.group}:${requested.module}"
+                    val expectedVersion = centralDependencySnapshotVersions[coordinate] ?: return@forEach
+                    observedCentralDependencyCoordinates += coordinate
+
+                    when (dependency) {
+                        is org.gradle.api.artifacts.result.ResolvedDependencyResult -> {
+                            val selected = dependency.selected.id as?
+                                org.gradle.api.artifacts.component.ModuleComponentIdentifier
+                            val selectedVersion = selected?.version
+                            if (selectedVersion != expectedVersion) {
+                                mismatches += "${candidateProject.path}:${configuration.name}: $coordinate " +
+                                    "requested=${requested.version} selected=${selectedVersion ?: "unknown"} " +
+                                    "expected=$expectedVersion"
+                            }
+                        }
+                        is org.gradle.api.artifacts.result.UnresolvedDependencyResult -> {
+                            mismatches += "${candidateProject.path}:${configuration.name}: $coordinate " +
+                                "requested=${requested.version} unresolved"
+                        }
+                    }
+                }
+            }
+
+            check(mismatches.isEmpty()) {
+                "Central dependency snapshot alignment failed:\n${mismatches.joinToString("\n")}"
+            }
+        }
+    }
+}
+
+tasks.register("verifyCentralDependencySnapshotAlignment") {
+    group = "verification"
+    description = "Verifies security-sensitive Gradle graph selections use the imported central catalog versions."
+    dependsOn(centralDependencySnapshotProjectChecks)
+
+    doLast {
+        val absentCoordinates = centralDependencySnapshotVersions.keys - observedCentralDependencyCoordinates
+        logger.lifecycle(
+            "Central dependency snapshot alignment checked; absent coordinates: " +
+                absentCoordinates.sorted().joinToString().ifBlank { "none" },
+        )
+    }
+}
+
+fun Project.configureCentralDependencySnapshotMetadata() {
+    val jackson2Version = bt4kVersion("jackson2")
+    val jackson3Version = bt4kVersion("jackson3")
+    val freemarkerVersion = bt4kLibrary("freemarker").get().versionConstraint.requiredVersion
+    val jsoupVersion = bt4kLibrary("jsoup").get().versionConstraint.requiredVersion
+    val mariaDbVersion = bt4kLibrary("mariadb-java-client").get().versionConstraint.requiredVersion
+    val lz4Version = bt4kLibrary("at-yawk-lz4-java").get().versionConstraint.requiredVersion
+    val bouncycastleBcpgVersion = bt4kLibrary("bouncycastle-bcpg").get().versionConstraint.requiredVersion
+    val bouncycastleBcpkixVersion = bt4kLibrary("bouncycastle-bcpkix").get().versionConstraint.requiredVersion
+    val bouncycastleBcprovVersion = bt4kLibrary("bouncycastle-bcprov").get().versionConstraint.requiredVersion
+
+    dependencies {
+        components {
+            fun replaceDependencies(module: String, coordinates: Set<String>, replacements: List<String>) {
+                withModule(module) {
+                    allVariants {
+                        withDependencies {
+                            removeAll { dependency -> "${dependency.group}:${dependency.name}" in coordinates }
+                            replacements.forEach { add(it) }
+                        }
+                        withDependencyConstraints {
+                            removeAll { dependency -> "${dependency.group}:${dependency.name}" in coordinates }
+                        }
+                    }
+                }
+            }
+
+            replaceDependencies(
+                "org.jetbrains.dokka:dokka-core",
+                setOf(
+                    "com.fasterxml.jackson.module:jackson-module-kotlin",
+                    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml",
+                ),
+                listOf(
+                    "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson2Version",
+                    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jackson2Version",
+                ),
+            )
+            replaceDependencies(
+                "org.jetbrains.dokka:dokka-base",
+                setOf(
+                    "com.fasterxml.jackson.module:jackson-module-kotlin",
+                    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml",
+                    "org.freemarker:freemarker",
+                    "org.jsoup:jsoup",
+                ),
+                listOf(
+                    "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson2Version",
+                    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$jackson2Version",
+                    "org.freemarker:freemarker:$freemarkerVersion",
+                    "org.jsoup:jsoup:$jsoupVersion",
+                ),
+            )
+            replaceDependencies(
+                "org.jetbrains.dokka:analysis-markdown",
+                setOf("org.jsoup:jsoup"),
+                listOf("org.jsoup:jsoup:$jsoupVersion"),
+            )
+            replaceDependencies(
+                "org.jetbrains.dokka:templating-plugin",
+                setOf("org.jsoup:jsoup"),
+                listOf("org.jsoup:jsoup:$jsoupVersion"),
+            )
+            replaceDependencies(
+                "org.jetbrains.intellij.deps:coverage-report",
+                setOf("org.freemarker:freemarker"),
+                listOf("org.freemarker:freemarker:$freemarkerVersion"),
+            )
+            replaceDependencies(
+                "org.flywaydb:flyway-core",
+                setOf("tools.jackson.core:jackson-core", "tools.jackson.core:jackson-databind"),
+                listOf(
+                    "tools.jackson.core:jackson-core:$jackson3Version",
+                    "tools.jackson.core:jackson-databind:$jackson3Version",
+                ),
+            )
+            replaceDependencies(
+                "org.jetbrains.exposed.plugin:exposed-gradle-plugin",
+                setOf("org.mariadb.jdbc:mariadb-java-client"),
+                listOf("org.mariadb.jdbc:mariadb-java-client:$mariaDbVersion"),
+            )
+            listOf("clickhouse-jdbc", "jdbc-v2").forEach { clickhouseModule ->
+                replaceDependencies(
+                    "com.clickhouse:$clickhouseModule",
+                    setOf("at.yawk.lz4:lz4-java"),
+                    listOf("at.yawk.lz4:lz4-java:$lz4Version"),
+                )
+            }
+            replaceDependencies(
+                "org.bouncycastle:bcpg-jdk18on",
+                setOf("org.bouncycastle:bcprov-jdk18on", "org.bouncycastle:bcutil-jdk18on"),
+                listOf(
+                    "org.bouncycastle:bcprov-jdk18on:$bouncycastleBcprovVersion",
+                    "org.bouncycastle:bcutil-jdk18on:$bouncycastleBcpgVersion",
+                ),
+            )
+            replaceDependencies(
+                "org.bouncycastle:bcpkix-jdk18on",
+                setOf("org.bouncycastle:bcutil-jdk18on"),
+                listOf("org.bouncycastle:bcutil-jdk18on:$bouncycastleBcpkixVersion"),
+            )
+            replaceDependencies(
+                "org.bouncycastle:bcutil-jdk18on",
+                setOf("org.bouncycastle:bcprov-jdk18on"),
+                listOf("org.bouncycastle:bcprov-jdk18on:$bouncycastleBcprovVersion"),
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalAbiValidation::class)
@@ -87,6 +355,8 @@ val baseVersion: String = providers.gradleProperty("baseVersion").get()
 val snapshotVersion: String = providers.gradleProperty("snapshotVersion").get()
 
 allprojects {
+    configureCentralDependencySnapshotMetadata()
+
     group = projectGroup
     version = baseVersion + snapshotVersion
 
@@ -101,13 +371,11 @@ allprojects {
     configurations.all {
         resolutionStrategy.cacheChangingModulesFor(1, TimeUnit.DAYS)
     }
-    configurations.matching { it.name.startsWith("dokka") }.configureEach {
-        resolutionStrategy.eachDependency {
-            if (requested.group == "org.jsoup" && requested.name == "jsoup") {
-                useVersion(bt4kVersion("jsoup"))
-                because("CVE-2026-71497: Dokka tooling must use the first patched jsoup release")
-            }
-        }
+}
+
+gradle.projectsEvaluated {
+    rootProject.allprojects.forEach { candidateProject ->
+        candidateProject.configureCentralDependencySnapshotResolution()
     }
 }
 
@@ -1210,8 +1478,8 @@ tasks.register("verifyJacksonSecurityPublicationMetadata") {
     )
     doLast {
         listOf(
-            Triple("exposed/jackson2", "com.fasterxml.jackson", "2.22.3"),
-            Triple("exposed/jackson3", "tools.jackson", "3.2.3"),
+            Triple("exposed/jackson2", "com.fasterxml.jackson", bt4kVersion("jackson2")),
+            Triple("exposed/jackson3", "tools.jackson", bt4kVersion("jackson3")),
         ).forEach { (modulePath, group, patchedVersion) ->
             val publicationDir = rootProject.file("$modulePath/build/publications/BluetapeExposed")
             val metadata = publicationDir.resolve("module.json").readText()
