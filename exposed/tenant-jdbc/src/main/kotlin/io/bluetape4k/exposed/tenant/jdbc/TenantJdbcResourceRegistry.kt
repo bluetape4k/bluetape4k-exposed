@@ -102,8 +102,9 @@ class TenantJdbcResourceRegistry<K: Any> private constructor(
     private val state = AtomicReference<CloseState>(CloseState.Open)
 
     private fun checkOpen() {
-        log.debug { "Checking if tenant JDBC resource registry is open. state: ${state.get()}" }
-        if (state.get() !is CloseState.Open) {
+        val observed = state.get()
+        log.debug { "Checking if tenant JDBC resource registry is open. state: ${observed.safeName()}" }
+        if (observed !is CloseState.Open) {
             error(CLOSED_MESSAGE)
         }
     }
@@ -300,6 +301,14 @@ private sealed interface CloseState {
     data class ClosedFailure(val failure: Throwable): CloseState
 
     data object ClosedFatal: CloseState
+}
+
+private fun CloseState.safeName(): String = when (this) {
+    CloseState.Open          -> "Open"
+    is CloseState.Closing    -> "Closing"
+    CloseState.ClosedSuccess -> "ClosedSuccess"
+    is CloseState.ClosedFailure -> "ClosedFailure"
+    CloseState.ClosedFatal   -> "ClosedFatal"
 }
 
 private class AssemblyFailure(

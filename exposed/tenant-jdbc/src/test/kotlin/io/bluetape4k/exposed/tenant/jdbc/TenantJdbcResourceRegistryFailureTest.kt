@@ -2,14 +2,19 @@
 
 package io.bluetape4k.exposed.tenant.jdbc
 
+import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
@@ -21,7 +26,6 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
-import kotlin.test.assertFailsWith
 
 class TenantJdbcResourceRegistryFailureTest {
 
@@ -291,6 +295,43 @@ class TenantJdbcResourceRegistryFailureTest {
             appender.list.none { it.throwableProxy?.message?.contains(marker) == true }.shouldBeTrue()
         } finally {
             root.detachAppender(appender)
+            appender.stop()
+        }
+    }
+
+    @Test
+    fun `종료 실패 후 모든 조회의 DEBUG 상태 로그에 callback 예외 메시지가 노출되지 않는다`() {
+        val marker = "synthetic-password-canary"
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        val logger = LoggerFactory.getLogger(TenantJdbcResourceRegistry::class.java) as Logger
+        val previousLevel = logger.level
+        logger.level = Level.DEBUG
+        logger.addAppender(appender)
+        val fixture = failureFixture()
+        val registry = fixture.create(listOf("a"))
+        fixture.disposeFailures["a"] = IllegalStateException(marker)
+
+        try {
+            val failure = assertFailsWith<IllegalStateException> { registry.close() }
+            failure.message shouldBeEqualTo marker
+
+            listOf<() -> Unit>(
+                { registry.resourceFor("a") },
+                { registry.databaseFor("a") },
+                { registry.dataSourceFor("a") },
+            ).forEach { lookup ->
+                assertFailsWith<IllegalStateException> { lookup() }
+            }
+
+            appender.list.filter { it.level == Level.DEBUG }.shouldHaveSize(3)
+            appender.list.filter { it.level == Level.DEBUG }.forEach { event ->
+                event.formattedMessage shouldContain "state: ClosedFailure"
+                event.formattedMessage shouldNotContain marker
+                event.throwableProxy.shouldBeNull()
+            }
+        } finally {
+            logger.detachAppender(appender)
+            logger.level = previousLevel
             appender.stop()
         }
     }
