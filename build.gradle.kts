@@ -4,6 +4,7 @@ import dev.detekt.gradle.plugin.getSupportedKotlinVersion
 import nmcp.NmcpAggregationExtension
 import nmcp.NmcpExtension
 import java.util.Collections
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -1470,6 +1471,9 @@ tasks.register("updateProductionAbiBaseline") {
 tasks.register("verifyJacksonSecurityPublicationMetadata") {
     group = "verification"
     description = "Verifies that published Jackson modules declare patched Jackson BOM versions."
+    notCompatibleWithConfigurationCache(
+        "The Jackson publication metadata verifier uses project-backed state; see issue #903.",
+    )
     dependsOn(
         ":bluetape4k-exposed-jackson2:generateMetadataFileForBluetapeExposedPublication",
         ":bluetape4k-exposed-jackson2:generatePomFileForBluetapeExposedPublication",
@@ -1501,6 +1505,15 @@ tasks.register("verifyJacksonSecurityPublicationMetadata") {
                 "$modulePath POM jackson-bom versions were $pomBomVersions; expected $patchedVersion"
             }
         }
+    }
+}
+
+listOf(":bluetape4k-exposed-jackson2", ":bluetape4k-exposed-jackson3").forEach { modulePath ->
+    project(modulePath).tasks.named<GenerateMavenPom>("generatePomFileForBluetapeExposedPublication") {
+        notCompatibleWithConfigurationCache(
+            "Spring Dependency Management adds a withXml POM hook that retains project-backed dependency state; " +
+                "see issue #903.",
+        )
     }
 }
 

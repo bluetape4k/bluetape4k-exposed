@@ -210,6 +210,11 @@ data class SnapshotStoreId(
         }
     }
 
+    private fun readResolve(): Any = SnapshotStoreId(
+        backend = backend,
+        namespace = namespace,
+    )
+
     companion object {
         private const val serialVersionUID: Long = 1L
         private const val MAX_BACKEND_LENGTH: Int = 128
@@ -253,6 +258,13 @@ data class SnapshotCacheLimits(
             require(it > Duration.ZERO) { "localDrainBudget[$it] must be positive when set." }
         }
     }
+
+    private fun readResolve(): Any = SnapshotCacheLimits(
+        maxStagedMutations = maxStagedMutations,
+        maxParticipatingStores = maxParticipatingStores,
+        maxStagedWeight = maxStagedWeight,
+        localDrainBudget = localDrainBudget,
+    )
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -329,6 +341,12 @@ data class MeasuredInvalidation<ID: Any>(
         }
     }
 
+    private fun readResolve(): Any = MeasuredInvalidation(
+        id = id,
+        encodedBytes = encodedBytes,
+        encodedSha256 = encodedSha256,
+    )
+
     companion object {
         private const val serialVersionUID = 1L
         private val SHA_256_PATTERN = Regex("[0-9a-f]{64}")
@@ -344,6 +362,10 @@ data class SnapshotCacheApplyReport(
     /** 적용 결과를 operation/outcome 단위로 집계한 목록입니다. */
     val results: List<SnapshotCacheOperationResult>,
 ): Serializable {
+    private fun readResolve(): Any = SnapshotCacheApplyReport(
+        java.util.Collections.unmodifiableList(results.toList()),
+    )
+
     /**
      * Requires this report to account exactly for one bulk [operation] input boundary.
      *
@@ -397,6 +419,13 @@ data class SnapshotCacheOperationResult(
         }
         exceptionType?.let(::requireSafeSnapshotCacheExceptionType)
     }
+
+    private fun readResolve(): Any = SnapshotCacheOperationResult(
+        operation = operation,
+        outcome = outcome,
+        affectedCount = affectedCount,
+        exceptionType = exceptionType,
+    )
 
     companion object {
         private const val serialVersionUID: Long = 1L

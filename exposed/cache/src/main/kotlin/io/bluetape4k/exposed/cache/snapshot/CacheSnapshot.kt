@@ -19,6 +19,8 @@ data class CacheSnapshot<V: Serializable>(
     /** 호출자가 정의한 consistency/version metadata이며, 없으면 `null`입니다. */
     val revision: String? = null,
 ): Serializable {
+    private fun readResolve(): Any = CacheSnapshot(value, revision)
+
     companion object {
         private const val serialVersionUID: Long = 1L
     }

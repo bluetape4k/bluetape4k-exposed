@@ -42,6 +42,13 @@ data class SnapshotCacheConfig(
         }
     }
 
+    private fun readResolve(): Any = SnapshotCacheConfig(
+        namespace = namespace,
+        schemaVersion = schemaVersion,
+        maxStagedMutations = maxStagedMutations,
+        maxParticipatingStores = maxParticipatingStores,
+    )
+
     companion object {
         private const val serialVersionUID: Long = 1L
         private val NAMESPACE_PATTERN = Regex("[a-z][a-z0-9._-]{0,62}:v[1-9][0-9]*")
@@ -109,6 +116,18 @@ data class CaffeineSnapshotCacheConfig(
             "maxOutstandingMissTokens[$maxOutstandingMissTokens] must be positive."
         }
     }
+
+    private fun readResolve(): Any = CaffeineSnapshotCacheConfig(
+        snapshot = snapshot,
+        maximumSize = maximumSize,
+        maximumWeight = maximumWeight,
+        expireAfterWrite = expireAfterWrite,
+        expireAfterAccess = expireAfterAccess,
+        maxStagedWeight = maxStagedWeight,
+        localDrainBudget = localDrainBudget,
+        fenceStripes = fenceStripes,
+        maxOutstandingMissTokens = maxOutstandingMissTokens,
+    )
 
     companion object {
         private const val serialVersionUID: Long = 1L
