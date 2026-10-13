@@ -394,14 +394,20 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
-      - name: Run buildSrc configuration-cache TestKit regression
+      - name: Run buildSrc configuration-cache TestKit regressions
         run: |
           ./gradlew -p buildSrc test \
             --tests CheckProductionAbiConfigurationCacheTest \
+            --tests VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest \
             --no-configuration-cache --no-daemon
           test -s buildSrc/build/test-results/test/TEST-CheckProductionAbiConfigurationCacheTest.xml
           grep -F 'checkProductionAbi stores and reuses configuration cache' \
             buildSrc/build/test-results/test/TEST-CheckProductionAbiConfigurationCacheTest.xml
+          test -s buildSrc/build/test-results/test/TEST-VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest.xml
+          grep -F 'metadata validator succeeds on cold and repeated default configuration cache invocations' \
+            buildSrc/build/test-results/test/TEST-VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest.xml
+          grep -F 'metadata validator rejects outdated Jackson BOM versions in module and Maven metadata' \
+            buildSrc/build/test-results/test/TEST-VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest.xml
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
@@ -416,6 +422,10 @@ jobs:
 
       - name: Validate publication POMs
         run: |
+          ./gradlew verifyJacksonSecurityPublicationMetadata \
+            -PsnapshotVersion=-SNAPSHOT \
+            --configuration-cache --configuration-cache-problems=fail \
+            --no-daemon --max-workers=2
           ./gradlew generateMetadataFileForBluetapeExposedPublication \
             generatePomFileForBluetapeExposedPublication exportPublicationInventory \
             -PsnapshotVersion=-SNAPSHOT \
