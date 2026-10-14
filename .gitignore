@@ -73,3 +73,6 @@ src_managed
 .profileconfig.json
 
 .codegraph/
+
+# Python CI validator bytecode
+/scripts/ci/__pycache__/
