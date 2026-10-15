@@ -1,9 +1,16 @@
 import ast
 import fnmatch
+import io
+import os
 import re
+import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
+from report_coverage_applicability import coverage_summary
+from report_coverage_applicability import main as report_coverage_main
 from validate_ci_matrix_contract import (
     COVERAGE_TRIGGER_FILTERS,
     MODULE_OUTPUTS,
@@ -273,7 +280,54 @@ class CiMatrixContractTest(unittest.TestCase):
             ci_status,
         )
         self.assertIn("CHANGES_RESULT: ${{ needs.changes.result }}", ci_status)
-        self.assertIn("Kover coverage: N/A", ci_status)
+        self.assertIn(
+            "run: python3 scripts/ci/report_coverage_applicability.py",
+            ci_status,
+        )
+
+    def test_coverage_summary_requires_an_explicit_boolean_applicability(self):
+        self.assertIsNone(coverage_summary("true", "success"))
+        self.assertEqual(
+            "Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다.",
+            coverage_summary("false", "success"),
+        )
+        self.assertIsNone(coverage_summary("", "failure"))
+
+        for value in ("", "unexpected", "TRUE"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                coverage_summary(value, "success")
+
+    def test_coverage_applicability_runtime_reports_only_explicit_not_applicable(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            summary_path = Path(temp_dir) / "step-summary.md"
+            with patch.dict(
+                os.environ,
+                {
+                    "COVERAGE_REQUIRED": "false",
+                    "CHANGES_RESULT": "success",
+                    "GITHUB_STEP_SUMMARY": str(summary_path),
+                },
+                clear=True,
+            ):
+                self.assertEqual(0, report_coverage_main())
+
+            self.assertEqual(
+                "Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다.\n",
+                summary_path.read_text(encoding="utf-8"),
+            )
+
+    def test_coverage_applicability_runtime_fails_closed_on_unknown_output(self):
+        with (
+            patch.dict(
+                os.environ,
+                {"COVERAGE_REQUIRED": "", "CHANGES_RESULT": "success"},
+                clear=True,
+            ),
+            redirect_stderr(io.StringIO()) as stderr,
+        ):
+            self.assertEqual(1, report_coverage_main())
+
+        self.assertIn("must be 'true' or 'false'", stderr.getvalue())
 
     def test_coverage_enabled_tracks_all_kover_producer_filters(self):
         workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -348,11 +402,15 @@ class CiMatrixContractTest(unittest.TestCase):
 
     def test_coverage_validator_rejects_missing_not_applicable_summary(self):
         workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
-        broken = workflow.replace("Kover coverage: N/A", "Kover coverage: skipped", 1)
+        broken = workflow.replace(
+            "run: python3 scripts/ci/report_coverage_applicability.py",
+            "run: true",
+            1,
+        )
         errors = validate(broken)
 
         self.assertIn(
-            "ci-status must report coverage N/A when no producer is selected",
+            "ci-status must validate coverage applicability with a fail-closed helper",
             errors,
         )
 
