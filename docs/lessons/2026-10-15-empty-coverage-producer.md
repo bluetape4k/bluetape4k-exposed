@@ -20,7 +20,7 @@ CI matrix 계약 테스트는 `coverage-enabled`의 Boolean truth table로 설�
 
 설정 전용 변경 경로는 임시 PR #912의 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 별도로 확인했다. [호스티드 CI run](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 40개 job 중 8개가 성공하고 32개가 건너뛰었으며 실패는 없었다. 29개 `Test /` job은 모두 건너뛰었으므로 테스트 성공으로 세지 않는다. `Coverage Report`도 건너뛰었고, `CI Status`는 `Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다.`를 기록하고 성공했다. 임시 PR은 병합하지 않고 닫았다.
 
-독립 코드 검토자는 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 코드 P0/P1 결함을 찾지 못했으며, review와 lesson의 CI 상태가 오래됐다는 P2를 보고했다. 이 문서와 review 기록에서 그 상태를 바로잡았다. 요청 모델은 `gpt-5.6-luna max`였지만, 인라인 및 독립 검토자의 실제 실행 모델은 확인되지 않았다. 위 실행들은 각각 기록된 SHA에 대한 증거다. 머지 판정에는 최신 PR head의 CI와 리뷰 상태를 확인한다.
+독립 코드 검토자는 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 코드 P0/P1 결함을 찾지 못했으며, review와 lesson의 CI 상태가 오래됐다는 P2를 보고했다. 이 문서와 review 기록에서 그 상태를 바로잡았다. 사용자가 요청한 모델은 `gpt-6-luna max`이며, 이전 독립 `code-reviewer` lane이 보고한 실제 실행 모델은 `gpt-5.6-luna max`다. 두 값을 구분해 기록하고 해당 검토를 요청 모델로 실행한 것으로 간주하지 않는다. 위 실행들은 각각 기록된 SHA에 대한 증거다. 머지 판정에는 최신 PR head의 CI와 리뷰 상태를 확인한다.
 
 ## 다음 변경에서 확인할 점
 
