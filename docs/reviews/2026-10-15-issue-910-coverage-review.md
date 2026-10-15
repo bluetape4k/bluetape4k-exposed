@@ -28,13 +28,13 @@
 - CI matrix validator, `actionlint`, Ruff 검사·포맷 검사, `git diff --check`: 통과
 - PR #911의 기존 실행 [38687095032](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38687095032)은 HEAD `43eeb86638238ec574360ecacc335156391b9a15`에서 실행됐다. 이 실행은 이후 검토 HEAD의 증거로 재사용하지 않는다.
 - Issue #910이 요구하는 설정 전용 경로의 호스티드 CI 증거는 미확인이다. 로컬 진리표는 이 경로의 기대 조건만 확인한다.
-- 요청 모델은 `gpt-5.6-luna max`다. 실제 인라인 검토자의 모델 정보는 확인하지 못했다.
+- 요청 모델은 `gpt-6-luna max`다. 실제 인라인 검토자의 모델 정보는 확인하지 못했다.
 
 Inline verdict: PASS; P0=0, P1=0.
 
 ### 독립 코드 검토
 
-- 대상 head `e81c2cdb037b53aa49a79c87816ac4e839075c89`의 workflow, coverage 집계기, 회귀 테스트를 별도 `code-reviewer`가 검토했다.
-- 코드 결함은 확인되지 않았고 P0/P1은 0건이다. 모델 표기 불일치 1건은 이번 후속 수정에서 바로잡는다.
+- 최초 독립 `code-reviewer`는 head `e81c2cdb037b53aa49a79c87816ac4e839075c89`의 workflow, coverage 집계기, 회귀 테스트를 검토했다. 최종 독립 검토는 head `8667239591dbf6186d1b2da022b8ff03f0a883c4`에서 코드와 CI 계약을 다시 확인했다.
+- 두 검토에서 코드 결함은 확인되지 않았고 P0/P1은 0건이다. 최종 검토가 지적한 이 문서의 오래된 검토 상태 표현을 이 수정에서 바로잡는다.
 - 설정 전용 변경의 hosted exact-head CI 증거는 여전히 없다. 이 검증 공백이 해소되기 전에는 merge-ready로 판정하지 않는다.
-- 독립 검토자의 실제 모델 정보는 실행 결과에서 확인할 수 없다. 요청 모델은 `gpt-5.6-luna max`다.
+- 독립 검토자의 실제 모델 정보는 실행 결과에서 확인할 수 없다. 요청 모델은 `gpt-6-luna max`다.
