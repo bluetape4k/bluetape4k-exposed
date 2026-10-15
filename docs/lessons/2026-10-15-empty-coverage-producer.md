@@ -18,10 +18,10 @@ Kover 보고서 생성 작업이 선택되면 `coverage-report`를 계속 실행
 
 - coverage 선택 테스트는 설정 전용, benchmark 전용, docs 전용, docs와 모듈 파일의 동시 변경, 모듈 변경, `workflow_dispatch`를 확인한다. `some-with-excludes`는 파일마다 positive pattern과 negative pattern을 평가하므로, docs 파일의 제외 패턴이 함께 바뀐 모듈 파일을 가리지 않도록 테스트 oracle도 파일별로 적용한다.
 - applicability 회귀 테스트는 성공한 변경 감지에서 `true`와 `false`를 구분하고, 빈 값·예상 밖 값·대소문자 오류를 거부한다. 변경 감지 실패 시에는 `N/A`를 만들지 않는다.
-- 수정 후 로컬 검증: `scripts/ci/validate_ci_matrix_contract_test.py` 25개, `scripts/ci/validate_required_jobs_test.py` 6개 통과. CI matrix validator, Python 컴파일, `actionlint`, `git diff --check`도 통과했다. 수정 head의 hosted CI와 독립 코드 검토는 PR #911의 live checks에서 확인한다.
+- 수정 후 로컬 검증: `scripts/ci/validate_ci_matrix_contract_test.py` 27개, `scripts/ci/validate_required_jobs_test.py` 6개, `.github/scripts/test_aggregate_kover_coverage.py` 5개 통과. CI matrix validator, Python 컴파일, Ruff, `actionlint`, `git diff --check`도 통과했다. 수정 head의 hosted CI와 독립 코드 검토는 PR #911의 live checks에서 확인한다.
 - 이전 full-matrix 실행 [38696808398](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`의 수정 전 코드다. 40개 job 중 39개 성공, 1개 skip, 실패 0개였고 29개 모듈 테스트, `Coverage Report`, `CI Status`가 성공했다.
 - 설정 전용 경로는 임시 PR #912의 [run 38705050851](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)에서 확인했다. head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에 대해 40개 job 중 8개 성공, 32개 skip, 실패 0개였고, 29개 모듈 테스트와 `Coverage Report`는 실행되지 않았다. `CI Status`가 `N/A`를 기록해 설정 전용 경로만 증명했다. PR #912는 닫혔고 병합되지 않았다.
-- 사용자는 `gpt-6-luna max`를 요청했다. 이전 독립 검토자가 보고한 실제 모델은 `gpt-5.6-luna max`였으므로 동일한 provenance로 취급하지 않는다. 수정 후 독립 검토 모델은 결과에서 확인해 별도로 기록한다.
+- 사용자는 `gpt-6-luna max`를 요청했다. head `49c4af9`와 `39546079`의 독립 reviewer lane은 실제 실행 모델을 각각 `gpt-5.6-luna max`로 보고했다. 이를 요청 모델 실행과 동일하게 취급하지 않는다.
 
 ## 다음 변경에서 확인할 점
 
