@@ -1,4 +1,5 @@
 version: 2
+# 이슈 #910의 설정 전용 CI 경로 검증을 위한 임시 주석입니다.
 # Gradle/Maven library version updates are centralized in bluetape4k-dependencies.
 # Security updates are evaluated from submitted Gradle graphs and central policy.
 updates:
