@@ -35,6 +35,16 @@ MODULE_OUTPUTS = (
     "utils-batch",
 )
 
+COVERAGE_PRODUCER_OUTPUTS = tuple(
+    output for output in MODULE_OUTPUTS if output != "benchmark"
+)
+COVERAGE_TRIGGER_FILTERS = (
+    "all-modules",
+    "jdbc-test-fixture",
+    "r2dbc-test-fixture",
+    *COVERAGE_PRODUCER_OUTPUTS,
+)
+
 GLOBAL_PATHS = (
     "settings.gradle.kts",
     "gradle.properties",
@@ -166,6 +176,98 @@ def validate_fixture_contract(workflow: str) -> list[str]:
     return errors
 
 
+def validate_coverage_selection_contract(workflow: str) -> list[str]:
+    """Ensure aggregation runs exactly when a Kover-producing test job is selected."""
+    errors: list[str] = []
+    changes_start = workflow.find("  changes:\n")
+    outputs_start = workflow.find("    outputs:\n", changes_start)
+    outputs_end = workflow.find("    steps:\n", outputs_start)
+    if changes_start < 0 or outputs_start < 0 or outputs_end < 0:
+        return ["coverage selection cannot locate changes outputs"]
+
+    outputs = workflow[outputs_start:outputs_end]
+    match = re.search(r"^      coverage-enabled: (.+)$", outputs, re.MULTILINE)
+    if match is None:
+        errors.append("changes job must expose coverage-enabled")
+        coverage_expression = ""
+    else:
+        coverage_expression = match.group(1)
+        for filter_name in COVERAGE_TRIGGER_FILTERS:
+            token = f"steps.filter.outputs['{filter_name}'] == 'true'"
+            if token not in coverage_expression:
+                errors.append(
+                    f"coverage-enabled output is missing filter {filter_name}"
+                )
+        if "github.event_name == 'workflow_dispatch'" not in coverage_expression:
+            errors.append("coverage-enabled output must include workflow_dispatch")
+        if "steps.filter.outputs['non-doc'] == 'true'" not in coverage_expression:
+            errors.append("coverage-enabled output must exclude docs-only changes")
+        if re.search(
+            r"steps\.filter\.outputs(?:\.benchmark|\['benchmark'\])",
+            coverage_expression,
+        ):
+            errors.append("coverage-enabled must not run for benchmark-only changes")
+
+    coverage_start = workflow.find("  coverage-report:\n")
+    status_start = workflow.find("  ci-status:\n", coverage_start + 1)
+    if coverage_start < 0 or status_start < 0:
+        return errors + ["coverage selection cannot locate coverage-report job"]
+    coverage_job = workflow[coverage_start:status_start]
+    if "needs.changes.outputs['coverage-enabled'] == 'true'" not in coverage_job:
+        errors.append("coverage-report must require coverage-enabled")
+    if "always()" not in coverage_job:
+        errors.append("coverage-report must retain always() for selected producers")
+    if "python3 .github/scripts/test_aggregate_kover_coverage.py" not in coverage_job:
+        errors.append("coverage-report must validate fail-closed report handling")
+    if (
+        "python3 .github/scripts/aggregate-kover-coverage.py coverage-artifacts"
+        not in coverage_job
+    ):
+        errors.append("coverage-report must aggregate selected producer artifacts")
+
+    producer_jobs = re.findall(
+        r"^\s+- (test-[a-z0-9-]+)\s*$", coverage_job, re.MULTILINE
+    )
+    for producer_job in producer_jobs:
+        if producer_job == "test-benchmark":
+            continue
+        job_header = f"  {producer_job}:\n"
+        job_start = workflow.find(job_header)
+        if job_start < 0:
+            errors.append(f"coverage producer job {producer_job} is missing")
+            continue
+        job_body_start = job_start + len(job_header)
+        next_job = re.search(
+            r"^  [a-z][a-z0-9-]*:\n", workflow[job_body_start:], re.MULTILINE
+        )
+        job_end = (
+            job_body_start + next_job.start() if next_job is not None else len(workflow)
+        )
+        if (
+            "github.event_name == 'workflow_dispatch'"
+            not in workflow[job_body_start:job_end]
+        ):
+            errors.append(
+                f"coverage producer job {producer_job} must run on workflow_dispatch"
+            )
+
+    ci_status = workflow[status_start:]
+    if (
+        "COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}"
+        not in ci_status
+    ):
+        errors.append("ci-status must receive coverage applicability")
+    if "CHANGES_RESULT: ${{ needs.changes.result }}" not in ci_status:
+        errors.append("ci-status must verify changes detection before reporting N/A")
+    if (
+        'if [ "$CHANGES_RESULT" = "success" ] && [ "$COVERAGE_REQUIRED" != "true" ]; then'
+        not in ci_status
+        or "Kover coverage: N/A" not in ci_status
+    ):
+        errors.append("ci-status must report coverage N/A when no producer is selected")
+    return errors
+
+
 def validate(workflow: str) -> list[str]:
     errors: list[str] = []
     all_modules = workflow.find("            all-modules:\n")
@@ -273,6 +375,8 @@ def validate(workflow: str) -> list[str]:
 
     errors.extend(validate_tenant_jdbc_job(workflow))
     errors.extend(validate_fixture_contract(workflow))
+
+    errors.extend(validate_coverage_selection_contract(workflow))
 
     for line in workflow.splitlines():
         if "if: ${{ needs.changes.outputs" not in line:

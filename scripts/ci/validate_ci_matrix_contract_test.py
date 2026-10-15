@@ -1,9 +1,11 @@
+import ast
 import fnmatch
 import re
 import unittest
 from pathlib import Path
 
 from validate_ci_matrix_contract import (
+    COVERAGE_TRIGGER_FILTERS,
     MODULE_OUTPUTS,
     TENANT_JDBC_REQUIRED_TOKENS,
     validate,
@@ -147,7 +149,7 @@ class CiMatrixContractTest(unittest.TestCase):
                 self.assertEqual(set(), self.activated_outputs(path))
 
     @staticmethod
-    def activated_outputs(path):
+    def matched_filter_outputs(paths):
         workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
         filters = {}
         name = None
@@ -165,12 +167,25 @@ class CiMatrixContractTest(unittest.TestCase):
             name
             for name, patterns in filters.items()
             if any(
-                fnmatch.fnmatchcase(path, p) for p in patterns if not p.startswith("!")
-            )
-            and not any(
-                fnmatch.fnmatchcase(path, p[1:]) for p in patterns if p.startswith("!")
+                any(
+                    fnmatch.fnmatchcase(path, pattern)
+                    for pattern in patterns
+                    if not pattern.startswith("!")
+                )
+                and not any(
+                    fnmatch.fnmatchcase(path, pattern[1:])
+                    for pattern in patterns
+                    if pattern.startswith("!")
+                )
+                for path in paths
             )
         }
+        return matched
+
+    @staticmethod
+    def activated_outputs(path):
+        matched = CiMatrixContractTest.matched_filter_outputs((path,))
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
         outputs = workflow.split("    outputs:\n", 1)[1].split("    steps:\n", 1)[0]
         result = set()
         for name, expression in re.findall(
@@ -190,6 +205,191 @@ class CiMatrixContractTest(unittest.TestCase):
                 result.add(name)
         return result
 
+    @classmethod
+    def coverage_enabled(cls, paths, event_name):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        outputs = workflow.split("    outputs:\n", 1)[1].split("    steps:\n", 1)[0]
+        coverage_line = next(
+            line
+            for line in outputs.splitlines()
+            if line.startswith("      coverage-enabled:")
+        )
+        expression = (
+            coverage_line.split(": ", 1)[1]
+            .removeprefix("${{")
+            .removesuffix("}}")
+            .strip()
+        )
+        matched = cls.matched_filter_outputs(paths)
+        references = re.compile(
+            r"github\.event_name == 'workflow_dispatch'|"
+            r"steps\.filter\.outputs(?:\.([\w-]+)|\['([^']+)'\]) == 'true'"
+        )
+
+        def replace_reference(match):
+            if match.group(0).startswith("github.event_name"):
+                value = event_name == "workflow_dispatch"
+            else:
+                filter_name = match.group(1) or match.group(2)
+                value = filter_name in matched
+            return "True" if value else "False"
+
+        python_expression = references.sub(replace_reference, expression)
+        python_expression = python_expression.replace("||", " or ").replace(
+            "&&", " and "
+        )
+        root = ast.parse(python_expression, mode="eval").body
+
+        def evaluate(node):
+            if isinstance(node, ast.Constant) and isinstance(node.value, bool):
+                return node.value
+            if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.And):
+                return all(evaluate(value) for value in node.values)
+            if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or):
+                return any(evaluate(value) for value in node.values)
+            raise AssertionError(f"unsupported coverage expression node: {node!r}")
+
+        return evaluate(root)
+
+    def test_coverage_report_runs_only_when_a_coverage_producer_is_selected(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        coverage_start = workflow.find("  coverage-report:\n")
+        status_start = workflow.find("  ci-status:\n", coverage_start + 1)
+        self.assertGreaterEqual(coverage_start, 0)
+        self.assertGreater(status_start, coverage_start)
+        coverage_job = workflow[coverage_start:status_start]
+
+        self.assertIn(
+            "needs.changes.outputs['coverage-enabled'] == 'true'",
+            coverage_job,
+        )
+
+    def test_ci_status_reports_coverage_as_not_applicable_without_a_producer(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        ci_status = workflow.split("  ci-status:\n", 1)[1]
+
+        self.assertIn(
+            "COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}",
+            ci_status,
+        )
+        self.assertIn("CHANGES_RESULT: ${{ needs.changes.result }}", ci_status)
+        self.assertIn("Kover coverage: N/A", ci_status)
+
+    def test_coverage_enabled_tracks_all_kover_producer_filters(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        outputs = workflow.split("    outputs:\n", 1)[1].split("    steps:\n", 1)[0]
+        coverage_output = next(
+            (
+                line
+                for line in outputs.splitlines()
+                if line.startswith("      coverage-enabled:")
+            ),
+            None,
+        )
+        self.assertIsNotNone(coverage_output, "changes must expose coverage-enabled")
+        if coverage_output is None:
+            return
+
+        expected_filters = (set(MODULE_OUTPUTS) - {"benchmark"}) | {
+            "all-modules",
+            "jdbc-test-fixture",
+            "r2dbc-test-fixture",
+        }
+        for output in expected_filters:
+            with self.subTest(output=output):
+                self.assertIn(
+                    f"steps.filter.outputs['{output}'] == 'true'",
+                    coverage_output,
+                )
+        self.assertIn("github.event_name == 'workflow_dispatch'", coverage_output)
+        self.assertIn("steps.filter.outputs['non-doc'] == 'true'", coverage_output)
+
+    def test_coverage_dispatch_requires_each_producer_job_to_run(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        broken = workflow.replace(
+            "needs.changes.outputs.core == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch'",
+            "needs.changes.outputs.core == 'true' || needs.changes.outputs['all-modules'] == 'true'",
+            1,
+        )
+
+        errors = validate(broken)
+
+        self.assertIn(
+            "coverage producer job test-core must run on workflow_dispatch",
+            errors,
+        )
+
+    def test_coverage_enabled_boolean_truth_table(self):
+        scenarios = (
+            ((".github/dependabot.yml",), "pull_request", False),
+            (
+                ("benchmark/exposed/src/main/kotlin/Benchmark.kt",),
+                "pull_request",
+                False,
+            ),
+            (("docs/ci.md",), "pull_request", False),
+            (
+                (
+                    "docs/ci.md",
+                    "exposed/druid/src/main/kotlin/DruidDialect.kt",
+                ),
+                "pull_request",
+                True,
+            ),
+            (("exposed/druid/src/main/kotlin/DruidDialect.kt",), "pull_request", True),
+            ((), "workflow_dispatch", True),
+        )
+        for paths, event_name, expected in scenarios:
+            with self.subTest(paths=paths, event_name=event_name):
+                self.assertEqual(
+                    expected,
+                    self.coverage_enabled(paths, event_name),
+                )
+
+    def test_coverage_validator_rejects_missing_not_applicable_summary(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        broken = workflow.replace("Kover coverage: N/A", "Kover coverage: skipped", 1)
+        errors = validate(broken)
+
+        self.assertIn(
+            "ci-status must report coverage N/A when no producer is selected",
+            errors,
+        )
+
+    def test_coverage_validator_rejects_omitted_producer_filter(self):
+        workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+        outputs = workflow.split("    outputs:\n", 1)[1].split("    steps:\n", 1)[0]
+        coverage_line = next(
+            line
+            for line in outputs.splitlines()
+            if line.startswith("      coverage-enabled:")
+        )
+
+        for filter_name in COVERAGE_TRIGGER_FILTERS:
+            with self.subTest(filter_name=filter_name):
+                token = f"steps.filter.outputs['{filter_name}'] == 'true'"
+                broken_line = coverage_line.replace(token, "false", 1)
+                self.assertNotEqual(coverage_line, broken_line)
+                broken = workflow.replace(coverage_line, broken_line, 1)
+                errors = validate(broken)
+                self.assertIn(
+                    f"coverage-enabled output is missing filter {filter_name}",
+                    errors,
+                )
+
+    def test_config_only_change_selects_no_coverage_producer(self):
+        coverage_producers = set(MODULE_OUTPUTS) - {"benchmark"}
+        self.assertFalse(
+            self.activated_outputs(".github/dependabot.yml") & coverage_producers
+        )
+
+    def test_module_change_selects_a_coverage_producer(self):
+        coverage_producers = set(MODULE_OUTPUTS) - {"benchmark"}
+        self.assertTrue(
+            self.activated_outputs("exposed/druid/src/main/kotlin/DruidDialect.kt")
+            & coverage_producers
+        )
+
     def test_current_workflow_satisfies_global_contract(self):
         with open(".github/workflows/ci.yml", encoding="utf-8") as workflow_file:
             errors = validate(workflow_file.read())
@@ -200,11 +400,16 @@ class CiMatrixContractTest(unittest.TestCase):
         with open(".github/workflows/ci.yml", encoding="utf-8") as workflow_file:
             workflow = workflow_file.read()
 
-        broken_workflow = workflow.replace(
-            " || steps.filter.outputs['jdbc-test-fixture'] == 'true'",
-            "",
-            1,
-        )
+        lines = workflow.splitlines()
+        for index, line in enumerate(lines):
+            if line.startswith("      core: "):
+                lines[index] = line.replace(
+                    " || steps.filter.outputs['jdbc-test-fixture'] == 'true'",
+                    "",
+                    1,
+                )
+                break
+        broken_workflow = "\n".join(lines) + "\n"
         errors = validate(broken_workflow)
 
         self.assertTrue(

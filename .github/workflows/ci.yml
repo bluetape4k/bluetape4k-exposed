@@ -97,6 +97,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       all-modules: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['all-modules'] == 'true') }}
+      coverage-enabled: ${{ github.event_name == 'workflow_dispatch' || (steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true' || steps.filter.outputs['r2dbc-test-fixture'] == 'true' || steps.filter.outputs['core'] == 'true' || steps.filter.outputs['serialization'] == 'true' || steps.filter.outputs['tink'] == 'true' || steps.filter.outputs['jdbc'] == 'true' || steps.filter.outputs['r2dbc'] == 'true' || steps.filter.outputs['spring-boot'] == 'true' || steps.filter.outputs['spring-modulith'] == 'true' || steps.filter.outputs['ktor'] == 'true' || steps.filter.outputs['examples'] == 'true' || steps.filter.outputs['lettuce'] == 'true' || steps.filter.outputs['redisson'] == 'true' || steps.filter.outputs['measured'] == 'true' || steps.filter.outputs['postgresql-module'] == 'true' || steps.filter.outputs['mysql8-module'] == 'true' || steps.filter.outputs['duckdb'] == 'true' || steps.filter.outputs['druid'] == 'true' || steps.filter.outputs['cache'] == 'true' || steps.filter.outputs['jdbc-caffeine'] == 'true' || steps.filter.outputs['r2dbc-caffeine'] == 'true' || steps.filter.outputs['clickhouse'] == 'true' || steps.filter.outputs['trino'] == 'true' || steps.filter.outputs['starrocks'] == 'true' || steps.filter.outputs['cockroachdb'] == 'true' || steps.filter.outputs['bigquery'] == 'true' || steps.filter.outputs['timefold'] == 'true' || steps.filter.outputs['spring-boot-batch'] == 'true' || steps.filter.outputs['utils-batch'] == 'true')) }}
       benchmark: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.benchmark == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs.jdbc == 'true' || steps.filter.outputs.r2dbc == 'true' || steps.filter.outputs.cache == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
       core: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.core == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
       serialization: ${{ steps.filter.outputs['non-doc'] == 'true' && (steps.filter.outputs.serialization == 'true' || steps.filter.outputs['all-modules'] == 'true' || steps.filter.outputs.core == 'true' || steps.filter.outputs['jdbc-test-fixture'] == 'true') }}
@@ -2072,7 +2073,7 @@ jobs:
       - test-timefold
       - test-spring-boot-batch
       - test-utils-batch
-    if: ${{ always() && needs.changes.outputs['docs-only'] != 'true' }}
+    if: ${{ always() && needs.changes.outputs['docs-only'] != 'true' && needs.changes.outputs['coverage-enabled'] == 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -2154,10 +2155,15 @@ jobs:
           RESULTS: ${{ join(needs.*.result, ',') }}
           BUILD_RESULT: ${{ needs.build.result }}
           DOCS_ONLY: ${{ needs.changes.outputs['docs-only'] }}
+          COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
           WRITE_BEHIND_RESULT: ${{ needs.verify-write-behind.result }}
           WRITE_BEHIND_REQUIRED: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs['jdbc-caffeine'] == 'true' || needs.changes.outputs['r2dbc-caffeine'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Job results: $RESULTS"
+          if [ "$CHANGES_RESULT" = "success" ] && [ "$COVERAGE_REQUIRED" != "true" ]; then
+            echo "Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다." >> "$GITHUB_STEP_SUMMARY"
+          fi
           if echo "$RESULTS" | grep -qE "failure|cancelled"; then
             echo "CI failed"
             exit 1
