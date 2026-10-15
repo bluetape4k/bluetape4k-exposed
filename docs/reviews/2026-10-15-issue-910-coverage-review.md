@@ -2,7 +2,7 @@
 
 ## 범위와 기준
 
-[`Issue #910`](https://github.com/bluetape4k/bluetape4k-exposed/issues/910)의 완료 조건과 `develop` 기준선 `5bb90aad40bae7a8f7a4b26a0c7ff4cf3663b042`부터 [`PR #911`](https://github.com/bluetape4k/bluetape4k-exposed/pull/911)에 포함된 변경을 검토했다. 범위는 Kover 커버리지 선택 계약과 0바이트 XML 회귀 테스트다. 정확한 검토 대상 HEAD는 Type E workflow receipt의 인라인 리뷰 기록에 결합한다. 이 문서는 변경을 작성한 주 세션의 자체 검토이며 독립 검토자의 판정을 대신하지 않는다.
+[`Issue #910`](https://github.com/bluetape4k/bluetape4k-exposed/issues/910)의 완료 조건과 `develop` 기준선 `5bb90aad40bae7a8f7a4b26a0c7ff4cf3663b042`부터 [`PR #911`](https://github.com/bluetape4k/bluetape4k-exposed/pull/911)에 포함된 변경을 검토했다. 코드 검토 범위는 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`의 Kover 커버리지 선택 계약과 0바이트 XML 회귀 테스트다. 이 문서는 변경을 작성한 주 세션의 검토 기록이며 독립 검토자의 판정을 대신하지 않는다. 최신 head의 CI와 독립 리뷰 판정은 PR #911의 live 상태 및 해당 실행 기록에서 확인한다.
 
 ## 결과
 
@@ -18,7 +18,7 @@
 | 공개 API·ABI | N/A | JVM 공개 선언, Maven artifact 좌표, 의존성 변경 없음 |
 | 테스트·호출자 | PASS | 0바이트 XML 거부 회귀와 CI matrix 계약 테스트 추가 |
 | 성능 | N/A | 제품 실행 경로 변경 없음 |
-| 문서·CI·배포 | PASS / PENDING | CI 조건과 요약 계약은 정적 검증 통과. 설정 전용 변경을 대상으로 한 호스티드 CI는 아직 확인되지 않음 |
+| 문서·CI·배포 | PASS | 변경 head의 CI와 설정 전용 경로의 별도 호스티드 CI에서 각각 기대된 producer 선택 및 `N/A` 동작을 확인 |
 
 ## 검증과 남은 증거
 
@@ -26,15 +26,15 @@
 - `scripts/ci/validate_ci_matrix_contract_test.py`: 24개 테스트 통과
 - `scripts/ci/validate_required_jobs_test.py`: 6개 테스트 통과
 - CI matrix validator, `actionlint`, Ruff 검사·포맷 검사, `git diff --check`: 통과
-- PR #911의 기존 실행 [38687095032](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38687095032)은 HEAD `43eeb86638238ec574360ecacc335156391b9a15`에서 실행됐다. 이 실행은 이후 검토 HEAD의 증거로 재사용하지 않는다.
-- Issue #910이 요구하는 설정 전용 경로의 호스티드 CI 증거는 미확인이다. 로컬 진리표는 이 경로의 기대 조건만 확인한다.
-- 요청 모델은 `gpt-5.6-luna max`다. 실제 인라인 검토자의 모델 정보는 확인하지 못했다.
+- PR #911의 exact-head 실행 [38696808398](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 40개 job 중 39개 성공, 1개 skip, 0개 실패로 끝났다. 29개 `Test /` job과 `Coverage Report`, `CI Status`가 성공했다. 건너뛴 job은 `Docs-only validation`이다.
+- 설정 전용 임시 PR #912의 exact-head 실행 [38705050851](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 40개 job 중 8개 성공, 32개 skip, 0개 실패로 끝났다. 29개 모듈 `Test /` job과 `Coverage Report`는 건너뛰었고 `CI Status`는 coverage `N/A`를 기록하며 성공했다. 따라서 이 실행은 설정 경로 결과를 검증하지만 제품 테스트 성공을 뜻하지 않는다. 임시 PR은 병합하지 않고 닫았다.
+- 위 두 실행은 각각 기록된 SHA의 증거다. 머지 준비 상태는 최신 PR head의 CI와 독립 리뷰 결과를 실시간으로 재확인해 판단한다.
+- 사용자가 요청한 모델은 `gpt-5.6-luna max`다. 인라인 및 독립 검토자의 실제 실행 모델은 확인되지 않았다.
 
-Inline verdict: PASS; P0=0, P1=0.
+인라인 코드 판정: PASS; 코드 P0=0, P1=0. 독립 검토는 lesson과 review의 오래된 CI 주장을 P2로 지적했고, 이 변경에서 바로잡았다. 새 head의 판정은 PR #911의 독립 리뷰 결과에서 확인한다.
 
 ### 독립 코드 검토
 
-- 최초 독립 `code-reviewer`는 head `e81c2cdb037b53aa49a79c87816ac4e839075c89`의 workflow, coverage 집계기, 회귀 테스트를 검토했다. 최종 독립 검토는 head `8667239591dbf6186d1b2da022b8ff03f0a883c4`에서 코드와 CI 계약을 다시 확인했다.
-- 두 검토에서 코드 결함은 확인되지 않았고 P0/P1은 0건이다. 최종 검토가 지적한 이 문서의 오래된 검토 상태 표현을 이 수정에서 바로잡는다.
-- 설정 전용 변경의 hosted exact-head CI 증거는 여전히 없다. 이 검증 공백이 해소되기 전에는 merge-ready로 판정하지 않는다.
-- 독립 검토자의 실제 모델 정보는 실행 결과에서 확인할 수 없다. 요청 모델은 `gpt-5.6-luna max`다.
+- 이전 독립 `code-reviewer` 검토는 head `e81c2cdb037b53aa49a79c87816ac4e839075c89`와 `8667239591dbf6186d1b2da022b8ff03f0a883c4`를 대상으로 코드와 CI 계약을 확인했다. 이후 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에 대한 독립 검토는 코드 P0/P1을 찾지 못했지만, lesson과 review에 남은 오래된 CI 상태를 P2로 지적했다. 이 수정에서 두 기록을 갱신했다.
+- 독립 검토자가 지적한 P2 기록 불일치는 이 변경에서 바로잡았다. 이 검토와 최신 head의 판정은 PR #911의 live review 결과에서 구분한다.
+- 독립 검토자의 실제 실행 모델은 확인되지 않았다. 요청 모델은 `gpt-5.6-luna max`다.

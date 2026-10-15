@@ -16,7 +16,11 @@ Kover 보고서 생성 작업이 선택되면 `coverage-report` 작업을 계속
 
 CI matrix 계약 테스트는 `coverage-enabled`의 Boolean truth table로 설정 전용, benchmark 전용, docs 전용, docs와 모듈 파일이 함께 바뀐 경우, 모듈 변경, `workflow_dispatch`를 확인한다. `some-with-excludes` filter는 변경 파일마다 positive pattern 일치와 같은 파일의 negative pattern 제외를 적용한 뒤, 조건을 만족하는 파일이 하나라도 있으면 filter를 선택한다. 따라서 docs 파일의 제외 패턴이 함께 변경된 모듈 파일을 가리지 않도록 테스트 오라클도 파일별로 평가한다. 이 동작은 [dorny/paths-filter README](https://github.com/dorny/paths-filter#usage)에 설명되어 있다. 계약 검증기는 모든 생성 작업 filter가 `coverage-enabled`에 연결되고 각 producer가 수동 실행에서도 선택되는지, 생성 작업이 없는 경로가 `N/A`를 기록하는지 검사한다. `.github/scripts/test_aggregate_kover_coverage.py`는 생성 작업이 선택됐는데 보고서가 없거나 유효하지 않으면 집계가 계속 실패하는 계약을 고정한다.
 
-실패 원인은 기존 PR #909의 head `327783528c1cc8f10bd127541678327b8b9b28fa`에서 수집한 CI 기록으로 확인했다. 이 수정 브랜치에서는 로컬 계약 테스트와 워크플로 정적 검증을 수행하며, 수정 브랜치의 원격 CI는 아직 실행되지 않았다. 병합 후 기준 checkout 동기화와 GNO 색인은 별도 마무리 단계다.
+실패 원인은 기존 PR #909의 head `327783528c1cc8f10bd127541678327b8b9b28fa`에서 수집한 CI 기록으로 확인했다. 수정 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 실행한 [호스티드 CI run](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 40개 job 중 39개가 성공하고 `Docs-only validation` 1개가 건너뛰었다. 29개 모듈 테스트와 `Coverage Report`, `CI Status`는 성공했다.
+
+설정 전용 변경 경로는 임시 PR #912의 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 별도로 확인했다. [호스티드 CI run](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 40개 job 중 8개가 성공하고 32개가 건너뛰었으며 실패는 없었다. 29개 `Test /` job은 모두 건너뛰었으므로 테스트 성공으로 세지 않는다. `Coverage Report`도 건너뛰었고, `CI Status`는 `Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다.`를 기록하고 성공했다. 임시 PR은 병합하지 않고 닫았다.
+
+독립 코드 검토자는 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 코드 P0/P1 결함을 찾지 못했으며, review와 lesson의 CI 상태가 오래됐다는 P2를 보고했다. 이 문서와 review 기록에서 그 상태를 바로잡았다. 요청 모델은 `gpt-5.6-luna max`였지만, 인라인 및 독립 검토자의 실제 실행 모델은 확인되지 않았다. 위 실행들은 각각 기록된 SHA에 대한 증거다. 머지 판정에는 최신 PR head의 CI와 리뷰 상태를 확인한다.
 
 ## 다음 변경에서 확인할 점
 
