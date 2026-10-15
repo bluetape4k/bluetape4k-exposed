@@ -13,6 +13,8 @@
 
 첫 번째 수정은 회귀 테스트와 워크플로 계약 검사에 반영했다. 수정 후 병합 판정은 현재 PR head의 CI와 독립 검토 결과를 기준으로 한다.
 
+head `395460798cb2db1a6f9d90b8a574a1758a3cdfae`의 후속 독립 검토는 CRITICAL/HIGH/MEDIUM을 찾지 않았고, 두 문서의 matrix 테스트 수가 현재 27개가 아니라 25개로 기록된 LOW 문서 불일치만 지적했다. 이 갱신에서 수치를 바로잡는다.
+
 ## 7-Tier 분류
 
 | 영역 | 판정 | 근거 |
@@ -27,12 +29,13 @@
 
 ## 검증 증거와 경계
 
-- `scripts/ci/validate_ci_matrix_contract_test.py`: 25개 테스트 통과
+- `scripts/ci/validate_ci_matrix_contract_test.py`: 27개 테스트 통과
 - `scripts/ci/validate_required_jobs_test.py`: 6개 테스트 통과
+- `.github/scripts/test_aggregate_kover_coverage.py`: 5개 테스트 통과
 - CI matrix validator, Python 컴파일, `actionlint`, `git diff --check`: 통과
 - 기존 exact-head 실행 [38731702494](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38731702494)은 head `49c4af989ab9306dd6ac1f5af4a957fba0abe3d1`의 수정 전 코드다. 이 run은 이 문서에 기록한 fail-open 수정의 hosted CI 증거가 아니다.
 - 기존 full-matrix 실행 [38696808398](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 40개 job 중 39개 성공, 1개 skip, 0개 실패였다. 29개 모듈 테스트, `Coverage Report`, `CI Status`가 성공했고 `Docs-only validation`은 skip이었다. 수정 전 코드의 결과다.
 - 설정 전용 임시 PR #912의 [hosted CI run 38705050851](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 40개 job 중 8개 성공, 32개 skip, 0개 실패였다. 29개 모듈 테스트와 `Coverage Report`는 skip됐고 `CI Status`가 `N/A`를 기록했다. 이는 설정 전용 경로의 producer 0개 동작만 증명한다. PR #912는 닫혔고 병합되지 않았다.
-- 사용자가 요청한 모델은 `gpt-6-luna max`다. 이전 독립 `code-reviewer` lane이 보고한 실제 실행 모델은 `gpt-5.6-luna max`로 요청과 다르다. 해당 검토를 요청 모델로 실행한 것으로 기록하지 않는다. 수정 후 독립 검토의 모델은 결과가 확인되면 별도로 기록한다.
+- 사용자가 요청한 모델은 `gpt-6-luna max`다. head `49c4af9`와 `39546079`의 독립 reviewer lane은 각각 실제 실행 모델을 `gpt-5.6-luna max`로 보고했다. 두 결과를 요청 모델 실행으로 기록하지 않는다.
 
 현재 변경에서 Kotlin 제품 코드, public API/ABI, dependency, 성능 경로는 바뀌지 않았다. 설정 전용 CI에서 skip된 테스트는 통과한 테스트로 집계하지 않는다. 최신 병합 준비 증거와 CG-15 상태는 PR #911의 live 본문과 체크를 기준으로 갱신한다.
