@@ -28,6 +28,6 @@
 - CI matrix validator, `actionlint`, Ruff 검사·포맷 검사, `git diff --check`: 통과
 - PR #911의 기존 실행 [38687095032](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38687095032)은 HEAD `43eeb86638238ec574360ecacc335156391b9a15`에서 실행됐다. 이 실행은 이후 검토 HEAD의 증거로 재사용하지 않는다.
 - Issue #910이 요구하는 설정 전용 경로의 호스티드 CI 증거는 미확인이다. 로컬 진리표는 이 경로의 기대 조건만 확인한다.
-- 요청 모델은 `gpt-6-luna max`다. 독립 `code-reviewer` lane은 응답 제한을 넘겨 중단됐고, 아래 verdict는 인라인 리뷰다. 실제 인라인 검토자의 모델 정보는 확인하지 못했다.
+- 요청 모델은 `gpt-5.6-luna max`다. 독립 `code-reviewer` lane은 응답 제한을 넘겨 중단됐고, 아래 verdict는 인라인 리뷰다. 실제 인라인 검토자의 모델 정보는 확인하지 못했다.
 
 Inline verdict: PASS; P0=0, P1=0.
