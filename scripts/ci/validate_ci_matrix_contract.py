@@ -260,11 +260,17 @@ def validate_coverage_selection_contract(workflow: str) -> list[str]:
     if "CHANGES_RESULT: ${{ needs.changes.result }}" not in ci_status:
         errors.append("ci-status must verify changes detection before reporting N/A")
     if (
-        'if [ "$CHANGES_RESULT" = "success" ] && [ "$COVERAGE_REQUIRED" != "true" ]; then'
+        "name: Validate coverage applicability" not in ci_status
+        or "COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}"
         not in ci_status
-        or "Kover coverage: N/A" not in ci_status
+        or "CHANGES_RESULT: ${{ needs.changes.result }}" not in ci_status
+        or "run: python3 scripts/ci/report_coverage_applicability.py" not in ci_status
     ):
-        errors.append("ci-status must report coverage N/A when no producer is selected")
+        errors.append(
+            "ci-status must validate coverage applicability with a fail-closed helper"
+        )
+    if 'COVERAGE_REQUIRED" != "true"' in ci_status:
+        errors.append("ci-status must not treat unknown coverage applicability as N/A")
     return errors
 
 

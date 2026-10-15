@@ -2,39 +2,37 @@
 
 ## 범위와 기준
 
-[`Issue #910`](https://github.com/bluetape4k/bluetape4k-exposed/issues/910)의 완료 조건과 `develop` 기준선 `5bb90aad40bae7a8f7a4b26a0c7ff4cf3663b042`부터 [`PR #911`](https://github.com/bluetape4k/bluetape4k-exposed/pull/911)에 포함된 변경을 검토했다. 코드 검토 범위는 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`의 Kover 커버리지 선택 계약과 0바이트 XML 회귀 테스트다. 이 문서는 변경을 작성한 주 세션의 검토 기록이며 독립 검토자의 판정을 대신하지 않는다. 최신 head의 CI와 독립 리뷰 판정은 PR #911의 live 상태 및 해당 실행 기록에서 확인한다.
+[`Issue #910`](https://github.com/bluetape4k/bluetape4k-exposed/issues/910)의 완료 조건과 `develop` 기준선 `5bb90aad40bae7a8f7a4b26a0c7ff4cf3663b042`부터 [`PR #911`](https://github.com/bluetape4k/bluetape4k-exposed/pull/911)에 포함된 변경을 검토했다. 독립 7-Tier 검토는 head `49c4af989ab9306dd6ac1f5af4a957fba0abe3d1`의 워크플로와 계약 검증을 확인했다. 여기 기록한 이전 head의 CI 결과는 각각 해당 SHA에만 적용한다.
 
-## 결과
+## 검토 결과
 
-확인된 코드 결함은 없다. [`ci.yml`](../../.github/workflows/ci.yml)의 `coverage-enabled`는 Kover XML을 생성하는 테스트 경로와 `workflow_dispatch`를 반영한다. 선택된 생성 작업이 없으면 커버리지 집계를 건너뛰고 `CI Status`에 `N/A`를 남기며, 변경 감지 실패는 기존 실패 판정에 전달한다. [커버리지 선택 검증기](../../scripts/ci/validate_ci_matrix_contract.py)와 [CI matrix 계약 테스트](../../scripts/ci/validate_ci_matrix_contract_test.py)는 이 분기를 검사한다. [집계기 회귀 테스트](../../.github/scripts/test_aggregate_kover_coverage.py)는 생성 작업이 선택된 경우 보고서가 누락되거나 0바이트이거나 손상되면 집계가 실패하는 계약을 확인한다. 다중 변경 파일에서 제외 패턴을 평가하는 테스트는 [dorny/paths-filter 공식 README](https://github.com/dorny/paths-filter/blob/master/README.md)의 `some-with-excludes` 정의에 근거한다.
+독립 검토에서 MEDIUM 두 건을 찾았다.
 
-7-Tier 분류:
+1. `.github/workflows/ci.yml`은 `CHANGES_RESULT=success`일 때 `COVERAGE_REQUIRED`가 정확히 `true`가 아닌 모든 값을 `N/A`로 처리했다. 빈 값과 예상 밖 값도 통과할 수 있는 fail-open 판정이었다. [coverage applicability helper](../../scripts/ci/report_coverage_applicability.py)를 추가해 `true`와 `false`만 허용하고, 그 밖의 값은 실패하도록 수정했다. 변경 감지 자체가 성공하지 않으면 `N/A`를 쓰지 않으며 기존 `CI Status` 결과 검사가 해당 job 실패를 처리한다.
+2. PR #911 본문이 실제 head보다 오래된 SHA와 CI 실행을 현재 증거처럼 표시했다. 새 exact-head 검증을 마친 뒤 live PR 본문을 갱신해야 한다.
+
+첫 번째 수정은 회귀 테스트와 워크플로 계약 검사에 반영했다. 수정 후 병합 판정은 현재 PR head의 CI와 독립 검토 결과를 기준으로 한다.
+
+## 7-Tier 분류
 
 | 영역 | 판정 | 근거 |
 |---|---|---|
 | 보안 | N/A | 권한, 비밀, 입력 신뢰 경계 변경 없음 |
-| 정확성·도메인 | PASS | 설정 전용 경로와 보고서 생성 경로를 분리하고 두 경로를 계약 테스트로 확인 |
+| 정확성·도메인 | 수정됨 | coverage applicability의 알 수 없는 값이 N/A로 통과하던 경로를 닫고 `true`/`false` 계약을 테스트 |
 | 복원력·수명주기 | N/A | 제품 실행 및 자원 수명주기 변경 없음 |
-| 공개 API·ABI | N/A | JVM 공개 선언, Maven artifact 좌표, 의존성 변경 없음 |
-| 테스트·호출자 | PASS | 0바이트 XML 거부 회귀와 CI matrix 계약 테스트 추가 |
+| 공개 API·ABI | N/A | Kotlin 공개 선언, JVM ABI, Maven 좌표, 의존성 변경 없음 |
+| 테스트·호출자 | PASS | 빈 값, 알 수 없는 값, 대소문자 오류는 실패하고 명시적 `false`만 N/A가 되는 회귀 테스트 추가 |
 | 성능 | N/A | 제품 실행 경로 변경 없음 |
-| 문서·CI·배포 | PASS | 변경 head의 CI와 설정 전용 경로의 별도 호스티드 CI에서 각각 기대된 producer 선택 및 `N/A` 동작을 확인 |
+| 문서·CI·배포 | 검증 대기 | 워크플로 수정과 구조 검증은 통과했으며, 수정 head의 hosted CI와 독립 리뷰는 PR #911에서 확인 |
 
-## 검증과 남은 증거
+## 검증 증거와 경계
 
-- `.github/scripts/test_aggregate_kover_coverage.py`: 5개 테스트 통과
-- `scripts/ci/validate_ci_matrix_contract_test.py`: 24개 테스트 통과
+- `scripts/ci/validate_ci_matrix_contract_test.py`: 25개 테스트 통과
 - `scripts/ci/validate_required_jobs_test.py`: 6개 테스트 통과
-- CI matrix validator, `actionlint`, Ruff 검사·포맷 검사, `git diff --check`: 통과
-- PR #911의 exact-head 실행 [38696808398](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 40개 job 중 39개 성공, 1개 skip, 0개 실패로 끝났다. 29개 `Test /` job과 `Coverage Report`, `CI Status`가 성공했다. 건너뛴 job은 `Docs-only validation`이다.
-- 설정 전용 임시 PR #912의 exact-head 실행 [38705050851](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 40개 job 중 8개 성공, 32개 skip, 0개 실패로 끝났다. 29개 모듈 `Test /` job과 `Coverage Report`는 건너뛰었고 `CI Status`는 coverage `N/A`를 기록하며 성공했다. 따라서 이 실행은 설정 경로 결과를 검증하지만 제품 테스트 성공을 뜻하지 않는다. 임시 PR은 병합하지 않고 닫았다.
-- 위 두 실행은 각각 기록된 SHA의 증거다. 머지 준비 상태는 최신 PR head의 CI와 독립 리뷰 결과를 실시간으로 재확인해 판단한다.
-- 사용자가 요청한 모델은 `gpt-6-luna max`다. 이전 독립 `code-reviewer` lane이 보고한 실제 실행 모델은 `gpt-5.6-luna max`로 요청과 다르다. 해당 검토를 요청 모델로 실행한 것으로 기록하지 않는다.
+- CI matrix validator, Python 컴파일, `actionlint`, `git diff --check`: 통과
+- 기존 exact-head 실행 [38731702494](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38731702494)은 head `49c4af989ab9306dd6ac1f5af4a957fba0abe3d1`의 수정 전 코드다. 이 run은 이 문서에 기록한 fail-open 수정의 hosted CI 증거가 아니다.
+- 기존 full-matrix 실행 [38696808398](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38696808398)은 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에서 40개 job 중 39개 성공, 1개 skip, 0개 실패였다. 29개 모듈 테스트, `Coverage Report`, `CI Status`가 성공했고 `Docs-only validation`은 skip이었다. 수정 전 코드의 결과다.
+- 설정 전용 임시 PR #912의 [hosted CI run 38705050851](https://github.com/bluetape4k/bluetape4k-exposed/actions/runs/38705050851)은 head `3b57a2db3bd20733c3deb2432ad00c0881fe6d3a`에서 40개 job 중 8개 성공, 32개 skip, 0개 실패였다. 29개 모듈 테스트와 `Coverage Report`는 skip됐고 `CI Status`가 `N/A`를 기록했다. 이는 설정 전용 경로의 producer 0개 동작만 증명한다. PR #912는 닫혔고 병합되지 않았다.
+- 사용자가 요청한 모델은 `gpt-6-luna max`다. 이전 독립 `code-reviewer` lane이 보고한 실제 실행 모델은 `gpt-5.6-luna max`로 요청과 다르다. 해당 검토를 요청 모델로 실행한 것으로 기록하지 않는다. 수정 후 독립 검토의 모델은 결과가 확인되면 별도로 기록한다.
 
-인라인 코드 판정: PASS; 코드 P0=0, P1=0. 독립 검토는 lesson과 review의 오래된 CI 주장을 P2로 지적했고, 이 변경에서 바로잡았다. 새 head의 판정은 PR #911의 독립 리뷰 결과에서 확인한다.
-
-### 독립 코드 검토
-
-- 이전 독립 `code-reviewer` 검토는 head `e81c2cdb037b53aa49a79c87816ac4e839075c89`와 `8667239591dbf6186d1b2da022b8ff03f0a883c4`를 대상으로 코드와 CI 계약을 확인했다. 이후 PR #911의 head `34440fd4e4a5bcd2b7433ec8a356b5cfdf0b4455`에 대한 독립 검토는 코드 P0/P1을 찾지 못했지만, lesson과 review에 남은 오래된 CI 상태를 P2로 지적했다. 이 수정에서 두 기록을 갱신했다.
-- 독립 검토자가 지적한 P2 기록 불일치는 이 변경에서 바로잡았다. 이 검토와 최신 head의 판정은 PR #911의 live review 결과에서 구분한다.
-- 해당 독립 검토자의 실제 실행 모델은 `gpt-5.6-luna max`다. 사용자가 요청한 `gpt-6-luna max`와 구분해 기록한다.
+현재 변경에서 Kotlin 제품 코드, public API/ABI, dependency, 성능 경로는 바뀌지 않았다. 설정 전용 CI에서 skip된 테스트는 통과한 테스트로 집계하지 않는다. 최신 병합 준비 증거와 CG-15 상태는 PR #911의 live 본문과 체크를 기준으로 갱신한다.

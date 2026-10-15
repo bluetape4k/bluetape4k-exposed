@@ -2146,6 +2146,11 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v7
+      - name: Validate coverage applicability
+        env:
+          COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+        run: python3 scripts/ci/report_coverage_applicability.py
       - name: Require activated consumer tests
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
@@ -2155,15 +2160,10 @@ jobs:
           RESULTS: ${{ join(needs.*.result, ',') }}
           BUILD_RESULT: ${{ needs.build.result }}
           DOCS_ONLY: ${{ needs.changes.outputs['docs-only'] }}
-          COVERAGE_REQUIRED: ${{ needs.changes.outputs['coverage-enabled'] }}
-          CHANGES_RESULT: ${{ needs.changes.result }}
           WRITE_BEHIND_RESULT: ${{ needs.verify-write-behind.result }}
           WRITE_BEHIND_REQUIRED: ${{ needs.changes.outputs.cache == 'true' || needs.changes.outputs['jdbc-caffeine'] == 'true' || needs.changes.outputs['r2dbc-caffeine'] == 'true' || needs.changes.outputs['all-modules'] == 'true' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Job results: $RESULTS"
-          if [ "$CHANGES_RESULT" = "success" ] && [ "$COVERAGE_REQUIRED" != "true" ]; then
-            echo "Kover coverage: N/A — coverage report를 생성할 테스트 job이 선택되지 않았습니다." >> "$GITHUB_STEP_SUMMARY"
-          fi
           if echo "$RESULTS" | grep -qE "failure|cancelled"; then
             echo "CI failed"
             exit 1
