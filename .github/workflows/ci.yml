@@ -18,9 +18,10 @@ on:
       - 'LICENSE'
       - '.claude/**'
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, test/issue-910-ci-trigger-base]
     # Keep the PR workflow always-on so branch protection receives CI Status
     # even when the change is limited to documentation or repository metadata.
+    # 이슈 #910의 설정 전용 검증용 임시 대상이며 호스티드 CI 확인 후 제거합니다.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
