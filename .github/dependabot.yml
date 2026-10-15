@@ -66,6 +66,7 @@ updates:
       - dependency-name: "org.springdoc:*"
       - dependency-name: "org.postgresql:postgresql"
       - dependency-name: "org.mariadb.jdbc:mariadb-java-client"
+      - dependency-name: "com.rabbitmq:amqp-client"
       - dependency-name: "com.mysql:mysql-connector-j"
       - dependency-name: "io.r2dbc:r2dbc-h2"
       - dependency-name: "io.projectreactor:reactor-bom"
