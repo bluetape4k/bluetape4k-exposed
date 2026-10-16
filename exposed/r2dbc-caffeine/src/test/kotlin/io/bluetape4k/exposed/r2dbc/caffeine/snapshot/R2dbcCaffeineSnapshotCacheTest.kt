@@ -3,6 +3,7 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.snapshot
 
 import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Ticker
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
@@ -18,6 +19,7 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
+import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -27,6 +29,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class R2dbcCaffeineSnapshotCacheTest {
 
@@ -234,14 +237,16 @@ class R2dbcCaffeineSnapshotCacheTest {
     }
 
     @Test
-    fun `maximum size and expiry settings are enforced by Caffeine`() {
-        val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
+    fun `maximum size eviction is independent of write expiry`() {
+        val ticker = ManualTicker()
+        val cache = newCache(
             config(
                 "expiry:v1",
                 maximumSize = 1L,
                 expireAfterWrite = Duration.ofMillis(2),
                 expireAfterAccess = null,
             ),
+            ticker,
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         fun put(id: Long) = store.claimMiss(cache.lookup(id).miss.shouldNotBeNull())
@@ -249,20 +254,43 @@ class R2dbcCaffeineSnapshotCacheTest {
 
         store.applySnapshots(listOf(put(1L), put(2L)), NeverExpiredDeadline)
         listOf(cache.lookup(1L).snapshot, cache.lookup(2L).snapshot).count { it != null } shouldBeEqualTo 1
+    }
 
-        Thread.sleep(20)
-        cache.lookup(2L).snapshot.shouldBeNull()
+    @Test
+    fun `write expiry removes a snapshot after ticker advances`() {
+        val ticker = ManualTicker()
+        val cache = newCache(
+            config(
+                "write-expiry:v1",
+                maximumSize = 4L,
+                expireAfterWrite = Duration.ofMillis(2),
+                expireAfterAccess = null,
+            ),
+            ticker,
+        )
+        val store = cache as SnapshotCacheStore<Long, Payload>
+        val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+            .prepare(CacheSnapshot(Payload("expires")))
+        store.applySnapshots(listOf(put), NeverExpiredDeadline)
+
+        cache.lookup(1L).snapshot.shouldNotBeNull()
+        ticker.advance(Duration.ofMillis(3))
+        caffeineCache(cache).cleanUp()
+
+        cache.lookup(1L).snapshot.shouldBeNull()
     }
 
     @Test
     fun `non-null expire after access expires an inactive snapshot`() {
-        val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
+        val ticker = ManualTicker()
+        val cache = newCache(
             config(
                 "access-expiry:v1",
                 maximumSize = 4L,
                 expireAfterWrite = Duration.ofMinutes(1),
                 expireAfterAccess = Duration.ofMillis(2),
             ),
+            ticker,
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
@@ -270,7 +298,8 @@ class R2dbcCaffeineSnapshotCacheTest {
         store.applySnapshots(listOf(put), NeverExpiredDeadline)
 
         cache.lookup(1L).snapshot.shouldNotBeNull()
-        Thread.sleep(20)
+        ticker.advance(Duration.ofMillis(3))
+        caffeineCache(cache).cleanUp()
 
         cache.lookup(1L).snapshot.shouldBeNull()
     }
@@ -352,6 +381,29 @@ class R2dbcCaffeineSnapshotCacheTest {
     )
 
     private data class Payload(val value: String): Serializable
+
+    private fun newCache(
+        config: CaffeineSnapshotCacheConfig,
+        ticker: Ticker,
+    ): R2dbcCaffeineSnapshotCache<Long, Payload> = R2dbcCaffeineSnapshotCache.create(
+        Long::class,
+        Payload::class,
+        config,
+        null,
+        rejectDirectEntitySnapshotValues(),
+        snapshotCacheFailureBuffer(),
+        ticker,
+    )
+
+    private class ManualTicker : Ticker {
+        private val currentTimeNanos = AtomicLong()
+
+        override fun read(): Long = currentTimeNanos.get()
+
+        fun advance(duration: Duration) {
+            currentTimeNanos.addAndGet(duration.toNanos())
+        }
+    }
 
     private fun weightedSize(cache: R2dbcCaffeineSnapshotCache<Long, Payload>): Long {
         return caffeineCache(cache).policy().eviction().orElseThrow().weightedSize().orElseThrow()
