@@ -4,7 +4,6 @@ package io.bluetape4k.exposed.r2dbc.caffeine.snapshot
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.github.benmanes.caffeine.cache.Ticker
 import com.github.benmanes.caffeine.cache.Weigher
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
@@ -48,9 +47,8 @@ class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
     internal val validator: CacheSnapshotValueValidator<V>,
     /** 이 파사드가 사용하는 호출자 소유의 용량 제한 실패 버퍼입니다. */
     override val failureBuffer: SnapshotCacheFailureBuffer,
-    ticker: Ticker,
 ): SnapshotCacheStore<ID, V> {
-    private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config, ticker)
+    private val cache: Cache<ID, StoredSnapshot<V>> = buildCache(config)
     private val fences = SnapshotLocalFenceRegistry<ID>(config.fenceStripes)
     private val misses = SnapshotMissCapabilityRegistry<ID, V>(config.maxOutstandingMissTokens)
     private val maintenanceLock = ReentrantLock()
@@ -211,26 +209,8 @@ class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
             valueSizer: SnapshotValueSizer<V>?,
             validator: CacheSnapshotValueValidator<V>,
             failureBuffer: SnapshotCacheFailureBuffer,
-        ): R2dbcCaffeineSnapshotCache<ID, V> = create(
-            idType,
-            valueType,
-            config,
-            valueSizer,
-            validator,
-            failureBuffer,
-            Ticker.systemTicker(),
-        )
-
-        internal fun <ID: Any, V: Serializable> create(
-            idType: KClass<ID>,
-            valueType: KClass<V>,
-            config: CaffeineSnapshotCacheConfig,
-            valueSizer: SnapshotValueSizer<V>?,
-            validator: CacheSnapshotValueValidator<V>,
-            failureBuffer: SnapshotCacheFailureBuffer,
-            ticker: Ticker,
         ): R2dbcCaffeineSnapshotCache<ID, V> =
-            R2dbcCaffeineSnapshotCache(idType, valueType, config, valueSizer, validator, failureBuffer, ticker)
+            R2dbcCaffeineSnapshotCache(idType, valueType, config, valueSizer, validator, failureBuffer)
     }
 
     private fun caffeineWeight(estimatedWeight: Long?): Int {
@@ -268,10 +248,8 @@ inline fun <reified ID: Any, reified V: Serializable> r2dbcCaffeineSnapshotCache
 
 private fun <ID: Any, V: Serializable> buildCache(
     config: CaffeineSnapshotCacheConfig,
-    ticker: Ticker,
 ): Cache<ID, StoredSnapshot<V>> {
     val base = Caffeine.newBuilder()
-        .ticker(ticker)
         .expireAfterWrite(config.expireAfterWrite)
         .apply { config.expireAfterAccess?.let(::expireAfterAccess) }
     config.maximumWeight?.let { maximumWeight ->
