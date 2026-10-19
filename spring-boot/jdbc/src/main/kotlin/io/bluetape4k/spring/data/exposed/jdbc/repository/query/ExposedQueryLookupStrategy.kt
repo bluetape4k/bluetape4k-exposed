@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.query
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
+import io.bluetape4k.support.requireBeTrue
 import org.jetbrains.exposed.v1.dao.Entity
 import org.springframework.data.projection.ProjectionFactory
 import org.springframework.data.repository.core.NamedQueries
@@ -44,7 +45,7 @@ class ExposedQueryLookupStrategy(
 
         return when (key) {
             QueryLookupStrategy.Key.USE_DECLARED_QUERY  -> {
-                require(queryMethod.isAnnotatedQuery) {
+                queryMethod.isAnnotatedQuery.requireBeTrue {
                     "No @Query annotation found on method '${method.name}'"
                 }
                 DeclaredExposedQuery(queryMethod, entityInformation)

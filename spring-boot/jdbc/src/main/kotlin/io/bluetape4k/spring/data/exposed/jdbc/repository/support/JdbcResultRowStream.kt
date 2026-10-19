@@ -216,7 +216,9 @@ internal object JdbcResultRowStream: KLogging() {
         return DataAccessResourceFailureException(
             "JDBC FluentQuery cursor cleanup failed.",
             failures.first(),
-        ).also { failure -> failures.drop(1).forEach(failure::addSuppressed) }
+        ).also { failure ->
+            failures.drop(1).forEach(failure::addSuppressed)
+        }
     }
 
     private enum class LeaseState {

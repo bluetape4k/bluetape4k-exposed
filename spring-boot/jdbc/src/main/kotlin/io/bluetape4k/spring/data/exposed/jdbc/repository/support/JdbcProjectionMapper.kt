@@ -67,7 +67,10 @@ internal class JdbcProjectionMapper(
         val descriptors = projectionInformation.inputProperties
         val requiredNames = descriptors.map(PropertyDescriptor::getName)
         validateExplicitProperties(resultType, requiredNames, explicitProperties)
-        val inputs = descriptors.map { descriptor -> descriptor to propertyResolver.resolve(descriptor.name) }
+
+        val inputs = descriptors.map { descriptor ->
+            descriptor to propertyResolver.resolve(descriptor.name)
+        }
         val resolved = inputs.map { it.second }
         val nullable = resultType.kotlin.memberProperties.associate { it.name to it.returnType.isMarkedNullable }
 
@@ -106,7 +109,9 @@ internal class JdbcProjectionMapper(
         val constructor = preferred.constructor.apply { trySetAccessible() }
         val kotlinNullability = resultType.kotlin.primaryConstructor
             ?.parameters
-            ?.mapIndexedNotNull { index, parameter -> parameter.name?.let { index to parameter.type.isMarkedNullable } }
+            ?.mapIndexedNotNull { index, parameter ->
+                parameter.name?.let { index to parameter.type.isMarkedNullable }
+            }
             ?.toMap()
             .orEmpty()
 
@@ -221,9 +226,10 @@ internal class JdbcProjectionMapper(
     private fun <R: Any> shape(
         resolved: List<JdbcResolvedProperty>,
         mapper: (Int, Map<String, Any?>) -> R,
-    ): JdbcProjectionShape<R> = object: JdbcProjectionShape<R> {
-        override val requiredProperties: List<JdbcResolvedProperty> = resolved
+    ): JdbcProjectionShape<R> =
+        object: JdbcProjectionShape<R> {
+            override val requiredProperties: List<JdbcResolvedProperty> = resolved
 
-        override fun map(rowIndex: Int, values: Map<String, Any?>): R = mapper(rowIndex, values)
-    }
+            override fun map(rowIndex: Int, values: Map<String, Any?>): R = mapper(rowIndex, values)
+        }
 }

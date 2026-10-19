@@ -38,7 +38,7 @@ class ExposedJdbcRepositoryFactory: RepositoryFactorySupport() {
         return SimpleExposedJdbcRepository.create(
             entityInformation = entityInfo,
             mappingContext = mappingContext,
-            projectionFactory = getProjectionFactory(),
+            projectionFactory = projectionFactory,
             creationMode = JdbcRepositoryCreationMode.FACTORY,
         )
     }

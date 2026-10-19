@@ -23,7 +23,7 @@ class ExposedMappingContextTest {
 
     @Test
     fun `createPersistentEntity returns DefaultExposedPersistentEntity for UserEntity`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
         entity.shouldNotBeNull()
         entity.type shouldBeEqualTo UserEntity::class.java
     }
@@ -31,13 +31,13 @@ class ExposedMappingContextTest {
     @Test
     fun `getPersistentEntity returns entity for registered class`() {
         context.setInitialEntitySet(setOf(UserEntity::class.java))
-        val entity = context.getPersistentEntity(UserEntity::class.java)
+        val entity = context.getPersistentEntity<UserEntity>()
         entity.shouldNotBeNull()
     }
 
     @Test
     fun `persistent entity for UserEntity has companion entityClass`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
         entity.shouldNotBeNull()
 
         val entityClass = entity.getEntityClass()
@@ -46,7 +46,7 @@ class ExposedMappingContextTest {
 
     @Test
     fun `persistent entity for UserEntity has table`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
         val table = entity.getTable()
         table.shouldNotBeNull()
         table.tableName shouldBeEqualTo "users"
@@ -56,7 +56,7 @@ class ExposedMappingContextTest {
     fun `persistent entity for plain data class has null table`() {
         data class PlainClass(val id: Long, val name: String)
 
-        val entity = context.getRequiredPersistentEntity(PlainClass::class.java)
+        val entity = context.getRequiredPersistentEntity<PlainClass>()
         entity.shouldNotBeNull()
         entity.getTable().shouldBeNull()
         entity.getEntityClass().shouldBeNull()
@@ -65,13 +65,13 @@ class ExposedMappingContextTest {
     @Test
     fun `hasPersistentEntityFor returns true after accessing entity`() {
         // Force entity creation via getRequiredPersistentEntity first
-        context.getRequiredPersistentEntity(UserEntity::class.java)
-        context.hasPersistentEntityFor(UserEntity::class.java).shouldBeTrue()
+        context.getRequiredPersistentEntity<UserEntity>()
+        context.hasPersistentEntityFor<UserEntity>().shouldBeTrue()
     }
 
     @Test
     fun `hasPersistentEntityFor returns false for unregistered class`() {
         data class NotRegistered(val x: Int)
-        context.hasPersistentEntityFor(NotRegistered::class.java).shouldBeFalse()
+        context.hasPersistentEntityFor<NotRegistered>().shouldBeFalse()
     }
 }

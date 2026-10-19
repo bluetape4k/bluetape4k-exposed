@@ -127,6 +127,7 @@ internal class AggregateEventTransactionSynchronization(
             val current = registration.aggregate.domainEvents()
             val unchanged = current.size == registration.snapshot.size &&
                     current.indices.all { current[it] === registration.snapshot[it] }
+
             if (!unchanged) {
                 poison("Aggregate domain events changed after publisher registration")
                 throw requireNotNull(poison)
@@ -180,9 +181,7 @@ private fun logCompletionAnomaly(category: String, registration: Registration) {
     }
     val fields = linkedMapOf(
         "category" to category,
-        "aggregateType" to (
-                registration.aggregate::class.qualifiedName ?: registration.aggregate.javaClass.name
-                ),
+        "aggregateType" to (registration.aggregate::class.qualifiedName ?: registration.aggregate.javaClass.name),
         "eventType" to eventTypes.joinToString(","),
         "eventCount" to registration.snapshot.size.toString(),
     )

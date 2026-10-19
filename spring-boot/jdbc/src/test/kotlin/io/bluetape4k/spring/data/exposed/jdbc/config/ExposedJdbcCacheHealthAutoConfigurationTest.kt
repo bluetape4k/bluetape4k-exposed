@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.jdbc.caffeine.repository.JdbcCaffeineRepository
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -35,8 +36,10 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(HealthyRepositoryConfiguration::class.java)
             .run { context ->
-                val health =
-                    context.getBean<HealthIndicator>("exposedJdbcCacheHealthIndicator").health().shouldNotBeNull()
+                val health = context.getBean<HealthIndicator>("exposedJdbcCacheHealthIndicator").health()
+
+                log.debug { "health=$health" }
+                health.shouldNotBeNull()
                 health.status shouldBeEqualTo Status.UP
                 health.details["repositoryCount"] shouldBeEqualTo 1
             }
@@ -80,7 +83,10 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         )
 
         cases.forEach { (workerState, expectedStatus) ->
-            healthFor(report(workerState = workerState, queueDepth = 37)).status shouldBeEqualTo expectedStatus
+            val health = healthFor(report(workerState = workerState, queueDepth = 37))
+
+            log.debug { "health=$health" }
+            health.status shouldBeEqualTo expectedStatus
         }
     }
 
@@ -91,6 +97,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         CacheWorkerState.entries.forEach { workerState ->
             val health = healthFor(report(workerState = workerState, lastFlushError = failure))
 
+            log.debug { "health=$health" }
             health.status shouldBeEqualTo Status.DOWN
             health.details["error"] shouldBeEqualTo failure.toString()
         }
@@ -100,6 +107,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
     fun `reports DOWN without an error detail for a failed JDBC worker`() {
         val health = healthFor(report(workerState = CacheWorkerState.FAILED))
 
+        log.debug { "health=$health" }
         health.status shouldBeEqualTo Status.DOWN
         health.details.containsKey("error").shouldBeFalse()
     }
@@ -135,9 +143,13 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         val selectedReport = report(workerState = CacheWorkerState.RUNNING, lastFlushError = selected)
         val otherReport = report(workerState = CacheWorkerState.FAILED, lastFlushError = other)
 
-        listOf(selectedReport to otherReport, otherReport to selectedReport).forEach { (first, second) ->
+        listOf(
+            selectedReport to otherReport,
+            otherReport to selectedReport
+        ).forEach { (first, second) ->
             val health = healthFor(first, second)
 
+            log.debug { "health=$health" }
             health.status shouldBeEqualTo Status.DOWN
             health.details["error"] shouldBeEqualTo selected.toString()
         }
@@ -164,6 +176,7 @@ class ExposedJdbcCacheHealthAutoConfigurationTest {
         @Suppress("UNCHECKED_CAST")
         val reports = health.details["reports"] as List<Map<String, Any?>>
 
+        reports.forEach { log.debug { "report=$it" } }
         reports[0] shouldBeEqualTo mapOf(
             "mode" to "WRITE_BEHIND",
             "queueDepth" to 13,

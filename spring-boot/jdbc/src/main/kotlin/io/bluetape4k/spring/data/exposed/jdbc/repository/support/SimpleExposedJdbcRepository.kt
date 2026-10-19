@@ -4,6 +4,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
+import io.bluetape4k.support.toOptional
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -109,7 +110,7 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
     @Transactional
     override fun <S: E> saveAll(entities: Iterable<S>): List<S> = entities.toList()
 
-    override fun findById(id: ID): Optional<E> = Optional.ofNullable(entityClass.findById(id))
+    override fun findById(id: ID): Optional<E> = entityClass.findById(id).toOptional()
 
     override fun existsById(id: ID): Boolean = !entityClass.find { table.id eq id }.empty()
 
@@ -236,20 +237,17 @@ class SimpleExposedJdbcRepository<E: Entity<ID>, ID: Any>(
             ?: throw InvalidDataAccessApiUsageException(
                 "JDBC FluentQuery requires an active caller-owned Exposed transaction.",
             )
-        val scope = JdbcFluentQueryScope.open(transaction)
+        JdbcFluentQueryScope.open(transaction).use { scope ->
+            @Suppress("UNCHECKED_CAST")
+            val plan = JdbcFluentQueryPlan.create(
+                example = example as Example<E>,
+                domainType = entityInformation.javaType,
+                projectionFactory = collaborators.projectionFactory,
+                persistentEntity = persistentEntity,
+                scope = scope,
+            )
 
-        @Suppress("UNCHECKED_CAST")
-        val plan = JdbcFluentQueryPlan.create(
-            example = example as Example<E>,
-            domainType = entityInformation.javaType,
-            projectionFactory = collaborators.projectionFactory,
-            persistentEntity = persistentEntity,
-            scope = scope,
-        )
-        return try {
-            block(plan)
-        } finally {
-            scope.close()
+            return block(plan)
         }
     }
 }

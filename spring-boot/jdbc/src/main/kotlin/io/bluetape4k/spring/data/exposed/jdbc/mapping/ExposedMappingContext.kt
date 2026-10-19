@@ -3,9 +3,11 @@ package io.bluetape4k.spring.data.exposed.jdbc.mapping
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toSnakeCase
 import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
+import org.springframework.data.mapping.PersistentPropertyPaths
 import org.springframework.data.mapping.context.AbstractMappingContext
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
+import java.util.function.Predicate
 
 /**
  * JDBC 저장소의 기존 MappingContext 구현입니다.
@@ -40,3 +42,18 @@ class ExposedMappingContext:
         simpleTypeHolder: SimpleTypeHolder,
     ): ExposedPersistentProperty = DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
 }
+
+inline fun <reified T: Any> ExposedMappingContext.getPersistentEntity(): DefaultExposedPersistentEntity<*>? =
+    getPersistentEntity(T::class.java)
+
+inline fun <reified T: Any> ExposedMappingContext.getRequiredPersistentEntity(): DefaultExposedPersistentEntity<*> =
+    getRequiredPersistentEntity(T::class.java)
+
+inline fun <reified T: Any> ExposedMappingContext.hasPersistentEntityFor(): Boolean =
+    hasPersistentEntityFor(T::class.java)
+
+
+inline fun <reified T: Any> ExposedMappingContext.findPersistentPropertyPaths(
+    predicate: Predicate<ExposedPersistentProperty>,
+): PersistentPropertyPaths<T, ExposedPersistentProperty> =
+    findPersistentPropertyPaths(T::class.java, predicate)

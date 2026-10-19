@@ -52,7 +52,11 @@ class SqlParameterSupportTest {
 
     @Test
     fun `닫히지 않은 인용과 주석은 SQL 오류 판단을 드라이버에 맡긴다`() {
-        listOf("SELECT '?1", "SELECT /* ?1", "SELECT ${'$'}tag${'$'}?1").forEach { sql ->
+        listOf(
+            "SELECT '?1",
+            "SELECT /* ?1",
+            "SELECT ${'$'}tag${'$'}?1"
+        ).forEach { sql ->
             replaceSqlParameters(sql) { error("인용 내부는 파라미터가 아님") } shouldBeEqualTo sql
         }
     }

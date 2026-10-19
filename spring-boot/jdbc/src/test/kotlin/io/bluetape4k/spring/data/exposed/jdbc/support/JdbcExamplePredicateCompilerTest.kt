@@ -4,6 +4,9 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.exposed.dao.entityToStringBuilder
+import io.bluetape4k.exposed.dao.idEquals
+import io.bluetape4k.exposed.dao.idHashCode
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
@@ -35,8 +38,11 @@ class JdbcExamplePredicateCompilerTest: AbstractExposedJdbcRepositoryTest() {
     @BeforeEach
     fun createCompilerTable() {
         transaction {
-            MigrationUtils.statementsRequiredForDatabaseMigration(QbeProfiles, withLogs = false)
-                .forEach { exec(it) }
+            MigrationUtils
+                .statementsRequiredForDatabaseMigration(QbeProfiles, withLogs = false)
+                .forEach {
+                    exec(it)
+                }
             QbeProfiles.deleteAll()
         }
     }
@@ -284,4 +290,15 @@ internal class QbeProfileEntity(id: EntityID<Long>): LongEntity(id) {
     var nickname: String? by QbeProfiles.nickname
     var age: Int by QbeProfiles.age
     var displayName: String by QbeProfiles.displayName
+
+    override fun equals(other: Any?): Boolean = idEquals(other)
+
+    override fun hashCode(): Int = idHashCode()
+
+    override fun toString(): String = entityToStringBuilder()
+        .add("name", name)
+        .add("nickname", nickname)
+        .add("age", age)
+        .add("display_name", displayName)
+        .toString()
 }

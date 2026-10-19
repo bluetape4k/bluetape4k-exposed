@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.jdbc
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.config.EnableExposedJdbcRepositories
+import kotlinx.atomicfu.locks.withLock
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteAll
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.PlatformTransactionManager
+import java.util.concurrent.locks.ReentrantLock
 import javax.sql.DataSource
 
 @SpringBootTest(classes = [AbstractExposedJdbcRepositoryTest.TestConfig::class])
@@ -43,10 +45,12 @@ abstract class AbstractExposedJdbcRepositoryTest {
             SpringTransactionManager(dataSource, DatabaseConfig {}, false)
     }
 
+    private val lock = ReentrantLock()
+
     @BeforeEach
     fun setUp() {
         if (!connected) {
-            synchronized(this) {
+            lock.withLock {
                 if (!connected) {
                     Database.connect(dataSource)
                     connected = true
@@ -62,8 +66,8 @@ abstract class AbstractExposedJdbcRepositoryTest {
                     runCatching { exec(stmt) }
                         .onFailure { ex ->
                             val message = ex.message.orEmpty()
-                            val duplicateObject = message.contains("already exists", ignoreCase = true) ||
-                                    message.contains("90045")
+                            val duplicateObject =
+                                message.contains("already exists", ignoreCase = true) || message.contains("90045")
                             if (!duplicateObject) throw ex
                         }
                 }

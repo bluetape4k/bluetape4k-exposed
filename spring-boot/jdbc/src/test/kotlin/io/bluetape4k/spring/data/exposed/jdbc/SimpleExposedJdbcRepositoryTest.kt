@@ -9,9 +9,11 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
+import io.bluetape4k.support.uninitialized
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.jdbc.deleteAll
@@ -34,7 +36,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     companion object: KLogging()
 
     @Autowired
-    private lateinit var userJdbcRepository: UserJdbcRepository
+    private val userJdbcRepository: UserJdbcRepository = uninitialized()
 
     @AfterEach
     fun tearDown() {
@@ -256,9 +258,12 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
 
     @Test
     fun `findAll with paging second page`() {
-        repeat(7) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
+        repeat(7) { i ->
+            createUser("User$i", "user$i@example.com", 20 + i)
+        }
         val page = userJdbcRepository.findAll(PageRequest.of(1, 3))
 
+        log.debug { "page=$page" }
         page.content shouldHaveSize 3
         page.totalElements shouldBeEqualTo 7L
         page.number shouldBeEqualTo 1
@@ -266,9 +271,12 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
 
     @Test
     fun `findAll with paging beyond last page returns empty content`() {
-        repeat(3) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
+        repeat(3) { i ->
+            createUser("User$i", "user$i@example.com", 20 + i)
+        }
         val page = userJdbcRepository.findAll(PageRequest.of(5, 3))
 
+        log.debug { "page=$page" }
         page.content.shouldBeEmpty()
         page.totalElements shouldBeEqualTo 3L
     }

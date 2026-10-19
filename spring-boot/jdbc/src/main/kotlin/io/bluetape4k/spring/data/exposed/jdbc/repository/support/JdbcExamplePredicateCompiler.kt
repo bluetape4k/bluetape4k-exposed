@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.LikePattern
@@ -26,6 +27,35 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
     private val entityClass: EntityClass<ID, E>,
     private val transaction: Transaction,
 ) {
+
+    companion object: KLogging() {
+        /**
+         * probe getter가 던진 내부 예외와 message를 caller 진단 경계 밖으로 노출하지 않습니다.
+         */
+        @JvmSynthetic
+        internal fun readProbeProperty(
+            getter: Method,
+            probe: Any,
+            propertyName: String,
+        ): Any? = try {
+            getter.invoke(probe)
+        } catch (cause: ReflectiveOperationException) {
+            throw InvalidDataAccessApiUsageException(
+                "QBE probe property '${safeDiagnosticValue(propertyName)}' could not be read.",
+                sanitizedReflectiveException(cause),
+            )
+        }
+
+        private val EXACT_STRING_MATCHERS = setOf(
+            ExampleMatcher.StringMatcher.DEFAULT,
+            ExampleMatcher.StringMatcher.EXACT,
+        )
+        private val SUPPORTED_STRING_MATCHERS = EXACT_STRING_MATCHERS + setOf(
+            ExampleMatcher.StringMatcher.CONTAINING,
+            ExampleMatcher.StringMatcher.STARTING,
+            ExampleMatcher.StringMatcher.ENDING,
+        )
+    }
 
     fun compile(example: Example<out E>): Op<Boolean> {
         val matcher = example.matcher
@@ -60,11 +90,14 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
         }
 
         if (conditions.isEmpty()) return Op.TRUE
-        return if (matcher.isAnyMatching) {
+        val result = if (matcher.isAnyMatching) {
             conditions.reduce { left, right -> left or right }
         } else {
             conditions.reduce { left, right -> left and right }
         }
+
+        log.debug { "Compile Example [$example] to $result" }
+        return result
     }
 
     private fun validateMatcher(matcher: ExampleMatcher): List<PreparedProperty> {
@@ -195,35 +228,6 @@ internal class JdbcExamplePredicateCompiler<E: Entity<ID>, ID: Any>(
         }
         @Suppress("UNCHECKED_CAST")
         return (property.column as Column<String?>).like(pattern)
-    }
-
-    companion object: KLogging() {
-        /**
-         * probe getter가 던진 내부 예외와 message를 caller 진단 경계 밖으로 노출하지 않습니다.
-         */
-        @JvmSynthetic
-        internal fun readProbeProperty(
-            getter: Method,
-            probe: Any,
-            propertyName: String,
-        ): Any? = try {
-            getter.invoke(probe)
-        } catch (cause: ReflectiveOperationException) {
-            throw InvalidDataAccessApiUsageException(
-                "QBE probe property '${safeDiagnosticValue(propertyName)}' could not be read.",
-                sanitizedReflectiveException(cause),
-            )
-        }
-
-        private val EXACT_STRING_MATCHERS = setOf(
-            ExampleMatcher.StringMatcher.DEFAULT,
-            ExampleMatcher.StringMatcher.EXACT,
-        )
-        private val SUPPORTED_STRING_MATCHERS = EXACT_STRING_MATCHERS + setOf(
-            ExampleMatcher.StringMatcher.CONTAINING,
-            ExampleMatcher.StringMatcher.STARTING,
-            ExampleMatcher.StringMatcher.ENDING,
-        )
     }
 
     private data class PreparedMatcher(

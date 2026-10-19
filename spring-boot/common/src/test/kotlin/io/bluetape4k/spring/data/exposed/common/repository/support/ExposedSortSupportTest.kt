@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.junit.jupiter.api.Test
@@ -30,6 +31,7 @@ class ExposedSortSupportTest {
     fun `sort maps direction and camelCase property to Exposed order`() {
         val orderBy = Sort.by(Sort.Direction.ASC, "createdAt").toExposedOrderBy(TestTable)
 
+        log.debug { "orderBy=${orderBy.contentToString()}" }
         orderBy shouldHaveSize 1
         orderBy[0].first shouldBeEqualTo TestTable.createdAt
         orderBy[0].second shouldBeEqualTo SortOrder.ASC

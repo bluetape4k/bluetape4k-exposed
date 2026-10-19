@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.ToStringBuilder
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.dao.Entity
@@ -66,4 +67,10 @@ class ExposedEntityInformationImpl<E: Entity<ID>, ID: Any>(
         }
         error("Cannot resolve ID type for ${clazz.name}. Ensure Entity<ID> generic parameter is declared explicitly.")
     }
+
+    override fun toString(): String =
+        ToStringBuilder(this)
+            .add("javaType", javaType)
+            .add("table", table.tableName)
+            .toString()
 }
