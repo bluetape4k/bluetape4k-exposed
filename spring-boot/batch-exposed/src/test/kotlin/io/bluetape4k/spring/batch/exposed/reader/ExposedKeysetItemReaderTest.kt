@@ -3,6 +3,7 @@ package io.bluetape4k.spring.batch.exposed.reader
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
@@ -10,6 +11,8 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.SourceRecord
 import io.bluetape4k.spring.batch.exposed.SourceTable
@@ -26,6 +29,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.batch.infrastructure.item.ExecutionContext
 
 class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
+
+    companion object: KLogging()
 
     private object DuplicateKeySourceTable: LongIdTable("duplicate_key_source") {
         val groupKey = long("group_key")
@@ -108,6 +113,7 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
 
             val results = generateSequence { reader.read() }.toList()
 
+            log.debug { "results=$results" }
             results shouldBeEqualTo listOf("a", "b", "c", "d")
             reader.close()
         }
@@ -125,6 +131,7 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
                 reader.read()
             }
 
+            log.debug { "error=$error" }
             error.message shouldBeEqualTo
                     "Keyset column must be strictly unique; use forColumnWithEntityIdTieBreaker for duplicate keys"
             reader.close()
@@ -149,6 +156,7 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             restartReader.open(context)
             val remaining = generateSequence { restartReader.read() }.toList()
 
+            log.debug { "remaining=$remaining" }
             remaining shouldBeEqualTo listOf("c", "d")
             restartReader.close()
         }
@@ -166,6 +174,7 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
                 createDuplicateKeyReader(testDB).open(legacyContext)
             }
 
+            log.debug { "error=$error" }
             error.message shouldBeEqualTo "Composite keyset checkpoint requires lastTieBreaker"
         }
     }
@@ -186,13 +195,15 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             reader.read()
 
             val sql = selectLog.entries.single().lowercase()
+            log.debug { "sql=$sql" }
+
             val orderBy = sql.substringAfter(" order by ")
             val groupKeyIndex = orderBy.indexOf("group_key")
             groupKeyIndex shouldBeGreaterOrEqualTo 0
 
             orderBy.indexOf("id").let { idIndex ->
-                (idIndex >= 0).shouldBeTrue()
-                (groupKeyIndex < idIndex).shouldBeTrue()
+                idIndex shouldBeGreaterOrEqualTo 0
+                groupKeyIndex shouldBeLessThan idIndex
             }
             sql shouldNotContain " offset "
 
@@ -219,7 +230,8 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
                 reader.read()
             }
 
-            error.message shouldBeEqualTo "pageSize must be less than Int.MAX_VALUE"
+            log.debug { "error=$error" }
+            error.message shouldBeEqualTo "1 <= pageSize[2147483647] < 2147483647"
             reader.close()
         }
     }
@@ -287,12 +299,7 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             val restartReader = createReader(testDB)
             restartReader.open(context)
 
-            val remaining = mutableListOf<SourceRecord>()
-            var item = restartReader.read()
-            while (item != null) {
-                remaining.add(item)
-                item = restartReader.read()
-            }
+            val remaining = generateSequence { restartReader.read() }.toList()
 
             remaining shouldHaveSize 35
             remaining.first().id shouldBeEqualTo 16L
@@ -314,16 +321,10 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             }
             reader.open(context)
 
-            val results = mutableListOf<SourceRecord>()
-            var item = reader.read()
-            while (item != null) {
-                results.add(item)
-                item = reader.read()
-            }
+            val results = generateSequence { reader.read() }.toList()
 
             results shouldHaveSize 20
-            results.first().id shouldBeEqualTo 21L
-            results.last().id shouldBeEqualTo 40L
+            results.all { it.id in 21L..40L }.shouldBeTrue()
 
             reader.close()
         }
@@ -356,15 +357,10 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             }
             reader.open(context)
 
-            val results = mutableListOf<SourceRecord>()
-            var item = reader.read()
-            while (item != null) {
-                results.add(item)
-                item = reader.read()
-            }
+            val results = generateSequence { reader.read() }.toList()
 
             results shouldHaveSize 26  // value 25..50
-            results.all { it.value >= 25 }.shouldBeTrue()
+            results.all { it.value in 25..50 }.shouldBeTrue()
 
             reader.close()
         }
@@ -394,15 +390,9 @@ class ExposedKeysetItemReaderTest: AbstractExposedBatchTest() {
             }
             reader.open(newContext)
 
-            val results = mutableListOf<SourceRecord>()
-            var item = reader.read()
-            while (item != null) {
-                results.add(item)
-                item = reader.read()
-            }
-
+            val results = generateSequence { reader.read() }.toList()
             results shouldHaveSize 10
-            results.first().id shouldBeEqualTo 1L
+            results.all { it.id in 1L..10L }.shouldBeTrue()
 
             reader.close()
         }

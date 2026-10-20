@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Exposed JDBC와 Caffeine in-process local cache를 결합하는 추상 repository입니다.
@@ -277,7 +278,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         if (remainingNanos <= 0L) return@withContext false
         val remainingMillis = remainingNanos / 1_000_000L
         if (remainingMillis <= 0L) return@withContext false
-        withTimeoutOrNull(remainingMillis) {
+        withTimeoutOrNull(remainingMillis.milliseconds) {
             flushBatchWithRetry(batch, deadlineNanos)
         } ?: false
     }
@@ -493,9 +494,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
                 if (remainingNanos <= 0L) continue
-                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+                delay(timeMillis = minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
             } else {
-                delay(backoffMillis)
+                delay(timeMillis = backoffMillis)
             }
         }
         return false

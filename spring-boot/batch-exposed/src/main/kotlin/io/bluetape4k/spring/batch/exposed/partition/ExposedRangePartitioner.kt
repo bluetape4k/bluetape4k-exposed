@@ -135,7 +135,7 @@ class ExposedRangePartitioner(
         val safeGridSize = totalRange.min(BigInteger.valueOf(effectiveGridSize.toLong())).intValueExact()
         val rangeSize = totalRange.divide(BigInteger.valueOf(safeGridSize.toLong()))
 
-        return (0 until safeGridSize).associate { i ->
+        return List(safeGridSize) { it }.associate { i ->
             val partMinId = minValue
                 .add(rangeSize.multiply(BigInteger.valueOf(i.toLong())))
                 .longValueExact()

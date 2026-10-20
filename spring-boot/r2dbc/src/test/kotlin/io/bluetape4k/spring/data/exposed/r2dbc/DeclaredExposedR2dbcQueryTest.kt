@@ -12,10 +12,12 @@ import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import org.jetbrains.exposed.v1.core.Slf4jSqlDebugLogger
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.junit.jupiter.params.ParameterizedTest
@@ -37,11 +39,12 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `@Query native - 문자열과 주석의 placeholder는 바인딩하지 않는다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
-            // Exposed 1.5.0 expandArgs의 주석 해석 결함과 실제 바인딩 검증을 분리합니다.
+            // Exposed 1.5.0 expandArgs의 주석 해석 결함과 실제 바인딩 검증을 분리합니다. (Logging 시 예외가 발생합니다)
             defaultLogger.removeLogger(Slf4jSqlDebugLogger)
             try {
                 userRepository
                     .findWithQuotedMarkersNative("alice@example.com")
+                    .onEach { log.debug { "found=$it" } }
                     .single()
                     .email shouldBeEqualTo "alice@example.com"
             } finally {
@@ -70,22 +73,22 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     private suspend fun createUsers() {
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Alice"
             row[email] = "alice@example.com"
             row[age] = 30
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Bob"
             row[email] = "bob@example.com"
             row[age] = 25
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Charlie"
             row[email] = "charlie@example.com"
             row[age] = 35
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Alice"
             row[email] = "alice2@example.com"
             row[age] = 20
@@ -99,6 +102,8 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findByEmailNative("alice@example.com")
+                .onEach { log.debug { "found=$it" } }
+
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "Alice"
         }
@@ -115,6 +120,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
 
             TransactionManager.defaultDatabase = testDB.db
             val found = userRepository.findByEmailNative("alice@example.com")
+                .onEach { log.debug { "found=$it" } }
 
             found shouldHaveSize 1
             found.first().name shouldBeEqualTo "Alice"
@@ -137,9 +143,10 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             }
 
             val found = userRepository.findByEmailNative("dana@example.com")
+                .onEach { log.debug { "found=$it" } }
 
             found shouldHaveSize 1
-            found.first().name shouldBeEqualTo "Dana"
+            found.single().name shouldBeEqualTo "Dana"
         }
     }
 
@@ -150,8 +157,9 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findByEmailAndAgeNative("alice@example.com", 30)
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
-            found.first().email shouldBeEqualTo "alice@example.com"
+            found.single().email shouldBeEqualTo "alice@example.com"
         }
     }
 
@@ -163,6 +171,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
 
             val injected = "alice@example.com' OR 1=1 --"
             val found = userRepository.findByEmailNative(injected)
+                .onEach { log.debug { "found=$it" } }
             found.shouldBeEmpty()
         }
     }
@@ -178,8 +187,9 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             }
 
             val found = userRepository.findByEmailNative("o'hara@example.com")
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
-            found.first().name shouldBeEqualTo "O'Hara"
+            found.single().name shouldBeEqualTo "O'Hara"
         }
     }
 
@@ -202,8 +212,9 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findByEmailNativeDuplicatedPlaceholder("alice@example.com")
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
-            found.first().email shouldBeEqualTo "alice@example.com"
+            found.single().email shouldBeEqualTo "alice@example.com"
         }
     }
 
@@ -214,8 +225,9 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findByAgeNativeLong(30L)
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
-            found.first().name shouldBeEqualTo "Alice"
+            found.single().name shouldBeEqualTo "Alice"
         }
     }
 
@@ -226,6 +238,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findByAgeRangeNative(25, 30)
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 2
             found.all { it.age in 25..30 }.shouldBeTrue()
         }
@@ -238,6 +251,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findYoungestTwoNative()
+                .onEach { log.debug { "found=$it" } }
             found.map { it.age } shouldBeEqualTo listOf(20, 25)
         }
     }
@@ -249,6 +263,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findDistinctIdsNative()
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 2
         }
     }
@@ -260,6 +275,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findDistinctIdsWithBlockCommentsNative()
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 2
         }
     }
@@ -271,6 +287,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findIdWithNestedProjectionNative()
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
         }
     }
@@ -283,6 +300,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findOuterProjectionWithNestedIdNative()
             }
 
+            log.debug { "error=$error" }
             error.message shouldBeEqualTo
                     "@Query method 'findOuterProjectionWithNestedIdNative' must select entity id column 'id'"
         }
@@ -295,18 +313,21 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             val wrongAliasError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findWrongIdAliasNative()
             }
+            log.debug { "wrongAliasError=$wrongAliasError" }
             wrongAliasError.message shouldBeEqualTo
                     "@Query method 'findWrongIdAliasNative' must select entity id column 'id'"
 
             val expressionAliasError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findExpressionIdAliasNative()
             }
+            log.debug { "expressionAliasError=$expressionAliasError" }
             expressionAliasError.message shouldBeEqualTo
                     "@Query method 'findExpressionIdAliasNative' must select entity id column 'id'"
 
             val commentAliasError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findCommentAliasProjectionNative()
             }
+            log.debug { "commentAliasError=$commentAliasError" }
             commentAliasError.message shouldBeEqualTo
                     "@Query method 'findCommentAliasProjectionNative' must select entity id column 'id'"
         }
@@ -323,6 +344,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                     val error = assertFailsWith<IllegalArgumentException> {
                         userRepository.findPostgresDollarQuoteIdProjectionNative()
                     }
+                    log.debug { "error=$error" }
                     error.message shouldBeEqualTo
                             "@Query method 'findPostgresDollarQuoteIdProjectionNative' must select entity id column 'id'"
                 }
@@ -339,6 +361,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val found = userRepository.findOldestJoinRowsNative()
+                .onEach { log.debug { "found=$it" } }
 
             found.map { it.age } shouldBeEqualTo listOf(35, 30, 30)
         }
@@ -354,6 +377,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findMissingEntityIdNative()
             }
 
+            log.debug { "error=$error" }
             error.message shouldStartWith "@Query method 'findMissingEntityIdNative' returned unknown entity id '"
         }
     }
@@ -368,6 +392,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.findEmailsProjectionNative()
             }
 
+            log.debug { "error=$error" }
             error.message shouldBeEqualTo
                     "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
         }
@@ -383,6 +408,7 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.groupByAgeNative()
             }
 
+            log.debug { "error=$error" }
             error.message shouldBeEqualTo
                     "@Query method 'groupByAgeNative' must select entity id column 'id'"
         }
@@ -395,12 +421,14 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             val projectionError = assertFailsWith<IllegalArgumentException> {
                 userRepository.findEmailsProjectionNative()
             }
+            log.debug { "projectionError=$projectionError" }
             projectionError.message shouldBeEqualTo
                     "@Query method 'findEmailsProjectionNative' must select entity id column 'id'"
 
             val groupingError = assertFailsWith<IllegalArgumentException> {
                 userRepository.groupByAgeNative()
             }
+            log.debug { "groupingError=$groupingError" }
             groupingError.message shouldBeEqualTo
                     "@Query method 'groupByAgeNative' must select entity id column 'id'"
         }
@@ -415,8 +443,9 @@ class DeclaredExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             val found = userRepository.findByEmailNativeTenthPlaceholder(
                 "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "alice@example.com"
             )
+                .onEach { log.debug { "found=$it" } }
             found shouldHaveSize 1
-            found.first().name shouldBeEqualTo "Alice"
+            found.single().name shouldBeEqualTo "Alice"
         }
     }
 }

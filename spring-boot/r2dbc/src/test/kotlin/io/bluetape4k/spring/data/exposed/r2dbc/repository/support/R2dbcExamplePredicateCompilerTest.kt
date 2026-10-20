@@ -1,12 +1,15 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import org.springframework.data.domain.ExampleMatcher
 import kotlin.test.Test
 
 class R2dbcExamplePredicateCompilerTest {
+
+    companion object: KLogging()
 
     @Test
     fun `compiler produces a predicate for all and any snapshots`() {

@@ -15,31 +15,33 @@ class ExposedUpsertItemWriterTest: AbstractExposedBatchTest() {
 
     companion object: KLogging()
 
+    private val writer = ExposedUpsertItemWriter<TargetRecord>(table = TargetTable) {
+        this[TargetTable.sourceName] = it.sourceName
+        this[TargetTable.transformedValue] = it.transformedValue
+    }
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `upsert로 신규 insert 및 기존 update 동작 검증`(testDB: TestDB) {
         withBatchTables(testDB) {
-            val writer = ExposedUpsertItemWriter<TargetRecord>(table = TargetTable) {
-                this[TargetTable.sourceName] = it.sourceName
-                this[TargetTable.transformedValue] = it.transformedValue
-            }
-
-            val items = (1..5).map {
+            val recordSize = 5
+            val items = List(recordSize) {
                 TargetRecord("name-$it", it * 2)
             }
             writer.write(Chunk(items))
-            TargetTable.selectAll().count() shouldBeEqualTo 5L
+            TargetTable.selectAll().count() shouldBeEqualTo recordSize.toLong()
 
-            val updatedItems = (1..5).map {
+            val updatedItems = List(recordSize) {
                 TargetRecord("name-$it", it * 100)
             }
             writer.write(Chunk(updatedItems))
-            TargetTable.selectAll().count() shouldBeEqualTo 5L
+            TargetTable.selectAll().count() shouldBeEqualTo recordSize.toLong()
 
             val updatedValues = TargetTable.selectAll()
                 .orderBy(TargetTable.sourceName)
                 .map { it[TargetTable.transformedValue] }
-            updatedValues shouldBeEqualTo (1..5).map { it * 100 }
+
+            updatedValues shouldBeEqualTo List(recordSize) { it * 100 }
         }
     }
 
@@ -47,13 +49,7 @@ class ExposedUpsertItemWriterTest: AbstractExposedBatchTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `빈 chunk 전달 시 아무 동작 안 함`(testDB: TestDB) {
         withBatchTables(testDB) {
-            val writer = ExposedUpsertItemWriter<TargetRecord>(table = TargetTable) {
-                this[TargetTable.sourceName] = it.sourceName
-                this[TargetTable.transformedValue] = it.transformedValue
-            }
-
             writer.write(Chunk(emptyList()))
-
             TargetTable.selectAll().count() shouldBeEqualTo 0L
         }
     }

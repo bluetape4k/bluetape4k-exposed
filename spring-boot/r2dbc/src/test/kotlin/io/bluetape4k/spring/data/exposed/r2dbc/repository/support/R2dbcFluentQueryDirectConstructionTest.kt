@@ -1,9 +1,11 @@
 package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import kotlinx.coroutines.flow.toList
@@ -15,6 +17,8 @@ import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 
 class R2dbcFluentQueryDirectConstructionTest {
+
+    companion object: KLoggingChannel()
 
     @Test
     fun `public four argument repository construction supports coroutine QBE`() = runSuspendIO {
@@ -42,7 +46,7 @@ class R2dbcFluentQueryDirectConstructionTest {
             )
 
             repository.findOne(example)?.name shouldBeEqualTo "Alice"
-            repository.findAll(example).toList().map { it.name } shouldBeEqualTo listOf("Alice")
+            repository.findAll(example).log("User").toList().map { it.name } shouldBeEqualTo listOf("Alice")
         }
     }
 

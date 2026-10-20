@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.SourceRecord
 import io.bluetape4k.spring.batch.exposed.SourceTable
@@ -25,6 +26,8 @@ class ExposedUpdateItemWriterTest: AbstractExposedBatchTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `개별 UPDATE로 레코드 정확히 수정`(testDB: TestDB) {
         withBatchTables(testDB) {
+            val recordSize = 3
+
             insertTestData(5)
 
             val writer = ExposedUpdateItemWriter<SourceRecord>(
@@ -36,12 +39,17 @@ class ExposedUpdateItemWriterTest: AbstractExposedBatchTest() {
                 this[SourceTable.value] = it.value * 10
             }
 
-            val items = (1L..3L).map { SourceRecord(id = it, name = "item-$it", value = it.toInt()) }
+            val items = List(recordSize) {
+                val id = it + 1
+                SourceRecord(id = id.toLong(), name = "item-$it", value = id)
+            }
             writer.write(Chunk(items))
 
             val rows = SourceTable.selectAll().toList()
             val updated = rows.filter { it[SourceTable.name].endsWith("-updated") }
-            updated shouldHaveSize 3
+                .onEach { log.debug { "ResultRow=$it" } }
+
+            updated shouldHaveSize recordSize
             updated.first()[SourceTable.value] shouldBeEqualTo 10
         }
     }

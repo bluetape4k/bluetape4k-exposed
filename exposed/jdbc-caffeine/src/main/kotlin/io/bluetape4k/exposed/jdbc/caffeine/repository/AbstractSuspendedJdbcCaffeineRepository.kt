@@ -270,7 +270,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         if (remainingNanos <= 0L) return@withContext false
         val remainingMillis = remainingNanos / NANOS_PER_MILLISECOND
         if (remainingMillis <= 0L) return@withContext false
-        withTimeoutOrNull(remainingMillis) {
+        withTimeoutOrNull(timeMillis = remainingMillis) {
             flushBatchWithRetry(batch, deadlineNanos)
         } ?: false
     }
@@ -382,9 +382,9 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
                 if (remainingNanos <= 0L) continue
-                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+                delay(timeMillis = minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
             } else {
-                delay(backoffMillis)
+                delay(timeMillis = backoffMillis)
             }
         }
         return false

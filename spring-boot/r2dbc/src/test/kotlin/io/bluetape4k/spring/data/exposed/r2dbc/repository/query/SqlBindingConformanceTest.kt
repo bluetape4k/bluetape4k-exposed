@@ -4,6 +4,9 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldStartWith
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -14,8 +17,13 @@ import java.lang.reflect.InvocationTargetException
  * 방언별 SQL 실행 여부는 별도 repository 통합 테스트가 검증합니다.
  */
 class SqlBindingConformanceTest {
+
+    companion object: KLogging()
+
+    private val method = mockk<ExposedR2dbcQueryMethod>()
+
     private val query = run {
-        val method = mockk<ExposedR2dbcQueryMethod>()
+        clearMocks(method)
         every { method.getAnnotatedQuery() } returns "SELECT id FROM sample"
         DeclaredExposedR2dbcQuery(method, mockk<R2dbcQueryMapper<Any, Long>>())
     }
@@ -44,6 +52,7 @@ class SqlBindingConformanceTest {
             bind("SELECT $fragment, ?10, ?2, ?10, ?1", values) shouldBeEqualTo
                     ("SELECT $fragment, ?, ?, ?, ?" to listOf("value-10", "value-2", "value-10", "value-1"))
         }
+
         bind("SELECT ?1, ?1", arrayOf(null)) shouldBeEqualTo ("SELECT ?, ?" to listOf(null, null))
     }
 
@@ -53,6 +62,7 @@ class SqlBindingConformanceTest {
             val error = assertFailsWith<InvocationTargetException> {
                 bind("SELECT $marker", arrayOf("one"))
             }
+            log.debug { "error=$error" }
             error.cause.shouldBeInstanceOf<IllegalArgumentException>()
             error.cause?.message shouldStartWith "Query placeholder index out of bounds:"
         }

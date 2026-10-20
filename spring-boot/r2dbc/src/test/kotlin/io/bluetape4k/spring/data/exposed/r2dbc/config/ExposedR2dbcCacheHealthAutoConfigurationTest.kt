@@ -6,6 +6,8 @@ import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -23,6 +25,8 @@ import org.springframework.context.annotation.Bean
 import java.io.Serializable
 
 class ExposedR2dbcCacheHealthAutoConfigurationTest {
+
+    companion object: KLogging()
 
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedR2dbcCacheHealthAutoConfiguration::class.java))
@@ -90,6 +94,7 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
         CacheWorkerState.entries.forEach { workerState ->
             val health = healthFor(report(workerState = workerState, lastFlushError = failure))
 
+            log.debug { "health=$health" }
             health.status shouldBeEqualTo Status.DOWN
             health.details["error"] shouldBeEqualTo failure.toString()
         }
@@ -99,6 +104,7 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
     fun `reports DOWN without an error detail for a failed R2DBC worker`() {
         val health = healthFor(report(workerState = CacheWorkerState.FAILED))
 
+        log.debug { "health=$health" }
         health.status shouldBeEqualTo Status.DOWN
         health.details.containsKey("error").shouldBeFalse()
     }
@@ -120,6 +126,7 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
             listOf(first to second, second to first).forEach { (left, right) ->
                 val health = healthFor(left, right)
 
+                log.debug { "health=$health" }
                 health.status shouldBeEqualTo expectedStatus
                 health.details["error"] shouldBeEqualTo
                         if (left.lastFlushError != null || right.lastFlushError != null) failure.toString() else null
@@ -134,9 +141,13 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
         val selectedReport = report(workerState = CacheWorkerState.RUNNING, lastFlushError = selected)
         val otherReport = report(workerState = CacheWorkerState.FAILED, lastFlushError = other)
 
-        listOf(selectedReport to otherReport, otherReport to selectedReport).forEach { (first, second) ->
+        listOf(
+            selectedReport to otherReport,
+            otherReport to selectedReport
+        ).forEach { (first, second) ->
             val health = healthFor(first, second)
 
+            log.debug { "health=$health" }
             health.status shouldBeEqualTo Status.DOWN
             health.details["error"] shouldBeEqualTo selected.toString()
         }
@@ -158,9 +169,13 @@ class ExposedR2dbcCacheHealthAutoConfigurationTest {
             ),
         )
 
+        log.debug { "health=$health" }
         health.details["repositoryCount"] shouldBeEqualTo 2
+
         @Suppress("UNCHECKED_CAST")
         val reports = health.details["reports"] as List<Map<String, Any?>>
+        log.debug { "reports=$reports" }
+
         reports[0] shouldBeEqualTo mapOf(
             "mode" to "WRITE_BEHIND",
             "queueDepth" to 13,

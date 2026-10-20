@@ -51,7 +51,7 @@ class ExposedBatchAutoConfiguration {
         SimpleAsyncTaskExecutor("batch-partition-").apply {
             val executor = properties.executor
             setVirtualThreads(executor.virtualThreads)
-            setConcurrencyLimit(executor.concurrencyLimit)
+            concurrencyLimit = executor.concurrencyLimit
             setTaskTerminationTimeout(Duration.ofSeconds(executor.awaitTerminationSeconds).toMillis())
         }
 }

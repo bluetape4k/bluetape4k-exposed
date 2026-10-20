@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.UserNameRecord
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
@@ -25,6 +26,8 @@ import java.lang.reflect.Modifier
  * Java-only `Class<R>` overloads are not part of this compatibility surface.
  */
 class ExposedR2dbcRepositoryAbiCompatibilityTest {
+
+    companion object: KLogging()
 
     @Test
     fun `coroutine QBE consumer fixture is loadable`() {
