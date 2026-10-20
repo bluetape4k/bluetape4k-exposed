@@ -67,6 +67,7 @@ abstract class AbstractBigQueryTest {
             val json = GsonFactory.getDefaultInstance()
             val credentials = GoogleCredentials.create(AccessToken("emulator-fake-token", null))
             val requestInitializer = HttpCredentialsAdapter(credentials)
+
             Bigquery.Builder(transport, json, requestInitializer)
                 .setRootUrl(BigQueryEmulator.endpoint.rootUrl)
                 .setApplicationName("exposed-bigquery-test")

@@ -6,7 +6,6 @@ import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 import java.time.Instant
 
 class BigQueryResultRowTest {
@@ -31,7 +30,7 @@ class BigQueryResultRowTest {
         )
 
         row[ResultRowTable.region] shouldBeEqualTo "kr"
-        row[ResultRowTable.amount] shouldBeEqualTo BigDecimal("12.34")
+        row[ResultRowTable.amount] shouldBeEqualTo 12.34.toBigDecimal()
         row[ResultRowTable.occurredAt] shouldBeEqualTo Instant.parse("2024-01-01T00:00:00Z")
     }
 
