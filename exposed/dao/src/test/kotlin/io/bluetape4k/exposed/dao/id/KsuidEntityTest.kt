@@ -9,6 +9,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.junit5.faker.Fakers
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +81,7 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
             }
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -100,7 +101,7 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
             }
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -124,7 +125,7 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
             tasks.awaitAll()
             entityCache.clear()
 
-            E1.all().count().toInt() shouldBeEqualTo entityCount
+            E1.all().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -147,7 +148,7 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
             task.await()
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -160,12 +161,13 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
     @ParameterizedTest(name = "{0} - {1}개 레코드")
     @MethodSource("getTestDBAndEntityCount")
     fun `insertIgnore as flow`(testDB: TestDB, entityCount: Int) = runSuspendIO {
+        // H2 는 insertIgnore 를 지원하지 않는다.
         Assumptions.assumeTrue { testDB in TestDB.ALL_MYSQL_MARIADB + TestDB.POSTGRESQL }
 
         withTablesSuspending(testDB, T1) {
             val entities: Sequence<Pair<String, Int>> = generateSequence {
-                val name = faker.name().fullName()
-                val age = faker.number().numberBetween(8, 80)
+                val name = Fakers.fixedString(36)
+                val age = faker.number().numberBetween(8, 120)
                 name to age
             }
 
@@ -174,18 +176,21 @@ class KsuidEntityTest: AbstractCustomIdTableTest() {
                 .take(entityCount)
                 .flatMapMerge(16) { (name, age) ->
                     flow {
-                        val insertCount = T1.insertIgnore {
-                            it[T1.name] = name
-                            it[T1.age] = age
+                        val insertCount = suspendedTransactionAsync(Dispatchers.IO) {
+                            T1.insertIgnore {
+                                it[T1.name] = name
+                                it[T1.age] = age
+                            }
                         }
-                        emit(insertCount)
+                        emit(insertCount.await())
                     }
+
                 }
                 .collect()
 
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 }

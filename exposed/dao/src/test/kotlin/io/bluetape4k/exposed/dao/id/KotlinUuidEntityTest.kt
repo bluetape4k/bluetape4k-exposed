@@ -3,9 +3,13 @@ package io.bluetape4k.exposed.dao.id
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.dao.id.KotlinUuidTable
+import io.bluetape4k.exposed.dao.entityToStringBuilder
+import io.bluetape4k.exposed.dao.idEquals
+import io.bluetape4k.exposed.dao.idHashCode
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.UuidEntity
 import org.jetbrains.exposed.v1.dao.UuidEntityClass
@@ -19,10 +23,7 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
 
     companion object: KLogging()
 
-    object Items: KotlinUuidTable(
-        name = "kotlin_uuid_entities",
-        uuidVersion = UuidVersion.V7,
-    ) {
+    object Items: KotlinUuidTable(name = "kotlin_uuid_entities", uuidVersion = UuidVersion.V7) {
         val name = varchar("name", 100)
     }
 
@@ -30,6 +31,13 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
         companion object: UuidEntityClass<Item>(Items)
 
         var name by Items.name
+
+
+        override fun equals(other: Any?): Boolean = idEquals(other)
+        override fun hashCode(): Int = idHashCode()
+        override fun toString(): String = entityToStringBuilder()
+            .add("name", name)
+            .toString()
     }
 
     @ParameterizedTest
@@ -42,13 +50,11 @@ class KotlinUuidEntityTest: AbstractCustomIdTableTest() {
             entityCache.clear()
 
             val loaded = Item.findById(entity.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.id.value shouldBeEqualTo entity.id.value
             loaded.name shouldBeEqualTo "kotlin-uuid-item"
             loaded.id.value.uuidVersion() shouldBeEqualTo 7
             Items.selectAll().count().toInt() shouldBeEqualTo 1
         }
     }
-
-    // HINT: bluetape4k-core 에 uuidVersion() 함수를 추가한다.
-    private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 }

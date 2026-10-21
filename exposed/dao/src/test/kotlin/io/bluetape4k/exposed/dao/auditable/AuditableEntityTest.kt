@@ -6,10 +6,12 @@ import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
+import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.entityCache
 import org.jetbrains.exposed.v1.dao.flushCache
@@ -45,6 +47,14 @@ class AuditableEntityTest: AbstractExposedTest() {
         override var createdAt by Articles.createdAt
         override var updatedBy by Articles.updatedBy
         override var updatedAt by Articles.updatedAt
+
+        override fun toString(): String = entityToStringBuilder()
+            .add("title", title)
+            .add("createdBy", createdBy)
+            .add("createdAt", createdAt)
+            .add("updatedBy", updatedBy)
+            .add("updatedAt", updatedAt)
+            .toString()
     }
 
     @ParameterizedTest
@@ -57,6 +67,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy.shouldNotBeNull()
             loaded.createdAt.shouldNotBeNull()
         }
@@ -72,6 +83,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.updatedAt.shouldBeNull()
             loaded.updatedBy.shouldBeNull()
         }
@@ -87,12 +99,14 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.title = "수정 후 아티클"
             loaded.flush()
 
             entityCache.clear()
 
             val updated = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "updated=$updated" }
             updated.updatedBy.shouldNotBeNull()
             updated.title shouldBeEqualTo "수정 후 아티클"
         }
@@ -113,6 +127,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(articleId).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy shouldBeEqualTo authorName
         }
     }
@@ -136,6 +151,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(updatedId).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.updatedBy shouldBeEqualTo "editor"
             loaded.title shouldBeEqualTo "edited by thread local"
         }
@@ -150,8 +166,9 @@ class AuditableEntityTest: AbstractExposedTest() {
             }
             entityCache.clear()
 
-            val reloaded = Article.findById(article.id).shouldNotBeNull()
-            reloaded shouldBeEqualTo article
+            val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
+            loaded shouldBeEqualTo article
         }
     }
 
@@ -163,7 +180,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             val article2 = Article.new { title = "아티클 2" }
             entityCache.clear()
 
-            article1 shouldNotBeEqualTo article2
+            article2 shouldNotBeEqualTo article1
         }
     }
 
@@ -176,8 +193,9 @@ class AuditableEntityTest: AbstractExposedTest() {
             }
             entityCache.clear()
 
-            val reloaded = Article.findById(article.id).shouldNotBeNull()
-            reloaded shouldBeEqualTo article
+            val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
+            loaded shouldBeEqualTo article
         }
     }
 
@@ -193,6 +211,7 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
         }
     }
@@ -209,11 +228,14 @@ class AuditableEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
+
             // 프로퍼티 수정 없이 flush 만 호출
             loaded.flush()
             entityCache.clear()
 
             val reloaded = Article.findById(article.id).shouldNotBeNull()
+            log.debug { "reloaded=$reloaded" }
             reloaded.updatedBy.shouldBeNull()
             reloaded.updatedAt.shouldBeNull()
         }

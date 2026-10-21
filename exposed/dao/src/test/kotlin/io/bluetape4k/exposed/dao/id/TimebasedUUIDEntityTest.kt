@@ -77,7 +77,7 @@ class TimebasedUUIDEntityTest: AbstractCustomIdTableTest() {
             }
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -102,7 +102,7 @@ class TimebasedUUIDEntityTest: AbstractCustomIdTableTest() {
             }
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -126,7 +126,7 @@ class TimebasedUUIDEntityTest: AbstractCustomIdTableTest() {
             tasks.awaitAll()
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -154,7 +154,7 @@ class TimebasedUUIDEntityTest: AbstractCustomIdTableTest() {
             task.await()
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -181,18 +181,20 @@ class TimebasedUUIDEntityTest: AbstractCustomIdTableTest() {
                 .take(entityCount)
                 .flatMapMerge(16) { (name, age) ->
                     flow {
-                        val insertCount = T1.insertIgnore {
-                            it[T1.name] = name
-                            it[T1.age] = age
+                        val insertCount = suspendedTransactionAsync(Dispatchers.IO) {
+                            T1.insertIgnore {
+                                it[T1.name] = name
+                                it[T1.age] = age
+                            }
                         }
-                        emit(insertCount)
+                        emit(insertCount.await())
                     }
                 }
                 .collect()
 
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 }

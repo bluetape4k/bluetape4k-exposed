@@ -97,7 +97,7 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
             }
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 
@@ -111,7 +111,6 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
     fun `Coroutine 환경에서 복수의 Unique한 엔티티를 생성한다`(testDB: TestDB, entityCount: Int) = runSuspendIO {
         withTablesSuspending(testDB, T1) {
             val tasks = List(entityCount) {
-                @Suppress("DEPRECATION")
                 suspendedTransactionAsync(Dispatchers.IO) {
                     E1.new {
                         name = faker.name().fullName()
@@ -172,18 +171,20 @@ class SnowflakeIdEntityTest: AbstractCustomIdTableTest() {
                 .take(entityCount)
                 .flatMapMerge(16) { (name, age) ->
                     flow {
-                        val insertCount = T1.insertIgnore {
-                            it[T1.name] = name
-                            it[T1.age] = age
+                        val insertCount = suspendedTransactionAsync(Dispatchers.IO) {
+                            T1.insertIgnore {
+                                it[T1.name] = name
+                                it[T1.age] = age
+                            }
                         }
-                        emit(insertCount)
+                        emit(insertCount.await())
                     }
                 }
                 .collect()
 
             entityCache.clear()
 
-            T1.selectAll().count().toInt() shouldBeEqualTo entityCount
+            T1.selectAll().count() shouldBeEqualTo entityCount.toLong()
         }
     }
 }
