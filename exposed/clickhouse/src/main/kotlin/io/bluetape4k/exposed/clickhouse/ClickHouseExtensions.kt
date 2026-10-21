@@ -3,15 +3,15 @@ package io.bluetape4k.exposed.clickhouse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.Query
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 /**
@@ -103,15 +103,17 @@ fun <T> queryFlow(
  * @param dispatcher 블로킹 JDBC 호출을 실행할 디스패처 (기본값: [Dispatchers.IO])
  * @param block 트랜잭션 블록
  */
+
+@Suppress("DEPRECATION")
 suspend fun <T> withSuspendTransaction(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     block: JdbcTransaction.() -> T,
     // ClickHouse JDBC 호출은 블로킹 I/O이므로, 코루틴 기본 디스패처(Main/Default)를 점유하지 않도록
     // Dispatchers.IO(또는 Virtual Thread 전용 디스패처)로 컨텍스트를 전환합니다.
-): T = withContext(dispatcher) {
-    try {
-        suspendTransaction(db) { block() }
+): T {
+    return try {
+        suspendedTransactionAsync(dispatcher, db) { block() }.await()
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
@@ -157,10 +159,19 @@ fun <T> queryFlow(
     // ResultSet 수명(트랜잭션 경계 내)과 Flow emit 경계가 겹치지 않도록
     // 트랜잭션 내에서 List로 완전히 materialize한 뒤 방출합니다.
     val items = try {
-        withSuspendTransaction(db, dispatcher) { block().toList() }
+        withSuspendTransaction(db, dispatcher) {
+            block().toList()
+        }
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
     }
-    emitAll(items.asFlow())
+    for (item in items) {
+        // forEach 대신 for+ensureActive()를 사용하는 이유:
+        // forEach는 suspend 람다가 아니므로 코루틴 취소 신호를 emit 사이에서 확인하지 못한다.
+        // 대규모 결과셋에서 취소가 지연되면 불필요한 emit이 누적될 수 있으므로
+        // 각 emit 직전에 취소 여부를 명시적으로 확인하여 CancellationException을 즉시 전파한다.
+        currentCoroutineContext().ensureActive()
+        emit(item)
+    }
 }
