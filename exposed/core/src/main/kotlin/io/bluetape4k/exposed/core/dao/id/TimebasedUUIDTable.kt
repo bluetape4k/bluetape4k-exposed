@@ -27,8 +27,7 @@ open class TimebasedUUIDTable(
     /**
      * UUID v7 을 Client 에서 생성합니다.
      */
-    final override val id: Column<EntityID<UUID>> =
-        javaUUID(columnName).timebasedGenerated().entityId()
+    final override val id: Column<EntityID<UUID>> = javaUUID(columnName).timebasedGenerated().entityId()
 
     /** 테이블 기본키 정의입니다. */
     final override val primaryKey = PrimaryKey(id)

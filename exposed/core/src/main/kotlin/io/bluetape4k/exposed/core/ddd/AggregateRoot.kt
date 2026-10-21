@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.core.ddd
 
+import java.io.Serializable
+
 /**
  * Spring에 의존하지 않는 DDD aggregate root 계약입니다.
  *
@@ -13,7 +15,7 @@ package io.bluetape4k.exposed.core.ddd
  * Durable outbox나 영속 retry queue는 별도의 integration 선택 사항입니다. 호출자가 이 계약을
  * 명시적으로 채택하지 않는 한 기존 repository에는 영향을 주지 않습니다.
  */
-interface AggregateRoot<ID: Any>: java.io.Serializable {
+interface AggregateRoot<ID: Any>: Serializable {
 
     /**
      * Aggregate의 안정적인 identifier입니다.

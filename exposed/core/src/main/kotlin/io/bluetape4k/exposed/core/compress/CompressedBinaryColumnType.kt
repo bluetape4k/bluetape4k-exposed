@@ -43,22 +43,24 @@ class CompressedBinaryTransformer(
     private val compressor: Compressor,
 ): ColumnTransformer<ByteArray, ByteArray> {
     /** 엔티티 값을 DB 저장용 압축 바이트로 변환합니다. */
-    override fun unwrap(value: ByteArray): ByteArray = try {
-        compressor.compress(value)
-    } catch (e: CancellationException) {
-        // 코루틴 취소는 반드시 재전파: Exception 핸들러가 취소를 삼키면 코루틴 구조가 깨진다
-        throw e
-    } catch (e: Exception) {
-        throw IllegalStateException("Failed to compress data (size: ${value.size} bytes)", e)
-    }
+    override fun unwrap(value: ByteArray): ByteArray =
+        try {
+            compressor.compress(value)
+        } catch (e: CancellationException) {
+            // 코루틴 취소는 반드시 재전파: Exception 핸들러가 취소를 삼키면 코루틴 구조가 깨진다
+            throw e
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to compress data (size: ${value.size} bytes)", e)
+        }
 
     /** DB 바이트를 엔티티 값으로 복원합니다. */
-    override fun wrap(value: ByteArray): ByteArray = try {
-        compressor.decompress(value)
-    } catch (e: CancellationException) {
-        // 코루틴 취소는 반드시 재전파: Exception 핸들러가 취소를 삼키면 코루틴 구조가 깨진다
-        throw e
-    } catch (e: Exception) {
-        throw IllegalStateException("Failed to decompress data (size: ${value.size} bytes)", e)
-    }
+    override fun wrap(value: ByteArray): ByteArray =
+        try {
+            compressor.decompress(value)
+        } catch (e: CancellationException) {
+            // 코루틴 취소는 반드시 재전파: Exception 핸들러가 취소를 삼키면 코루틴 구조가 깨진다
+            throw e
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to decompress data (size: ${value.size} bytes)", e)
+        }
 }

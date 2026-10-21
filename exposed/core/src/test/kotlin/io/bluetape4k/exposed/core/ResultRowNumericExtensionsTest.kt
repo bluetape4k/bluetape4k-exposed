@@ -8,7 +8,8 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import org.jetbrains.exposed.v1.core.Table
+import io.bluetape4k.logging.debug
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -26,7 +27,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    object NumericTable: Table("result_row_numeric_test") {
+    object NumericTable: IntIdTable("result_row_numeric_test") {
         val byteVal = varchar("byte_val", 8)
         val shortVal = varchar("short_val", 8)
         val floatVal = varchar("float_val", 32)
@@ -53,6 +54,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getByte(NumericTable.byteVal) shouldBeEqualTo 42.toByte()
             row.getByteOrNull(NumericTable.byteVal) shouldBeEqualTo 42.toByte()
             row.getByteOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -75,6 +77,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getShort(NumericTable.shortVal) shouldBeEqualTo 32000.toShort()
             row.getShortOrNull(NumericTable.shortVal) shouldBeEqualTo 32000.toShort()
             row.getShortOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -97,6 +100,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getFloat(NumericTable.floatVal).shouldNotBeNull()
             row.getFloatOrNull(NumericTable.floatVal).shouldNotBeNull()
             row.getFloatOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -119,6 +123,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getDouble(NumericTable.doubleVal).shouldNotBeNull()
             row.getDoubleOrNull(NumericTable.doubleVal).shouldNotBeNull()
             row.getDoubleOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -141,6 +146,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getBigInt(NumericTable.bigIntVal) shouldBeEqualTo BigInteger("999999999999")
             row.getBigIntOrNull(NumericTable.bigIntVal) shouldBeEqualTo BigInteger("999999999999")
             row.getBigIntOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -163,6 +169,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getBigDecimal(NumericTable.bigDecimalVal) shouldBeEqualTo BigDecimal("12345.6789")
             row.getBigDecimalOrNull(NumericTable.bigDecimalVal) shouldBeEqualTo BigDecimal("12345.6789")
             row.getBigDecimalOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -185,6 +192,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getChar(NumericTable.charVal) shouldBeEqualTo 'Z'
             row.getCharOrNull(NumericTable.charVal) shouldBeEqualTo 'Z'
             row.getCharOrNull(NumericTable.nullableVal).shouldBeNull()
@@ -207,6 +215,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             assertFailsWith<IllegalStateException> {
                 row.getByte(NumericTable.nullableVal)
             }
@@ -229,6 +238,7 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
             assertFailsWith<IllegalStateException> {
                 row.getShort(NumericTable.nullableVal)
             }
@@ -273,6 +283,8 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
+
             assertFailsWith<IllegalStateException> {
                 row.getFloat(NumericTable.nullableVal)
             }
@@ -295,6 +307,8 @@ class ResultRowNumericExtensionsTest: AbstractExposedTest() {
             }
 
             val row = NumericTable.selectAll().single()
+            log.debug { "row=$row" }
+
             assertFailsWith<IllegalStateException> {
                 row.getDouble(NumericTable.nullableVal)
             }

@@ -22,7 +22,7 @@
     <logger name="Exposed" level="DEBUG"/>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="Console"/>
     </root>
 
 </configuration>

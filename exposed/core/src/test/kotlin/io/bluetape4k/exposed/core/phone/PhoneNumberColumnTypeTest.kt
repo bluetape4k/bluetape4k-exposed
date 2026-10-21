@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -25,8 +26,8 @@ class PhoneNumberColumnTypeTest: AbstractExposedTest() {
     companion object: KLogging()
 
     object ContactTable: LongIdTable("phone_contacts") {
-        val phone = phoneNumber("phone")
-        val phoneStr = phoneNumberString("phone_str")
+        val phone = phoneNumber("phone", "KR")
+        val phoneStr = phoneNumberString("phone_str", "KR")
     }
 
     @ParameterizedTest
@@ -58,6 +59,7 @@ class PhoneNumberColumnTypeTest: AbstractExposedTest() {
 
             val row = ContactTable.selectAll().single()
             val phoneNumber = row[ContactTable.phone]
+            log.debug { "phoneNumber=$phoneNumber" }
             phoneNumber.shouldNotBeNull()
 
             val e164 = PhoneNumberUtil.getInstance().format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.E164)
@@ -88,8 +90,14 @@ class PhoneNumberColumnTypeTest: AbstractExposedTest() {
             }
 
             val row = ContactTable.selectAll().single()
+            val phoneNumber = row[ContactTable.phone]
+            log.debug { "phoneNumberString=$phoneNumber" }
+            val e164 = PhoneNumberUtil.getInstance().format(phoneNumber, PhoneNumberUtil.PhoneNumberFormat.E164)
+            e164 shouldBeEqualTo "+821099998888"
+
             val phoneStr = row[ContactTable.phoneStr]
             phoneStr shouldBeEqualTo "+821099998888"
+
         }
     }
 

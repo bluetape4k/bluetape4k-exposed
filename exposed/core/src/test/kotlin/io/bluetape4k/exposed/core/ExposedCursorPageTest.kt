@@ -4,13 +4,12 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.io.lookup
+import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
-import java.io.ObjectStreamClass
 
 /**
  * [ExposedCursorPage]의 커서 진행 상태 불변식을 검증합니다.
@@ -23,6 +22,7 @@ class ExposedCursorPageTest {
     fun `마지막 페이지는 다음 커서 없이 반환된다`() {
         val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = null, hasNext = false)
 
+        log.debug { "page=$page" }
         page.content shouldBeEqualTo listOf("a", "b")
         page.nextCursor shouldBeEqualTo null
         page.hasNext.shouldBeFalse()
@@ -49,6 +49,7 @@ class ExposedCursorPageTest {
     fun `다음 페이지는 마지막 반환 행의 커서와 함께 전달된다`() {
         val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = 20L, hasNext = true)
 
+        log.debug { "page=$page" }
         page.content shouldBeEqualTo listOf("a", "b")
         page.nextCursor shouldBeEqualTo 20L
         page.hasNext.shouldBeTrue()
@@ -57,25 +58,36 @@ class ExposedCursorPageTest {
     @Test
     fun `직렬화 가능한 content와 cursor를 사용하면 Java serialization round-trip이 유지된다`() {
         val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = 20L, hasNext = true)
+        val restored = javaSerializeRoundTrip(page)
 
-        val restored = serializeRoundTrip(page)
+        log.debug { "page=$page" }
+        log.debug { "restored=$restored" }
+        restored shouldBeEqualTo page
+    }
 
+    @Test
+    fun `직렬화 가능한 content와 cursor를 사용하면 Fory serialization round-trip이 유지된다`() {
+        val page = ExposedCursorPage(content = listOf("a", "b"), nextCursor = 20L, hasNext = true)
+        val restored = forySerializeRoundTrip(page)
+
+        log.debug { "page=$page" }
+        log.debug { "restored=$restored" }
         restored shouldBeEqualTo page
     }
 
     @Test
     fun `직렬화 UID는 명시한 안정적인 값이다`() {
-        ObjectStreamClass.lookup(ExposedCursorPage::class.java).serialVersionUID shouldBeEqualTo 1L
+        ExposedCursorPage::class.lookup().serialVersionUID shouldBeEqualTo 1L
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> serializeRoundTrip(value: T): T {
-        val bytes = ByteArrayOutputStream().use { output ->
-            ObjectOutputStream(output).use { it.writeObject(value) }
-            output.toByteArray()
-        }
-        return ByteArrayInputStream(bytes).use { input ->
-            ObjectInputStream(input).use { it.readObject() as T }
-        }
+    @Suppress("DEPRECATION")
+    private fun <T: Any> javaSerializeRoundTrip(value: T): T {
+        val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
+        return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
+    }
+
+    private fun <T: Any> forySerializeRoundTrip(value: T): T {
+        val bytes = BinarySerializers.FastFory.serialize(value)
+        return BinarySerializers.FastFory.deserialize<T>(bytes).shouldNotBeNull()
     }
 }

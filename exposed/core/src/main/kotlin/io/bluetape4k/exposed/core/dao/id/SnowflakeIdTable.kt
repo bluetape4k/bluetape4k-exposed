@@ -23,8 +23,7 @@ open class SnowflakeIdTable(
     columnName: String = "id",
 ): IdTable<Long>(name) {
 
-    final override val id: Column<EntityID<Long>> =
-        long(columnName).snowflakeGenerated().entityId()
+    final override val id: Column<EntityID<Long>> = long(columnName).snowflakeGenerated().entityId()
 
     /** 테이블 기본키 정의입니다. */
     final override val primaryKey = PrimaryKey(id)
