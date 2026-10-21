@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.RepeatedTest
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -11,7 +11,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.Types
-import java.util.Properties
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 @EnabledIfSystemProperty(named = "clickhouseV2Integration", matches = "true")
 class ClickHouseRowBinaryIntegrationTest: AbstractClickHouseTest() {
+
+    companion object: KLogging()
 
     @RepeatedTest(3)
     fun `enabled profile uses writer and unsupported SQL uses disabled profile`() {
@@ -194,7 +196,7 @@ class ClickHouseRowBinaryIntegrationTest: AbstractClickHouseTest() {
                         if (closed.compareAndSet(false, true)) connectionCloseCount++
                         invokeJdbc(delegate, method, args)
                     }
-                    else -> invokeJdbc(delegate, method, args)
+                    else    -> invokeJdbc(delegate, method, args)
                 }
             } as Connection
             return connection
@@ -208,7 +210,7 @@ class ClickHouseRowBinaryIntegrationTest: AbstractClickHouseTest() {
                 arrayOf(PreparedStatement::class.java),
             ) { _, method, args ->
                 when (method.name) {
-                    "addBatch" -> {
+                    "addBatch"   -> {
                         val result = invokeJdbc(delegate, method, args)
                         pendingRows++
                         result
@@ -222,11 +224,11 @@ class ClickHouseRowBinaryIntegrationTest: AbstractClickHouseTest() {
                         pendingRows = 0
                         invokeJdbc(delegate, method, args)
                     }
-                    "close" -> {
+                    "close"      -> {
                         if (closed.compareAndSet(false, true)) statementCloseCount++
                         invokeJdbc(delegate, method, args)
                     }
-                    else -> invokeJdbc(delegate, method, args)
+                    else         -> invokeJdbc(delegate, method, args)
                 }
             } as PreparedStatement
         }

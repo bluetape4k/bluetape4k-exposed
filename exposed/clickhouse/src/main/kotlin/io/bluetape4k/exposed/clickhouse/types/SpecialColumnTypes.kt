@@ -14,8 +14,7 @@ import java.net.Inet6Address
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.sql.Clob
-import java.util.LinkedHashMap
-import java.util.UUID
+import java.util.*
 
 private const val JSON_CONTROL_CHARACTER_LIMIT = 0x20
 private const val JSON_UNICODE_ESCAPE_LENGTH = 4
@@ -60,17 +59,17 @@ class ClickHouseJsonCodecColumnType<T: Any>(val codec: ClickHouseJsonCodec<T>): 
 }
 
 private fun clickHouseJsonText(value: Any?): String = when (value) {
-    is String -> value
-    is ByteArray -> value.toString(StandardCharsets.UTF_8)
-    is Clob -> withClickHouseCleanup({ value.free() }) { value.getSubString(1, value.length().toInt()) }
+    is String      -> value
+    is ByteArray   -> value.toString(StandardCharsets.UTF_8)
+    is Clob        -> withClickHouseCleanup({ value.free() }) { value.getSubString(1, value.length().toInt()) }
     is java.sql.Array -> clickHouseJsonText(clickHouseArrayElements(value))
-    is Map<*, *> -> clickHouseJsonObject(value)
+    is Map<*, *>   -> clickHouseJsonObject(value)
     is Iterable<*> -> clickHouseJsonArray(value)
-    is Array<*> -> clickHouseJsonArray(value.asList())
-    is Number -> clickHouseJsonNumber(value)
-    is Boolean -> value.toString()
-    null -> "null"
-    else -> error("Unexpected ClickHouse JSON value: $value (${value::class.simpleName})")
+    is Array<*>    -> clickHouseJsonArray(value.asList())
+    is Number      -> clickHouseJsonNumber(value)
+    is Boolean     -> value.toString()
+    null           -> "null"
+    else           -> error("Unexpected ClickHouse JSON value: $value (${value::class.simpleName})")
 }
 
 private fun clickHouseJsonObject(value: Map<*, *>): String =
@@ -92,7 +91,7 @@ private fun clickHouseJsonString(value: String): String = buildString(value.leng
     append('"')
     value.forEach { character ->
         when (character) {
-            '"' -> append("\\\"")
+            '"'  -> append("\\\"")
             '\\' -> append("\\\\")
             '\b' -> append("\\b")
             '\u000C' -> append("\\f")
@@ -128,24 +127,24 @@ private class ClickHouseJsonParser(private val input: String) {
     private fun parseValue() {
         require(index < input.length) { "Malformed JSON at offset $index" }
         when (input[index]) {
-            '{' -> parseObject()
-            '[' -> parseArray()
-            '"' -> parseString()
-            't' -> {
+            '{'  -> parseObject()
+            '['  -> parseArray()
+            '"'  -> parseString()
+            't'  -> {
                 val literal = "true"
                 require(input.regionMatches(index, literal, 0, literal.length)) {
                     "Malformed JSON at offset $index"
                 }
                 index += literal.length
             }
-            'f' -> {
+            'f'  -> {
                 val literal = "false"
                 require(input.regionMatches(index, literal, 0, literal.length)) {
                     "Malformed JSON at offset $index"
                 }
                 index += literal.length
             }
-            'n' -> {
+            'n'  -> {
                 val literal = "null"
                 require(input.regionMatches(index, literal, 0, literal.length)) {
                     "Malformed JSON at offset $index"
@@ -192,12 +191,12 @@ private class ClickHouseJsonParser(private val input: String) {
         require(consume('"')) { "Expected '\"' at offset $index" }
         while (index < input.length) {
             when (val character = input[index++]) {
-                '"' -> return
+                '"'  -> return
                 '\\' -> {
                     require(index < input.length) { "Incomplete JSON escape at offset $index" }
                     when (input[index++]) {
                         '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> Unit
-                        'u' -> repeat(JSON_UNICODE_ESCAPE_LENGTH) {
+                        'u'  -> repeat(JSON_UNICODE_ESCAPE_LENGTH) {
                             val digit = input.getOrNull(index)
                             require(digit != null && (digit.isDigit() || digit.lowercaseChar() in 'a'..'f')) {
                                 "Invalid JSON unicode escape at offset $index"
@@ -266,7 +265,7 @@ class ClickHouseUuidColumnType: ColumnType<UUID>() {
     override fun sqlType(): String = "UUID"
 
     override fun valueFromDB(value: Any): UUID = when (value) {
-        is UUID -> value
+        is UUID   -> value
         is String -> runCatching { UUID.fromString(value) }
             .getOrElse { error("Malformed ClickHouse UUID: $value") }
         is ByteArray -> {
@@ -277,7 +276,7 @@ class ClickHouseUuidColumnType: ColumnType<UUID>() {
             val least = value.copyOfRange(8, 16).fold(0L) { result, byte -> (result shl 8) or (byte.toLong() and 0xff) }
             UUID(most, least)
         }
-        else -> error("Unexpected ClickHouse UUID value: $value (${value::class.simpleName})")
+        else      -> error("Unexpected ClickHouse UUID value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: UUID): Any = value
@@ -300,8 +299,8 @@ class ClickHouseIpv4ColumnType: ColumnType<Inet4Address>() {
             require(value is Inet4Address) { "Expected IPv4 address but got ${value.hostAddress}" }
             value
         }
-        is String -> parseIpv4(value)
-        else -> error("Unexpected ClickHouse IPv4 value: $value (${value::class.simpleName})")
+        is String      -> parseIpv4(value)
+        else           -> error("Unexpected ClickHouse IPv4 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Inet4Address): Any = value.hostAddress
@@ -324,8 +323,8 @@ class ClickHouseIpv6ColumnType: ColumnType<Inet6Address>() {
             require(value is Inet6Address) { "Expected IPv6 address but got ${value.hostAddress}" }
             value
         }
-        is String -> parseIpv6(value)
-        else -> error("Unexpected ClickHouse IPv6 value: $value (${value::class.simpleName})")
+        is String      -> parseIpv6(value)
+        else           -> error("Unexpected ClickHouse IPv6 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: Inet6Address): Any = value.hostAddress
@@ -379,7 +378,7 @@ class ClickHouseDecimalColumnType(val precision: Int, val scale: Int): ColumnTyp
             is BigDecimal -> value
             is Number, is String -> runCatching { BigDecimal(value.toString()) }
                 .getOrElse { error("Malformed ClickHouse Decimal value: $value") }
-            else -> error("Unexpected ClickHouse Decimal value: $value (${value::class.simpleName})")
+            else          -> error("Unexpected ClickHouse Decimal value: $value (${value::class.simpleName})")
         }
         val scaled = decimal.setScale(scale, RoundingMode.UNNECESSARY)
         require(scaled.precision() <= precision) {
@@ -397,9 +396,9 @@ class ClickHouseEnumColumnType<E: Enum<E>>(values: Map<E, String>): ColumnType<E
     init {
         require(this.values.isNotEmpty()) { "ClickHouse Enum requires at least one value" }
         this.values.values.forEach { name ->
-        require(name.isNotBlank() && name.none(Char::isISOControl)) {
-            "Enum wire name must be non-blank and printable"
-        }
+            require(name.isNotBlank() && name.none(Char::isISOControl)) {
+                "Enum wire name must be non-blank and printable"
+            }
         }
         require(this.values.values.toSet().size == this.values.size) { "ClickHouse Enum wire names must be unique" }
         byWireName = this.values.entries.associate { it.value to it.key }
@@ -421,7 +420,7 @@ class ClickHouseEnumColumnType<E: Enum<E>>(values: Map<E, String>): ColumnType<E
             require(values.containsKey(typed)) { "Enum value $typed is not registered in ClickHouse Enum" }
             typed
         }
-        else -> throw IllegalArgumentException("ClickHouse Enum ordinal values are unsupported: $value")
+        else      -> throw IllegalArgumentException("ClickHouse Enum ordinal values are unsupported: $value")
     }
 
     override fun notNullValueToDB(value: E): Any = values[value]

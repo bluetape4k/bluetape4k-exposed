@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.support.requireBeTrue
+import io.bluetape4k.support.requireNotEmpty
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.Table
@@ -7,8 +10,7 @@ import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import java.sql.ResultSet
 import java.sql.Struct
-import java.util.Collections
-import java.util.LinkedHashMap
+import java.util.*
 
 /** `Array(Nullable(T))` — 배열 컨테이너는 필수이고 원소가 nullable입니다. */
 class ClickHouseArrayNullableElementsColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<List<T?>>() {
@@ -42,9 +44,7 @@ class ClickHouseNullableArrayColumnType<T: Any>(
 ): ColumnType<List<T>>(nullableContainer) {
 
     init {
-        require(nullableContainer) {
-            "Use ClickHouseArrayNullableElementsColumnType for Array(Nullable(T))"
-        }
+        nullableContainer.requireBeTrue { "Use ClickHouseArrayNullableElementsColumnType for Array(Nullable(T))" }
     }
 
     override fun sqlType(): String = if (nullableContainer) {
@@ -88,6 +88,7 @@ class ClickHouseMapColumnType<K: Any, V>(
 
     override fun sqlType(): String = "Map(${keyType.sqlType()}, ${valueType.sqlType()})"
 
+    @Suppress("UNCHECKED_CAST")
     override fun valueFromDB(value: Any): Map<K, V> {
         val entries = when (value) {
             is Map<*, *> -> value.entries.map { it.key to it.value }
@@ -95,11 +96,10 @@ class ClickHouseMapColumnType<K: Any, V>(
         }
         val result = LinkedHashMap<K, V>(entries.size)
         entries.forEach { (rawKey, rawValue) ->
-            require(rawKey != null) { "ClickHouse Map key cannot be null" }
-            @Suppress("UNCHECKED_CAST")
+            rawKey.requireNotNull { "ClickHouse Map key cannot be null" }
             val key = clickHouseValueFromDB(keyType, rawKey) as K
+
             require(!result.containsKey(key)) { "Duplicate ClickHouse Map key: $key" }
-            @Suppress("UNCHECKED_CAST")
             val mappedValue = clickHouseValueFromDB(valueType, rawValue) as V
             result[key] = mappedValue
         }
@@ -110,7 +110,7 @@ class ClickHouseMapColumnType<K: Any, V>(
         val result = LinkedHashMap<Any, Any?>(value.size)
         value.forEach { (key, mappedValue) ->
             val dbKey = clickHouseValueToDB(keyType, key)
-            require(dbKey != null) { "ClickHouse Map key cannot be null" }
+            dbKey.requireNotNull { "ClickHouse Map key cannot be null" }
             require(!result.containsKey(dbKey)) { "Duplicate ClickHouse Map key: $dbKey" }
             result[dbKey] = clickHouseValueToDB(valueType, mappedValue)
         }
@@ -127,12 +127,12 @@ class ClickHouseMapColumnType<K: Any, V>(
 
 private fun clickHouseMapEntry(value: Any?): Pair<Any?, Any?> = when (value) {
     is Pair<*, *> -> value.first to value.second
-    is Struct -> {
+    is Struct   -> {
         val attributes = value.attributes.toList()
         require(attributes.size == 2) { "ClickHouse Map entry must contain exactly two values" }
         attributes[0] to attributes[1]
     }
-    is List<*> -> {
+    is List<*>  -> {
         require(value.size == 2) { "ClickHouse Map entry must contain exactly two values" }
         value[0] to value[1]
     }
@@ -140,7 +140,7 @@ private fun clickHouseMapEntry(value: Any?): Pair<Any?, Any?> = when (value) {
         require(value.size == 2) { "ClickHouse Map entry must contain exactly two values" }
         value[0] to value[1]
     }
-    else -> error("Unexpected ClickHouse Map entry: $value")
+    else        -> error("Unexpected ClickHouse Map entry: $value")
 }
 
 /** ClickHouse `Tuple(...)` 컬럼 타입. Kotlin에서는 고정 arity list로 표현합니다. */
@@ -148,7 +148,7 @@ class ClickHouseTupleColumnType(elements: List<ColumnType<*>>): ColumnType<List<
     val elements: List<ColumnType<*>> = elements.toList()
 
     init {
-        require(this.elements.isNotEmpty()) { "ClickHouse Tuple must contain at least one element" }
+        this.elements.requireNotEmpty { "ClickHouse Tuple must contain at least one element" }
     }
 
     override fun sqlType(): String = "Tuple(${elements.joinToString(", ") { it.sqlType() }})"
@@ -157,7 +157,7 @@ class ClickHouseTupleColumnType(elements: List<ColumnType<*>>): ColumnType<List<
         val values = when (value) {
             is com.clickhouse.data.Tuple -> value.values.toList()
             is Struct -> value.attributes.toList()
-            else -> clickHouseElements(value)
+            else      -> clickHouseElements(value)
         }
         require(values.size == elements.size) {
             "ClickHouse Tuple arity mismatch: expected ${elements.size}, got ${values.size}"
@@ -190,12 +190,14 @@ class ClickHouseNestedColumnType(elements: List<ColumnType<*>>): ColumnType<List
     val elements: List<ColumnType<*>> = elements.toList()
 
     init {
-        require(this.elements.isNotEmpty()) { "ClickHouse Nested must contain at least one element" }
+        this.elements.requireNotEmpty { "ClickHouse Nested must contain at least one element" }
     }
 
-    override fun sqlType(): String = "Nested(${elements.mapIndexed { index, element ->
-        "field_$index ${element.sqlType()}"
-    }.joinToString(", ")})"
+    override fun sqlType(): String = "Nested(${
+        elements.mapIndexed { index, element ->
+            "field_$index ${element.sqlType()}"
+        }.joinToString(", ")
+    })"
 
     override fun valueFromDB(value: Any): List<List<Any?>> {
         val rows = when (value) {
@@ -233,11 +235,13 @@ class ClickHouseNestedColumnType(elements: List<ColumnType<*>>): ColumnType<List
 }
 
 private fun clickHouseNestedRowsFromColumns(columns: Map<*, *>): List<List<Any?>> {
-    require(columns.isNotEmpty()) { "ClickHouse Nested requires at least one column" }
+    columns.requireNotEmpty { "ClickHouse Nested requires at least one column" }
     val values = columns.values.map { column -> clickHouseElements(column as Any) }
     val rowCount = values.first().size
+
     require(values.all { it.size == rowCount }) { "ClickHouse Nested columns must have equal lengths" }
-    return (0 until rowCount).map { rowIndex -> values.map { it[rowIndex] } }
+
+    return List(rowCount) { rowIndex -> values.map { it[rowIndex] } }
 }
 
 /** `Map(K,V)` 컬럼을 등록합니다. */

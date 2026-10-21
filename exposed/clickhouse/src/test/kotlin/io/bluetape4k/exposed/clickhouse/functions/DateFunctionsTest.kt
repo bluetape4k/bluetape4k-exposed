@@ -64,7 +64,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
 
         val result = transaction(db) {
             exec("SELECT toYYYYMM(created_at) FROM events WHERE event_id = 1") { rs ->
-                rs.next(); rs.getInt(1)
+                rs.next()
+                rs.getInt(1)
             }
         }
         result shouldBeEqualTo 202403
@@ -83,7 +84,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
 
         val result = transaction(db) {
             exec("SELECT toYYYYMMDD(created_at) FROM events WHERE event_id = 2") { rs ->
-                rs.next(); rs.getInt(1)
+                rs.next()
+                rs.getInt(1)
             }
         }
         result shouldBeEqualTo 20240620
@@ -93,7 +95,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
     fun `dateDiff 두 날짜의 일 차이 계산`() {
         val result = transaction(db) {
             exec("SELECT dateDiff('day', toDate('2024-01-01'), toDate('2024-01-10'))") { rs ->
-                rs.next(); rs.getLong(1)
+                rs.next()
+                rs.getLong(1)
             }
         }
         result shouldBeEqualTo 9L
@@ -103,7 +106,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
     fun `dateDiff 두 날짜의 월 차이 계산`() {
         val result = transaction(db) {
             exec("SELECT dateDiff('month', toDate('2024-01-01'), toDate('2024-04-01'))") { rs ->
-                rs.next(); rs.getLong(1)
+                rs.next()
+                rs.getLong(1)
             }
         }
         result shouldBeEqualTo 3L
@@ -113,7 +117,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
     fun `dateDiff 시간 차이 계산`() {
         val result = transaction(db) {
             exec("SELECT dateDiff('hour', toDateTime('2024-01-01 00:00:00'), toDateTime('2024-01-01 06:00:00'))") { rs ->
-                rs.next(); rs.getLong(1)
+                rs.next()
+                rs.getLong(1)
             }
         }
         result shouldBeEqualTo 6L
@@ -133,7 +138,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
         // 2024-03-15T01:07:30Z -> 300초(5분) 단위로 버림 -> 2024-03-15T01:05:00Z
         val result = transaction(db) {
             exec("SELECT toStartOfInterval(created_at, INTERVAL 300 SECOND) FROM events WHERE event_id = 3") { rs ->
-                rs.next(); rs.getString(1)
+                rs.next()
+                rs.getString(1)
             }
         }
         result.shouldNotBeNull()
@@ -153,7 +159,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
 
         val result = transaction(db) {
             exec("SELECT toYYYYMM(created_at) FROM events WHERE event_id = 4") { rs ->
-                rs.next(); rs.getInt(1)
+                rs.next()
+                rs.getInt(1)
             }
         }
         result shouldBeEqualTo 202411
@@ -172,7 +179,8 @@ class DateFunctionsTest: AbstractClickHouseTest() {
 
         val result = transaction(db) {
             exec("SELECT toYYYYMMDD(created_at) FROM events WHERE event_id = 5") { rs ->
-                rs.next(); rs.getInt(1)
+                rs.next()
+                rs.getInt(1)
             }
         }
         result shouldBeEqualTo 20251231

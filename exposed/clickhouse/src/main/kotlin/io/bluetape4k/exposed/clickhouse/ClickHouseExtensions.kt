@@ -4,13 +4,15 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.Query
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 /**
  * 호출 시 조회 결과를 트랜잭션 안에서 모두 수집하여 반환합니다.
@@ -31,7 +33,10 @@ suspend fun <T> queryList(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     block: JdbcTransaction.() -> Iterable<T>,
-): List<T> = suspendTransaction(db, dispatcher) { block().toList() }
+): List<T> =
+    withSuspendTransaction(db, dispatcher) {
+        block().toList()
+    }
 
 /**
  * 수집할 때마다 독립된 트랜잭션에서 조회하고 행을 하나씩 변환하여 전달합니다.
@@ -98,7 +103,7 @@ fun <T> queryFlow(
  * @param dispatcher 블로킹 JDBC 호출을 실행할 디스패처 (기본값: [Dispatchers.IO])
  * @param block 트랜잭션 블록
  */
-suspend fun <T> suspendTransaction(
+suspend fun <T> withSuspendTransaction(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     block: JdbcTransaction.() -> T,
@@ -106,7 +111,7 @@ suspend fun <T> suspendTransaction(
     // Dispatchers.IO(또는 Virtual Thread 전용 디스패처)로 컨텍스트를 전환합니다.
 ): T = withContext(dispatcher) {
     try {
-        transaction(db) { block() }
+        suspendTransaction(db) { block() }
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
@@ -152,10 +157,10 @@ fun <T> queryFlow(
     // ResultSet 수명(트랜잭션 경계 내)과 Flow emit 경계가 겹치지 않도록
     // 트랜잭션 내에서 List로 완전히 materialize한 뒤 방출합니다.
     val items = try {
-        withContext(dispatcher) { transaction(db) { block().toList() } }
+        withSuspendTransaction(db, dispatcher) { block().toList() }
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
     }
-    items.forEach { emit(it) }
+    emitAll(items.asFlow())
 }

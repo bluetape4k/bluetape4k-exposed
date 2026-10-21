@@ -1,6 +1,6 @@
 package io.bluetape4k.exposed.clickhouse
 
-import java.util.Properties
+import java.util.*
 
 internal fun Properties.applyRawProperties(options: ClickHouseV2Options) {
     options.immutableRawProperties.forEach { (key, value) ->
@@ -32,15 +32,19 @@ internal fun Properties.applyTypedProperties(options: ClickHouseV2Options) {
         options.sessionTimezone?.let { "use_time_zone" to it.id },
         property("query_id", options.queryId),
         property("clickhouse_setting_log_comment", options.logComment),
-    ).forEach { (key, value) -> setProperty(key, value) }
-    options.immutableServerSettings.forEach { (key, value) ->
-        setProperty("clickhouse_setting_$key", value)
+    ).forEach { (key, value) ->
+        setProperty(key, value)
     }
+    options.immutableServerSettings
+        .forEach { (key, value) ->
+            setProperty("clickhouse_setting_$key", value)
+        }
     options.proxy?.let(::applyProxy)
     options.tls?.let(::applyTls)
-    options.immutableCustomHeaders.forEach { (name, value) ->
-        setProperty("http_header_${normalizeHeaderName(name)}", value)
-    }
+    options.immutableCustomHeaders
+        .forEach { (name, value) ->
+            setProperty("http_header_${normalizeHeaderName(name)}", value)
+        }
 }
 
 private fun property(key: String, value: Any?): Pair<String, String>? = value?.let { key to it.toString() }
@@ -51,7 +55,9 @@ private fun Properties.applyProxy(proxyOptions: ClickHouseV2ProxyOptions) {
         "proxy_host" to proxyOptions.host,
         "proxy_port" to proxyOptions.port.toString(),
         proxyOptions.user?.let { "proxy_user" to it },
-    ).forEach { (key, value) -> setProperty(key, value) }
+    ).forEach { (key, value) ->
+        setProperty(key, value)
+    }
     proxyOptions.password?.let { withSecret("proxy_password", it) }
 }
 
@@ -66,7 +72,9 @@ private fun Properties.applyTls(tlsOptions: ClickHouseV2TlsOptions) {
         tlsOptions.sslCertReference?.let { "sslcert" to it },
         property("ssl_authentication", tlsOptions.sslAuthentication),
         tlsOptions.sslSocketSni?.let { "ssl_socket_sni" to it },
-    ).forEach { (key, value) -> setProperty(key, value) }
+    ).forEach { (key, value) ->
+        setProperty(key, value)
+    }
     tlsOptions.keyStorePassword?.let { withSecret("key_store_password", it) }
 }
 

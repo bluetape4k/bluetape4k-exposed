@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.clickhouse.dialect
 
+import io.bluetape4k.ToStringBuilder
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnDiff
-import org.jetbrains.exposed.v1.core.InternalApi
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 
 /**
@@ -47,6 +47,16 @@ class ClickHouseDialect: PostgreSQLDialect(name = dialectName) {
     // ClickHouse는 DDL을 autocommit으로 실행해야 함
     override val requiresAutoCommitOnCreateDrop: Boolean = true
 
-    @OptIn(InternalApi::class)
     override fun modifyColumn(column: Column<*>, columnDiff: ColumnDiff): List<String> = emptyList()
+
+    override fun toString(): String =
+        ToStringBuilder(this)
+            .add("name", name)
+            .add("supportsColumnTypeChange", supportsColumnTypeChange)
+            .add("supportsMultipleGeneratedKeys", supportsMultipleGeneratedKeys)
+            .add("supportsCreateSequence", supportsCreateSequence)
+            .add("supportsTernaryAffectedRowValues", supportsTernaryAffectedRowValues)
+            .add("supportsSetDefaultReferenceOption", supportsSetDefaultReferenceOption)
+            .add("requiresAutoCommitOnCreateDrop", requiresAutoCommitOnCreateDrop)
+            .toString()
 }

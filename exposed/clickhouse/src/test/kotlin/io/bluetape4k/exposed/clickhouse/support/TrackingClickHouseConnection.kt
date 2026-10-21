@@ -33,7 +33,7 @@ internal class TrackingClickHouseConnection(
 ): Connection by delegate {
 
     companion object: KLogging()
-    
+
     private val closed = AtomicBoolean()
     private val markers = mutableMapOf<String, String>()
 

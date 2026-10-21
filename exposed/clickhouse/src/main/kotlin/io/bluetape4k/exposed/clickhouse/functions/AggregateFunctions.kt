@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse.functions
 
+import io.bluetape4k.support.requireInRange
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.DoubleColumnType
 import org.jetbrains.exposed.v1.core.Expression
@@ -115,7 +116,7 @@ class Quantile<T>(
     val expr: Expression<T>,
 ): Function<Double>(DoubleColumnType()) {
     init {
-        require(level in 0.0..1.0) { "quantile level must be in 0.0..1.0, got: $level" }
+        level.requireInRange(0.0, 1.0, "level")
     }
 
     override fun toQueryBuilder(queryBuilder: QueryBuilder) {

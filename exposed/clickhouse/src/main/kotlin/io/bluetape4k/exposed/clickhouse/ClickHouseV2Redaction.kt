@@ -41,7 +41,7 @@ internal object ClickHouseV2Redaction {
     fun sanitizeMessage(message: String?): String = message
         ?.replace(credentialPattern, "$1=REDACTED")
         ?.replace(genericSecretPattern, "$1=REDACTED")
-            ?: "ClickHouse JDBC V2 connection failed"
+        ?: "ClickHouse JDBC V2 connection failed"
 
     private fun redactUserInfo(url: String): String {
         val schemeSeparator = url.indexOf("://")
@@ -76,7 +76,7 @@ internal object ClickHouseV2Redaction {
 
     private val credentialPattern = Regex(
         "(?i)(password|access_token|bearer_token|proxy_password|" +
-            "key_store_password|ssl_key|sslrootcert|sslcert)=[^&\\s]+",
+                "key_store_password|ssl_key|sslrootcert|sslcert)=[^&\\s]+",
     )
     private val genericSecretPattern = Regex("(?i)(token|secret|credential)[:=]\\s*[^,;\\s]+")
 }

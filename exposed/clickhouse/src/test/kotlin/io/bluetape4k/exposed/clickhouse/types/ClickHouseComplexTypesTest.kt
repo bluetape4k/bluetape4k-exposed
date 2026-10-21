@@ -1,15 +1,17 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldContainIgnoringCase
+import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
+import io.bluetape4k.support.equalsIgnoreCase
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.sql.JDBCType
@@ -39,6 +41,7 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
         }
     }
 
+    @Suppress("UnusedReceiverParameter")
     private fun JdbcTransaction.insertFixture() {
         ClickHouseComplexTypesTable.insert { row ->
             row[ClickHouseComplexTypesTable.id] = ClickHouseTypeBoundaryFixture.seed
@@ -57,10 +60,11 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
         }
     }
 
+    @Suppress("UnusedReceiverParameter")
     private fun JdbcTransaction.assertRoundTrip() {
         val selected = ClickHouseComplexTypesTable.selectAll().single()
         selected[ClickHouseComplexTypesTable.nullableArray] shouldBeEqualTo
-            ClickHouseTypeBoundaryFixture.nullableArrayValue
+                ClickHouseTypeBoundaryFixture.nullableArrayValue
         selected[ClickHouseComplexTypesTable.nestedArray] shouldBeEqualTo ClickHouseTypeBoundaryFixture.nestedArrayValue
         selected[ClickHouseComplexTypesTable.labels] shouldBeEqualTo ClickHouseTypeBoundaryFixture.labelsValue
         selected[ClickHouseComplexTypesTable.tuple] shouldBeEqualTo ClickHouseTypeBoundaryFixture.tupleValue
@@ -81,12 +85,14 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
             val precision: Int,
             val scale: Int,
         )
+
         val metadata = exec(
             "SELECT nullable_array, nested_array, labels, tuple, json, uuid, ipv4, ipv6, amount, counter, state " +
-                "FROM ${ClickHouseTypeBoundaryFixture.tableName} LIMIT 0",
+                    "FROM ${ClickHouseTypeBoundaryFixture.tableName} LIMIT 0",
         ) { resultSet ->
             val meta = resultSet.metaData
-            (1..meta.columnCount).map { index ->
+            List(meta.columnCount) {
+                val index = it + 1
                 ColumnMetadata(
                     name = meta.getColumnName(index),
                     typeName = meta.getColumnTypeName(index),
@@ -98,24 +104,28 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
             }
         } ?: emptyList()
 
-        assertTrue(metadata.isNotEmpty())
+        metadata.shouldNotBeEmpty()
         metadata.forEach { column ->
-            assertTrue(column.typeName.isNotBlank())
-            assertTrue(column.jdbcType != JDBCType.NULL.vendorTypeNumber)
-            assertTrue(column.nullability == ResultSetMetaData.columnNoNulls)
+            column.typeName.shouldNotBeEmpty()
+            column.jdbcType shouldNotBeEqualTo JDBCType.NULL.vendorTypeNumber
+            column.nullability shouldBeEqualTo ResultSetMetaData.columnNoNulls
         }
         val decimalMetadata = metadata.first { it.name.equals("amount", ignoreCase = true) }
-        assertTrue(decimalMetadata.typeName.contains("Decimal", ignoreCase = true))
-        assertEquals(18, decimalMetadata.precision)
-        assertEquals(4, decimalMetadata.scale)
-        assertTrue(metadata.first { it.name.equals("nested_array", ignoreCase = true) }
-            .typeName.contains("Array", ignoreCase = true))
-        assertTrue(metadata.first { it.name.equals("labels", ignoreCase = true) }
-            .typeName.contains("Map", ignoreCase = true))
-        assertTrue(metadata.first { it.name.equals("tuple", ignoreCase = true) }
-            .typeName.contains("Tuple", ignoreCase = true))
-        assertTrue(metadata.first { it.name.equals("state", ignoreCase = true) }
-            .typeName.contains("Enum", ignoreCase = true))
+        decimalMetadata.typeName shouldContainIgnoringCase "Decimal"
+        decimalMetadata.precision shouldBeEqualTo 18
+        decimalMetadata.scale shouldBeEqualTo 4
+
+        metadata.first { it.name.equalsIgnoreCase("nested_array") }
+            .typeName shouldContainIgnoringCase "Array"
+
+        metadata.first { it.name.equalsIgnoreCase("labels") }
+            .typeName shouldContainIgnoringCase "Map"
+
+        metadata.first { it.name.equalsIgnoreCase("tuple") }
+            .typeName shouldContainIgnoringCase "Tuple"
+
+        metadata.first { it.name.equalsIgnoreCase("state") }
+            .typeName shouldContainIgnoringCase "Enum"
     }
 
     private fun JdbcTransaction.assertJdbcBoundaries() {
@@ -123,22 +133,22 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
         exec("SELECT nullable_array, tuple FROM ${ClickHouseTypeBoundaryFixture.tableName} LIMIT 1") { resultSet ->
             check(resultSet.next())
             resultSet.getArray(1)?.free()
-            (resultSet.getObject(2) as? java.sql.Struct)?.getAttributes()
+            (resultSet.getObject(2) as? java.sql.Struct)?.attributes
         }
 
         // Verify the JDBC factory boundary independently from Exposed's row mapper.
         val arrayType = ClickHouseArrayNullableElementsColumnType(ClickHouseStringColumnType())
         val jdbcConnection = connection.connection as java.sql.Connection
+
         jdbcConnection.createArrayOf("Nullable(String)", arrayOf<Any?>("alpha", null, "omega"))
             .let { jdbcArray ->
                 try {
-                    assertEquals(
-                        listOf("alpha", null, "omega"),
-                        arrayType.valueFromDB(jdbcArray),
-                    )
+                    arrayType.valueFromDB(jdbcArray) shouldBeEqualTo listOf("alpha", null, "omega")
                 } finally {
                     // valueFromDB owns and frees a JDBC Array returned by the driver.
-                    assertThrows(java.sql.SQLException::class.java) { jdbcArray.getArray() }
+                    assertFailsWith<java.sql.SQLException> {
+                        jdbcArray.array
+                    }
                 }
             }
 
@@ -146,10 +156,8 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
             check(resultSet.next())
             val jdbcArray = resultSet.getArray(1)
             try {
-                assertEquals(
-                    ClickHouseTypeBoundaryFixture.nullableArrayValue,
-                    arrayType.valueFromDB(jdbcArray.getResultSet()),
-                )
+                arrayType.valueFromDB(jdbcArray.resultSet) shouldBeEqualTo ClickHouseTypeBoundaryFixture.nullableArrayValue
+
             } finally {
                 jdbcArray.free()
             }
@@ -158,8 +166,8 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
         val tupleType = ClickHouseTupleColumnType(
             listOf(ClickHouseStringColumnType(), ClickHouseInt32ColumnType()),
         )
-        jdbcConnection.createStruct("Tuple(String, Int32)", arrayOf<Any?>("kr", 7)).let { jdbcStruct ->
-            assertEquals(ClickHouseTypeBoundaryFixture.tupleValue, tupleType.valueFromDB(jdbcStruct))
-        }
+
+        val struct = jdbcConnection.createStruct("Tuple(String, Int32)", arrayOf<Any?>("kr", 7))
+        tupleType.valueFromDB(struct) shouldBeEqualTo ClickHouseTypeBoundaryFixture.tupleValue
     }
 }

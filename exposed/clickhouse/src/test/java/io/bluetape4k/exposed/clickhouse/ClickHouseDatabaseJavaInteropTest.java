@@ -1,46 +1,47 @@
 package io.bluetape4k.exposed.clickhouse;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jetbrains.exposed.v1.jdbc.Database;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import org.jetbrains.exposed.v1.jdbc.Database;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClickHouseDatabaseJavaInteropTest {
 
     @Test
     void optionsOverloadsRemainDiscoverableFromJava() throws NoSuchMethodException {
         Method hostOverload = ClickHouseDatabase.class.getMethod(
-            "connect",
-            String.class,
-            int.class,
-            String.class,
-            String.class,
-            String.class,
-            ClickHouseV2Options.class
+                "connect",
+                String.class,
+                int.class,
+                String.class,
+                String.class,
+                String.class,
+                ClickHouseV2Options.class
         );
         Method jdbcUrlOverload = ClickHouseDatabase.class.getMethod(
-            "connect",
-            String.class,
-            String.class,
-            String.class,
-            ClickHouseV2Options.class
+                "connect",
+                String.class,
+                String.class,
+                String.class,
+                ClickHouseV2Options.class
         );
         Method existingHostOverload = ClickHouseDatabase.class.getMethod(
-            "connect",
-            String.class,
-            int.class,
-            String.class,
-            String.class,
-            String.class
+                "connect",
+                String.class,
+                int.class,
+                String.class,
+                String.class,
+                String.class
         );
         Method existingJdbcUrlOverload = ClickHouseDatabase.class.getMethod(
-            "connect",
-            String.class,
-            String.class,
-            String.class
+                "connect",
+                String.class,
+                String.class,
+                String.class
         );
 
         assertEquals(Database.class, hostOverload.getReturnType());
