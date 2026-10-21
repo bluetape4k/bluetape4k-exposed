@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.druid
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
@@ -20,6 +22,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
  */
 @EnabledIfEnvironmentVariable(named = "EXPOSED_DRUID_SMOKE", matches = "true")
 class DruidJdbcSmokeTest {
+
+    companion object: KLogging()
 
     private val options = DruidConnectionOptions(
         avaticaEndpoint = System.getenv("EXPOSED_DRUID_AVATICA_ENDPOINT")
@@ -49,6 +53,8 @@ class DruidJdbcSmokeTest {
         val rows = DruidJdbc.query("SELECT * FROM \"$datasource\" LIMIT 1", options) { rs ->
             rs.getObject(1)
         }
+            .onEach { log.debug { "row=$it" } }
+
         rows.shouldNotBeEmpty()
     }
 }

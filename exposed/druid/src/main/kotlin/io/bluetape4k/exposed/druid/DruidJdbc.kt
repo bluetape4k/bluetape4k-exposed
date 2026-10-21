@@ -16,7 +16,7 @@ import java.sql.ResultSet
 object DruidJdbc: KLogging() {
 
     /** Apache Calcite Avatica remote JDBC driver class name입니다. */
-    val DRIVER = "org.apache.calcite.avatica.remote.Driver"
+    const val DRIVER = "org.apache.calcite.avatica.remote.Driver"
 
     init {
         Class.forName(DRIVER)
@@ -40,7 +40,7 @@ object DruidJdbc: KLogging() {
     ): List<T> {
         requireQueryOnlySql(sql)
         log.debug { "Executing query: $sql" }
-        
+
         return connection(options).use { conn ->
             conn.createStatement().use { statement ->
                 statement.executeQuery(sql).use { rs ->
