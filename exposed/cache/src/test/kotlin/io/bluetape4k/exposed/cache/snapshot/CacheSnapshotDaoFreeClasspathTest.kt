@@ -1,8 +1,9 @@
 package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.Serializable
@@ -13,21 +14,24 @@ class CacheSnapshotDaoFreeClasspathTest {
 
     @Test
     fun `direct Entity validator is safe when Exposed DAO is absent`() {
-        val classpathEntries = System.getProperty("java.class.path")
-            .split(File.pathSeparator)
+        val classpathEntries = System.getProperty("java.class.path").split(File.pathSeparator)
         val daoEntries = classpathEntries.filter(::isExposedDaoEntry)
         val isolatedClasspath = classpathEntries
             .filterNot(::isExposedDaoEntry)
             .joinToString(File.pathSeparator)
 
-        daoEntries.isNotEmpty().shouldBeTrue()
+        daoEntries.forEach { log.debug { "daoEntry: $it" } }
+        daoEntries.shouldNotBeEmpty()
 
         val process = ProcessBuilder(
             Path.of(System.getProperty("java.home"), "bin", "java").toString(),
             "-cp",
             isolatedClasspath,
             CacheSnapshotDaoFreeClasspathTest::class.java.name,
-        ).redirectErrorStream(true).start()
+        )
+            .redirectErrorStream(true)
+            .start()
+
         try {
             val completed = process.waitFor(CHILD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             if (!completed) {

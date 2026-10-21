@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 
 /**
@@ -86,14 +88,11 @@ fun <V: Serializable> maximumEstimatedPayloadBytes(
     sizer: SnapshotValueSizer<V>,
     limit: Long,
 ): CacheSnapshotValueValidator<V> {
-    require(limit > 0L) { "limit[$limit] must be positive." }
+    limit.requirePositiveNumber("limit")
 
     return CacheSnapshotValueValidator { value ->
         val estimate = sizer.estimatedRetainedBytes(value)
-        require(estimate >= 0L) { "estimatedRetainedBytes[$estimate] must not be negative." }
-        require(estimate <= limit) {
-            "estimatedRetainedBytes[$estimate] must not exceed limit[$limit]."
-        }
+        estimate.requireInRange(0L, limit, "estimatedRetainedBytes")
     }
 }
 

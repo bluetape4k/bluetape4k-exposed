@@ -3,6 +3,7 @@
 
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Key
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.statements.StatementInterceptor
@@ -533,18 +534,25 @@ private fun drain(
 
     val localMutations = pending.mutations.filter { it.participant is LocalParticipant<*, *> }
     if (localMutations.isEmpty()) return
-    val deadline = pending.localDrainBudget?.let { MonotonicSnapshotCacheDeadline(it, nanoTimeSource) }
+
+    val deadline = pending.localDrainBudget
+        ?.let { MonotonicSnapshotCacheDeadline(it, nanoTimeSource) }
         ?: NeverExpiringSnapshotCacheDeadline
+
     drainLocalPhase(
         mutations = localMutations.filterIsInstance<LocalInvalidationMutation<*, *>>(),
         operation = SnapshotCacheOperation.INVALIDATE,
         deadline = deadline,
-    ) { participant, batch -> participant.applyInvalidations(batch, deadline) }
+    ) { participant, batch ->
+        participant.applyInvalidations(batch, deadline)
+    }
     drainLocalPhase(
         mutations = localMutations.filterIsInstance<LocalPutMutation<*, *>>(),
         operation = SnapshotCacheOperation.PUT,
         deadline = deadline,
-    ) { participant, batch -> participant.applySnapshots(batch, deadline) }
+    ) { participant, batch ->
+        participant.applySnapshots(batch, deadline)
+    }
 }
 
 private fun drainAsyncInvalidations(
@@ -602,19 +610,22 @@ internal fun observeAsyncCompletion(
         }
 
         try {
-            val reconciled = requireNotNull(report) { "Asynchronous invalidation completed without a report." }
+            val reconciled = report.requireNotNull { "Asynchronous invalidation completed without a report." }
                 .requireReconciled(SnapshotCacheOperation.INVALIDATE, expectedCount)
-            reconciled.results.filter { it.outcome != SnapshotCacheOutcome.SUCCESS }.forEach { result ->
-                failureBuffer.recordFailure(
-                    SnapshotCacheFailure(
-                        storeId,
-                        result.operation,
-                        result.outcome,
-                        result.affectedCount,
-                        result.exceptionType,
-                    ),
-                )
-            }
+
+            reconciled.results
+                .filter { it.outcome != SnapshotCacheOutcome.SUCCESS }
+                .forEach { result ->
+                    failureBuffer.recordFailure(
+                        SnapshotCacheFailure(
+                            storeId,
+                            result.operation,
+                            result.outcome,
+                            result.affectedCount,
+                            result.exceptionType,
+                        ),
+                    )
+                }
         } catch (exception: Exception) {
             failureBuffer.recordFailure(
                 failureFromException(
@@ -652,18 +663,22 @@ private inline fun drainLocalPhase(
             return@forEach
         }
         try {
-            val report = apply(participant, group.mutations).requireReconciled(operation, group.mutations.size)
-            report.results.filter { it.outcome != SnapshotCacheOutcome.SUCCESS }.forEach { result ->
-                participant.failureBuffer.recordFailure(
-                    SnapshotCacheFailure(
-                        participant.storeId,
-                        result.operation,
-                        result.outcome,
-                        result.affectedCount,
-                        result.exceptionType,
-                    ),
-                )
-            }
+            val report = apply(participant, group.mutations)
+                .requireReconciled(operation, group.mutations.size)
+
+            report.results
+                .filter { it.outcome != SnapshotCacheOutcome.SUCCESS }
+                .forEach { result ->
+                    participant.failureBuffer.recordFailure(
+                        SnapshotCacheFailure(
+                            participant.storeId,
+                            result.operation,
+                            result.outcome,
+                            result.affectedCount,
+                            result.exceptionType,
+                        ),
+                    )
+                }
         } catch (exception: Exception) {
             participant.failureBuffer.recordFailure(
                 failureFromException(participant.storeId, operation, group.mutations.size, exception),

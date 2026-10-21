@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 class SnapshotCacheFailureTest {
@@ -36,7 +37,9 @@ class SnapshotCacheFailureTest {
     @Test
     fun `observer exception consumes current failure and stops caller-thread drain`() {
         val buffer = snapshotCacheFailureBuffer(capacity = 3)
-        repeat(3) { buffer.recordFailure(failure(SnapshotCacheOutcome.FAILED, it + 1)) }
+        repeat(3) {
+            buffer.recordFailure(failure(SnapshotCacheOutcome.FAILED, it + 1))
+        }
         var observed = 0
 
         val result = buffer.drainTo(
@@ -45,7 +48,7 @@ class SnapshotCacheFailureTest {
                 if (observed == 2) throw ObserverFailure("secret-observer-message")
             },
         )
-
+        log.debug { "result=$result" }
         result shouldBeEqualTo SnapshotCacheDrainResult(
             deliveredCount = 1,
             observerFailedCount = 1,
@@ -65,6 +68,7 @@ class SnapshotCacheFailureTest {
             buffer.drainTo({ throw ObserverFatalError() })
         }
 
+        log.debug { "buffer=$buffer" }
         buffer.size shouldBeEqualTo 0
         buffer.observerFailureCount shouldBeEqualTo 0L
     }
@@ -86,6 +90,7 @@ class SnapshotCacheFailureTest {
         rendered shouldContain MaliciousFailure::class.java.name
         rendered shouldNotContain malicious.message.orEmpty()
         rendered shouldNotContain "password=secret"
+
         failure.javaClass.declaredFields
             .map { it.type }
             .any(Throwable::class.java::isAssignableFrom).shouldBeFalse()
@@ -105,6 +110,8 @@ class SnapshotCacheFailureTest {
         val drained = buffer.drainTo({ throw CustomException() })
 
         failure.exceptionType shouldBeEqualTo CustomException::class.java.name
+
+        log.debug { "drained=$drained" }
         drained.observerExceptionType shouldBeEqualTo CustomException::class.java.name
         drained.observerFailedCount shouldBeEqualTo 1
     }

@@ -1,7 +1,9 @@
 package io.bluetape4k.exposed.cache.internal
 
+import io.bluetape4k.ToStringBuilder
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.atomicfu.locks.withLock
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
@@ -22,10 +24,10 @@ const val INITIAL_FLUSH_RETRY_BACKOFF_MILLIS: Long = 10L
 const val MAX_FLUSH_RETRY_BACKOFF_MILLIS: Long = 1_000L
 
 fun flushRetryBackoffMillis(failedAttempt: Int): Long {
-    require(failedAttempt >= 1) { "failedAttempt must be positive" }
+    failedAttempt.requirePositiveNumber("failedAttempt")
+
     val exponent = (failedAttempt - 1).coerceAtMost(7)
-    return (INITIAL_FLUSH_RETRY_BACKOFF_MILLIS * (1L shl exponent))
-        .coerceAtMost(MAX_FLUSH_RETRY_BACKOFF_MILLIS)
+    return (INITIAL_FLUSH_RETRY_BACKOFF_MILLIS * (1L shl exponent)).coerceAtMost(MAX_FLUSH_RETRY_BACKOFF_MILLIS)
 }
 
 /** Worker가 flush를 포기한 이유를 안정적인 상태 값으로 표현합니다. */
@@ -57,9 +59,9 @@ data class CoordinatorSnapshot(
  * Token은 coordinator가 발급한 인스턴스 identity로만 유효합니다. adapter가
  * 임의의 token을 만들거나 이미 정산된 token을 재사용하면 거부됩니다.
  */
-class AdmissionToken internal constructor(
-    internal val owner: WriteBehindCoordinator,
-    internal val sequence: Long,
+data class AdmissionToken(
+    val owner: WriteBehindCoordinator,
+    val sequence: Long,
 )
 
 /** close owner만 completion을 발행할 수 있도록 하는 내부 lease입니다. */
@@ -115,10 +117,16 @@ class WriteBehindCoordinator(
     private val nextToken = AtomicLong(0L)
     private val tokens = IdentityHashMap<AdmissionToken, TokenState>()
 
-    private var lifecycle = if (mode == CacheWriteMode.WRITE_BEHIND) Lifecycle.OPEN else Lifecycle.STOPPED
+    private var lifecycle = when (mode) {
+        CacheWriteMode.WRITE_BEHIND -> Lifecycle.OPEN
+        else                        -> Lifecycle.STOPPED
+    }
     private var queueDepth = 0
-    private var workerState =
-        if (mode == CacheWriteMode.WRITE_BEHIND) CacheWorkerState.IDLE else CacheWorkerState.NOT_APPLICABLE
+    private var workerState = when (mode) {
+        CacheWriteMode.WRITE_BEHIND -> CacheWorkerState.IDLE
+        else                        -> CacheWorkerState.NOT_APPLICABLE
+    }
+
     private var failureKind: WriteBehindFailureKind? = null
     private var activeOwner: CloseLease.Owner? = null
     private var completionPublished = false
@@ -308,5 +316,11 @@ class WriteBehindCoordinator(
     /** adapter 테스트/진단용 terminal 판정입니다. */
     internal fun isTerminal(): Boolean = lock.withLock {
         lifecycle == Lifecycle.STOPPED || lifecycle == Lifecycle.FAILED
+    }
+
+    override fun toString(): String {
+        return ToStringBuilder(this)
+            .add("mode", mode)
+            .toString()
     }
 }
