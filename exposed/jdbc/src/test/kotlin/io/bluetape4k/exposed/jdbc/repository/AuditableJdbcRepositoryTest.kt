@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -161,6 +162,10 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
 
             val actor1 = findById(id1)
             val actor2 = findById(id2)
+
+            log.debug { "actor1=actor1" }
+            log.debug { "actor2=actor2" }
+
             actor1.updatedAt.shouldNotBeNull()
             actor2.updatedAt.shouldNotBeNull()
             actor1.updatedBy shouldBeEqualTo "batch"
@@ -183,6 +188,8 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
             }
 
             val actor = findById(id)
+
+            log.debug { "actor=$actor" }
             actor.updatedAt.shouldBeNull()
             actor.updatedBy.shouldBeNull()
         }
@@ -207,6 +214,8 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
             }
 
             val actor = findById(id)
+
+            log.debug { "actor=$actor" }
             actor.updatedBy.shouldNotBeNull()
             actor.updatedBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             actor.updatedAt.shouldNotBeNull()
@@ -231,6 +240,7 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
                 }
             }
             val afterUser1 = findById(id)
+            log.debug { "afterUser1=$afterUser1" }
             afterUser1.updatedBy shouldBeEqualTo "user1"
 
             UserContext.withUser("user2") {
@@ -239,6 +249,7 @@ class AuditableJdbcRepositoryTest: AbstractExposedTest() {
                 }
             }
             val afterUser2 = findById(id)
+            log.debug { "afterUser2=$afterUser2" }
             afterUser2.updatedBy shouldBeEqualTo "user2"
         }
     }

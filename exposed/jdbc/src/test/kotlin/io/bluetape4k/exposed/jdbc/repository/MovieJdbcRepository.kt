@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.jdbc.repository
 
-import io.bluetape4k.exposed.domain.model.ActorRecord
 import io.bluetape4k.exposed.domain.model.MovieActorCountRecord
 import io.bluetape4k.exposed.domain.model.MovieRecord
 import io.bluetape4k.exposed.domain.model.MovieSchema.ActorInMovieTable
@@ -42,21 +41,13 @@ class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
 
         params.forEach { (key, value) ->
             when (key) {
-                MovieTable::id.name          -> {
-                    value?.run { query.andWhere { MovieTable.id eq value.toLong() } }
+                MovieTable::id.name           -> value?.run { query.andWhere { MovieTable.id eq value.toLong() } }
+                MovieTable::name.name         -> value?.run { query.andWhere { MovieTable.name eq value } }
+                MovieTable::producerName.name -> value?.run {
+                    query.andWhere { MovieTable.producerName eq value }
                 }
-                MovieTable::name.name        -> {
-                    value?.run { query.andWhere { MovieTable.name eq value } }
-                }
-                MovieTable::producerName.name -> {
-                    value?.run {
-                        query.andWhere { MovieTable.producerName eq value }
-                    }
-                }
-                MovieTable::releaseDate.name -> {
-                    value?.run {
-                        query.andWhere { MovieTable.releaseDate eq LocalDate.parse(value) }
-                    }
+                MovieTable::releaseDate.name  -> value?.run {
+                    query.andWhere { MovieTable.releaseDate eq LocalDate.parse(value) }
                 }
             }
         }
@@ -95,7 +86,6 @@ class MovieJdbcRepository: LongJdbcRepository<MovieRecord> {
 
         val join = table.innerJoin(ActorInMovieTable).innerJoin(ActorTable)
         val movies = mutableMapOf<Long, MovieWithActorRecord>()
-        val actors = mutableListOf<ActorRecord>()
 
         join.select(
             MovieTable.id,

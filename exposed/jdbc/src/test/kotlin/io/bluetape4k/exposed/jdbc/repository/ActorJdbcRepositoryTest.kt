@@ -125,7 +125,9 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
                 ActorRecord(
                     firstName = "Bulk-$index",
                     lastName = "SaveAll",
-                    birthday = LocalDate.of(1980, 1, 1).plusDays((index % 365).toLong()).toString(),
+                    birthday = LocalDate.of(1980, 1, 1)
+                        .plusDays((index % 365).toLong())
+                        .toString(),
                 )
             }
 
@@ -133,6 +135,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
             ids shouldHaveSize actors.size
             ids.all { it > 0L }.shouldBeTrue()
+
             repository.count() shouldBeEqualTo currentCount + actors.size
             repository.findAllByIds(ids) shouldHaveSize actors.size
         }
@@ -148,7 +151,9 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
                 ActorRecord(
                     firstName = "Bulk10k-$index",
                     lastName = "SaveAll",
-                    birthday = LocalDate.of(1980, 1, 1).plusDays((index % 365).toLong()).toString(),
+                    birthday = LocalDate.of(1980, 1, 1)
+                        .plusDays((index % 365).toLong())
+                        .toString(),
                 )
             }
 
@@ -156,6 +161,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
             ids shouldHaveSize actors.size
             ids.toSet() shouldHaveSize actors.size
+
             repository.count() shouldBeEqualTo currentCount + actors.size
         }
     }
@@ -244,11 +250,11 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             exists2.shouldBeTrue()
 
             val op = repository.table.firstName eq "Not-Exists"
-            val query =
-                repository.table
-                    .select(repository.table.id)
-                    .where(op)
-                    .limit(1)
+            val query = repository.table
+                .select(repository.table.id)
+                .where(op)
+                .limit(1)
+
             val exists3 = repository.exists(query)
             log.debug { "exists3: $exists3" }
             exists3.shouldBeFalse()
@@ -276,6 +282,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
             // Delete savedActor
             repository.delete(savedActor) shouldBeEqualTo 1
+
             // Already deleted
             repository.delete(savedActor) shouldBeEqualTo 0
         }
@@ -360,15 +367,12 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `find with filters`(testDB: TestDB) {
         withMovieAndActors(testDB) {
-            val actors =
-                repository.findWithFilters(
-                    { repository.table.firstName eq "Johnny" },
-                    { repository.table.lastName eq "Depp" }
-                )
+            val actors = repository.findWithFilters(
+                { repository.table.firstName eq "Johnny" },
+                { repository.table.lastName eq "Depp" }
+            ).onEach { log.debug { "actor: $it" } }
+
             actors shouldHaveSize 1
-            actors.forEach {
-                log.debug { "actor: $it" }
-            }
         }
     }
 
@@ -376,11 +380,11 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findBy 는 findWithFilters 와 동일하게 동작한다`(testDB: TestDB) {
         withMovieAndActors(testDB) {
-            val actors =
-                repository.findBy(
-                    { repository.table.firstName eq "Johnny" },
-                    { repository.table.lastName eq "Depp" }
-                )
+            val actors = repository.findBy(
+                { repository.table.firstName eq "Johnny" },
+                { repository.table.lastName eq "Depp" }
+            ).onEach { log.debug { "actor: $it" } }
+
             actors shouldHaveSize 1
             actors.single().lastName shouldBeEqualTo "Depp"
         }
@@ -417,12 +421,11 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }
 
-            val inserted =
-                repository.batchInsert(entities) { actor ->
-                    this[repository.table.firstName] = actor.firstName
-                    this[repository.table.lastName] = actor.lastName
-                    actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
-                }
+            val inserted = repository.batchInsert(entities) { actor ->
+                this[repository.table.firstName] = actor.firstName
+                this[repository.table.lastName] = actor.lastName
+                actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
+            }
 
             inserted shouldHaveSize batchCount
             inserted.all { it.id > 0L }.shouldBeTrue()
@@ -436,12 +439,11 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }.asSequence()
 
-            val inserted =
-                repository.batchInsert(entities) { actor ->
-                    this[repository.table.firstName] = actor.firstName
-                    this[repository.table.lastName] = actor.lastName
-                    actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
-                }
+            val inserted = repository.batchInsert(entities) { actor ->
+                this[repository.table.firstName] = actor.firstName
+                this[repository.table.lastName] = actor.lastName
+                actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
+            }
 
             inserted shouldHaveSize batchCount
             inserted.all { it.id > 0L }.shouldBeTrue()
@@ -455,23 +457,21 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }
 
-            val inserted =
-                repository.batchInsert(entities) { actor ->
-                    this[repository.table.firstName] = actor.firstName
-                    this[repository.table.lastName] = actor.lastName
-                    actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
-                }
+            val inserted = repository.batchInsert(entities) { actor ->
+                this[repository.table.firstName] = actor.firstName
+                this[repository.table.lastName] = actor.lastName
+                actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
+            }
 
             inserted shouldHaveSize batchCount
             inserted.all { it.id > 0L }.shouldBeTrue()
 
             // Update all inserted actors
-            val updated =
-                repository.batchUpsert(inserted) { actor ->
-                    this[repository.table.id] = actor.id
-                    this[repository.table.firstName] = actor.firstName + " Updated"
-                    this[repository.table.lastName] = actor.firstName + " Updated"
-                }
+            val updated = repository.batchUpsert(inserted) { actor ->
+                this[repository.table.id] = actor.id
+                this[repository.table.firstName] = actor.firstName + " Updated"
+                this[repository.table.lastName] = actor.firstName + " Updated"
+            }
 
             updated shouldHaveSize batchCount
             updated.all { it.firstName.endsWith(" Updated") }.shouldBeTrue()
@@ -486,23 +486,21 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val batchCount = 10
             val entities = List(batchCount) { newActorRecord() }.asSequence()
 
-            val inserted =
-                repository.batchInsert(entities) { actor ->
-                    this[repository.table.firstName] = actor.firstName
-                    this[repository.table.lastName] = actor.lastName
-                    actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
-                }
+            val inserted = repository.batchInsert(entities) { actor ->
+                this[repository.table.firstName] = actor.firstName
+                this[repository.table.lastName] = actor.lastName
+                actor.birthday?.let { this[repository.table.birthday] = LocalDate.parse(it) }
+            }
 
             inserted shouldHaveSize batchCount
             inserted.all { it.id > 0L }.shouldBeTrue()
 
             // Update all inserted actors
-            val updated =
-                repository.batchUpsert(inserted.asSequence()) { actor ->
-                    this[repository.table.id] = actor.id
-                    this[repository.table.firstName] = actor.firstName + " Updated"
-                    this[repository.table.lastName] = actor.firstName + " Updated"
-                }
+            val updated = repository.batchUpsert(inserted.asSequence()) { actor ->
+                this[repository.table.id] = actor.id
+                this[repository.table.firstName] = actor.firstName + " Updated"
+                this[repository.table.lastName] = actor.firstName + " Updated"
+            }
 
             updated shouldHaveSize batchCount
             updated.all { it.firstName.endsWith(" Updated") }.shouldBeTrue()
@@ -531,11 +529,10 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val savedActor = repository.save(actor)
             savedActor.id.shouldNotBeNull()
 
-            val updatedCount =
-                repository.updateById(savedActor.id) {
-                    it[repository.table.firstName] = "Updated"
-                    it[repository.table.lastName] = "Updated"
-                }
+            val updatedCount = repository.updateById(savedActor.id) {
+                it[repository.table.firstName] = "Updated"
+                it[repository.table.lastName] = "Updated"
+            }
             updatedCount shouldBeEqualTo 1
 
             val updatedActor = repository.findById(savedActor.id)
@@ -587,8 +584,8 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val before = repository.findAll { repository.table.firstName eq "Johnny" }
             before.shouldNotBeEmpty()
 
-            val updatedCount =
-                repository.updateAll({ repository.table.firstName eq "Johnny" }) {
+            val updatedCount = repository
+                .updateAll({ repository.table.firstName eq "Johnny" }) {
                     it[repository.table.firstName] = "John"
                 }
             updatedCount shouldBeEqualTo before.size
@@ -628,13 +625,15 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
             val totalCount = repository.count()
 
             val page0 = repository.findPage(pageNumber = 0, pageSize = 2)
+            log.debug { "page0=$page0" }
             page0.content shouldHaveSize 2
             page0.pageNumber shouldBeEqualTo 0
             page0.pageSize shouldBeEqualTo 2
             page0.totalCount shouldBeEqualTo totalCount
 
             val page1 = repository.findPage(pageNumber = 1, pageSize = 2)
-            page1.content.isNotEmpty().shouldBeTrue()
+            log.debug { "page1=$page1" }
+            page1.content.shouldNotBeEmpty()
             page1.pageNumber shouldBeEqualTo 1
         }
     }
@@ -693,6 +692,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
             // 마지막 페이지 (pageNumber=1, 0-based) 검증
             val lastPage = repository.findPage(pageNumber = 1, pageSize = pageSize)
+            log.debug { "lastPage=$lastPage" }
             lastPage.content shouldHaveSize pageSize
             lastPage.pageNumber shouldBeEqualTo 1
             lastPage.totalCount shouldBeEqualTo totalInserted.toLong()
@@ -701,6 +701,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
 
             // 초과 페이지(pageNumber=2)는 빈 content 반환
             val overPage = repository.findPage(pageNumber = 2, pageSize = pageSize)
+            log.debug { "overPage=$overPage" }
             overPage.content.shouldBeEmpty()
         }
     }
@@ -716,6 +717,7 @@ class ActorJdbcRepositoryTest: AbstractExposedTest() {
         withMovieAndActors(testDB) {
             // 기존 배우를 모두 삭제하고 정확히 3개만 삽입
             repository.deleteAll()
+
             val pageSize = 3
             repeat(pageSize) {
                 repository.save(newActorRecord())

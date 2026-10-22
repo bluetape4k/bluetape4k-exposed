@@ -16,6 +16,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
+import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -129,6 +130,7 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
 
             // DESC 정렬: id가 큰 순서. offset=1이면 두 번째부터, limit=2이면 2개
             val result = repo.findAll(limit = 2, offset = 1L, sortOrder = SortOrder.DESC)
+                .onEach { log.debug { "record=$it" } }
             result shouldHaveSize 2
         }
     }
@@ -151,8 +153,10 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
                 { EdgeCaseTable.name eq "Alice" },
                 { EdgeCaseTable.isActive eq true },
             )
+                .onEach { log.debug { "record=$it" } }
+            
             result shouldHaveSize 1
-            result.first().name shouldBeEqualTo "Alice"
+            result.single().name shouldBeEqualTo "Alice"
         }
     }
 
@@ -170,11 +174,12 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "adult1", age = 25))
             repo.save(EdgeCaseRecord(name = "adult2", age = 35))
 
-            val predicate: () -> org.jetbrains.exposed.v1.core.Op<Boolean> = { EdgeCaseTable.age greater 18 }
+            val predicate: () -> Op<Boolean> = { EdgeCaseTable.age greater 18 }
             val result = repo.findBy(predicate)
+                .onEach { log.debug { "record=$it" } }
 
             result shouldHaveSize 2
-            result.map { it.name } shouldContainAll listOf("adult1", "adult2")
+            result.map { it.name } shouldBeEqualTo listOf("adult1", "adult2")
         }
     }
 
@@ -193,6 +198,8 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "person-c", age = 30))
 
             val result = repo.findByField(EdgeCaseTable.age, 25)
+                .onEach { log.debug { "record=$it" } }
+            
             result shouldHaveSize 2
             result.map { it.age }.all { it == 25 }.shouldBeTrue()
         }
@@ -230,6 +237,8 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
             repo.save(EdgeCaseRecord(name = "batch-4", age = 40))
 
             val result = repo.findAllByIds(listOf(r1.id, r2.id))
+                .onEach { log.debug { "record=$it" } }
+            
             result shouldHaveSize 2
             result.map { it.name } shouldContainAll listOf("batch-1", "batch-2")
         }
@@ -245,6 +254,8 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
     fun `findPage 는 totalCount 0 시 빈 페이지 반환`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
             val page = repo.findPage(pageNumber = 0, pageSize = 10)
+
+            log.debug { "page=$page" }
             page.content.shouldBeEmpty()
             page.totalCount shouldBeEqualTo 0L
             page.totalPages shouldBeEqualTo 0
@@ -261,11 +272,13 @@ class JdbcRepositoryReadEdgeCaseTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findPage 는 마지막 페이지 경계 검증`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
-            (1..5).forEach { i ->
+            repeat(5) { i ->
                 repo.save(EdgeCaseRecord(name = "page-item-$i", age = i))
             }
 
             val page = repo.findPage(pageNumber = 1, pageSize = 3)
+
+            log.debug { "page=$page" }
             page.content shouldHaveSize 2
             page.totalCount shouldBeEqualTo 5L
             page.totalPages shouldBeEqualTo 2

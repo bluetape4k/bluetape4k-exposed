@@ -10,10 +10,13 @@ dependencies {
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(bt4k.exposed.java.time)
-    api(libs.kotlinx.coroutines.core)
 
     // DuckDB JDBC 드라이버
     api(bt4k.duckdb.jdbc)
+
+    // Coroutines
+    api(bt4k.bluetape4k.coroutines)
+    api(libs.kotlinx.coroutines.core)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(libs.kotlinx.coroutines.test)

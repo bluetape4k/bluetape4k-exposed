@@ -2,13 +2,17 @@ package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.collections.toList
 import io.bluetape4k.support.requireNull
+import io.bluetape4k.support.requireNullOrEmpty
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.ComparisonOp
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.FieldSet
+import org.jetbrains.exposed.v1.core.GreaterOp
 import org.jetbrains.exposed.v1.core.IntegerColumnType
+import org.jetbrains.exposed.v1.core.LessOp
 import org.jetbrains.exposed.v1.core.LongColumnType
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -63,8 +67,7 @@ fun Query.fetchBatchedResultFlow(
     // 사용 오류를 조기에 발견할 수 있도록 진입점에서 사전 검증합니다.
     limit.requireNull { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
 
-    // HINT: bluetape4k-core RequireSupport.kt 에 requireEmpty() 메소드 추가 필요
-    require(orderByExpressions.isEmpty()) {
+    orderByExpressions.requireNullOrEmpty {
         "A manual `ORDER BY` clause should not be set. By default, the auto-incrementing column will be used."
     }
     return SuspendedQuery(this@fetchBatchedResultFlow, where = where).fetchBatchResultFlow(batch, sortOrder)
@@ -103,23 +106,24 @@ open class SuspendedQuery(
         sortOrder: SortOrder = SortOrder.ASC,
     ): Flow<List<ResultRow>> {
         batchSize.requirePositiveNumber("batchSize")
+
         // WHY: fetchBatchResultFlow 는 내부에서 limit = batchSize 와 orderBy = cursorColumn 을 직접 설정합니다.
         // 외부에서 이미 limit/orderBy 를 지정하면 내부 설정과 충돌하여 페이징이 올바르게 동작하지 않습니다.
         limit.requireNull { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
+
         // require(limit == null) { "A manual `LIMIT` clause should not be set. By default, `batchSize` will be used." }
-        require(orderByExpressions.isEmpty()) {
+        orderByExpressions.requireNullOrEmpty {
             "A manual `ORDER BY` clause should not be set. By default, the auto-incrementing column will be used."
         }
 
         // snowflakeId 같은 Global Unique ID 도 지원하기 위해 첫 번째 선택 컬럼을 커서로 사용
-        val cursorColumn =
-            try {
-                set.fields.first { it is Column<*> } as Column<*>
-            } catch (_: NoSuchElementException) {
-                throw UnsupportedOperationException(
-                    "Batched select only works when the first selected expression is an Int/Long id column"
-                )
-            }
+        val cursorColumn: Column<*> = try {
+            set.fields.first { it is Column<*> } as Column<*>
+        } catch (_: NoSuchElementException) {
+            throw UnsupportedOperationException(
+                "Batched select only works when the first selected expression is an Int/Long id column"
+            )
+        }
         val columnType = cursorColumn.columnType
         require(
             columnType is IntegerColumnType ||
@@ -133,63 +137,38 @@ open class SuspendedQuery(
         val fetchInAscendingOrder =
             sortOrder in listOf(SortOrder.ASC, SortOrder.ASC_NULLS_FIRST, SortOrder.ASC_NULLS_LAST)
 
-        // HINT: 이 함수 어디인가 있는 것 같은데??? 아니라면 공용 함수로 만드는게 낫지 않나?
-        fun toLong(autoIncVal: Any): Long =
-            when (autoIncVal) {
-                is EntityID<*> -> toLong(autoIncVal.value)
-                is Int  -> autoIncVal.toLong()
-                is Long -> autoIncVal
-                else    -> throw IllegalArgumentException(
-                    "Batched select only supports Int/Long id but was ${autoIncVal::class.qualifiedName}"
-                )
-            }
+        fun toLong(autoIncVal: Any): Long = when (autoIncVal) {
+            is EntityID<*> -> toLong(autoIncVal.value)
+            is Int         -> autoIncVal.toLong()
+            is Long        -> autoIncVal
+            else           -> throw IllegalArgumentException(
+                "Batched select only supports Int/Long id but was ${autoIncVal::class.qualifiedName}"
+            )
+        }
 
+        val self: SuspendedQuery = this@SuspendedQuery
         return channelFlow {
             // limit/orderBy 변이를 flow 수집 시점으로 지연시켜
             // fetchBatchResultFlow() 호출 시점에는 원본 Query를 변경하지 않습니다.
-            val originalLimit = this@SuspendedQuery.limit
-            val originalOrderBy = this@SuspendedQuery.orderByExpressions.toList()
+            val originalLimit = self.limit
+            val originalOrderBy = self.orderByExpressions.toList()
             try {
-                this@SuspendedQuery.limit = batchSize
-                (this@SuspendedQuery.orderByExpressions as MutableList).add(cursorColumn to sortOrder)
-                var lastOffset = if (fetchInAscendingOrder) 0L else null
+                self.limit = batchSize
+                (self.orderByExpressions as MutableList).add(cursorColumn to sortOrder)
+                var lastOffset: Long? = if (fetchInAscendingOrder) 0L else null
+
                 while (true) {
                     val query =
-                        this@SuspendedQuery.copy().adjustWhere {
+                        self.copy().adjustWhere {
                             lastOffset?.let { lastOffset ->
-                                whereOp and
-                                        if (fetchInAscendingOrder) {
-                                            // HINT: private 함수로 빼자
-                                            when (cursorColumn.columnType) {
-                                                is EntityIDColumnType<*> -> {
-                                                    (cursorColumn as? Column<EntityID<Long>>)?.let {
-                                                        (it greater lastOffset)
-                                                    } ?: (cursorColumn as? Column<EntityID<Int>>)?.let {
-                                                        (it greater lastOffset.toInt())
-                                                    } ?: (cursorColumn greater lastOffset)
-                                                }
-                                                else                     -> {
-                                                    (cursorColumn greater lastOffset)
-                                                }
-                                            }
-                                        } else {
-                                            // HINT: private 함수로 빼자 
-                                            when (cursorColumn.columnType) {
-                                                is EntityIDColumnType<*> -> {
-                                                    (cursorColumn as? Column<EntityID<Long>>)?.let {
-                                                        (it less lastOffset)
-                                                    } ?: (cursorColumn as? Column<EntityID<Int>>)?.let {
-                                                        (it less lastOffset.toInt())
-                                                    } ?: (cursorColumn less lastOffset)
-                                                }
-                                                else                     -> {
-                                                    (cursorColumn less lastOffset)
-                                                }
-                                            }
-                                        }
+                                val greaterOp: ComparisonOp = when {
+                                    fetchInAscendingOrder -> ascendingOrder(cursorColumn, lastOffset)
+                                    else                  -> descendingOrder(cursorColumn, lastOffset)
+                                }
+                                whereOp and greaterOp
                             } ?: whereOp
                         }
-                    val results = query.iterator().toList()
+                    val results: List<ResultRow> = query.iterator().toList()
                     if (results.isNotEmpty()) {
                         send(results)
                     }
@@ -206,12 +185,38 @@ open class SuspendedQuery(
                     )
                 }
             } finally {
-                this@SuspendedQuery.limit = originalLimit
-                (this@SuspendedQuery.orderByExpressions as MutableList).apply {
+                self.limit = originalLimit
+                (self.orderByExpressions as MutableList).apply {
                     clear()
                     addAll(originalOrderBy)
                 }
             }
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun ascendingOrder(cursorColumn: Column<*>, lastOffset: Long): GreaterOp =
+        when (cursorColumn.columnType) {
+            is EntityIDColumnType<*> -> {
+                (cursorColumn as? Column<EntityID<Long>>)?.let {
+                    (it greater lastOffset)
+                } ?: (cursorColumn as? Column<EntityID<Int>>)?.let {
+                    (it greater lastOffset.toInt())
+                } ?: (cursorColumn greater lastOffset)
+            }
+            else                     -> cursorColumn greater lastOffset
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun descendingOrder(cursorColumn: Column<*>, lastOffset: Long): LessOp =
+        when (cursorColumn.columnType) {
+            is EntityIDColumnType<*> -> {
+                (cursorColumn as? Column<EntityID<Long>>)?.let {
+                    (it less lastOffset)
+                } ?: (cursorColumn as? Column<EntityID<Int>>)?.let {
+                    (it less lastOffset.toInt())
+                } ?: (cursorColumn less lastOffset)
+            }
+            else                     -> cursorColumn less lastOffset
+        }
 }

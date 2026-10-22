@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -201,6 +202,7 @@ class SoftDeletedJdbcRepositoryTest: AbstractExposedTest() {
             repository.softDeleteById(deletedId)
 
             val page = repository.findActivePage(0, 3)
+            log.debug { "page=$page" }
             page.content shouldHaveSize 3
             page.totalCount shouldBeEqualTo 5L
             page.totalPages shouldBeEqualTo 2

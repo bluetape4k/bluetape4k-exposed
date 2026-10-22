@@ -45,9 +45,7 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
             val params = mapOf("producerName" to "Johnny")
 
             val movies = repository.searchMovies(params).map { it.toMovieRecord() }
-            movies.forEach {
-                log.debug { "movie: $it" }
-            }
+                .onEach { log.debug { "movies: $it" } }
             movies shouldHaveSize 2
         }
     }
@@ -63,8 +61,7 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
             val savedMovie = repository.save(movie)
             savedMovie shouldBeEqualTo movie.copy(id = savedMovie.id)
 
-            val newCount = repository.count()
-            newCount shouldBeEqualTo currentCount + 1
+            repository.count() shouldBeEqualTo currentCount + 1
         }
     }
 
@@ -85,11 +82,9 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
     fun `get all movies and actors`(testDB: TestDB) {
         withMovieAndActors(testDB) {
             val movieWithActors = repository.getAllMoviesWithActors()
+                .onEach { log.debug { "record: $it" } }
 
             movieWithActors.shouldNotBeEmpty()
-            movieWithActors.forEach { movie ->
-                log.debug { "movie: ${movie.name}" }
-            }
         }
     }
 
@@ -113,11 +108,9 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
     fun `get movie and actor count`(testDB: TestDB) {
         withMovieAndActors(testDB) {
             val movieWithActors = repository.getMovieActorsCount()
+                .onEach { log.debug { "movie=${it.movieName}, actor count=${it.actorCount}" } }
 
             movieWithActors.shouldNotBeEmpty()
-            movieWithActors.forEach {
-                log.debug { "movie=${it.movieName}, actor count=${it.actorCount}" }
-            }
         }
     }
 
@@ -126,11 +119,9 @@ class MovieJdbcRepositoryTest: AbstractExposedTest() {
     fun `find movies with acting producers`(testDB: TestDB) {
         withMovieAndActors(testDB) {
             val results = repository.findMoviesWithActingProducers()
+                .onEach { log.debug { "movie=${it.movieName}, actor=${it.producerActorName}" } }
 
             results shouldHaveSize 1
-            results.forEach {
-                log.debug { "movie=${it.movieName}, actor=${it.producerActorName}" }
-            }
         }
     }
 

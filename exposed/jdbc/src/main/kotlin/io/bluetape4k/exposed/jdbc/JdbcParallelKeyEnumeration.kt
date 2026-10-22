@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.jdbc
 import io.bluetape4k.concurrent.virtualthread.VirtualFuture
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.bluetape4k.concurrent.virtualthread.virtualFuture
+import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.Op
@@ -73,9 +74,7 @@ data class JdbcParallelKeyEnumerationOptions<ID: Any>(
     val comparator: Comparator<in ID>? = null,
 ) {
     init {
-        require(maxConcurrency > 0) {
-            "maxConcurrency는 0보다 커야 합니다. maxConcurrency=$maxConcurrency"
-        }
+        maxConcurrency.requirePositiveNumber("maxConcurrency")
     }
 
     companion object {
@@ -145,13 +144,13 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
     val comparator = options.comparator ?: naturalComparator()
     validateRanges(ranges, comparator)
 
-    val database =
-        options.database
-            ?: TransactionManager.currentOrNull()?.db
-            ?: TransactionManager.defaultDatabase
-            ?: error("JDBC parallel key enumeration requires an explicit Database or a default database")
+    val database = options.database
+        ?: TransactionManager.currentOrNull()?.db
+        ?: TransactionManager.defaultDatabase
+        ?: error("JDBC parallel key enumeration requires an explicit Database or a default database")
+
     val executor = options.executor ?: VirtualThreadExecutor
-    require(!executor.isShutdown && !executor.isTerminated) {
+    check(!executor.isShutdown && !executor.isTerminated) {
         "ExecutorService is already shutdown."
     }
 
@@ -164,16 +163,15 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
             permits.acquire()
 
             try {
-                children +=
-                    submitJdbcEnumerationChild(
-                        executor = executor,
-                        db = database,
-                        transactionIsolation = options.transactionIsolation,
-                        readOnly = options.readOnly,
-                        permits = permits,
-                    ) { childHandle ->
-                        rangeReader(table, range, childHandle)
-                    }
+                children += submitJdbcEnumerationChild(
+                    executor = executor,
+                    db = database,
+                    transactionIsolation = options.transactionIsolation,
+                    readOnly = options.readOnly,
+                    permits = permits,
+                ) { childHandle ->
+                    rangeReader(table, range, childHandle)
+                }
             } catch (cause: Throwable) {
                 permits.release()
                 throw cause
@@ -250,13 +248,13 @@ private fun <T> submitJdbcEnumerationChild(
                     transactionIsolation = isolationLevel,
                     readOnly = readOnly,
                 ) {
-                    val connectionRegistration =
-                        handle.registerConnection(
-                            this.connection.connection as? Connection
-                                ?: error("JDBC enumeration requires a java.sql.Connection"),
-                        )
+                    val conn = this.connection.connection as? Connection
+                        ?: error("JDBC enumeration requires a java.sql.Connection")
+                    val connectionRegistration = handle.registerConnection(conn)
+
                     val interceptor = JdbcEnumerationStatementInterceptor(handle)
                     registerInterceptor(interceptor)
+
                     try {
                         statement(handle)
                     } finally {
@@ -431,14 +429,13 @@ private fun <ID: Any> IdTable<ID>.readParallelKeyRange(range: JdbcKeyRange<ID>):
     val rawIdColumn = (id.columnType as EntityIDColumnType<ID>).idColumn as Column<Comparable<Any>>
     val lower = range.lowerInclusive
     val upper = range.upperExclusive
-    val predicate: Op<Boolean> =
-        when {
-            lower != null && upper != null ->
-                (rawIdColumn greaterEq lower.asComparableKey()) and (rawIdColumn less upper.asComparableKey())
-            lower != null -> rawIdColumn greaterEq lower.asComparableKey()
-            upper != null -> rawIdColumn less upper.asComparableKey()
-            else          -> error("JdbcKeyRange must have a lowerInclusive or upperExclusive boundary")
-        }
+
+    val predicate: Op<Boolean> = when {
+        lower != null && upper != null -> (rawIdColumn greaterEq lower.asComparableKey()) and (rawIdColumn less upper.asComparableKey())
+        lower != null                  -> rawIdColumn greaterEq lower.asComparableKey()
+        upper != null                  -> rawIdColumn less upper.asComparableKey()
+        else                           -> error("JdbcKeyRange must have a lowerInclusive or upperExclusive boundary")
+    }
 
     return select(id)
         .where { predicate }
@@ -448,5 +445,4 @@ private fun <ID: Any> IdTable<ID>.readParallelKeyRange(range: JdbcKeyRange<ID>):
 
 @Suppress("UNCHECKED_CAST")
 private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
-    this as? Comparable<Any>
-        ?: error("PK range boundary requires Comparable")
+    this as? Comparable<Any> ?: error("PK range boundary requires Comparable")

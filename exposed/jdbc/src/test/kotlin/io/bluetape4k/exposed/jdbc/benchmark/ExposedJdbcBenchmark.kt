@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.jdbc.benchmark
 
-import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.PostgreSQLServer
+import io.bluetape4k.testcontainers.database.getDataSource
 import io.bluetape4k.utils.ShutdownQueue
 import kotlinx.benchmark.Benchmark
 import kotlinx.benchmark.BenchmarkMode
@@ -93,11 +93,7 @@ class ExposedJdbcBenchmark {
             ShutdownQueue.register(this)
         }
 
-        val config = HikariConfig().apply {
-            jdbcUrl = postgres.jdbcUrl
-            username = postgres.username
-            password = postgres.password
-            driverClassName = PostgreSQLServer.DRIVER_CLASS_NAME
+        dataSource = postgres.getDataSource {
             maximumPoolSize = 24
             minimumIdle = 8
             connectionTimeout = 30_000
@@ -105,7 +101,6 @@ class ExposedJdbcBenchmark {
             maxLifetime = 1_800_000
             poolName = "exposed-jdbc-bench"
         }
-        dataSource = HikariDataSource(config)
         database = Database.connect(dataSource)
 
         // 스키마 초기화 + 시드
@@ -120,7 +115,7 @@ class ExposedJdbcBenchmark {
             }
             val statuses = arrayOf("NEW", "PAID", "SHIPPED", "CANCELLED")
             val orders = (1..SEED_USERS).flatMap { uid ->
-                (1..SEED_ORDERS_PER_USER).map { seq ->
+                List(SEED_ORDERS_PER_USER) { seq ->
                     Triple(uid.toLong(), (seq * 10 + uid % 7), statuses[(uid + seq) % statuses.size])
                 }
             }
@@ -148,7 +143,7 @@ class ExposedJdbcBenchmark {
      */
     @Benchmark
     @Threads(14)
-    open fun singleInsert(): Long {
+    fun singleInsert(): Long {
         val rnd = ThreadLocalRandom.current()
         return transaction(database) {
             val id = BenchmarkUsers.insert {

@@ -1,14 +1,15 @@
 package io.bluetape4k.exposed.jdbc
 
-import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDBConfig
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.testcontainers.database.CockroachServer
+import io.bluetape4k.testcontainers.database.getDataSource
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import java.io.PrintWriter
@@ -23,7 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.logging.Logger
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * CockroachDB의 PostgreSQL-wire `PGConnection.cancelQuery()` 경로를 별도 runtime row로
@@ -44,16 +47,12 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
         assumeCockroach()
 
         val cockroach = CockroachServer.Launcher.cockroach
-        val hikari = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = cockroach.url
-            username = cockroach.username ?: CockroachServer.USERNAME
-            password = cockroach.password ?: CockroachServer.PASSWORD
-            driverClassName = CockroachServer.DRIVER_CLASS_NAME
+        val hikari = cockroach.getDataSource {
             maximumPoolSize = 2
             minimumIdle = 0
             connectionTimeout = HIKARI_TIMEOUT_MS
             poolName = "issue-707-cockroach-cancel"
-        })
+        }
         val tracker = TrackingDataSource(hikari)
         val target = tracker.connection
         val observer = tracker.connection
@@ -77,7 +76,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
             try {
                 awaitCockroachSleep(observer)
                 invokePostgreSqlConnectionMethod(target, "cancelQuery")
-                future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                future.get(LATCH_TIMEOUT_SECONDS.seconds)
 
                 check(elapsedNanos.get() < TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)) {
                     "PGConnection.cancelQuery did not finish the CockroachDB query promptly"
@@ -96,7 +95,7 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
                 runCatching { invokePostgreSqlConnectionMethod(target, "cancelQuery") }
                 runCatching { target.close() }
                 runCatching { observer.close() }
-                runCatching { future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+                runCatching { future.get(LATCH_TIMEOUT_SECONDS.seconds) }
             }
         } finally {
             runCatching { statement.close() }
@@ -179,9 +178,9 @@ class CockroachDbJdbcCancellationTest: AbstractExposedTest() {
 
         override fun getLoginTimeout(): Int = delegate.loginTimeout
 
-        override fun getParentLogger() = delegate.parentLogger
+        override fun getParentLogger(): Logger? = delegate.parentLogger
 
-        override fun <T: Any?> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
+        override fun <T> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
 
         override fun isWrapperFor(iface: Class<*>?): Boolean = delegate.isWrapperFor(iface)
 

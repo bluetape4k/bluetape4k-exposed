@@ -12,11 +12,13 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.BatchUpsertStatement
+import org.jetbrains.exposed.v1.core.statements.InsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.core.statements.UpsertBuilder
 import org.jetbrains.exposed.v1.core.vendors.SQLiteDialect
@@ -25,6 +27,7 @@ import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.batchUpsert
 import org.jetbrains.exposed.v1.jdbc.deleteIgnoreWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
@@ -51,9 +54,6 @@ private fun <D> multiRowValuesData(iterator: Iterator<D>, table: Table): List<D>
  *
  * 기본 키 타입 [ID]로 식별되는 [E] 엔티티를 조회하고 저장하며 삭제하는 공통 CRUD 연산을 제공합니다.
  * 구현체는 [table]과 [ResultRow.toEntity]만 정의하면 됩니다.
- *
- * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
- * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
  *
  * ## 사용 예
  *
@@ -101,6 +101,9 @@ private fun <D> multiRowValuesData(iterator: Iterator<D>, table: Table): List<D>
  *     val page  = repo.findPage(pageNumber = 0, pageSize = 20)
  * }
  * ```
+ *
+ * @param ID 기본 키 타입(예: [Long], [Int], [java.util.UUID])
+ * @param E [ResultRow]에서 매핑되는 엔티티(레코드) 타입
  */
 interface JdbcRepository<ID: Any, E: Any> {
     /**
@@ -161,6 +164,15 @@ interface JdbcRepository<ID: Any, E: Any> {
                 bindSave(entity)
             }
             .map { row -> row[table.id].value }
+    }
+
+    fun insert(
+        entity: E,
+        builder: (InsertStatement<EntityID<ID>>) -> Unit,
+    ): EntityID<ID> {
+        return table.insertAndGetId { stmt ->
+            builder(stmt)
+        }
     }
 
     /**
@@ -723,12 +735,6 @@ interface JdbcRepository<ID: Any, E: Any> {
      * 두 쿼리 사이에 동시 트랜잭션이 행을 삽입하거나 삭제하면 개수가 달라질 수 있습니다.
      * 엄격한 일관성이 필요하면 `SERIALIZABLE` 격리 수준을 사용하십시오.
      *
-     * @param pageNumber 0부터 시작하는 페이지 인덱스(0 이상)
-     * @param pageSize 페이지당 행 수(0보다 커야 함)
-     * @param sortOrder 결과에 적용할 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
-     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
-     * @return `content`, `totalCount`, `pageNumber`, `pageSize`, `totalPages`를 담은 [ExposedPage]
-     *
      * ## 사용 예
      *
      * ```kotlin
@@ -744,6 +750,13 @@ interface JdbcRepository<ID: Any, E: Any> {
      *     println(page.pageNumber) // 현재 페이지 인덱스
      * }
      * ```
+     *
+     * @param pageNumber 0부터 시작하는 페이지 인덱스(0 이상)
+     * @param pageSize 페이지당 행 수(0보다 커야 함)
+     * @param sortOrder 결과에 적용할 정렬 순서. 기본값은 [SortOrder.ASC]입니다.
+     * @param predicate 필터 조건. 기본값은 `Op.TRUE`(모든 행)입니다.
+     * @return `content`, `totalCount`, `pageNumber`, `pageSize`, `totalPages`를 담은 [ExposedPage]
+     *
      */
     fun findPage(
         pageNumber: Int,

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
@@ -16,6 +17,7 @@ import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.exceptions.UnsupportedByDialectException
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -36,17 +38,24 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
     fun `native multi-row 부분 충돌의 반환 행 누락을 분리 재현한다`(testDB: TestDB) {
         withTables(testDB, Rows) {
             Rows.batchInsert(listOf(Record(name = "dup")), body = bind)
-            val input = listOf(Record(name = "new-1"), Record(name = "dup"), Record(name = "new-2"))
+            val records =
+                listOf(Record(name = "new-1"), Record(name = "dup"), Record(name = "new-2"), Record(name = "new-3"))
+
             if (testDB == TestDB.H2) {
-                assertFailsWith<org.jetbrains.exposed.v1.exceptions.UnsupportedByDialectException> {
-                    Rows.batchInsert(input, useMultiRowValues = true, ignore = true, body = bind)
+                assertFailsWith<UnsupportedByDialectException> {
+                    Rows.batchInsert(records, useMultiRowValues = true, ignore = true, body = bind)
                 }
             } else {
-                // repository mapper 없이도 upstream이 실제 신규 2행 대신 3행을 반환한다.
-                val returned = Rows.batchInsert(input, useMultiRowValues = true, ignore = true, body = bind)
-                returned shouldHaveSize 3
-                returned.count { it.hasValue(Rows.id) } shouldBeEqualTo 2
-                Rows.selectAll().count() shouldBeEqualTo 3L
+                // repository mapper 없이도 upstream이 실제 신규 3행 대신 4행을 반환한다.
+                val returned = Rows.batchInsert(records, useMultiRowValues = true, ignore = true, body = bind)
+                    .onEach { log.debug { "row=$it" } }
+
+                returned shouldHaveSize records.size
+                returned.count { it.hasValue(Rows.id) } shouldBeEqualTo records.size - 1
+                Rows.selectAll().count() shouldBeEqualTo records.size.toLong()
+
+                // 1, 3 은 중복되므로, 신규 생성 Id는 2,4,5 가 된다.
+                returned.filter { it.hasValue(Rows.id) }.map { it[Rows.id].value } shouldBeEqualTo listOf(2L, 4L, 5L)
             }
         }
     }
@@ -91,16 +100,24 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
             val observer = InsertLog()
             addLogger(observer)
 
-            val old = Repository.batchInsert(listOf(Record(name = "old-1"), Record(name = "old-2")), false, true, bind)
-            old shouldHaveSize 2
+            val records = listOf(Record(name = "old-1"), Record(name = "old-2"))
+            val old = Repository.batchInsert(
+                entities = records,
+                ignore = false,
+                shouldReturnGeneratedValues = true,
+                insertStatement = bind
+            ).onEach { log.debug { "record=$it" } }
+            old shouldHaveSize records.size
 
             observer.entries.map { it.second } shouldBeEqualTo listOf(2, 2)
             observer.entries.clear()
 
+            val sequences = sequenceOf(Record(name = "false-1"), Record(name = "false-2")).constrainOnce()
             val saved = Repository.batchInsert(
-                sequenceOf(Record(name = "false-1"), Record(name = "false-2")).constrainOnce(),
-                useMultiRowValues = false, insertStatement = bind,
-            )
+                entities = sequences,
+                useMultiRowValues = false,
+                insertStatement = bind
+            ).onEach { log.debug { "sequences=$it" } }
             saved shouldHaveSize 2
             observer.entries.map { it.second } shouldBeEqualTo listOf(2, 2)
         }
@@ -123,9 +140,12 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
             saved.map { it.id }.distinct() shouldHaveSize 2
             observer.entries shouldHaveSize 1
             observer.entries.single().second shouldBeEqualTo 4
+
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(observer.entries.single().first).shouldBeTrue()
 
-            saved.forEach { Repository.findById(it.id) shouldBeEqualTo it }
+            saved.forEach {
+                Repository.findById(it.id) shouldBeEqualTo it
+            }
         }
     }
 
@@ -135,13 +155,16 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
         withTables(testDB, Rows) {
             val observer = InsertLog()
             addLogger(observer)
+
             Repository.batchInsert(emptyList<Record>(), useMultiRowValues = true) {
                 error("empty binder")
-            } shouldHaveSize 0
+            }.shouldBeEmpty()
+
             Repository.batchInsert(emptySequence<Record>(), useMultiRowValues = true) {
                 error("empty binder")
-            } shouldHaveSize 0
-            observer.entries shouldHaveSize 0
+            }.shouldBeEmpty()
+
+            observer.entries.shouldBeEmpty()
 
             val saved = Repository.batchInsert(
                 sequenceOf(Record(name = "single")).constrainOnce(),
@@ -171,7 +194,8 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
                 }
             }
             bound shouldBeEqualTo 0
-            failure.message.orEmpty() shouldNotContain "secret-payload"
+            failure.message shouldNotContain "secret-payload"
+
             Rows.selectAll().count() shouldBeEqualTo maxRows.toLong()
         }
     }
@@ -191,9 +215,10 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
                 Repository.batchInsert(input, useMultiRowValues = true) { bound++; bind(it) }
             }
 
-            consumed shouldBeEqualTo 65_535 / Rows.columns.size + 1
+            consumed shouldBeEqualTo (65_535 / Rows.columns.size + 1)
             bound shouldBeEqualTo 0
-            observer.entries shouldHaveSize 0
+            observer.entries.shouldBeEmpty()
+
             Rows.selectAll().count() shouldBeEqualTo 1L
         }
     }
@@ -202,12 +227,22 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
     @MethodSource("multiRowDialects")
     fun `생성 값 요청을 끈 명시 ID 데이터는 별도 SELECT로 확인한다`(testDB: TestDB) {
         withTables(testDB, Rows) {
-            val input = listOf(Record(101, "explicit-1"), Record(102, "explicit-2", "note"))
-            Repository.batchInsert(input, shouldReturnGeneratedValues = false, useMultiRowValues = true) {
+            val input = listOf(
+                Record(101, "explicit-1"),
+                Record(102, "explicit-2", "note")
+            )
+            Repository.batchInsert(
+                entities = input,
+                shouldReturnGeneratedValues = false,
+                useMultiRowValues = true
+            ) {
                 this[Rows.id] = it.id
                 bind(it)
             }
-            input.forEach { Repository.findById(it.id) shouldBeEqualTo it }
+
+            input.forEach {
+                Repository.findById(it.id) shouldBeEqualTo it
+            }
         }
     }
 
@@ -221,21 +256,27 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
 
             var iterated = 0
             var bound = 0
-            val iterable = Iterable<Record> { iterated++; listOf(Record(name = "secret")).iterator() }
-            val sequence = Sequence<Record> { iterated++; listOf(Record(name = "secret")).iterator() }
+            val iterable = Iterable { iterated++; listOf(Record(name = "secret")).iterator() }
+            val sequence = Sequence { iterated++; listOf(Record(name = "secret")).iterator() }
 
             for (generated in listOf(true, false)) {
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
                         iterable, ignore = true, shouldReturnGeneratedValues = generated,
                         useMultiRowValues = true
-                    ) { bound++; bind(it) }
+                    ) {
+                        bound++
+                        bind(it)
+                    }
                 }
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
                         sequence, ignore = true, shouldReturnGeneratedValues = generated,
                         useMultiRowValues = true
-                    ) { bound++; bind(it) }
+                    ) {
+                        bound++
+                        bind(it)
+                    }
                 }
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
@@ -252,7 +293,8 @@ class JdbcRepositoryMultiRowValuesTest: AbstractExposedTest() {
             }
             iterated shouldBeEqualTo 0
             bound shouldBeEqualTo 0
-            observer.entries shouldHaveSize 0
+            observer.entries.shouldBeEmpty()
+
             Rows.selectAll().count() shouldBeEqualTo 1L
         }
     }

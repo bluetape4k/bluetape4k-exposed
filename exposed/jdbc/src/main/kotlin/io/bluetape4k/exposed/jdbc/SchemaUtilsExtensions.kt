@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.logging.KotlinLogging
 import io.bluetape4k.logging.error
+import io.bluetape4k.support.equalsIgnoreCase
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -26,19 +27,21 @@ private val log = KotlinLogging.logger { }
  */
 fun JdbcTransaction.execCreateMissingTablesAndColumns(vararg tables: Table) {
     runCatching {
-        val existingTables = SchemaUtils.listTables()
-        val missingTables =
-            tables.filterNot { table ->
-                existingTables.any { it.equals(table.tableName, ignoreCase = true) }
-            }
+        val existingTableNames = SchemaUtils.listTables()
+        val missingTables = tables.filterNot { table ->
+            existingTableNames.any { it.equalsIgnoreCase(table.tableName) }
+        }
         SchemaUtils.create(*missingTables.toTypedArray())
     }.onFailure { ex ->
         log.error(ex) { "누락 테이블 생성 중 예외가 발생했습니다. tables=${tables.joinToString { it.tableName }}" }
     }
+
     runCatching {
         MigrationUtils
             .statementsRequiredForDatabaseMigration(*tables)
-            .forEach { sql -> exec(sql) }
+            .forEach { sql ->
+                exec(sql)
+            }
     }.onFailure { ex ->
         log.error(ex) { "마이그레이션 SQL 생성/실행 중 예외가 발생했습니다. tables=${tables.joinToString { it.tableName }}" }
     }

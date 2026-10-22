@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.collections.intRangeOf
+import io.bluetape4k.concurrent.awaitTermination
 import io.bluetape4k.concurrent.virtualthread.VirtualFuture
 import io.bluetape4k.concurrent.virtualthread.awaitAll
 import io.bluetape4k.exposed.dao.idEquals
@@ -39,9 +40,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.testcontainers.utility.Base58
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 class VirtualThreadTransactionTest: AbstractExposedTest() {
 
@@ -58,8 +60,8 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
 
     @Test
     fun `receiver virtual thread transaction preserves its database`() {
-        val selectedDb = Database.connect("jdbc:h2:mem:vt-selected-${System.nanoTime()};DB_CLOSE_DELAY=-1")
-        val defaultDb = Database.connect("jdbc:h2:mem:vt-default-${System.nanoTime()};DB_CLOSE_DELAY=-1")
+        val selectedDb = Database.connect("jdbc:h2:mem:vt-selected-${Base58.randomString(8)};DB_CLOSE_DELAY=-1")
+        val defaultDb = Database.connect("jdbc:h2:mem:vt-default-${Base58.randomString(8)};DB_CLOSE_DELAY=-1")
         val previousDefault = TransactionManager.defaultDatabase
 
         try {
@@ -78,19 +80,28 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
                     VTester.insert { it[name] = "bridged" }
                     VTester.selectAll().map { it[VTester.name] }
                 }
-            }
+            }.onEach { log.debug { "name=$it" } }
 
             selectedNames shouldBeEqualTo listOf("selected", "bridged")
+
             transaction(defaultDb) {
                 VTester.selectAll().map { it[VTester.name] }
             } shouldBeEqualTo listOf("default")
+
         } finally {
             TransactionManager.defaultDatabase = previousDefault
         }
     }
 
     @Suppress("UnusedReceiverParameter")
-    fun JdbcTransaction.getTesterById(id: Int): ResultRow? = newVirtualThreadJdbcTransaction {
+    fun JdbcTransaction.getTesterById(id: Int): ResultRow = newVirtualThreadJdbcTransaction {
+        VTester.selectAll()
+            .where { VTester.id eq id }
+            .single()
+    }.shouldNotBeNull()
+
+    @Suppress("UnusedReceiverParameter")
+    fun JdbcTransaction.getTesterByIdOrNull(id: Int): ResultRow? = newVirtualThreadJdbcTransaction {
         VTester.selectAll()
             .where { VTester.id eq id }
             .singleOrNull()
@@ -105,10 +116,10 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
                 commit()
 
                 // 내부적으로 새로운 트랜잭션을 생성하여 비동기 작업을 수행한다
-                getTesterById(id.value)!![VTester.id].value shouldBeEqualTo id.value
+                getTesterById(id.value)[VTester.id].value shouldBeEqualTo id.value
             }
 
-            val result = getTesterById(1)!![VTester.id].value
+            val result = getTesterById(1)[VTester.id].value
             result shouldBeEqualTo 1
         }
     }
@@ -120,29 +131,37 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
             val recordCount = 10
 
             newVirtualThreadJdbcTransaction {
-                List(recordCount) { index ->
+                val inserts = List(recordCount) { index ->
+                    Thread.sleep(1)
                     // insert 를 수행하는 트랜잭션을 생성한다
                     virtualThreadJdbcTransactionAsync {
-                        log.debug { "Task[$index] inserting ..." }
                         // insert 를 수행하는 트랜잭션을 생성한다
-                        VTester.insert { }
+                        val id = VTester.insertAndGetId { }
+                        log.debug { "Task[$index] insert. id=$id" }
                     }
-                }.awaitAll()
-                commit()
+
+                }
+                Thread.sleep(100)
 
                 // 중첩 트랜잭션에서 virtual threads 를 이용하여 동시에 여러 작업을 수행한다.
-                val futures: List<VirtualFuture<List<ResultRow>>> = List(recordCount) { index ->
+                val selects: List<VirtualFuture<List<ResultRow>>> = List(recordCount) { index ->
+                    Thread.sleep(1)
                     virtualThreadJdbcTransactionAsync {
                         log.debug { "Task[$index] selecting ..." }
                         VTester.selectAll().toList()
                     }
+
                 }
+
+                inserts.awaitAll()
                 // recordCount 개의 행을 가지는 `ResultRow` 를 recordCount 수만큼 가지는 List
-                val rows: List<ResultRow> = futures.awaitAll().flatten()
+                val rows: List<ResultRow> = selects.awaitAll().flatten()
                 rows.shouldNotBeEmpty()
             }
 
-            val count = withVirtualThreadJdbcTransaction { VTester.selectAll().count() }
+            val count = withVirtualThreadJdbcTransaction {
+                VTester.selectAll().count()
+            }
             count shouldBeEqualTo recordCount.toLong()
         }
     }
@@ -218,6 +237,7 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
 
             // 여기서 중복된 Id 로 엔티티를 생성하려고 해서 중복 Id 예외가 발생한다
             var innerConn: ExposedConnection<*>? = null
+
             assertFailsWith<ExecutionException> {
                 newVirtualThreadJdbcTransaction {
                     maxAttempts = 1
@@ -250,11 +270,11 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
                 val threadName = newVirtualThreadJdbcTransaction(executor = executor) {
                     Thread.currentThread().name
                 }
-                threadName.shouldContain("vt-custom-executor")
+                threadName shouldContain "vt-custom-executor"
             } finally {
                 runCatching {
                     executor.shutdown()
-                    executor.awaitTermination(1, TimeUnit.SECONDS)
+                    executor.awaitTermination(3.seconds)
                 }
             }
         }
@@ -282,7 +302,7 @@ class VirtualThreadTransactionTest: AbstractExposedTest() {
         withTables(testDB, VTester) {
             val executor = Executors.newSingleThreadExecutor()
             executor.shutdown()
-            executor.awaitTermination(1, TimeUnit.SECONDS)
+            executor.awaitTermination(3.seconds)
 
             assertFailsWith<IllegalArgumentException> {
                 virtualThreadJdbcTransactionAsync(executor = executor) {
