@@ -30,9 +30,6 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    private val expr = mockk<Expression<Any?>>()
-    private val row = mockk<ResultRow>()
-
     private data class Payload(
         val user: FastjsonSchema.User,
         val active: Boolean,
@@ -47,6 +44,10 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         val jsonArrayText = text("json_array_text")
         val nullableText = text("nullable_text").nullable()
     }
+
+
+    private val expr = mockk<Expression<Any?>>(relaxed = true)
+    private val row = mockk<ResultRow>(relaxed = true)
 
     @BeforeEach
     fun setUpMocks() {
@@ -70,8 +71,10 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             val row = JsonTextTable.selectAll().single()
 
             row.getFastjson<Payload>(JsonTextTable.jsonObjectText) shouldBeEqualTo payload
-            row.getFastjsonObject(JsonTextTable.jsonObjectText).getJSONObject("user")
+            row.getFastjsonObject(JsonTextTable.jsonObjectText)
+                .getJSONObject("user")
                 .getString("name") shouldBeEqualTo "tester"
+
             row.getFastjsonArray(JsonTextTable.jsonArrayText) shouldHaveSize 3
             row.getFastjsonOrNull<Payload>(JsonTextTable.nullableText).shouldBeNull()
         }

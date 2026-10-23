@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ComparisonOp
 import org.jetbrains.exposed.v1.core.Expression
@@ -66,6 +67,8 @@ class FastjsonBColumnTest: AbstractExposedTest() {
             }
 
             val newRow = tester.selectAll().where { tester.id eq newId }.single()
+                .also { log.debug { "row=$it" } }
+
             newRow[tester.fastjsonBColumn] shouldBeEqualTo newData
         }
     }
@@ -117,20 +120,20 @@ class FastjsonBColumnTest: AbstractExposedTest() {
         withFastjsonBTable(testDB) { tester, user1, data1 ->
             val pathPrefix = if (currentDialectTest is PostgreSQLDialect) "" else "."
             val isActive = tester.fastjsonBColumn.extract<Boolean>("${pathPrefix}active", toScalar = false)
-            val row1 = tester.select(isActive).singleOrNull()
-            row1?.get(isActive) shouldBeEqualTo data1.active
+            val row1 = tester.select(isActive).single()
+            row1[isActive] shouldBeEqualTo data1.active
 
             val storedUser = tester.fastjsonBColumn.extract<User>("${pathPrefix}user", toScalar = false)
-            val row2 = tester.select(storedUser).singleOrNull()
-            row2?.get(storedUser) shouldBeEqualTo user1
+            val row2 = tester.select(storedUser).single()
+            row2[storedUser] shouldBeEqualTo user1
 
             val path = when (currentDialectTest) {
                 is PostgreSQLDialect -> arrayOf("user", "name")
                 else -> arrayOf(".user.name")
             }
             val username = tester.fastjsonBColumn.extract<String>(*path)
-            val row3 = tester.select(username).singleOrNull()
-            row3?.get(username) shouldBeEqualTo user1.name
+            val row3 = tester.select(username).single().also { log.debug { "row=$it" } }
+            row3[username] shouldBeEqualTo user1.name
         }
     }
 
@@ -455,6 +458,8 @@ class FastjsonBColumnTest: AbstractExposedTest() {
                 defaultTester.insert { }
 
                 defaultTester.selectAll().single().also {
+                    log.debug { "row=$it" }
+
                     it[defaultTester.user1].name shouldBeEqualTo defaultUser.name
                     it[defaultTester.user1].team shouldBeEqualTo defaultUser.team
 
@@ -477,7 +482,7 @@ class FastjsonBColumnTest: AbstractExposedTest() {
             val intArray = fastjsonb<IntArray>("int_array")
         }
 
-        withTables(testDB, iterables) {
+        withTables(testDB, iterables) { testDb ->
             val user1 = User("A", "Team A")
             val user2 = User("B", "Team B")
             val integerList = listOf(1, 2, 3)
@@ -491,6 +496,7 @@ class FastjsonBColumnTest: AbstractExposedTest() {
             }
 
             val row = iterables.selectAll().single()
+            log.debug { "row=$row" }
             row[iterables.userList] shouldBeEqualTo listOf(user1, user2)
             row[iterables.intList] shouldBeEqualTo integerList
             row[iterables.userArray] shouldBeEqualTo arrayOf(user1, user2)
@@ -617,12 +623,16 @@ class FastjsonBColumnTest: AbstractExposedTest() {
                 .selectAll()
                 .where { tester.fastjsonBColumn keyExists "logins" }
                 .single()
+                .also { log.debug { "row=$it" } }
+
             topLevelKeyResult[tester.fastjsonBColumn] shouldBeEqualTo data1
 
             val nestedKeyResult = tester
                 .selectAll()
                 .where { tester.fastjsonBColumn keyExists "name" }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
+
             nestedKeyResult.shouldBeEmpty()
         }
     }
