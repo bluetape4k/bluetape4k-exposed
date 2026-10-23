@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.jackson3
 
 import io.bluetape4k.jackson3.JacksonSerializer
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
@@ -111,7 +112,7 @@ inline fun <reified T: Any> Table.jacksonb(
         deserialize = {
             // WHY: force unwrap 대신 requireNotNull 사용 — NPE 대신 명확한 IllegalArgumentException을 던져
             //       컬럼명·타입·입력값을 메시지에 포함시킴으로써 데이터 정합성 오류를 즉시 진단 가능하게 함
-            requireNotNull(serializer.deserializeFromString<T>(it)) {
+            serializer.deserializeFromString<T>(it).requireNotNull {
                 "JSONB 역직렬화 결과가 null입니다. 컬럼='$name', 타입='${T::class.qualifiedName}', 입력='$it'"
             }
         }
