@@ -3,6 +3,8 @@ package io.bluetape4k.exposed.jdbc
 import io.bluetape4k.concurrent.virtualthread.VirtualFuture
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
 import io.bluetape4k.concurrent.virtualthread.virtualFuture
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
@@ -32,6 +34,8 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+
+private object JdbcParallelLogger: KLogging()
 
 /**
  * JDBC PK enumeration에 사용하는 반개방 구간입니다.
@@ -162,6 +166,7 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
             checkCompletedFailures(children)
             permits.acquire()
 
+            JdbcParallelLogger.log.debug { "병렬 쿼리를 실행합니다. range=$range" }
             try {
                 children += submitJdbcEnumerationChild(
                     executor = executor,
@@ -170,6 +175,7 @@ internal fun <ID: Any> parallelJdbcKeyEnumeration(
                     readOnly = options.readOnly,
                     permits = permits,
                 ) { childHandle ->
+                    JdbcParallelLogger.log.debug { "병렬 쿼리를 실행했습니다. table=${table.tableName}, range=$range" }
                     rangeReader(table, range, childHandle)
                 }
             } catch (cause: Throwable) {
@@ -236,43 +242,42 @@ private fun <T> submitJdbcEnumerationChild(
     val completion = CountDownLatch(1)
     val lifecycle = AtomicInteger(CHILD_NEW)
     val handle = JdbcEnumerationChildHandle()
-    val future =
-        virtualFuture(executor = executor) {
-            if (!lifecycle.compareAndSet(CHILD_NEW, CHILD_RUNNING)) {
-                throw CancellationException("JDBC enumeration child was cancelled before start")
-            }
-            try {
-                val isolationLevel = transactionIsolation ?: db.transactionManager.defaultIsolationLevel
-                transaction(
-                    db = db,
-                    transactionIsolation = isolationLevel,
-                    readOnly = readOnly,
-                ) {
-                    val conn = this.connection.connection as? Connection
-                        ?: error("JDBC enumeration requires a java.sql.Connection")
-                    val connectionRegistration = handle.registerConnection(conn)
+    val future = virtualFuture(executor = executor) {
+        if (!lifecycle.compareAndSet(CHILD_NEW, CHILD_RUNNING)) {
+            throw CancellationException("JDBC enumeration child was cancelled before start")
+        }
+        try {
+            val isolationLevel = transactionIsolation ?: db.transactionManager.defaultIsolationLevel
+            transaction(
+                db = db,
+                transactionIsolation = isolationLevel,
+                readOnly = readOnly,
+            ) {
+                val conn = this.connection.connection as? Connection
+                    ?: error("JDBC enumeration requires a java.sql.Connection")
+                val connectionRegistration = handle.registerConnection(conn)
 
-                    val interceptor = JdbcEnumerationStatementInterceptor(handle)
-                    registerInterceptor(interceptor)
+                val interceptor = JdbcEnumerationStatementInterceptor(handle)
+                registerInterceptor(interceptor)
 
+                try {
+                    statement(handle)
+                } finally {
                     try {
-                        statement(handle)
+                        unregisterInterceptor(interceptor)
                     } finally {
-                        try {
-                            unregisterInterceptor(interceptor)
-                        } finally {
-                            handle.clearCurrentStatement()
-                            handle.clearConnection(connectionRegistration)
-                        }
+                        handle.clearCurrentStatement()
+                        handle.clearConnection(connectionRegistration)
                     }
                 }
-            } finally {
-                if (lifecycle.compareAndSet(CHILD_RUNNING, CHILD_COMPLETED)) {
-                    permits.release()
-                    completion.countDown()
-                }
+            }
+        } finally {
+            if (lifecycle.compareAndSet(CHILD_RUNNING, CHILD_COMPLETED)) {
+                permits.release()
+                completion.countDown()
             }
         }
+    }
 
     return JdbcEnumerationChild(
         future = future,

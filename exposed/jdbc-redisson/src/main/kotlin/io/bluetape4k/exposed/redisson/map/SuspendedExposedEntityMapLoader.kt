@@ -68,7 +68,10 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
         try {
             while (hasMore) {
                 val cursor = lastId
-                val query = entityTable.select(entityTable.id).orderBy(entityTable.id, SortOrder.ASC)
+                val query = entityTable
+                    .select(entityTable.id)
+                    .orderBy(entityTable.id, SortOrder.ASC)
+
                 val rows =
                     if (keysetSupported == true && cursor != null) {
                         query
@@ -135,10 +138,10 @@ internal fun Any.isKeysetScalar(): Boolean =
                 is Byte, is Short, is Int, is Long, is Float, is Double,
                 is UByte, is UShort, is UInt, is ULong,
                 is java.math.BigDecimal, is java.math.BigInteger,
-                is String, is Char, is java.util.UUID,
+                is String, is Char, is java.util.UUID, is kotlin.uuid.Uuid,
                 is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
                      -> true
-                else -> javaClass.name.startsWith("java.time.")
+                else -> javaClass.name.startsWith("java.time.") || javaClass.name.startsWith("kotlin.time.")
             }
 
 @Suppress("UNCHECKED_CAST")

@@ -107,7 +107,7 @@ class ExposedEntityRedissonCodecTest: AbstractExposedTest() {
     private fun <T: Entity<ID>, ID: Any> Codec.verifyCodec(origin: T) {
         val buf = valueEncoder.encode(origin)
         val actual = valueDecoder.decode(buf, State()) as? T
-        actual!!.id shouldBeEqualTo origin.id
+        actual?.id shouldBeEqualTo origin.id
         // actual shouldBeEqualTo origin
     }
 }

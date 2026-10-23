@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.redisson.repository
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.SuspendedJdbcCacheRepository
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.exposed.redisson.map.EntityMapLoader
 import io.bluetape4k.exposed.redisson.map.EntityMapWriter
 import io.bluetape4k.exposed.redisson.map.ExposedEntityMapWriter
@@ -29,7 +30,6 @@ import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.redisson.api.EvictionMode
 import org.redisson.api.RLocalCachedMap
 import org.redisson.api.RMap
@@ -130,19 +130,8 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                 SuspendedExposedEntityMapWriter(
                     scope = scope,
                     entityTable = table,
-                    updateBody = { stmt, entity ->
-                        with(this@AbstractSuspendedJdbcRedissonRepository) {
-                            stmt.updateEntity(
-                                entity
-                            )
-                        }
-                    },
-                    batchInsertBody = { entity ->
-                        val stmt = this;
-                        with(this@AbstractSuspendedJdbcRedissonRepository) {
-                            stmt.insertEntity(entity)
-                        }
-                    },
+                    updateBody = { stmt, entity -> stmt.updateEntity(entity) },
+                    batchInsertBody = { entity -> insertEntity(entity) },
                     deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate, // 캐시 invalidated 시 DB에서도 삭제할 것인지 여부
                     writeMode = config.writeMode // Write Through 모드
                 )
@@ -200,7 +189,7 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
                 loaderAsync(suspendedMapLoader)
             } else {
                 loaderAsync(suspendedMapLoader)
-                suspendedMapWriter.requireNotNull("mapWriter")
+                suspendedMapWriter.requireNotNull("suspendedMapWriter")
                 writerAsync(suspendedMapWriter)
                 writeMode(config.writeMode)
             }
@@ -338,14 +327,13 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      * @return 엔티티 또는 null
      */
     @Suppress("DEPRECATION")
-    override suspend fun findByIdFromDb(id: ID): E? =
-        suspendedTransactionAsync(scope.coroutineContext) {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.toEntity()
-        }.await()
+    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransactionWithIO {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.toEntity()
+    }
 
     /**
      * DB에서 직접 여러 엔티티를 조회합니다 (캐시 우회).
@@ -354,13 +342,12 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      * @return 엔티티 리스트
      */
     @Suppress("DEPRECATION")
-    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> =
-        suspendedTransactionAsync(scope.coroutineContext) {
-            table
-                .selectAll()
-                .where { table.id inList ids }
-                .map { it.toEntity() }
-        }.await()
+    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> = inTopLevelSuspendTransactionWithIO {
+        table
+            .selectAll()
+            .where { table.id inList ids }
+            .map { it.toEntity() }
+    }
 
     /**
      * DB에서 전체 레코드 수를 조회합니다 (캐시 우회).
@@ -368,10 +355,10 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
      * @return 전체 레코드 수
      */
     @Suppress("DEPRECATION")
-    override suspend fun countFromDb(): Long =
-        suspendedTransactionAsync(scope.coroutineContext) {
-            table.selectAll().count()
-        }.await()
+    override suspend fun countFromDb(): Long = inTopLevelSuspendTransactionWithIO {
+        table.selectAll().count()
+    }
+
 
     /**
      * DB에서 조건에 맞는 엔티티 목록을 조회하고, 조회된 엔티티를 캐시에 저장합니다.
@@ -389,24 +376,20 @@ abstract class AbstractSuspendedJdbcRedissonRepository<ID: Any, E: Serializable>
         sortBy: Expression<*>,
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
-    ): List<E> {
-        @Suppress("DEPRECATION")
-        return suspendedTransactionAsync(scope.coroutineContext) {
-            table
-                .selectAll()
-                .where(where)
-                .apply {
-                    orderBy(sortBy, sortOrder)
-                    limit?.run { limit(limit) }
-                    offset?.run { offset(offset) }
-                }.map { it.toEntity() }
+    ): List<E> = inTopLevelSuspendTransactionWithIO {
+        table
+            .selectAll()
+            .where(where)
+            .apply {
+                orderBy(sortBy, sortOrder)
+                limit?.run { limit(limit) }
+                offset?.run { offset(offset) }
+            }.map { it.toEntity() }
+
+    }.also { entities ->
+        if (entities.isNotEmpty()) {
+            upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
         }
-            .await()
-            .also { entities ->
-                if (entities.isNotEmpty()) {
-                    upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
-                }
-            }
     }
 
     /**

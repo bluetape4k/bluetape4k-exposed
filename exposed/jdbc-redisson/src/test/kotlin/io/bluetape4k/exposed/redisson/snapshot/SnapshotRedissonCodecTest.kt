@@ -169,6 +169,7 @@ class SnapshotRedissonCodecTest {
         config.trustedBinaryCache.shouldBeFalse()
     }
 
+    @Suppress("UnusedDataClassCopyResult")
     @Test
     fun `invalidator configuration rejects every non-positive cap and timeout`() {
         val valid = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())
@@ -186,6 +187,7 @@ class SnapshotRedissonCodecTest {
         }
     }
 
+    @Suppress("UnusedDataClassCopyResult")
     @Test
     fun `invalidator configuration rejects a timeout that cannot be represented in nanoseconds`() {
         val valid = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())

@@ -10,7 +10,6 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
 import io.bluetape4k.exposed.cache.snapshot.ClaimedSnapshotMiss
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
@@ -42,16 +41,14 @@ import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
 import org.redisson.client.codec.StringCodec
 import org.redisson.config.Config
+import org.testcontainers.utility.Base58
 import java.io.Serializable
 import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.ArrayDeque
 
 class JdbcRedissonSnapshotTransactionTest {
-
 
     @Test
     fun `source usage compiles and exposes only the exact transaction invalidation extension`() {
@@ -277,8 +274,7 @@ class JdbcRedissonSnapshotTransactionTest {
                 local,
                 miss,
                 CacheSnapshot(Payload("put")),
-                CacheSnapshotValueValidator { },
-            )
+            ) { }
             events.clear()
         }
 
@@ -549,7 +545,7 @@ class JdbcRedissonSnapshotTransactionTest {
     }
 
     private fun database(useNestedTransactions: Boolean = false): Database = Database.connect(
-        url = "jdbc:h2:mem:redisson-transaction-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+        url = "jdbc:h2:mem:redisson-transaction-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
         driver = "org.h2.Driver",
         databaseConfig = DatabaseConfig { this.useNestedTransactions = useNestedTransactions },
     )

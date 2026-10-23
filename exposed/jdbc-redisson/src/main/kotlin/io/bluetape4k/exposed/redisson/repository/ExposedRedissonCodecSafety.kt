@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.apache.containsIgnoreCase
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.redisson.client.codec.Codec
@@ -49,9 +50,9 @@ object ExposedRedissonCodecSafety {
 
     private fun Codec.isDirectTrustedBinaryCodec(): Boolean =
         this in trustedBinaryCodecs ||
-                javaClass.name.contains("Fory", ignoreCase = true) ||
-                javaClass.name.contains("Kryo", ignoreCase = true) ||
-                javaClass.name.contains("SerializationCodec", ignoreCase = true)
+                javaClass.name.containsIgnoreCase("Fory") ||
+                javaClass.name.containsIgnoreCase("Kryo") ||
+                javaClass.name.containsIgnoreCase("SerializationCodec")
 
     private fun Codec.childCodecsOrNull(): List<Codec>? =
         when (this) {

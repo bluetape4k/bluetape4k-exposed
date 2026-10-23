@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.redisson.map
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.collections.longRangeOf
 import io.bluetape4k.exposed.jdbc.JdbcKeyRange
 import io.bluetape4k.exposed.jdbc.JdbcParallelKeyEnumerationOptions
 import io.bluetape4k.exposed.tests.AbstractExposedTest
@@ -49,7 +50,7 @@ class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
                 batchSize = 2,
                 toEntity = { toLoaderEntity() },
             )
-            val sequential = loader.loadAllKeys()!!.toList()
+            val sequential = loader.loadAllKeys()?.toList()
             val parallel = loader.loadAllKeysInParallel(
                 ranges = listOf(
                     JdbcKeyRange(upperExclusive = 5L),
@@ -59,7 +60,7 @@ class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
             )
 
             parallel shouldBeEqualTo sequential
-            parallel shouldBeEqualTo (1L..8L).toList()
+            parallel shouldBeEqualTo longRangeOf(1, 8)
             parallel.distinct() shouldBeEqualTo parallel
         }
     }
@@ -83,7 +84,7 @@ class ExposedEntityMapLoaderParallelTest: AbstractExposedTest() {
                     )
                 )
             }
-            loader.loadAllKeys()!!.toList().shouldBeEmpty()
+            loader.loadAllKeys()?.toList().shouldBeEmpty()
         }
     }
 }

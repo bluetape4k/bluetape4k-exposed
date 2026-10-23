@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.redisson.map
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -48,9 +50,7 @@ class Issue699QueryTimeoutTest: AbstractExposedTest() {
             }.exceptionOrNull()
 
             assertPostgreSQLStatementTimeout(failure)
-            check(TransactionManager.currentOrNull() == null) {
-                "loader timeout must close the current JDBC transaction"
-            }
+            TransactionManager.currentOrNull().shouldBeNull()
         }
 
         withDb(TestDB.POSTGRESQL) {
@@ -90,9 +90,7 @@ class Issue699QueryTimeoutTest: AbstractExposedTest() {
 
                 assertPostgreSQLStatementTimeout(failure)
                 awaitLoaderChildren(scope)
-                check(TransactionManager.currentOrNull() == null) {
-                    "loader timeout must close the current suspended JDBC transaction"
-                }
+                TransactionManager.currentOrNull().shouldBeNull()
             }
         } finally {
             scope.cancel()
@@ -112,9 +110,7 @@ class Issue699QueryTimeoutTest: AbstractExposedTest() {
     private suspend fun awaitLoaderChildren(scope: CoroutineScope) {
         val children = scope.coroutineContext[Job]?.children?.toList().orEmpty()
         children.joinAll()
-        check(children.none { it.isActive }) {
-            "loader producer must finish after statement timeout"
-        }
+        children.none { it.isActive }.shouldBeTrue()
     }
 
     private suspend fun <T> withDefaultDatabase(database: Database, block: suspend () -> T): T {
@@ -131,8 +127,6 @@ class Issue699QueryTimeoutTest: AbstractExposedTest() {
         checkNotNull(failure) { "the 31-second PostgreSQL statement must be cancelled" }
         val chain = generateSequence(failure) { it.cause }.toList()
         val sqlState = chain.filterIsInstance<SQLException>().firstNotNullOfOrNull { it.sqlState }
-        check(sqlState == "57014") {
-            "unexpected PostgreSQL timeout failure: $failure"
-        }
+        sqlState shouldBeEqualTo "57014"
     }
 }

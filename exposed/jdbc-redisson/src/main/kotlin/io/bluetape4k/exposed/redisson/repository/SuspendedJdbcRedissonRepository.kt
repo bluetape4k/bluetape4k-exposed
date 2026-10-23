@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.collections.toVarargArray
 import io.bluetape4k.exposed.cache.redis.SuspendJdbcRedisRepository
 import io.bluetape4k.support.requirePositiveNumber
 import kotlinx.coroutines.future.await
@@ -152,7 +153,7 @@ interface SuspendedJdbcRedissonRepository<ID: Any, E: Serializable>: SuspendJdbc
      */
     override suspend fun invalidateAll(ids: Collection<ID>) {
         if (ids.isEmpty()) return
-        ids.forEach { cache.fastRemoveAsync(it).await() }
+        cache.fastRemoveAsync(*ids.toVarargArray()).await()
     }
 
     /**
@@ -178,8 +179,6 @@ interface SuspendedJdbcRedissonRepository<ID: Any, E: Serializable>: SuspendJdbc
         if (keys.isEmpty()) {
             return 0
         }
-        var removed = 0L
-        keys.forEach { removed += cache.fastRemoveAsync(it).await() }
-        return removed
+        return cache.fastRemoveAsync(*keys.toVarargArray()).await()
     }
 }

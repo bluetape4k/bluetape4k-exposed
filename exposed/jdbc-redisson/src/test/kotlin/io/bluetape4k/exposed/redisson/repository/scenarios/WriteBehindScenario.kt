@@ -4,14 +4,17 @@ import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest.Companion.ENABLE_DIALECTS_METHOD
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
-import java.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 interface WriteBehindScenario<ID: Any, E: Serializable>: CacheTestScenario<ID, E> {
 
@@ -32,10 +35,9 @@ interface WriteBehindScenario<ID: Any, E: Serializable>: CacheTestScenario<ID, E
             val entities = createNewEntities(1000)
             repository.putAll(entities.associateBy { repository.extractId(it) })
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofMillis(5))
-                .until { getAllCountFromDB() >= entities.size.toLong() }
+            await atMost 30.seconds withPollInterval 5.milliseconds until {
+                getAllCountFromDB() >= entities.size.toLong()
+            }
 
             // DB에서 조회한 값
             val dbCount = getAllCountFromDB()

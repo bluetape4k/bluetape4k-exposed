@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
@@ -95,7 +96,8 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
 
             // 캐시에 갱신된 값 저장 -> DB에도 저장
             val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
-            repository.putAll(updatedEntities.associateBy { repository.extractId(it) })
+            val updatedMap = updatedEntities.associateBy { repository.extractId(it) }
+            repository.putAll(updatedMap)
 
             // 캐시에서 조회한 값
             val entitiesFromCacheMap = repository.getAll(ids)
@@ -103,10 +105,9 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
             entitiesFromCacheMap.values.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    updatedEntities
-                        .find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }.shouldNotBeNull()
+                    updatedEntities.find {
+                        repository.extractId(it) == repository.extractId(entity)
+                    }.shouldNotBeNull()
                 )
             }
 
@@ -116,16 +117,15 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
             }
 
             // DB에서 조회한 값
-            val entitiesFromDB = repository.findAllFromDb(ids)
+            val entitiesFromDB = repository.findAllFromDb(ids).onEach { log.debug { it } }
             entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
 
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    entitiesFromCacheMap.values
-                        .find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }.shouldNotBeNull()
+                    entitiesFromCacheMap.values.find {
+                        repository.extractId(it) == repository.extractId(entity)
+                    }.shouldNotBeNull()
                 )
             }
         }

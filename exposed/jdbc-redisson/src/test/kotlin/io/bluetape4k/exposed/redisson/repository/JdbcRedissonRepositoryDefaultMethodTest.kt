@@ -74,8 +74,7 @@ class JdbcRedissonRepositoryDefaultMethodTest {
         verify(exactly = 1) { cache.fastPut(1L, alice) }
         verify(exactly = 1) { cache.putAll(mapOf(1L to alice, 2L to bob), 2) }
         verify(exactly = 1) { cache.putAll(mapOf(2L to bob), 1) }
-        verify(exactly = 2) { cache.fastRemove(1L) }
-        verify(exactly = 1) { cache.fastRemove(2L) }
+        verify(exactly = 1) { cache.fastRemove(1L, 2L) }
         verify(exactly = 1) { cache.clear() }
     }
 
@@ -104,14 +103,12 @@ class JdbcRedissonRepositoryDefaultMethodTest {
     @Test
     fun `invalidate by pattern removes matching keys and sums removed count`() {
         every { cache.keySet("user:*", 20) } returns setOf(1L, 2L)
-        every { cache.fastRemove(1L) } returns 1L
-        every { cache.fastRemove(2L) } returns 0L
+        every { cache.fastRemove(1L, 2L) } returns 1L
 
         repository.invalidateByPattern("user:*", 20) shouldBeEqualTo 1L
 
         verify(exactly = 1) { cache.keySet("user:*", 20) }
-        verify(exactly = 1) { cache.fastRemove(1L) }
-        verify(exactly = 1) { cache.fastRemove(2L) }
+        verify(exactly = 1) { cache.fastRemove(1L, 2L) } 
     }
 
     @Test

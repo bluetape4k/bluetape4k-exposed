@@ -18,6 +18,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -74,7 +75,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-write-through:remote:users")
+                config = cacheConfig.copy(
+                    name = "read-write-through:remote:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -86,7 +90,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-write-through:remote:delete-db:users")
+                config = cacheConfig.copy(
+                    name = "read-write-through:remote:delete-db:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -98,7 +105,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-write-through:near:users")
+                config = cacheConfig.copy(
+                    name = "read-write-through:near:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -111,7 +121,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-write-through:near:delete-db:users")
+                config = cacheConfig.copy(
+                    name = "read-write-through:near:delete-db:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -162,7 +175,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:remote:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:remote:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -175,7 +191,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:remote:delete-db:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:remote:delete-db:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -187,7 +206,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:near:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:near:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -200,7 +222,10 @@ class ReadWriteThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:near:delete-db:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:near:delete-db:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }

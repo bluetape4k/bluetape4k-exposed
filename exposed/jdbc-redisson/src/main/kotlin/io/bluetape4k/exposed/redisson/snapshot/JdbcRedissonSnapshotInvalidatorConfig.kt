@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
+import io.bluetape4k.javatimes.seconds
 import org.redisson.api.options.LocalCachedMapOptions
 import java.io.Serializable
 import java.time.Duration
@@ -34,12 +35,10 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
     val maxCommitEncodedKeyBytes: Int = 256 * 1024,
     val maxOutstandingChunks: Int = 64,
     val maxOutstandingEncodedBytes: Long = 4L * 1024 * 1024,
-    val namespaceVerificationTimeout: Duration = Duration.ofSeconds(2),
+    val namespaceVerificationTimeout: Duration = 2.seconds(),
     val multiNode: Boolean = true,
-    val synchronizationStrategy: LocalCachedMapOptions.SyncStrategy =
-        LocalCachedMapOptions.SyncStrategy.INVALIDATE,
-    val reconnectionStrategy: LocalCachedMapOptions.ReconnectionStrategy =
-        LocalCachedMapOptions.ReconnectionStrategy.CLEAR,
+    val synchronizationStrategy: LocalCachedMapOptions.SyncStrategy = LocalCachedMapOptions.SyncStrategy.INVALIDATE,
+    val reconnectionStrategy: LocalCachedMapOptions.ReconnectionStrategy = LocalCachedMapOptions.ReconnectionStrategy.CLEAR,
     val trustedBinaryCache: Boolean = false,
 ): Serializable {
 

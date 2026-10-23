@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.toUserRecord
 import io.bluetape4k.exposed.redisson.repository.AbstractSuspendedJdbcRedissonRepository
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
@@ -14,7 +15,10 @@ import java.time.Instant
 
 class SuspendedUserCacheRepository(
     redissonClient: RedissonClient,
-    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:suspended:users"),
+    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
+        name = "exposed:remote:suspended:users",
+        codec = RedissonCodecs.FastForyComposite
+    ),
 ): AbstractSuspendedJdbcRedissonRepository<Long, UserRecord>(
     redissonClient,
     config,

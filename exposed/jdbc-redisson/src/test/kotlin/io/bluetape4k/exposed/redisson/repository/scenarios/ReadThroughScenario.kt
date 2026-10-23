@@ -113,7 +113,7 @@ interface ReadThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScenar
             val entities = repository.getAll(ids)
             entities.shouldNotBeEmpty()
 
-            entities shouldHaveSize ids.size - 1
+            entities shouldHaveSize getExistingIds().size
         }
     }
 
