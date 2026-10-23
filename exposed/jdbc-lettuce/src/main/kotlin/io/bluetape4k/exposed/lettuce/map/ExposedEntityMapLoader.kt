@@ -64,11 +64,12 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
         options: JdbcParallelKeyEnumerationOptions<ID> = JdbcParallelKeyEnumerationOptions(),
     ): List<ID> = parallelJdbcKeyEnumeration(table, ranges, options)
 
-    override fun loadById(id: ID): E? = table
-        .selectAll()
-        .where { table.id eq id }
-        .singleOrNull()
-        ?.let(toEntity)
+    override fun loadById(id: ID): E? =
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.let(toEntity)
 
     /**
      * 전체 키를 lazy page로 반환한다.
@@ -139,6 +140,7 @@ private fun <ID: Any> loadJdbcPage(
     keysetSupported: Boolean?,
 ): List<ID> = transaction {
     val query = table.select(table.id).orderBy(table.id, SortOrder.ASC)
+
     val pagedQuery =
         if (keysetSupported == true && lastId != null) {
             query.where { table.rawIdColumn() greater lastId.asComparableKey() }

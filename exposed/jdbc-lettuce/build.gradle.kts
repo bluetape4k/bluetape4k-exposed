@@ -32,6 +32,10 @@ dependencies {
     compileOnly(bt4k.at.yawk.lz4.java)
     compileOnly(bt4k.zstd.jni)
 
+    // Coroutines
+    api(bt4k.bluetape4k.coroutines)
+    api(libs.kotlinx.coroutines.core)
+
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(project(":bluetape4k-exposed-jdbc-tests"))

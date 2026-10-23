@@ -128,7 +128,7 @@ class SuspendedReadWriteThroughCacheTest {
             UserSchema.newUserCredentialsRecord().copy(id = id)
 
         override suspend fun updateEmail(entity: UserCredentialsRecord): UserCredentialsRecord =
-            entity.copy(email = Base58.randomString(4) + "." + faker.internet().emailAddress())
+            entity.copy(email = Base58.randomString(8) + "." + faker.internet().emailAddress())
 
         override suspend fun createNewEntity(): UserCredentialsRecord = UserSchema.newUserCredentialsRecord()
     }
