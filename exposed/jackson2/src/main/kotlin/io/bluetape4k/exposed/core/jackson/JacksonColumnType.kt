@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.jackson
 
 import io.bluetape4k.jackson.JacksonSerializer
+import io.bluetape4k.support.requireNotNull
 import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.support.toUtf8String
 import org.jetbrains.exposed.v1.core.Column
@@ -159,7 +160,7 @@ inline fun <reified T: Any> Table.jackson(
         //      IllegalArgumentException이 원인을 더 명확하게 드러냅니다.
         //   ② 타입명과 원본 JSON을 메시지에 포함해 디버깅 시 즉시 원인을 파악할 수 있습니다.
         deserialize = {
-            requireNotNull(jacksonSerializer.deserializeFromString<T>(it)) {
+            jacksonSerializer.deserializeFromString<T>(it).requireNotNull {
                 "JSON 역직렬화 결과가 null입니다. 타입 [${T::class.qualifiedName}] 으로 변환할 수 없는 JSON 입니다: $it"
             }
         }

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.jackson
 
 import io.bluetape4k.jackson.JacksonSerializer
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.IColumnType
@@ -71,7 +72,7 @@ inline fun <reified T: Any> ExpressionWithColumnType<*>.extract(
             //      NPE보다 IllegalArgumentException으로 호출자에게 명시적 계약 위반을 알립니다.
             //   ② 어떤 JSON에서 어떤 타입으로 실패했는지 메시지에 포함해 쿼리 디버깅을 돕습니다.
             {
-                requireNotNull(serializer.deserializeFromString<T>(it)) {
+                serializer.deserializeFromString<T>(it).requireNotNull {
                     "JSON extract 역직렬화 결과가 null입니다. 타입 [${T::class.qualifiedName}] 으로 변환할 수 없는 JSON 입니다: $it"
                 }
             }

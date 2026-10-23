@@ -7,6 +7,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.toUtf8Bytes
 import io.r2dbc.spi.Readable
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -42,20 +44,21 @@ class ReadableExtensionsTest {
 
     @Test
     fun `Readable jackson getter supports index and name`() {
+        val payload = Payload("blue", 20)
         val jsonText = """{"name":"blue","age":20}"""
         val readable = FakeReadable(
             valuesByIndex = mapOf(0 to jsonText),
             valuesByName = mapOf("payload" to jsonText),
         )
 
-        readable.getJackson<Payload>(0) shouldBeEqualTo Payload("blue", 20)
-        readable.getJackson<Payload>("payload") shouldBeEqualTo Payload("blue", 20)
+        readable.getJackson<Payload>(0) shouldBeEqualTo payload
+        readable.getJackson<Payload>("payload") shouldBeEqualTo payload
     }
 
     @Test
     fun `Readable jackson getter supports ByteArray value by index`() {
         val jsonText = """{"name":"bytes","age":5}"""
-        val byteArrayValue = jsonText.toByteArray()
+        val byteArrayValue = jsonText.toUtf8Bytes()
         val readable = FakeReadable(valuesByIndex = mapOf(0 to byteArrayValue))
 
         readable.getJackson<Payload>(0) shouldBeEqualTo Payload("bytes", 5)
@@ -64,7 +67,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable jackson getter supports ByteArray value by name`() {
         val jsonText = """{"name":"bytes","age":5}"""
-        val byteArrayValue = jsonText.toByteArray()
+        val byteArrayValue = jsonText.toUtf8Bytes()
         val readable = FakeReadable(valuesByName = mapOf("payload" to byteArrayValue))
 
         readable.getJackson<Payload>("payload") shouldBeEqualTo Payload("bytes", 5)
@@ -114,23 +117,32 @@ class ReadableExtensionsTest {
         val jsonText = """{"user":{"name":"tester"}}"""
         val readable = FakeReadable(valuesByIndex = mapOf(1 to jsonText))
 
-        readable.getJsonNode(1).path("user").path("name").textValue() shouldBeEqualTo "tester"
+        readable.getJsonNode(1)
+            .path("user")
+            .path("name")
+            .textValue() shouldBeEqualTo "tester"
     }
 
     @Test
     fun `Readable jackson json node getter supports ByteArray by index`() {
         val jsonText = """{"user":{"name":"bytes"}}"""
-        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toUtf8Bytes()))
 
-        readable.getJsonNode(0).path("user").path("name").textValue() shouldBeEqualTo "bytes"
+        readable.getJsonNode(0)
+            .path("user")
+            .path("name")
+            .textValue() shouldBeEqualTo "bytes"
     }
 
     @Test
     fun `Readable jackson json node getter supports ByteArray by name`() {
         val jsonText = """{"user":{"name":"bytes"}}"""
-        val readable = FakeReadable(valuesByName = mapOf("node" to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByName = mapOf("node" to jsonText.toUtf8Bytes()))
 
-        readable.getJsonNode("node").path("user").path("name").textValue() shouldBeEqualTo "bytes"
+        readable.getJsonNode("node")
+            .path("user")
+            .path("name")
+            .textValue() shouldBeEqualTo "bytes"
     }
 
     @Test
@@ -139,7 +151,9 @@ class ReadableExtensionsTest {
         val jsonNode: JsonNode = mapper.readTree("""{"x":1}""")
         val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonNode))
 
-        readable.getJsonNode(0).path("x").intValue() shouldBeEqualTo 1
+        readable.getJsonNode(0)
+            .path("x")
+            .intValue() shouldBeEqualTo 1
     }
 
     @Test
@@ -148,7 +162,9 @@ class ReadableExtensionsTest {
         val jsonNode: JsonNode = mapper.readTree("""{"x":2}""")
         val readable = FakeReadable(valuesByName = mapOf("node" to jsonNode))
 
-        readable.getJsonNode("node").path("x").intValue() shouldBeEqualTo 2
+        readable.getJsonNode("node")
+            .path("x")
+            .intValue() shouldBeEqualTo 2
     }
 
     @Test
@@ -159,7 +175,9 @@ class ReadableExtensionsTest {
         }
         val readable = FakeReadable(valuesByIndex = mapOf(0 to customObj))
 
-        readable.getJsonNode(0).path("y").intValue() shouldBeEqualTo 42
+        readable.getJsonNode(0)
+            .path("y")
+            .intValue() shouldBeEqualTo 42
     }
 
     @Test
@@ -170,12 +188,15 @@ class ReadableExtensionsTest {
         }
         val readable = FakeReadable(valuesByName = mapOf("node" to customObj))
 
-        readable.getJsonNode("node").path("y").intValue() shouldBeEqualTo 42
+        readable.getJsonNode("node")
+            .path("y")
+            .intValue() shouldBeEqualTo 42
     }
 
     @Test
     fun `Readable jackson nullable getter returns null when value is null by index`() {
         val readable = FakeReadable(valuesByIndex = mapOf(3 to null))
+
         readable.getJacksonOrNull<Payload>(3).shouldBeNull()
         readable.getJsonNodeOrNull(3).shouldBeNull()
     }
@@ -203,6 +224,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getJsonNode("payload")
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[payload] is null or not convertible to JsonNode."
     }
 
@@ -213,6 +235,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getJackson<Payload>(0)
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[0] is null or not convertible to Payload."
     }
 
@@ -223,6 +246,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getJackson<Payload>("absent")
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[absent] is null or not convertible to Payload."
     }
 }
