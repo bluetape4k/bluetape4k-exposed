@@ -4,6 +4,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * [SuspendedJdbcCacheTestScenario] 기반 Write-Behind 캐시 suspend 시나리오입니다.
@@ -69,12 +70,9 @@ interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJ
             val expectedCount = initialCount + entityMap.size
             repository.putAll(entityMap)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofSeconds(5))
-                .untilSuspending {
-                    getAllCountFromDB() >= expectedCount
-                }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                getAllCountFromDB() >= expectedCount
+            }
         }
     }
 }

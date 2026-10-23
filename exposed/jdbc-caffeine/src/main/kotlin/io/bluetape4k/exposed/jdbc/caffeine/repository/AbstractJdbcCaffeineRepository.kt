@@ -1,7 +1,8 @@
 package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.Cache
-import com.github.benmanes.caffeine.cache.Caffeine
+import io.bluetape4k.cache.caffeine.caffeine
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
@@ -15,6 +16,7 @@ import io.bluetape4k.exposed.cache.internal.WriteBehindCoordinator
 import io.bluetape4k.exposed.cache.internal.WriteBehindFailureKind
 import io.bluetape4k.exposed.cache.internal.WriteBehindWorkerCompletion
 import io.bluetape4k.exposed.cache.internal.flushRetryBackoffMillis
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
@@ -50,7 +52,6 @@ import java.io.Serializable
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -82,7 +83,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 ): JdbcCaffeineRepository<ID, E> {
 
     companion object: KLogging() {
-        private val DEFAULT_WRITE_BEHIND_CLOSE_WAIT_DURATION: Duration = Duration.ofSeconds(30)
+        private val DEFAULT_WRITE_BEHIND_CLOSE_WAIT_DURATION: Duration = 30.seconds()
         private const val NANOS_PER_MILLISECOND = 1_000_000L
         private const val WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS = 100L
     }
@@ -125,11 +126,11 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override val cache: Cache<String, E> by lazy {
-        Caffeine.newBuilder()
-            .maximumSize(config.maximumSize)
-            .expireAfterWrite(config.expireAfterWrite)
-            .apply { config.expireAfterAccess?.let { expireAfterAccess(it) } }
-            .build()
+        caffeine {
+            maximumSize(config.maximumSize)
+            expireAfterWrite(config.expireAfterWrite)
+            config.expireAfterAccess?.let { expireAfterAccess(it) }
+        }.build()
     }
 
     // -------------------------------------------------------------------------
@@ -183,6 +184,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             try {
                 for (entry in writeBehindQueue) {
                     if (!entry.accepted.await()) continue
+
                     batch.add(entry.id to entry.entity)
                     // 큐에 남아있는 항목을 배치 크기까지 추가로 수집
                     while (batch.size < config.writeBehindBatchSize) {
@@ -192,12 +194,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     if (batch.isNotEmpty()) {
                         val persistedWrites = batch.toPersistedWrites()
                         val flushedCount = persistedWrites.size
-                        if (flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
-                            settleSuccessfulWriteBehindBatch(batch, flushedCount, persistedWrites)
-                        ) {
-                            // lifecycle fence가 회계와 persisted hook을
-                            // late-side-effect guard와 함께 정산한다.
-                        } else {
+
+                        val isSuccess = flushBatchWithRetry(batch, writeBehindCloseDeadlineNanos.takeIf { it > 0L }) &&
+                                settleSuccessfulWriteBehindBatch(batch, flushedCount, persistedWrites)
+                        if (!isSuccess) {
                             // A permanent failure leaves the coordinator depth/error intact
                             // and terminates the worker without accepting a new batch.
                             if (!writeBehindLateSideEffectGuard.get()) {
@@ -230,11 +230,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                         // lifecycle fence가 회계와 persisted hook을
                         // late-side-effect guard와 함께 정산한다.
                     } else {
-                        if (writeBehindLateSideEffectGuard.get()) {
-                            batch.clear()
-                            return@launch
+                        if (!writeBehindLateSideEffectGuard.get()) {
+                            retainWriteBehindFailedBatch(batch)
                         }
-                        retainWriteBehindFailedBatch(batch)
                         batch.clear()
                     }
                 }
@@ -253,10 +251,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                     return@invokeOnCompletion
                 }
                 writeBehindCoordinator.onWorkerCompleted(
-                    when {
-                        cause == null -> WriteBehindWorkerCompletion.DRAINED
-                        cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
-                        else          -> WriteBehindWorkerCompletion.FAILED
+                    when (cause) {
+                        null                     -> WriteBehindWorkerCompletion.DRAINED
+                        is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
+                        else                     -> WriteBehindWorkerCompletion.FAILED
                     }
                 )
                 writeBehindLifecycleLock.withLock {
@@ -269,19 +267,21 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun startWriteBehindJob(): Job = writeBehindJob
 
-    private suspend fun flushFinalBatch(batch: List<Pair<ID, E>>): Boolean = withContext(NonCancellable) {
-        val deadlineNanos = writeBehindCloseDeadlineNanos.takeIf { it > 0L }
-        if (deadlineNanos == null || deadlineNanos == Long.MAX_VALUE) {
-            return@withContext flushBatchWithRetry(batch, deadlineNanos)
+    private suspend fun flushFinalBatch(batch: List<Pair<ID, E>>): Boolean =
+        withContext(NonCancellable) {
+            val deadlineNanos = writeBehindCloseDeadlineNanos.takeIf { it > 0L }
+            if (deadlineNanos == null || deadlineNanos == Long.MAX_VALUE) {
+                return@withContext flushBatchWithRetry(batch, deadlineNanos)
+            }
+            val remainingNanos = deadlineNanos - System.nanoTime()
+            if (remainingNanos <= 0L) return@withContext false
+            val remainingMillis = remainingNanos / 1_000_000L
+            if (remainingMillis <= 0L) return@withContext false
+
+            withTimeoutOrNull(remainingMillis.milliseconds) {
+                flushBatchWithRetry(batch, deadlineNanos)
+            } ?: false
         }
-        val remainingNanos = deadlineNanos - System.nanoTime()
-        if (remainingNanos <= 0L) return@withContext false
-        val remainingMillis = remainingNanos / 1_000_000L
-        if (remainingMillis <= 0L) return@withContext false
-        withTimeoutOrNull(remainingMillis.milliseconds) {
-            flushBatchWithRetry(batch, deadlineNanos)
-        } ?: false
-    }
 
     private fun markWriteBehindFailed(error: Throwable, terminalizeCoordinator: Boolean = true) {
         if (terminalizeCoordinator) {
@@ -473,7 +473,10 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     @Suppress("ReturnCount") // retry terminal state를 worker 경계에서 구분해야 한다.
     private suspend fun flushBatchWithRetry(batch: List<Pair<ID, E>>, deadlineNanos: Long? = null): Boolean {
         for (attempt in 1..MAX_FLUSH_RETRY_ATTEMPTS) {
+            log.debug { "flushBatchWithRetry: attempt $attempt" }
+
             if (writeBehindLateSideEffectGuard.get()) return false
+
             if (deadlineNanos != null && System.nanoTime() >= deadlineNanos) {
                 val failure = IllegalStateException("Write-Behind flush close deadline exhausted")
                 lastFlushError.compareAndSet(null, failure)
@@ -483,13 +486,16 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             }
             if (flushBatch(batch) && !writeBehindLateSideEffectGuard.get()) return true
             if (writeBehindLateSideEffectGuard.get()) return false
+
             writeBehindCoordinator.onFlushFailed()
+
             if (attempt == MAX_FLUSH_RETRY_ATTEMPTS) {
                 val failure = IllegalStateException("Write-Behind flush retry limit exhausted")
                 markWriteBehindFailed(failure)
                 writeBehindQueue.close(failure)
                 return false
             }
+
             val backoffMillis = flushRetryBackoffMillis(attempt)
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
@@ -506,28 +512,26 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     // DB 직접 조회 (캐시 우회)
     // -------------------------------------------------------------------------
 
-    override fun findByIdFromDb(id: ID): E? =
-        transaction {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.let { with(this@AbstractJdbcCaffeineRepository) { it.toEntity() } }
-        }
+    override fun findByIdFromDb(id: ID): E? = transaction {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.toEntity()
+    }
 
-    override fun findAllFromDb(ids: Collection<ID>): List<E> =
-        transaction {
-            if (ids.isEmpty()) return@transaction emptyList()
-            table
-                .selectAll()
-                .where { table.id inList ids }
-                .map { with(this@AbstractJdbcCaffeineRepository) { it.toEntity() } }
-        }
+    override fun findAllFromDb(ids: Collection<ID>): List<E> = transaction {
+        if (ids.isEmpty()) return@transaction emptyList()
 
-    override fun countFromDb(): Long =
-        transaction {
-            table.selectAll().count()
-        }
+        table
+            .selectAll()
+            .where { table.id inList ids }
+            .map { it.toEntity() }
+    }
+
+    override fun countFromDb(): Long = transaction {
+        table.selectAll().count()
+    }
 
     // -------------------------------------------------------------------------
     // 캐시 기반 조회 (Read-through)
@@ -537,15 +541,15 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     override fun get(id: ID): E? {
         val key = serializeKey(id)
-        if (
-            writeBehindWorkerState.get() == CacheWorkerState.FAILED &&
-            writeBehindCachePublicationsInProgress.containsKey(key)
-        ) {
+
+        val behindProcessing = writeBehindWorkerState.get() == CacheWorkerState.FAILED &&
+                writeBehindCachePublicationsInProgress.containsKey(key)
+
+        if (behindProcessing) {
             return findByIdFromDb(id)
         }
-        return cache.getNullable(key) {
-            findByIdFromDb(id)
-        }
+
+        return cache.getNullable(key) { findByIdFromDb(id) }
     }
 
     override fun getAll(ids: Collection<ID>): Map<ID, E> {
@@ -567,17 +571,17 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
     ): List<E> {
-        val entities =
-            transaction {
-                table
-                    .selectAll()
-                    .where(where)
-                    .apply {
-                        orderBy(sortBy, sortOrder)
-                        limit?.let { limit(it) }
-                        offset?.let { offset(it) }
-                    }.map { with(this@AbstractJdbcCaffeineRepository) { it.toEntity() } }
-            }
+        val entities = transaction {
+            table
+                .selectAll()
+                .where(where)
+                .apply {
+                    orderBy(sortBy, sortOrder)
+                    limit?.let { limit(it) }
+                    offset?.let { offset(it) }
+                }.map { it.toEntity() }
+        }
+
         // 조회 결과를 캐시에 적재
         if (entities.isNotEmpty()) {
             entities.forEach { entity ->
@@ -603,10 +607,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * Subclasses must override this when using the `findAll(where)` variant.
      */
     override fun extractId(entity: E): ID =
-        error(
-            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
-                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
-        )
+        error("findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다.")
 
     // -------------------------------------------------------------------------
     // 쓰기 (캐시 + DB)
@@ -637,9 +638,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 val queuedEntry = WriteBehindEntry(id, entity)
                 if (!tryReserveWriteBehindPending()) {
                     writeBehindCoordinator.settleEnqueue(admissionToken, accepted = false)
-                    throw IllegalStateException(
-                        "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity})."
-                    )
+                    error("Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity}).")
                 }
                 // Write-Behind Job 초기화 보장
                 startWriteBehindJob()
@@ -661,7 +660,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                             if (result.isClosed || state.isWriteBehindTerminalOrDraining()) {
                                 throw writeBehindNotAcceptingException(state)
                             }
-                            throw IllegalStateException(
+                            error(
                                 "Write-Behind queue is full (capacity=${config.writeBehindQueueCapacity}). " +
                                         "Entity id=$id was NOT persisted to the database. " +
                                         "Increase LocalCacheConfig.writeBehindQueueCapacity or reduce the " +
@@ -747,13 +746,16 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
                 }
             }
 
-            else                        -> cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
+            else                        ->
+                cache.put(key, entity)  // READ_ONLY: 캐시만 갱신
         }
     }
 
     override fun putAll(entities: Map<ID, E>, batchSize: Int) {
         batchSize.requirePositiveNumber("batchSize")
-        entities.forEach { (id, entity) -> put(id, entity) }
+        entities.forEach { (id, entity) ->
+            put(id, entity)
+        }
     }
 
     /**
@@ -770,6 +772,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * hook.
      */
     protected open fun afterPersisted(id: ID, entity: E) {
+        log.debug { "after persisted. id=$id entity=$entity" }
         // Default no-op.
     }
 
@@ -781,7 +784,9 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * The default implementation delegates to [afterPersisted] once per write.
      */
     protected open fun afterPersisted(writes: List<CachePersistedWrite<ID, E>>) {
-        writes.forEach { write -> afterPersisted(write.id, write.entity) }
+        writes.forEach { write ->
+            afterPersisted(write.id, write.entity)
+        }
     }
 
     /**
@@ -927,11 +932,11 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun writeBehindNotAcceptingException(state: CacheWorkerState): IllegalStateException {
         val terminalError = writeBehindTerminalError.get()
-        val terminalReason =
-            writeBehindCloseOutcome?.failureReason?.name
-                ?: (terminalError as? WriteBehindCloseFailure)?.reason?.name
-                ?: terminalError?.let { it::class.qualifiedName }
-                ?: state.name
+        val terminalReason = writeBehindCloseOutcome?.failureReason?.name
+            ?: (terminalError as? WriteBehindCloseFailure)?.reason?.name
+            ?: terminalError?.let { it::class.qualifiedName }
+            ?: state.name
+
         return IllegalStateException(
             "Write-Behind worker is not accepting writes because the repository is closing, closed, or terminal. " +
                     "cacheName=$cacheName, workerState=$state, terminalReason=$terminalReason"
@@ -1009,6 +1014,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
 
     private fun cancelWriteBehindAfterClose(outcome: WriteBehindCloseOutcome) {
         if (outcome == WriteBehindCloseOutcome.COMPLETED) return
+
         if (outcome == WriteBehindCloseOutcome.TIMEOUT || outcome == WriteBehindCloseOutcome.INTERRUPTED) {
             // Once the bounded close contract expires, no worker completion may publish
             // cache, hook, coordinator, or lifecycle state changes after close returns.
@@ -1017,12 +1023,14 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
             writeBehindJob.invokeOnCompletion { completed.countDown() }
             writeBehindJob.cancel()
             var restoreInterrupt = false
+
             try {
-                completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS, TimeUnit.MILLISECONDS)
+                completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS.milliseconds)
             } catch (_: InterruptedException) {
                 restoreInterrupt = true
             }
             if (restoreInterrupt) Thread.currentThread().interrupt()
+
             if (!writeBehindJob.isCompleted) {
                 log.warn {
                     "Write-Behind event: component=jdbc operation=close " +
@@ -1140,11 +1148,12 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun publishCoordinatorCloseCompletion() {
         val owner = writeBehindCoordinatorCloseLease.get() ?: return
         if (!writeBehindCoordinatorCompletionPublished.compareAndSet(false, true)) return
+
         val snapshot = writeBehindCoordinator.snapshot()
         val outcome = writeBehindCloseOutcome
         val completed = outcome == null || outcome == WriteBehindCloseOutcome.COMPLETED
-        val drained = completed && snapshot.queueDepth == 0 &&
-                writeBehindWorkerState.get() == CacheWorkerState.STOPPED
+        val drained = completed && snapshot.queueDepth == 0 && writeBehindWorkerState.get() == CacheWorkerState.STOPPED
+
         val kind = if (drained) {
             CloseCompletionKind.COMPLETED
         } else {
@@ -1165,39 +1174,39 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     }
 
     private fun markCloseCleanupPendingIfNeeded(): Boolean = writeBehindLifecycleLock.withLock {
-        val pending = writeBehindAdmissions.get().inProgress > 0 ||
-                writeBehindPersistedHookInProgress.get() > 0
-        if (pending) writeBehindCloseCleanupPending.set(true)
+        val pending = writeBehindAdmissions.get().inProgress > 0 || writeBehindPersistedHookInProgress.get() > 0
+        if (pending) {
+            writeBehindCloseCleanupPending.set(true)
+        }
         pending
     }
 
     @Suppress("ReturnCount") // deferred cleanup은 빠른 비활성/락/회계 검사를 유지한다.
     private fun finishDeferredCloseCleanupIfReady() {
         if (!writeBehindCloseCleanupPending.get()) return
-        writeBehindCloseLock.lock()
-        try {
+
+        writeBehindCloseLock.withLock {
             val ready = writeBehindLifecycleLock.withLock {
-                writeBehindAdmissions.get().inProgress == 0 &&
-                        writeBehindPersistedHookInProgress.get() == 0
+                writeBehindAdmissions.get().inProgress == 0 && writeBehindPersistedHookInProgress.get() == 0
             }
-            if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return
+            if (!ready || !writeBehindCloseCleanupPending.compareAndSet(true, false)) return@withLock
+
             invalidateCacheOnCloseSafely()
             publishCoordinatorCloseCompletion()
-        } finally {
-            writeBehindCloseLock.unlock()
         }
     }
 
     private fun publishWriteBehindCloseFailureLocked(reason: WriteBehindCloseFailureReason) {
         if (writeBehindCloseOutcome != null) return
-        if (reason == WriteBehindCloseFailureReason.TIMEOUT ||
-            reason == WriteBehindCloseFailureReason.INTERRUPTED
-        ) {
+
+        if (reason == WriteBehindCloseFailureReason.TIMEOUT || reason == WriteBehindCloseFailureReason.INTERRUPTED) {
             writeBehindLateSideEffectGuard.set(true)
         }
+
         val failure = WriteBehindCloseFailure(reason)
         writeBehindTerminalError.compareAndSet(null, failure)
         writeBehindWorkerState.set(CacheWorkerState.FAILED)
+
         writeBehindCoordinator.onCloseFailed(
             when (reason) {
                 WriteBehindCloseFailureReason.TIMEOUT -> WriteBehindFailureKind.CLOSE_TIMEOUT
@@ -1216,14 +1225,13 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun writeBehindReadinessWasWithinCloseBudgetLocked(): Boolean {
         val completion = writeBehindJobCompletion.get() ?: return false
         val admissions = writeBehindAdmissions.get()
+
         if (admissions.inProgress != 0 ||
             writeBehindPersistedHookInProgress.get() != 0 ||
             admissions.drainedAtNanos == 0L
         ) return false
-        val readinessAtNanos = maxOf(
-            completion.completedAtNanos,
-            admissions.drainedAtNanos,
-        )
+
+        val readinessAtNanos = maxOf(completion.completedAtNanos, admissions.drainedAtNanos)
         val elapsed = readinessAtNanos - writeBehindCloseStartedAtNanos
         return elapsed <= writeBehindCloseWaitBudgetNanos
     }
@@ -1247,6 +1255,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
     private fun writeBehindCloseWaitNanos(): Long {
         val duration = writeBehindCloseWaitDuration
         if (duration.isNegative || duration.isZero) return 0L
+
         return try {
             duration.toNanos()
         } catch (_: ArithmeticException) {

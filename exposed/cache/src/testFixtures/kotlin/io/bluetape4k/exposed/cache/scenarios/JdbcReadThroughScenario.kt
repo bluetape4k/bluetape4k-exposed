@@ -8,8 +8,10 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -37,10 +39,14 @@ interface JdbcReadThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
 
             // DB에서 조회한 값
             val entityFromDB = repository.findByIdFromDb(id)
+
+            log.debug { "entity from DB. id=$id, entity=$entityFromDB" }
             entityFromDB.shouldNotBeNull()
 
             // 캐시에서 조회한 값 (Read-Through)
             val entityFromCache = repository.get(id)
+
+            log.debug { "entity from cache for id=$id, entity=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
             entityFromCache shouldBeEqualTo entityFromDB
 
@@ -70,14 +76,20 @@ interface JdbcReadThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
 
             // 먼저 캐시에 로드
             val entityFromCache = repository.get(id)
+
+            log.debug { "entity from cache for id=$id, entity=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
 
             // 캐시에서 삭제 (Read-Through Only인 경우 DB에는 영향 없음)
-            getExistingIds().forEach { repository.invalidate(it) }
+            getExistingIds().forEach {
+                log.debug { "invalidate id=$it" }
+                repository.invalidate(it)
+            }
 
             // 다시 조회하면 DB에서 로드
             val reloadedEntity = repository.get(id)
-            if (cacheWriteMode == io.bluetape4k.exposed.cache.CacheWriteMode.READ_ONLY) {
+            log.debug { "reloaded=$reloadedEntity" }
+            if (cacheWriteMode == CacheWriteMode.READ_ONLY) {
                 reloadedEntity.shouldNotBeNull()
                 reloadedEntity shouldBeEqualTo entityFromCache
             }

@@ -52,15 +52,13 @@ class WriteThroughCacheTest {
         override fun withEntityTable(testDB: TestDB, statement: JdbcTransaction.() -> Unit) =
             withActorTable(testDB, statement)
 
-        override fun getExistingId(): Long =
-            transaction {
-                ActorTable.select(ActorTable.id).limit(1).first()[ActorTable.id].value
-            }
+        override fun getExistingId(): Long = transaction {
+            ActorTable.select(ActorTable.id).limit(1).first()[ActorTable.id].value
+        }
 
-        override fun getExistingIds(): List<Long> =
-            transaction {
-                ActorTable.select(ActorTable.id).map { it[ActorTable.id].value }
-            }
+        override fun getExistingIds(): List<Long> = transaction {
+            ActorTable.select(ActorTable.id).map { it[ActorTable.id].value }
+        }
 
         override fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -68,7 +66,7 @@ class WriteThroughCacheTest {
             ActorSchema.newActorRecord()
 
         override fun updateEntityEmail(entity: ActorRecord): ActorRecord =
-            entity.copy(email = Base58.randomString(4) + ".wt-updated@example.com")
+            entity.copy(email = Base58.randomString(8) + ".wt-updated@example.com")
 
         override fun assertSameEntityWithoutUpdatedAt(entity1: ActorRecord, entity2: ActorRecord) {
             entity1.firstName shouldBeEqualTo entity2.firstName

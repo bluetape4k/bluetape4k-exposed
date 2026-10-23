@@ -12,6 +12,7 @@ import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -40,10 +41,14 @@ interface SuspendedJdbcReadThroughScenario<ID: Any, E: Serializable>: SuspendedJ
 
             // DB에서 조회한 값
             val entityFromDB = repository.findByIdFromDb(id)
+
+            log.debug { "entityFromDB: $entityFromDB" }
             entityFromDB.shouldNotBeNull()
 
             // 캐시에서 조회한 값 (Read-Through)
             val entityFromCache = repository.get(id)
+
+            log.debug { "entityFromCache: $entityFromCache" }
             entityFromCache.shouldNotBeNull()
             entityFromCache shouldBeEqualTo entityFromDB
 
@@ -105,7 +110,7 @@ interface SuspendedJdbcReadThroughScenario<ID: Any, E: Serializable>: SuspendedJ
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findAll - 전체 엔티티를 가져옵니다`(testDB: TestDB) = runSuspendIO {
         withSuspendedEntityTable(testDB) {
-            val entities = repository.findAll()
+            val entities = repository.findAll().onEach { log.debug { it } }
             entities.shouldNotBeEmpty()
             entities shouldHaveSize repository.table
                 .selectAll()
@@ -119,9 +124,9 @@ interface SuspendedJdbcReadThroughScenario<ID: Any, E: Serializable>: SuspendedJ
     fun `getAll - 여러 ID의 엔티티를 한 번에 조회한다`(testDB: TestDB) = runSuspendIO {
         withSuspendedEntityTable(testDB) {
             val ids = getExistingIds() + getNonExistentId()
-            val entities = repository.getAll(ids)
-            entities.shouldNotBeEmpty()
 
+            val entities = repository.getAll(ids).onEach { log.debug { it } }
+            entities.shouldNotBeEmpty()
             entities shouldHaveSize getExistingIds().size
         }
     }

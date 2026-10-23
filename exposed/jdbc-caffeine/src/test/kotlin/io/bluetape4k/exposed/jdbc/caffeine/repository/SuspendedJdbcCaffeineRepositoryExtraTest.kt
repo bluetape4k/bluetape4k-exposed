@@ -3,11 +3,15 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.support.joinUntil
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.jdbc.caffeine.AbstractJdbcCaffeineTest
@@ -21,17 +25,18 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedCrede
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
+import io.bluetape4k.utils.Runtimex
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -50,11 +55,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
-import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -69,16 +74,16 @@ import kotlin.time.Duration.Companion.seconds
 @Suppress("DEPRECATION")
 class SuspendedJdbcCaffeineRepositoryExtraTest {
 
-    companion object: KLogging()
+    companion object: KLoggingChannel()
 
     @Test
     fun `get - concurrent suspended cache misses run one loader per key`() = runSuspendIO {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get")
 
-        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
+        val results = ConcurrentLinkedQueue<ActorRecord>()
 
         SuspendedJobTester()
-            .workers(8)
+            .workers(Runtimex.availableProcessors)
             .rounds(1)
             .addAll(
                 List(8) {
@@ -98,10 +103,10 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         val repository = CountingSuspendedActorRepository("jdbc:caffeine:s-atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
 
-        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
+        val results = ConcurrentLinkedQueue<Map<Long, ActorRecord>>()
 
         SuspendedJobTester()
-            .workers(8)
+            .workers(Runtimex.availableProcessors)
             .rounds(1)
             .addAll(
                 List(8) {
@@ -161,7 +166,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
-    fun `get - caller cancellation releases entry and preserves retry`() = runSuspendIO(timeout = 10.seconds) {
+    fun `get - caller cancellation releases entry and preserves retry`() = runSuspendIO {
         val loadStarted = CompletableDeferred<Unit>()
         val releaseLoad = CompletableDeferred<Unit>()
         val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:cancel") { id, _ ->
@@ -187,7 +192,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
-    fun `get - cancelled waiter does not remove holder entry`() = runSuspendIO(timeout = 10.seconds) {
+    fun `get - cancelled waiter does not remove holder entry`() = runSuspendIO {
         val loadStarted = CompletableDeferred<Unit>()
         val releaseLoad = CompletableDeferred<Unit>()
         val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:waiter") { id, _ ->
@@ -195,6 +200,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             releaseLoad.await()
             ActorSchema.newActorRecord().withId(id)
         }
+
         val holder = async(Dispatchers.Default) {
             repository.get(1L)
         }
@@ -203,8 +209,11 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         val waiter = async(Dispatchers.Default) {
             repository.get(1L)
         }
+
         withTimeout(5.seconds) {
-            while (loadMutexUsersOf(repository) < 2) yield()
+            while (loadMutexUsersOf(repository) < 2) {
+                yield()
+            }
         }
         loadMutexUsersOf(repository) shouldBeEqualTo 2
 
@@ -217,77 +226,83 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
-    fun `get - release and new acquire boundary keeps successful loaders non-overlapping`() =
-        runSuspendIO(timeout = 10.seconds) {
-            val loadStarted = CompletableDeferred<Unit>()
-            val releaseLoad = CompletableDeferred<Unit>()
-            val secondLoadStarted = CompletableDeferred<Unit>()
-            val releaseSecondLoad = CompletableDeferred<Unit>()
-            val thirdLoadStarted = CompletableDeferred<Unit>()
-            val activeLoads = AtomicInteger()
-            val maxActiveLoads = AtomicInteger()
-            val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:boundary") { id, attempt ->
-                val active = activeLoads.incrementAndGet()
-                maxActiveLoads.updateAndGet { current -> maxOf(current, active) }
-                try {
-                    loadStarted.complete(Unit)
-                    if (attempt == 1) {
+    fun `get - release and new acquire boundary keeps successful loaders non-overlapping`() = runSuspendIO {
+        val loadStarted = CompletableDeferred<Unit>()
+        val releaseLoad = CompletableDeferred<Unit>()
+        val secondLoadStarted = CompletableDeferred<Unit>()
+        val releaseSecondLoad = CompletableDeferred<Unit>()
+        val thirdLoadStarted = CompletableDeferred<Unit>()
+        val activeLoads = AtomicInteger()
+        val maxActiveLoads = AtomicInteger()
+
+        val repository = ScriptedSuspendedActorRepository("jdbc:caffeine:s-lifecycle:boundary") { id, attempt ->
+            val active = activeLoads.incrementAndGet()
+            maxActiveLoads.updateAndGet { current -> maxOf(current, active) }
+            try {
+                loadStarted.complete(Unit)
+                when (attempt) {
+                    1    -> {
                         releaseLoad.await()
                         null
-                    } else if (attempt == 2) {
+                    }
+                    2    -> {
                         secondLoadStarted.complete(Unit)
                         releaseSecondLoad.await()
                         null
-                    } else {
+                    }
+                    else -> {
                         thirdLoadStarted.complete(Unit)
                         ActorSchema.newActorRecord().withId(id)
                     }
-                } finally {
-                    activeLoads.decrementAndGet()
                 }
+            } finally {
+                activeLoads.decrementAndGet()
             }
-            val holder = async(Dispatchers.Default) {
-                repository.get(1L)
-            }
-            loadStarted.await()
-
-            val waiter = async(Dispatchers.Default) {
-                repository.get(1L)
-            }
-            withTimeout(5.seconds) {
-                while (loadMutexUsersOf(repository) < 2) yield()
-            }
-            loadMutexUsersOf(repository) shouldBeEqualTo 2
-
-            releaseLoad.complete(Unit)
-            holder.await().shouldBeNull()
-
-            secondLoadStarted.await()
-            val third = async(Dispatchers.Default) {
-                repository.get(1L)
-            }
-            withTimeout(5.seconds) {
-                while (loadMutexUsersOf(repository) < 2 && !thirdLoadStarted.isCompleted) yield()
-            }
-            loadMutexUsersOf(repository) shouldBeEqualTo 2
-            thirdLoadStarted.isCompleted shouldBeEqualTo false
-
-            releaseSecondLoad.complete(Unit)
-            val results = listOf(waiter.await(), third.await())
-            results.count { it == null } shouldBeEqualTo 1
-            results.count { it != null } shouldBeEqualTo 1
-
-            maxActiveLoads.get() shouldBeEqualTo 1
-            repository.loadCount.get() shouldBeEqualTo 3
-            loadMutexSizeOf(repository) shouldBeEqualTo 0
         }
+
+        val holder = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+        loadStarted.await()
+
+        val waiter = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+
+        withTimeout(5.seconds) {
+            while (loadMutexUsersOf(repository) < 2) yield()
+        }
+        loadMutexUsersOf(repository) shouldBeEqualTo 2
+
+        releaseLoad.complete(Unit)
+        holder.await().shouldBeNull()
+
+        secondLoadStarted.await()
+
+        val third = async(Dispatchers.Default) {
+            repository.get(1L)
+        }
+        withTimeout(5.seconds) {
+            while (loadMutexUsersOf(repository) < 2 && !thirdLoadStarted.isCompleted) yield()
+        }
+        loadMutexUsersOf(repository) shouldBeEqualTo 2
+        thirdLoadStarted.isCompleted.shouldBeFalse()
+
+        releaseSecondLoad.complete(Unit)
+        val results = listOf(waiter.await(), third.await())
+        results.count { it == null } shouldBeEqualTo 1
+        results.count { it != null } shouldBeEqualTo 1
+
+        maxActiveLoads.get() shouldBeEqualTo 1
+        repository.loadCount.get() shouldBeEqualTo 3
+        loadMutexSizeOf(repository) shouldBeEqualTo 0
+    }
 
     @Test
     fun `close cancels scope when cache invalidate fails`() {
         val repository = CloseProbeSuspendedJdbcCaffeineRepository()
 
         repository.close()
-
         repository.scopeCancelled.shouldBeTrue()
     }
 
@@ -310,15 +325,15 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         override fun extractId(entity: ActorRecord): Long = entity.id
 
-        override suspend fun findByIdFromDb(id: Long): ActorRecord? {
+        override suspend fun findByIdFromDb(id: Long): ActorRecord {
             singleLoadCount.incrementAndGet()
-            delay(100)
+            delay(100.milliseconds)
             return ActorSchema.newActorRecord().withId(id)
         }
 
         override suspend fun findAllFromDb(ids: Collection<Long>): List<ActorRecord> {
             bulkLoadCount.incrementAndGet()
-            delay(100)
+            delay(100.milliseconds)
             return ids.map { ActorSchema.newActorRecord().withId(it) }
         }
     }
@@ -388,11 +403,14 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `countFromDb - DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `countFromDb - DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
+
             withSuspendedActorTable(testDB) {
                 // countFromDb()는 캐시를 우회해 DB에서 직접 집계해야 한다
                 val count = repository.countFromDb()
+
+                log.debug { "count from db=$count" }
                 count shouldBeEqualTo ActorTable.selectAll().count()
                 count shouldBeGreaterThan 0L
             }
@@ -400,7 +418,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `clear - 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `clear - 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO {
             // DB 인스턴스마다 독립된 레포지토리를 사용해야 캐시 오염을 방지할 수 있다
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
@@ -428,12 +446,14 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
+
                 val ids = newSuspendedTransaction(Dispatchers.IO) {
                     ActorTable.select(ActorTable.id).map { it[ActorTable.id].value }
                 }
+                log.debug { "ids=$ids" }
 
                 // 모두 캐시에 로드
                 ids.forEach { repository.get(it) }
@@ -460,7 +480,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache warming Exception is skipped without losing query result`(
             testDB: TestDB,
-        ) = runSuspendIO(timeout = 30.seconds) {
+        ) = runSuspendIO {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = IllegalStateException("cache key failure")
             )
@@ -468,6 +488,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             withSuspendedActorTable(testDB) {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
+                        .onEach { log.debug { it } }
 
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
@@ -482,7 +503,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache key serialization Exception is warned and skipped`(
             testDB: TestDB,
-        ) = runSuspendIO(timeout = 30.seconds) {
+        ) = runSuspendIO {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = IllegalStateException("cache key serialization failure"),
                 failInSerializeKey = true,
@@ -491,6 +512,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             withSuspendedActorTable(testDB) {
                 RecordingLogbackAppender().use { appender ->
                     val entities = repository.findAll()
+                        .onEach { log.debug { it } }
 
                     entities shouldHaveSize ActorTable.selectAll().count().toInt()
                     repository.cache.asMap().shouldBeEmpty()
@@ -505,7 +527,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `findAll - cache warming CancellationException is not swallowed`(
             testDB: TestDB,
-        ) = runSuspendIO(timeout = 30.seconds) {
+        ) = runSuspendIO {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = CancellationException("cache warming cancelled")
             )
@@ -515,13 +537,14 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     repository.findAll()
                 }
 
+                log.debug { "error=$error" }
                 error.message shouldBeEqualTo "cache warming cancelled"
             }
         }
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `findAll - cache warming Error is not swallowed`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `findAll - cache warming Error is not swallowed`(testDB: TestDB) = runSuspendIO {
             val repository = FailingCacheWarmSuspendedJdbcRepository(
                 failure = AssertionError("fatal cache warming failure")
             )
@@ -531,6 +554,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     repository.findAll()
                 }
 
+                log.debug { "error=$error" }
                 error.message shouldBeEqualTo "fatal cache warming failure"
             }
         }
@@ -550,10 +574,12 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `countFromDb - UUID 테이블 DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `countFromDb - UUID 테이블 DB 직접 카운트를 반환한다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val count = repository.countFromDb()
+
+                log.debug { "count from db=$count" }
                 count shouldBeEqualTo CredentialTable.selectAll().count()
                 count shouldBeGreaterThan 0L
             }
@@ -561,7 +587,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `clear - UUID 테이블 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `clear - UUID 테이블 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val id = newSuspendedTransaction(Dispatchers.IO) {
@@ -575,6 +601,8 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 repository.cache.getIfPresent(id.toString()).shouldBeNull()
 
                 val reloaded = repository.get(id)
+
+                log.debug { "reloaded=$reloaded" }
                 reloaded.shouldNotBeNull()
                 reloaded shouldBeEqualTo first
             }
@@ -582,7 +610,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `invalidateAll - UUID 테이블 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO(timeout = 30.seconds) {
+        fun `invalidateAll - UUID 테이블 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
                 val ids = newSuspendedTransaction(Dispatchers.IO) {
@@ -609,7 +637,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `close - Write-Behind 종료 시 큐에 남은 항목이 DB에 flush된다`(testDB: TestDB) = runSuspendIO(timeout = 60.seconds) {
+        fun `close - Write-Behind 종료 시 큐에 남은 항목이 DB에 flush된다`(testDB: TestDB) = runSuspendIO {
             // AutoInc 테이블은 새 엔티티를 DB에 삽입하지 않으므로 UUID 테이블로 검증
             val config = LocalCacheConfig(
                 keyPrefix = "jdbc:caffeine:s-extra:wb-close",
@@ -627,7 +655,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             val newEntities = List(10) { ActorSchema.newCredentialRecord() }
             val newMap = newEntities.associateBy { it.id }
 
-            withTables(testDB, CredentialTable) {
+            withTablesSuspending(testDB, CredentialTable) {
                 repeat(3) {
                     CredentialTable.insert {
                         it[loginId] = faker.internet().domainWord() + "_swb_close_$it"
@@ -641,7 +669,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
                 try {
                     // JDBC fixture 본문에서 suspend API를 호출한다.
-                    runBlocking { repository.putAll(newMap) }
+                    repository.putAll(newMap)
                 } finally {
                     // 큐를 비운 뒤 종료하며, 등록 실패 시에도 worker를 정리한다.
                     repository.close()
@@ -656,7 +684,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `close - write-behind put 전에도 hang 없이 종료한다`(testDB: TestDB) = runSuspendIO(timeout = 35.seconds) {
+        fun `close - write-behind put 전에도 hang 없이 종료한다`(testDB: TestDB) = runSuspendIO {
             val repository = CredentialSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-close-before-put",
@@ -675,9 +703,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `close - write-behind job 시작 후 반복 호출해도 hang 없이 종료한다`(
-            testDB: TestDB,
-        ) = runSuspendIO(timeout = 35.seconds) {
+        fun `close - write-behind job 시작 후 반복 호출해도 hang 없이 종료한다`(testDB: TestDB) = runSuspendIO {
             val repository = CredentialSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-close-idempotent",
@@ -697,15 +723,14 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                 CredentialTable.selectAll()
                     .where { CredentialTable.id eq entity.id }
                     .count() shouldBeEqualTo 1L
+
                 writeBehindJobOf(repository).isCompleted.shouldBeTrue()
             }
         }
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `put - full admission rejects without publishing dirty cache`(
-            testDB: TestDB,
-        ) = runSuspendIO(timeout = 35.seconds) {
+        fun `put - full admission rejects without publishing dirty cache`(testDB: TestDB) = runSuspendIO {
             val flushStarted = CountDownLatch(1)
             val releaseFlush = CountDownLatch(1)
             val repository = BlockingFlushSuspendedJdbcRepository(
@@ -729,12 +754,15 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(blocked.id, blocked)
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     repository.put(queued.id, queued)
+
                     val failure = assertFailsWith<IllegalStateException> {
                         repository.put(cancelled.id, cancelled)
                     }
-                    failure.message.orEmpty().contains("queue is full").shouldBeTrue()
+                    log.debug { "failure=$failure" }
+                    failure.message shouldContain "queue is full"
+
                     repository.cache.getIfPresent(cancelled.id.toString()).shouldBeNull()
                 } finally {
                     releaseFlush.countDown()
@@ -745,9 +773,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
-        fun `put - closed write-behind queue does not publish dirty cache`(
-            testDB: TestDB,
-        ) = runSuspendIO(timeout = 35.seconds) {
+        fun `put - closed write-behind queue does not publish dirty cache`(testDB: TestDB) = runSuspendIO {
             val repository = ActorSuspendedJdbcCaffeineRepository(
                 LocalCacheConfig(
                     keyPrefix = "jdbc:caffeine:s-extra:wb-closed-queue",
@@ -788,10 +814,10 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
                     val existing = ActorTable.selectAll().first().toActorRecord()
                     try {
                         repository.put(existing.id, existing.copy(firstName = "permanent-failure"))
-                        withTimeout(5.seconds) {
-                            writeBehindJobOf(repository).join()
-                        }
+
+                        writeBehindJobOf(repository).joinUntil(5.seconds)
                         attempts.get() shouldBeEqualTo 8
+
                         assertFailsWith<IllegalStateException> {
                             repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
                         }
@@ -852,7 +878,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            releaseFlush.await(5.seconds).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email
@@ -905,10 +931,12 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         return (field.get(repository) as Map<String, *>).size
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun loadMutexUsersOf(repository: AbstractSuspendedJdbcCaffeineRepository<*, *>): Int {
         val registryField = AbstractSuspendedJdbcCaffeineRepository::class.java
             .getDeclaredField("loadMutexes")
             .also { it.isAccessible = true }
+
         val entry = (registryField.get(repository) as Map<String, *>).values.firstOrNull() ?: return 0
         val usersField = entry.javaClass.getDeclaredField("users").also { it.isAccessible = true }
         return usersField.getInt(entry)

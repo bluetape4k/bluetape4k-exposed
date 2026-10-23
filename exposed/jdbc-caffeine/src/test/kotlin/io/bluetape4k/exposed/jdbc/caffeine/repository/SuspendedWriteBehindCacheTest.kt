@@ -16,7 +16,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepo
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
@@ -33,7 +33,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class SuspendedWriteBehindCacheTest {
 
-    companion object: KLogging()
+    companion object: KLoggingChannel()
 
     // -------------------------------------------------------------------------
     // AutoIncrement Long ID — ActorTable

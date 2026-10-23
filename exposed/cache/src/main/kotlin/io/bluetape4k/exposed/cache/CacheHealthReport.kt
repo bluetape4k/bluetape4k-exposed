@@ -38,7 +38,6 @@ data class CacheHealthReport(
     val workerState: CacheWorkerState,
     val lastFlushError: Throwable?,
 ): Serializable {
-
     companion object {
         private const val serialVersionUID: Long = -1428853048381429257L
     }
