@@ -25,7 +25,7 @@ class UserRepository(
 ): AbstractJdbcLettuceRepository<Long, UserRecord>(
     client,
     config,
-    ExposedLettuceCodecs.jackson3(UserRecord::class.java)
+    ExposedLettuceCodecs.fastFory()
 ) {
 
     companion object: KLogging()

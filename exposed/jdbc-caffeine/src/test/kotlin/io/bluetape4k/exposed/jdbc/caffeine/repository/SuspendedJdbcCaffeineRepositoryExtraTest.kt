@@ -24,6 +24,7 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedActor
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedCredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
+import io.bluetape4k.exposed.jdbc.suspendTransactionWithIO
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
@@ -48,7 +49,6 @@ import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -71,7 +71,6 @@ import kotlin.time.Duration.Companion.seconds
  * - [AbstractSuspendedJdbcCaffeineRepository.invalidateAll] (Collection 오버로드)
  * - Write-Behind [AbstractSuspendedJdbcCaffeineRepository.close] 시 남은 큐 flush 보장
  */
-@Suppress("DEPRECATION")
 class SuspendedJdbcCaffeineRepositoryExtraTest {
 
     companion object: KLoggingChannel()
@@ -241,11 +240,11 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             try {
                 loadStarted.complete(Unit)
                 when (attempt) {
-                    1    -> {
+                    1 -> {
                         releaseLoad.await()
                         null
                     }
-                    2    -> {
+                    2 -> {
                         secondLoadStarted.complete(Unit)
                         releaseSecondLoad.await()
                         null
@@ -422,7 +421,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             // DB 인스턴스마다 독립된 레포지토리를 사용해야 캐시 오염을 방지할 수 있다
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
-                val id = newSuspendedTransaction(Dispatchers.IO) {
+                val id = suspendTransactionWithIO {
                     ActorTable.select(ActorTable.id).limit(1).first()[ActorTable.id].value
                 }
 
@@ -450,7 +449,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
             val repository = newRepository()
             withSuspendedActorTable(testDB) {
 
-                val ids = newSuspendedTransaction(Dispatchers.IO) {
+                val ids = suspendTransactionWithIO {
                     ActorTable.select(ActorTable.id).map { it[ActorTable.id].value }
                 }
                 log.debug { "ids=$ids" }
@@ -590,7 +589,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         fun `clear - UUID 테이블 캐시를 비우면 다음 get은 DB에서 다시 로드된다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
-                val id = newSuspendedTransaction(Dispatchers.IO) {
+                val id = suspendTransactionWithIO {
                     CredentialTable.select(CredentialTable.id).limit(1).first()[CredentialTable.id].value
                 }
 
@@ -613,7 +612,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
         fun `invalidateAll - UUID 테이블 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
             val repository = newRepository()
             withSuspendedCredentialTable(testDB) {
-                val ids = newSuspendedTransaction(Dispatchers.IO) {
+                val ids = suspendTransactionWithIO {
                     CredentialTable.select(CredentialTable.id).map { it[CredentialTable.id].value }
                 }
 

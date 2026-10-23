@@ -14,6 +14,7 @@ import io.bluetape4k.exposed.cache.internal.WriteBehindCoordinator
 import io.bluetape4k.exposed.cache.internal.WriteBehindFailureKind
 import io.bluetape4k.exposed.cache.internal.WriteBehindWorkerCompletion
 import io.bluetape4k.exposed.cache.internal.flushRetryBackoffMillis
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
@@ -408,27 +409,31 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
     // -------------------------------------------------------------------------
 
     @Suppress("DEPRECATION")
-    override suspend fun findByIdFromDb(id: ID): E? = suspendedTransactionAsync(Dispatchers.IO) {
+    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransactionWithIO {
         table
             .selectAll()
             .where { table.id eq id }
             .singleOrNull()
             ?.toEntity()
-    }.await()
+    }
 
     @Suppress("DEPRECATION")
-    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> = suspendedTransactionAsync(Dispatchers.IO) {
-        if (ids.isEmpty()) return@suspendedTransactionAsync emptyList()
-        table
-            .selectAll()
-            .where { table.id inList ids }
-            .map { it.toEntity() }
-    }.await()
+    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> {
+        if (ids.isEmpty()) return emptyList()
+
+        return inTopLevelSuspendTransactionWithIO {
+
+            table
+                .selectAll()
+                .where { table.id inList ids }
+                .map { it.toEntity() }
+        }
+    }
 
     @Suppress("DEPRECATION")
-    override suspend fun countFromDb(): Long = suspendedTransactionAsync(Dispatchers.IO) {
+    override suspend fun countFromDb(): Long = inTopLevelSuspendTransactionWithIO {
         table.selectAll().count()
-    }.await()
+    }
 
     // -------------------------------------------------------------------------
     // 캐시 기반 조회 (Read-through)

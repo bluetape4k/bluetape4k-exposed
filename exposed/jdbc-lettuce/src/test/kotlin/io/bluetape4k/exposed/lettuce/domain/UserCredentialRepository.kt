@@ -28,7 +28,7 @@ class UserCredentialRepository(
 ): AbstractJdbcLettuceRepository<UUID, UserCredentialsRecord>(
     client,
     config,
-    ExposedLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
+    ExposedLettuceCodecs.fastFory()
 ) {
     companion object: KLogging()
 

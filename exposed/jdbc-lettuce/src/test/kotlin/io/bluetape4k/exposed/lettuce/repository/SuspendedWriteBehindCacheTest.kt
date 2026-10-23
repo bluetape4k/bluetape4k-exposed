@@ -69,7 +69,7 @@ class SuspendedWriteBehindCacheTest {
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 
         override suspend fun updateEmail(entity: UserRecord): UserRecord =
-            entity.copy(email = Base58.randomString(4) + "." + faker.internet().emailAddress())
+            entity.copy(email = Base58.randomString(8) + "." + faker.internet().emailAddress())
 
         override suspend fun createNewEntity(): UserRecord = UserSchema.newUserRecord()
     }

@@ -18,7 +18,7 @@ class ItemRepository(
 ): AbstractJdbcLettuceRepository<Long, ItemDto>(
     client,
     config,
-    ExposedLettuceCodecs.jackson3(ItemDto::class.java)
+    ExposedLettuceCodecs.fastFory()
 ) {
     override val table: IdTable<Long> = ItemTable
 

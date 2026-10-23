@@ -4,6 +4,7 @@ import io.bluetape4k.cache.nearcache.LettuceNearCacheConfig
 import io.bluetape4k.cache.nearcache.LettuceSuspendNearCache
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.exposed.jdbc.suspendTransactionWithIO
 import io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapLoader
@@ -27,7 +28,6 @@ import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
 import java.io.Serializable
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -64,7 +64,6 @@ import kotlin.coroutines.cancellation.CancellationException
  * @param client Lettuce [RedisClient]
  * @param config [LettuceCacheConfig] 설정
  */
-@Suppress("DEPRECATION")
 abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     private val client: RedisClient,
     override val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
@@ -142,7 +141,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // DB 직접 조회 (캐시 우회)
     // -------------------------------------------------------------------------
 
-    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransaction {
+    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransactionWithIO {
         table
             .selectAll()
             .where { table.id eq id }
@@ -154,7 +153,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     @Suppress("DEPRECATION")
     override suspend fun findAllFromDb(ids: Collection<ID>): List<E> {
         if (ids.isEmpty()) return emptyList()
-        return inTopLevelSuspendTransaction {
+        return inTopLevelSuspendTransactionWithIO {
             table
                 .selectAll()
                 .where { table.id inList ids }
@@ -163,7 +162,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     @Suppress("DEPRECATION")
-    override suspend fun countFromDb(): Long = inTopLevelSuspendTransaction {
+    override suspend fun countFromDb(): Long = inTopLevelSuspendTransactionWithIO {
         table.selectAll().count()
     }
 
