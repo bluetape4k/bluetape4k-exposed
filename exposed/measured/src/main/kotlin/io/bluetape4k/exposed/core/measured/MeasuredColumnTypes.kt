@@ -39,6 +39,7 @@ class MeasureColumnType<T: Units>(
     private val baseUnit: T,
     private val fromBaseValue: (Double) -> Measure<T>,
 ): ColumnType<Measure<T>>() {
+
     private val delegate = DoubleColumnType()
 
     override fun sqlType(): String = delegate.sqlType()
