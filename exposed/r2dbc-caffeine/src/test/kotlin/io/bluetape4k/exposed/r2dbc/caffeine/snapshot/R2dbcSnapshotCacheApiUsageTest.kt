@@ -4,7 +4,6 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.logging.KLogging
@@ -55,7 +54,7 @@ class R2dbcSnapshotCacheApiUsageTest {
             stageSnapshot(cache, miss, snapshot)
         }
         val mapped: R2dbcTransaction.(String) -> CacheSnapshot<Payload> = { source ->
-            stageSnapshot(cache, miss, source, CacheSnapshotMapper { CacheSnapshot(Payload(it)) })
+            stageSnapshot(cache, miss, source) { CacheSnapshot(Payload(it)) }
         }
         val invalidate: R2dbcTransaction.(Long) -> Unit = { id -> stageInvalidation(cache, id) }
 
@@ -103,7 +102,7 @@ class R2dbcSnapshotCacheApiUsageTest {
     private fun extractMarkedBlock(source: String, begin: String, end: String): String {
         val start = source.indexOf(begin)
         val finish = source.indexOf(end, startIndex = start + begin.length)
-        check(start >= 0 && finish > start) { "Missing canonical README markers: $begin .. $end" }
+        check(start in 0..<finish) { "Missing canonical README markers: $begin .. $end" }
         return source.substring(start + begin.length, finish).trim('\n', '\r')
     }
 }

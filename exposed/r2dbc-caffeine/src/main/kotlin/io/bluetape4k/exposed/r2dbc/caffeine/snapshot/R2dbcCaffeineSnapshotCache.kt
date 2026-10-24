@@ -29,6 +29,9 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.support.requireGe
+import io.bluetape4k.support.requireLe
+import io.bluetape4k.support.requireNotNull
 import java.io.Serializable
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -99,11 +102,9 @@ class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
         val claimed = misses.claim(miss)
         return ClaimedSnapshotMiss { snapshot ->
             val estimatedWeight = valueSizer?.estimatedRetainedBytes(snapshot.value)?.also {
-                require(it >= 0L) { "Snapshot value size[$it] must be non-negative." }
+                it.requireGe(0L) { "Snapshot value size[$it] must be non-negative." }
                 if (config.maximumWeight != null) {
-                    require(it <= Int.MAX_VALUE.toLong()) {
-                        "Snapshot value size[$it] exceeds Caffeine's per-entry weight limit."
-                    }
+                    it.requireLe(Int.MAX_VALUE.toLong()) { "Snapshot value size[$it] exceeds Caffeine's per-entry weight limit." }
                 }
             }
             claimed.prepare(snapshot).copy(estimatedWeight = estimatedWeight)
@@ -116,7 +117,7 @@ class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
         deadline: SnapshotCacheDeadline,
     ): SnapshotCacheApplyReport {
         val report = applyEntries(snapshots, SnapshotCacheOperation.PUT, deadline) { put ->
-            val fence = requireNotNull(put.localFence) { "A local snapshot PUT requires its opaque fence." }
+            val fence = put.localFence.requireNotNull { "A local snapshot PUT requires its opaque fence." }
             if (fences.putIfCurrent(put.id, fence) {
                     cache.put(put.id, StoredSnapshot(put.snapshot, caffeineWeight(put.estimatedWeight)))
                 }

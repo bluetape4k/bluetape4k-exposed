@@ -2,7 +2,6 @@ package io.bluetape4k.exposed.r2dbc.caffeine.snapshot.readme
 
 // README-CANONICAL-R2DBC-BEGIN
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.r2dbc.caffeine.snapshot.r2dbcCaffeineSnapshotCache
@@ -36,7 +35,7 @@ suspend fun R2dbcTransaction.cacheOrderSnapshot(
         cache = r2dbcOrderSnapshotCache,
         miss = requireNotNull(lookup.miss),
         source = row,
-        mapper = CacheSnapshotMapper { CacheSnapshot(R2dbcOrderSnapshot(it.id, it.description)) },
+        mapper = { CacheSnapshot(R2dbcOrderSnapshot(it.id, it.description)) },
     )
 }
 
