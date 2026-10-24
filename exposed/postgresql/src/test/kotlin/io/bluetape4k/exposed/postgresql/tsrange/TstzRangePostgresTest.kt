@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -55,6 +56,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
             result.end shouldBeEqualTo end
             result.lowerInclusive.shouldBeTrue()
             result.upperInclusive.shouldBeFalse()
+            result shouldBeEqualTo range
         }
     }
 
@@ -77,6 +79,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
             // inclusive/exclusive 경계가 변환될 수 있으나, start/end 시각은 보존됨
             result.start shouldBeEqualTo start
             result.end shouldBeEqualTo end
+            result shouldBeEqualTo range
         }
     }
 
@@ -104,6 +107,8 @@ class TstzRangePostgresTest: AbstractExposedTest() {
 
             rows shouldHaveSize 1
             rows.first()[PgOverlapTestTable.label] shouldBeEqualTo "겹침"
+            rows.first()[PgOverlapTestTable.range1] shouldBeEqualTo overlapping1
+            rows.first()[PgOverlapTestTable.range2] shouldBeEqualTo overlapping2
         }
     }
 
@@ -156,7 +161,9 @@ class TstzRangePostgresTest: AbstractExposedTest() {
                 .toList()
 
             rows shouldHaveSize 1
-            rows.first()[PgOverlapTestTable.label] shouldBeEqualTo "포함"
+            rows.single()[PgOverlapTestTable.label] shouldBeEqualTo "포함"
+            rows.single()[PgOverlapTestTable.range1] shouldBeEqualTo outer
+            rows.single()[PgOverlapTestTable.range2] shouldBeEqualTo inner
         }
     }
 
@@ -217,6 +224,7 @@ class TstzRangePostgresTest: AbstractExposedTest() {
 
             rows.forEach { row ->
                 row[PgEventTable.period].shouldNotBeNull()
+                log.debug { "period=${row[PgEventTable.period]}" }
             }
         }
     }

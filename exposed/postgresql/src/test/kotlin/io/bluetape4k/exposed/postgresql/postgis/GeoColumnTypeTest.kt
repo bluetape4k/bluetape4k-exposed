@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.PostgisServer
+import io.bluetape4k.testcontainers.database.getDataSource
 import net.postgis.jdbc.PGgeometry
 import net.postgis.jdbc.geometry.LinearRing
 import net.postgis.jdbc.geometry.Point
@@ -39,17 +40,18 @@ class GeoColumnTypeTest: AbstractExposedTest() {
         private const val SRID = 4326
 
         @JvmStatic
-        val postgisContainer = PostgisServer.Launcher.postgis
+        val postgisContainer by lazy { PostgisServer.Launcher.postgis }
 
         @JvmStatic
-        val db: Database by lazy {
-            Database.connect(
-                url = postgisContainer.jdbcUrl,
-                driver = "org.postgresql.Driver",
-                user = postgisContainer.username!!,
-                password = postgisContainer.password!!,
-            )
+        val dataSource by lazy {
+            postgisContainer.getDataSource {
+                maximumPoolSize = 4
+                poolName = "postgis-pool"
+            }
         }
+
+        @JvmStatic
+        val db: Database by lazy { Database.connect(dataSource) }
 
         /**
          * Point 생성 헬퍼. PostGIS 좌표 순서: x=경도(lng), y=위도(lat)

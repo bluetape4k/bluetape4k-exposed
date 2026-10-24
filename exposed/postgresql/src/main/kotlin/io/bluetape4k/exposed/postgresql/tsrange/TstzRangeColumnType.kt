@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.postgresql.tsrange
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotBlank
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.core.vendors.currentDialect
@@ -113,9 +114,8 @@ class TstzRangeColumnType: ColumnType<TimestampRange>() {
     private fun parseRangeLiteral(literal: String): TimestampRange {
         // H2 VARCHAR fallback 환경에서 빈 문자열이 유입될 수 있다.
         // substring(1, length-1) 호출 전 빈 입력을 차단하여 StringIndexOutOfBoundsException 을 예방한다.
-        require(literal.isNotBlank()) {
-            "TSTZRANGE literal 이 비어 있거나 공백만 포함되어 있습니다."
-        }
+        literal.requireNotBlank { "TSTZRANGE literal 이 비어 있거나 공백만 포함되어 있습니다." }
+
         val trimmed = literal.trim()
         val lowerInclusive = trimmed.startsWith("[")
         val upperInclusive = trimmed.endsWith("]")

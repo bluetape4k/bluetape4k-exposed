@@ -1,14 +1,19 @@
 package io.bluetape4k.exposed.postgresql.pgvector
 
 import com.pgvector.PGvector
-import io.bluetape4k.exposed.tests.AbstractExposedTest
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.testcontainers.database.PgvectorServer
+import io.bluetape4k.assertions.FLOAT_EPSILON
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldBeNear
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.exposed.tests.AbstractExposedTest
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.testcontainers.database.PgvectorServer
+import io.bluetape4k.testcontainers.database.getDataSource
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -20,8 +25,6 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * pgvector 컬럼 타입 및 거리 연산 통합 테스트.
@@ -35,16 +38,19 @@ class VectorColumnTypeTest: AbstractExposedTest() {
         private const val DIMENSION = 3
 
         @JvmStatic
-        val pgvectorContainer = PgvectorServer.Launcher.pgvector
+        val pgvectorContainer by lazy { PgvectorServer.Launcher.pgvector }
+
+        @JvmStatic
+        val dataSource by lazy {
+            pgvectorContainer.getDataSource {
+                maximumPoolSize = 4
+                poolName = "postgis-pool"
+            }
+        }
 
         @JvmStatic
         val db: Database by lazy {
-            Database.connect(
-                url = pgvectorContainer.jdbcUrl,
-                driver = "org.postgresql.Driver",
-                user = pgvectorContainer.username!!,
-                password = pgvectorContainer.password!!,
-            ).also { db ->
+            Database.connect(dataSource).also { db ->
                 transaction(db) {
                     PGvector.addVectorType(connection.connection as java.sql.Connection)
                 }
@@ -101,9 +107,9 @@ class VectorColumnTypeTest: AbstractExposedTest() {
             val result = row[Embeddings.embedding]
             result.shouldNotBeNull()
             result shouldHaveSize DIMENSION
-            result[0].toDouble().shouldBeNear(1.0, 0.001)
-            result[1].toDouble().shouldBeNear(2.0, 0.001)
-            result[2].toDouble().shouldBeNear(3.0, 0.001)
+            result[0].shouldBeNear(1.0f, FLOAT_EPSILON)
+            result[1].shouldBeNear(2.0f, FLOAT_EPSILON)
+            result[2].shouldBeNear(3.0f, FLOAT_EPSILON)
         }
     }
 
@@ -192,11 +198,8 @@ class VectorColumnTypeTest: AbstractExposedTest() {
         val columnType = VectorColumnType(DIMENSION)
 
         columnType.valueFromDB("[1,2,3]").toList() shouldBeEqualTo listOf(1.0f, 2.0f, 3.0f)
-        columnType.valueFromDB(PGvector(floatArrayOf(4.0f, 5.0f, 6.0f))).toList() shouldBeEqualTo listOf(
-            4.0f,
-            5.0f,
-            6.0f
-        )
+        columnType.valueFromDB(PGvector(floatArrayOf(4.0f, 5.0f, 6.0f)))
+            .toList() shouldBeEqualTo listOf(4.0f, 5.0f, 6.0f)
     }
 
     @Test
@@ -244,12 +247,9 @@ class VectorColumnTypeTest: AbstractExposedTest() {
             val l2 = row[l2Expr]
             val inner = row[innerExpr]
 
-            cosine.shouldNotBeNull()
-            l2.shouldNotBeNull()
-            inner.shouldNotBeNull()
-            cosine shouldBeGreaterThan 0.9
-            l2 shouldBeGreaterThan 1.4
-            inner shouldBeLessThan 0.1
+            cosine.shouldNotBeNull() shouldBeGreaterThan 0.9
+            l2.shouldNotBeNull() shouldBeGreaterThan 1.4
+            inner.shouldNotBeNull() shouldBeLessThan 0.1
         }
     }
 
@@ -265,6 +265,9 @@ class VectorColumnTypeTest: AbstractExposedTest() {
 
             val results = Embeddings.selectAll().toList()
             results shouldHaveSize 5
+            results.forEach {
+                log.debug { "embedding=${it[Embeddings.embedding].contentToString()}" }
+            }
         }
     }
 }
