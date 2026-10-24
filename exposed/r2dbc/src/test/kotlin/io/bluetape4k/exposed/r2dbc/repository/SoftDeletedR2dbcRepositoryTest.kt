@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -172,11 +173,14 @@ class SoftDeletedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findActivePage 는 활성 엔티티만 페이징하여 반환한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, ContactTable) {
-            repeat(5) { ContactTable.insertAndGetId { it[name] = faker.name().fullName() } }
+            repeat(5) {
+                ContactTable.insertAndGetId { it[name] = faker.name().fullName() }
+            }
             val deletedId = ContactTable.insertAndGetId { it[name] = faker.name().fullName() }.value
             repository.softDeleteById(deletedId)
 
             val page = repository.findActivePage(0, 3)
+            log.debug { "page=$page" }
             page.content shouldHaveSize 3
             page.totalCount shouldBeEqualTo 5L
             page.totalPages shouldBeEqualTo 2

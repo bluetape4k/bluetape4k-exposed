@@ -16,7 +16,13 @@ suspend fun withTables(
     configure: (DatabaseConfig.Builder.() -> Unit)? = null,
     dropTables: Boolean = true,
     statement: suspend R2dbcTransaction.(TestDB) -> Unit,
-) = withTables(r2dbcFixtureFor(testDB), *tables, configure = configure, dropTables = dropTables, statement = statement)
+) = withTables(
+    r2dbcFixtureFor(testDB),
+    *tables,
+    configure = configure,
+    dropTables = dropTables,
+    statement = statement
+)
 
 /**
  * 호출자가 소유한 요청 테이블을 생성하고 필수 cleanup을 수행합니다.

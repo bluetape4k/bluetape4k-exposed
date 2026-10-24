@@ -12,6 +12,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.r2dbc.pool.ConnectionPool
 import io.r2dbc.pool.ConnectionPoolConfiguration
 import io.r2dbc.spi.ConnectionFactories
@@ -35,12 +36,13 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
-import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.testcontainers.utility.Base58
 import java.util.*
 
 private object R2dbcCursorPaginationTable: IdTable<Long>("r2dbc_cursor_pagination_rows") {
@@ -64,11 +66,12 @@ private object R2dbcCursorPaginationRepository: LongR2dbcRepository<R2dbcCursorR
         active = this[R2dbcCursorPaginationTable.active],
     )
 
-    suspend fun insert(record: R2dbcCursorRecord) {
-        R2dbcCursorPaginationTable.insert {
+    suspend fun insert(record: R2dbcCursorRecord): R2dbcCursorRecord {
+        val newId = R2dbcCursorPaginationTable.insertAndGetId {
             it[R2dbcCursorPaginationTable.id] = record.id
             it[R2dbcCursorPaginationTable.active] = record.active
         }
+        return record.copy(id = newId.value)
     }
 }
 
@@ -83,6 +86,7 @@ private class BlockingR2dbcCursorPaginationRepository(
     override suspend fun ResultRow.toEntity(): R2dbcCursorRecord {
         mapperEntered.complete(Unit)
         releaseMapper.await()
+
         return R2dbcCursorRecord(
             id = this[R2dbcCursorPaginationTable.id].value,
             active = this[R2dbcCursorPaginationTable.active],
@@ -134,6 +138,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
                 SortOrder.DESC_NULLS_LAST,
             ).forEach { sortOrder ->
                 val page = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 2, sortOrder = sortOrder)
+                log.debug { "page=$page" }
                 page.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(20L, 7L)
                 page.nextCursor shouldBeEqualTo 7L
                 page.hasNext.shouldBeTrue()
@@ -145,6 +150,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
                 SortOrder.ASC_NULLS_LAST,
             ).forEach { sortOrder ->
                 val page = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 2, sortOrder = sortOrder)
+                log.debug { "page=$page" }
                 page.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(1L, 3L)
             }
         }
@@ -164,7 +170,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
             val page = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 10) {
                 R2dbcCursorPaginationTable.active eq true
             }
-
+            log.debug { "page=$page" }
             page.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(3L, 20L)
             page.hasNext.shouldBeFalse()
         }
@@ -189,6 +195,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
             val next = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 10, cursor = first.nextCursor) {
                 R2dbcCursorPaginationTable.active eq true
             }
+            log.debug { "next=$next" }
             next.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(3L, 20L)
             next.content.map(R2dbcCursorRecord::id).contains(2L).shouldBeFalse()
         }
@@ -232,7 +239,10 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
                 R2dbcCursorPaginationTable.active eq true
             }
 
-            val selectStatements = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            val selectStatements = sqlStatements.filter {
+                it.trimStart().startsWith("SELECT", ignoreCase = true)
+            }.onEach { log.debug { "select=$it" } }
+
             selectStatements.size shouldBeEqualTo 1
             sqlStatements.none { it.contains("count(", ignoreCase = true) }.shouldBeTrue()
 
@@ -247,7 +257,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
     @Test
     fun `suspend 커서 행 삭제와 앞뒤 삽입은 별도 커밋 트랜잭션에서 중복 없이 진행된다`() = runSuspendIO {
         val database = R2dbcDatabase.connect(
-            url = "r2dbc:h2:mem:///r2dbc-cursor-mutation-${UUID.randomUUID()};DB_CLOSE_DELAY=-1;",
+            url = "r2dbc:h2:mem:///r2dbc-cursor-mutation-${Base58.randomString(8)};DB_CLOSE_DELAY=-1;",
         )
         val connectionIds = mutableListOf<Int>()
 
@@ -280,7 +290,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
                 commit()
                 page
             }
-
+            log.debug { "nextPage=$nextPage" }
             nextPage.content.map(R2dbcCursorRecord::id) shouldBeEqualTo listOf(5L, 7L)
             nextPage.nextCursor shouldBeEqualTo 7L
             nextPage.hasNext.shouldBeTrue()
@@ -329,7 +339,9 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
 
             mapperEntered.await()
             request.cancel()
-            assertFailsWith<CancellationException> { request.await() }
+            assertFailsWith<CancellationException> {
+                request.await()
+            }
 
             val idsAfterCancellation = withTimeout(timeMillis = 5_000L) {
                 suspendTransaction(db = database) {
@@ -354,9 +366,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
     }
 
     @Suppress("UnusedReceiverParameter")
-    private suspend fun R2dbcTransaction.seed(
-        vararg records: R2dbcCursorRecord,
-    ) {
+    private suspend fun R2dbcTransaction.seed(vararg records: R2dbcCursorRecord) {
         records.forEach {
             R2dbcCursorPaginationRepository.insert(it)
         }

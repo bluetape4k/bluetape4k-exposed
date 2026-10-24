@@ -32,12 +32,14 @@ class QueryExtensionsIntegrationTest: AbstractExposedR2dbcTest() {
     fun `forEach 는 모든 row 를 순서대로 방문한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, ItemTable) {
             val names = listOf("alpha", "beta", "gamma")
-            ItemTable.batchInsert(names) { name -> this[ItemTable.name] = name }
+            ItemTable.batchInsert(names) { this[ItemTable.name] = it }
 
             val collected = mutableListOf<String>()
-            ItemTable.selectAll().orderBy(ItemTable.id, SortOrder.ASC).forEach { row ->
-                collected.add(row[ItemTable.name])
-            }
+            ItemTable.selectAll()
+                .orderBy(ItemTable.id, SortOrder.ASC)
+                .forEach { row ->
+                    collected.add(row[ItemTable.name])
+                }
 
             collected shouldBeEqualTo names
         }
@@ -49,7 +51,6 @@ class QueryExtensionsIntegrationTest: AbstractExposedR2dbcTest() {
         withTables(testDB, ItemTable) {
             var count = 0
             ItemTable.selectAll().forEach { count++ }
-
             count shouldBeEqualTo 0
         }
     }
@@ -59,7 +60,7 @@ class QueryExtensionsIntegrationTest: AbstractExposedR2dbcTest() {
     fun `forEachIndexed 는 0부터 시작하는 인덱스를 함께 제공한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, ItemTable) {
             val names = listOf("one", "two", "three")
-            ItemTable.batchInsert(names) { name -> this[ItemTable.name] = name }
+            ItemTable.batchInsert(names) { this[ItemTable.name] = it }
 
             val indices = mutableListOf<Int>()
             ItemTable.selectAll()
@@ -77,7 +78,7 @@ class QueryExtensionsIntegrationTest: AbstractExposedR2dbcTest() {
     fun `forEachIndexed 는 row 값과 인덱스를 동시에 접근한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, ItemTable) {
             val names = listOf("x", "y")
-            ItemTable.batchInsert(names) { name -> this[ItemTable.name] = name }
+            ItemTable.batchInsert(names) { this[ItemTable.name] = it }
 
             val pairs = mutableListOf<Pair<Int, String>>()
             ItemTable.selectAll()

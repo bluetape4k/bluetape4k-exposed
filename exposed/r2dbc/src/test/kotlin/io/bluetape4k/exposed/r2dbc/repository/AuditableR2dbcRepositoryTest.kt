@@ -8,11 +8,15 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.Auditable
 import io.bluetape4k.exposed.core.auditable.AuditableLongIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
+import io.bluetape4k.exposed.r2dbc.repository.ArticleSchema.ArticleRecord
+import io.bluetape4k.exposed.r2dbc.repository.ArticleSchema.ArticleRepository
+import io.bluetape4k.exposed.r2dbc.repository.ArticleSchema.ArticleTable
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.exposed.r2dbc.virtualThreadTransaction
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -21,13 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Instant
 
-/**
- * [AuditableR2dbcRepository] 통합 테스트입니다.
- *
- * R2DBC Repository에서 감사 컬럼 기본값, 명시적 수정 사용자, 기본 수정 사용자,
- * 일반 update와 audited update의 차이를 검증합니다.
- */
-class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
+
+object ArticleSchema {
 
     object ArticleTable: AuditableLongIdTable("auditable_r2dbc_articles") {
         val title = varchar("title", 100)
@@ -53,21 +52,35 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
 
         override fun extractId(entity: ArticleRecord): Long = entity.id
 
-        override suspend fun ResultRow.toEntity(): ArticleRecord = ArticleRecord(
-            id = this[ArticleTable.id].value,
-            title = this[ArticleTable.title],
-            category = this[ArticleTable.category],
-            createdBy = this[ArticleTable.createdBy],
-            createdAt = this[ArticleTable.createdAt],
-            updatedBy = this[ArticleTable.updatedBy],
-            updatedAt = this[ArticleTable.updatedAt],
-        )
+        override suspend fun ResultRow.toEntity(): ArticleRecord = toArticleRecord()
 
         override fun BatchInsertStatement.bindSave(entity: ArticleRecord) {
             this[ArticleTable.title] = entity.title
             this[ArticleTable.category] = entity.category
         }
     }
+
+    fun ResultRow.toArticleRecord() = ArticleRecord(
+        id = this[ArticleTable.id].value,
+        title = this[ArticleTable.title],
+        category = this[ArticleTable.category],
+        createdBy = this[ArticleTable.createdBy],
+        createdAt = this[ArticleTable.createdAt],
+        updatedBy = this[ArticleTable.updatedBy],
+        updatedAt = this[ArticleTable.updatedAt],
+    )
+
+}
+
+/**
+ * [AuditableR2dbcRepository] 통합 테스트입니다.
+ *
+ * R2DBC Repository에서 감사 컬럼 기본값, 명시적 수정 사용자, 기본 수정 사용자,
+ * 일반 update와 audited update의 차이를 검증합니다.
+ */
+class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private suspend fun insertArticle(
         title: String = faker.book().title(),
@@ -103,7 +116,7 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val ids = ArticleRepository.saveAll(records)
 
             ids shouldHaveSize records.size
-            ids.all { id -> id > 0L }.shouldBeTrue()
+            ids.all { it > 0L }.shouldBeTrue()
             val article = ArticleRepository.findById(ids.first())
             article.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             article.createdAt.shouldNotBeNull()
@@ -121,8 +134,8 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val updatedCount = ArticleRepository.auditedUpdateById(id, updatedBy = "editor") {
                 it[title] = "updated-title"
             }
-
             updatedCount shouldBeEqualTo 1
+
             val article = ArticleRepository.findById(id)
             article.title shouldBeEqualTo "updated-title"
             article.updatedBy shouldBeEqualTo "editor"
@@ -146,13 +159,16 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             }
 
             updatedCount shouldBeEqualTo 2
+
             val article1 = ArticleRepository.findById(id1)
-            val article2 = ArticleRepository.findById(id2)
+
             article1.category shouldBeEqualTo "published"
-            article2.category shouldBeEqualTo "published"
             article1.updatedBy shouldBeEqualTo "batch"
-            article2.updatedBy shouldBeEqualTo "batch"
             article1.updatedAt.shouldNotBeNull()
+
+            val article2 = ArticleRepository.findById(id2)
+            article2.category shouldBeEqualTo "published"
+            article2.updatedBy shouldBeEqualTo "batch"
             article2.updatedAt.shouldNotBeNull()
         }
     }
@@ -177,22 +193,20 @@ class AuditableR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `withCoroutineUser 는 virtual thread transaction 의 감사 사용자명에 전파된다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, ArticleTable) {
-            val id = UserContext.withCoroutineUser("coroutine-editor") {
-                virtualThreadTransaction(db = this@withTables.db) {
-                    val articleId = insertArticle(title = "coroutine-created")
-
+            val id = UserContext.withCoroutineUser("virtual-editor") {
+                virtualThreadTransaction(db = it.db) {
+                    val articleId = insertArticle(title = "virtual-created")
                     ArticleRepository.auditedUpdateById(articleId) {
-                        it[title] = "coroutine-user"
+                        it[title] = "virtual-user"
                     }
-
                     articleId
                 }
             }
 
             val article = ArticleRepository.findById(id)
-            article.title shouldBeEqualTo "coroutine-user"
-            article.createdBy shouldBeEqualTo "coroutine-editor"
-            article.updatedBy shouldBeEqualTo "coroutine-editor"
+            article.title shouldBeEqualTo "virtual-user"
+            article.createdBy shouldBeEqualTo "virtual-editor"
+            article.updatedBy shouldBeEqualTo "virtual-editor"
             article.updatedAt.shouldNotBeNull()
         }
     }

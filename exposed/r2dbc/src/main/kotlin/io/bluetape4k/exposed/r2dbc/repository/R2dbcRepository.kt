@@ -34,7 +34,6 @@ import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.update
 import java.util.*
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
@@ -174,13 +173,15 @@ interface R2dbcRepository<ID: Any, E: Any> {
      * [predicate]와 일치하는 엔티티 수를 반환합니다.
      * @param predicate 필터 조건을 반환하는 함수
      */
-    suspend fun countBy(predicate: () -> Op<Boolean> = { Op.TRUE }): Long = table.selectAll().where(predicate).count()
+    suspend fun countBy(predicate: () -> Op<Boolean> = { Op.TRUE }): Long =
+        table.selectAll().where(predicate).count()
 
     /**
      * [op]와 일치하는 엔티티 수를 반환합니다.
      * @param op 필터 조건
      */
-    suspend fun countBy(op: Op<Boolean>): Long = table.selectAll().where(op).count()
+    suspend fun countBy(op: Op<Boolean>): Long =
+        table.selectAll().where(op).count()
 
     /**
      * 테이블에 행이 없는지 반환합니다.
@@ -197,10 +198,11 @@ interface R2dbcRepository<ID: Any, E: Any> {
      * @param query 존재 여부를 확인할 [AbstractQuery]
      */
     suspend fun exists(query: AbstractQuery<*>): Boolean {
-        val exists =
-            org.jetbrains.exposed.v1.core
-                .exists(query)
-        return table.select(exists).firstOrNull()?.getOrNull(exists) ?: false
+        val exists = org.jetbrains.exposed.v1.core.exists(query)
+
+        return table.select(exists)
+            .firstOrNull()
+            ?.getOrNull(exists) ?: false
     }
 
     /**
@@ -272,10 +274,9 @@ interface R2dbcRepository<ID: Any, E: Any> {
         offset: Long? = null,
         sortOrder: SortOrder = SortOrder.ASC,
     ): Flow<E> {
-        val condition: Op<Boolean> =
-            filters.fold(Op.TRUE as Op<Boolean>) { acc, filter ->
-                acc.and(filter.invoke())
-            }
+        val condition: Op<Boolean> = filters.fold(Op.TRUE as Op<Boolean>) { acc, filter ->
+            acc.and(filter.invoke())
+        }
         return findAll(limit, offset, sortOrder) { condition }
     }
 
@@ -312,9 +313,8 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .selectAll()
             .where(predicate)
             .limit(1)
-            .apply {
-                offset?.run { offset(offset) }
-            }.firstOrNull()
+            .apply { offset?.run { offset(offset) } }
+            .firstOrNull()
             ?.toEntity()
 
     /**
@@ -331,9 +331,8 @@ interface R2dbcRepository<ID: Any, E: Any> {
             .where(predicate)
             .orderBy(table.id, SortOrder.DESC)
             .limit(1)
-            .apply {
-                offset?.run { offset(offset) }
-            }.firstOrNull()
+            .apply { offset?.run { offset(offset) } }
+            .firstOrNull()
             ?.toEntity()
 
     /**
@@ -414,7 +413,8 @@ interface R2dbcRepository<ID: Any, E: Any> {
     suspend fun deleteAllIgnore(
         limit: Int? = null,
         op: (IdTable<ID>).() -> Op<Boolean> = { Op.TRUE },
-    ): Int = table.deleteIgnoreWhere(limit, op = op)
+    ): Int =
+        table.deleteIgnoreWhere(limit, op = op)
 
     /**
      * ID 모음으로 엔티티를 삭제합니다.
@@ -453,7 +453,8 @@ interface R2dbcRepository<ID: Any, E: Any> {
         predicate: () -> Op<Boolean> = { Op.TRUE },
         limit: Int? = null,
         updateStatement: IdTable<ID>.(UpdateStatement) -> Unit,
-    ): Int = table.update(where = predicate, limit = limit, body = updateStatement)
+    ): Int =
+        table.update(where = predicate, limit = limit, body = updateStatement)
 
     /**
      * Exposed 배치 삽입으로 [entities]를 삽입합니다.
@@ -532,13 +533,17 @@ interface R2dbcRepository<ID: Any, E: Any> {
         }
         require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
         val rows = multiRowValuesData(entities.iterator(), table)
-        return if (rows.isEmpty()) emptyList() else table.batchInsert(
-            data = rows,
-            useMultiRowValues = true,
-            ignore = ignore,
-            shouldReturnGeneratedValues = shouldReturnGeneratedValues,
-            body = insertStatement,
-        ).map { it.toEntity() }
+
+        return if (rows.isEmpty()) emptyList()
+        else table
+            .batchInsert(
+                data = rows,
+                useMultiRowValues = true,
+                ignore = ignore,
+                shouldReturnGeneratedValues = shouldReturnGeneratedValues,
+                body = insertStatement,
+            )
+            .map { it.toEntity() }
     }
 
     /**
@@ -575,13 +580,17 @@ interface R2dbcRepository<ID: Any, E: Any> {
         }
         require(!ignore) { "useMultiRowValues=true cannot be combined with ignore=true; use the legacy batch path" }
         val rows = multiRowValuesData(entities.iterator(), table)
-        return if (rows.isEmpty()) emptyList() else table.batchInsert(
-            data = rows,
-            useMultiRowValues = true,
-            ignore = ignore,
-            shouldReturnGeneratedValues = shouldReturnGeneratedValues,
-            body = insertStatement,
-        ).map { it.toEntity() }
+
+        return if (rows.isEmpty()) emptyList()
+        else table
+            .batchInsert(
+                data = rows,
+                useMultiRowValues = true,
+                ignore = ignore,
+                shouldReturnGeneratedValues = shouldReturnGeneratedValues,
+                body = insertStatement,
+            )
+            .map { it.toEntity() }
     }
 
     /**
@@ -675,14 +684,15 @@ interface R2dbcRepository<ID: Any, E: Any> {
     ): ExposedPage<E> {
         pageNumber.requireGe(0, "pageNumber")
         pageSize.requirePositiveNumber("pageSize")
+
         val totalCount = countBy(predicate)
-        val content =
-            findAll(
-                limit = pageSize,
-                offset = (pageNumber.toLong() * pageSize),
-                sortOrder = sortOrder,
-                predicate = predicate
-            ).toList()
+        val content = findAll(
+            limit = pageSize,
+            offset = (pageNumber.toLong() * pageSize),
+            sortOrder = sortOrder,
+            predicate = predicate
+        ).toList()
+
         return ExposedPage(
             content = content,
             totalCount = totalCount,
@@ -715,7 +725,6 @@ interface LongR2dbcRepository<E: Any>: R2dbcRepository<Long, E>
  *
  * @param E 엔티티 타입
  */
-@OptIn(ExperimentalUuidApi::class)
 interface KotlinUuidR2dbcRepository<E: Any>: R2dbcRepository<Uuid, E>
 
 /**
@@ -739,7 +748,6 @@ interface JavaUuidR2dbcRepository<E: Any>: R2dbcRepository<UUID, E>
     message = "Use KotlinUuidR2dbcRepository instead.",
     replaceWith = ReplaceWith("KotlinUuidR2dbcRepository<E>"),
 )
-@OptIn(ExperimentalUuidApi::class)
 typealias UuidR2dbcRepository<E> = KotlinUuidR2dbcRepository<E>
 
 /**

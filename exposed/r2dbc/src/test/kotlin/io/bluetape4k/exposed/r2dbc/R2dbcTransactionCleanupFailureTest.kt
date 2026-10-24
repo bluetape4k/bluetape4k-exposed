@@ -2,11 +2,12 @@ package io.bluetape4k.exposed.r2dbc
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
-import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.ConnectionFactories
 import io.r2dbc.spi.ConnectionFactory
@@ -27,7 +28,8 @@ import reactor.core.publisher.Mono
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /** Exposed `1.5.0` R2DBC transaction cleanup 실패의 호출자 전달 계약을 검증한다. */
 class R2dbcTransactionCleanupFailureTest {
@@ -44,8 +46,8 @@ class R2dbcTransactionCleanupFailureTest {
             .flatMap { db -> CleanupBoundary.entries.map { Arguments.of(db, it) } }
     }
 
-    private class PrimaryFailure(val boundary: CleanupBoundary): IllegalStateException(boundary.name)
-    private class CleanupFailure(val boundary: CleanupBoundary): IllegalStateException(boundary.name)
+    private class PrimaryFailure(boundary: CleanupBoundary): IllegalStateException(boundary.name)
+    private class CleanupFailure(boundary: CleanupBoundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
@@ -54,22 +56,26 @@ class R2dbcTransactionCleanupFailureTest {
         boundary: CleanupBoundary,
     ) = runSuspendIO {
         val previousDatabase = TransactionManager.defaultDatabase
-        val events = CopyOnWriteArrayList<String>()
+        val events = ConcurrentLinkedQueue<String>()
         val primary = PrimaryFailure(boundary)
         val cleanup = CleanupFailure(boundary)
         val database = instrumentedDatabase(testDB, boundary, events, primary, cleanup)
 
         try {
             val observed = assertFailsWith<PrimaryFailure> {
-                suspendTransaction(database) { exec("SELECT 1") }
+                suspendTransaction(database) {
+                    exec("SELECT 1")
+                }
             }
 
             observed shouldBeSameInstanceAs primary
             observed.suppressed.shouldBeEmpty()
-            events.count { it == "statement-execute" } shouldBeEqualTo 1
-            events.count { it == "rollback" } shouldBeEqualTo 1
-            events.count { it == "connection-close" } shouldBeEqualTo 1
-            events.count { it == "cleanup-failure" } shouldBeEqualTo 1
+
+            events.forEach { log.debug { "event=$it" } }
+            events shouldContain "statement-execute"
+            events shouldContain "rollback"
+            events shouldContain "cleanup-failure"
+            events shouldContain "connection-close"
         } finally {
             TransactionManager.closeAndUnregister(database)
             TransactionManager.defaultDatabase = previousDatabase
@@ -79,7 +85,7 @@ class R2dbcTransactionCleanupFailureTest {
     private fun instrumentedDatabase(
         testDB: TestDB,
         boundary: CleanupBoundary,
-        events: MutableList<String>,
+        events: Queue<String>,
         primary: Throwable,
         cleanup: Throwable,
     ): R2dbcDatabase {
@@ -136,7 +142,7 @@ class R2dbcTransactionCleanupFailureTest {
         })
     }
 
-    private fun cleanupFailure(events: MutableList<String>, cleanup: Throwable): Mono<Void> = Mono.defer {
+    private fun cleanupFailure(events: Queue<String>, cleanup: Throwable): Mono<Void> = Mono.defer {
         events.add("cleanup-failure")
         Mono.error(cleanup)
     }

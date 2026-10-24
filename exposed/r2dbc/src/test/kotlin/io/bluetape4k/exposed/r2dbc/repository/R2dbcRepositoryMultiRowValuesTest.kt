@@ -11,6 +11,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
@@ -37,7 +38,9 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
     fun `native multi-row 부분 충돌의 반환 행 누락을 분리 재현한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Rows) {
             Rows.batchInsert(listOf(Record(name = "dup")), body = bind)
+
             val input = listOf(Record(name = "new-1"), Record(name = "dup"), Record(name = "new-2"))
+
             if (testDB == TestDB.H2) {
                 assertFailsWith<UnsupportedByDialectException> {
                     Rows.batchInsert(input, useMultiRowValues = true, ignore = true, body = bind)
@@ -57,7 +60,11 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
         val note = varchar("note", 80).nullable()
     }
 
-    private data class Record(val id: Long = 0, val name: String, val note: String? = null): Serializable {
+    private data class Record(
+        val id: Long = 0,
+        val name: String,
+        val note: String? = null,
+    ): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -91,14 +98,22 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
         withTables(testDB, Rows) {
             val observer = InsertLog()
             addLogger(observer)
-            val old = Repository.batchInsert(listOf(Record(name = "old-1"), Record(name = "old-2")), false, true, bind)
+
+            val old = Repository.batchInsert(
+                entities = listOf(Record(name = "old-1"), Record(name = "old-2")),
+                ignore = false,
+                shouldReturnGeneratedValues = true,
+                insertStatement = bind
+            )
             old shouldHaveSize 2
+
             observer.entries.map { it.second } shouldBeEqualTo listOf(2, 2)
             observer.entries.clear()
 
             val saved = Repository.batchInsert(
-                sequenceOf(Record(name = "false-1"), Record(name = "false-2")).constrainOnce(),
-                useMultiRowValues = false, insertStatement = bind,
+                entities = sequenceOf(Record(name = "false-1"), Record(name = "false-2")).constrainOnce(),
+                useMultiRowValues = false,
+                insertStatement = bind,
             )
             saved shouldHaveSize 2
             observer.entries.map { it.second } shouldBeEqualTo listOf(2, 2)
@@ -112,12 +127,17 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
             val observer = InsertLog()
             addLogger(observer)
             val input = listOf(Record(name = "first"), Record(name = "second", note = "note"))
-            val saved = Repository.batchInsert(input, useMultiRowValues = true, insertStatement = bind)
+            val saved = Repository.batchInsert(
+                entities = input,
+                useMultiRowValues = true,
+                insertStatement = bind
+            )
 
             saved.map { it.name } shouldBeEqualTo input.map { it.name }
             saved.map { it.note } shouldBeEqualTo input.map { it.note }
             saved.all { it.id > 0 }.shouldBeTrue()
             saved.map { it.id }.distinct() shouldHaveSize 2
+
             observer.entries shouldHaveSize 1
             observer.entries.single().second shouldBeEqualTo 4
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(observer.entries.single().first).shouldBeTrue()
@@ -147,7 +167,8 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
 
             val saved = Repository.batchInsert(
                 sequenceOf(Record(name = "single")).constrainOnce(),
-                useMultiRowValues = true, insertStatement = bind,
+                useMultiRowValues = true,
+                insertStatement = bind,
             )
             saved.single().name shouldBeEqualTo "single"
             observer.entries shouldHaveSize 1
@@ -160,7 +181,7 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
     fun `행 수 추정 한도까지 저장하고 초과 입력은 바인더 전에 거부한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Rows) {
             val maxRows = 65_535 / Rows.columns.size
-            val input = (1..maxRows).map { Record(name = "row-$it") }
+            val input = List(maxRows) { Record(name = "row-$it") }
 
             Repository.batchInsert(input, useMultiRowValues = true, insertStatement = bind) shouldHaveSize maxRows
             Rows.selectAll().count() shouldBeEqualTo maxRows.toLong()
@@ -172,6 +193,7 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
                     bind(it)
                 }
             }
+            log.debug { "failure: $failure" }
             bound shouldBeEqualTo 0
             failure.message shouldNotContain "secret-payload"
             Rows.selectAll().count() shouldBeEqualTo maxRows.toLong()
@@ -204,7 +226,10 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
     @MethodSource("multiRowDialects")
     fun `생성 값 요청을 끈 명시 ID 데이터는 별도 SELECT로 확인한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Rows) {
-            val input = listOf(Record(101, "explicit-1"), Record(102, "explicit-2", "note"))
+            val input = listOf(
+                Record(101, "explicit-1"),
+                Record(102, "explicit-2", "note")
+            )
             Repository.batchInsert(input, shouldReturnGeneratedValues = false, useMultiRowValues = true) {
                 this[Rows.id] = it.id
                 bind(it)
@@ -220,36 +245,45 @@ class R2dbcRepositoryMultiRowValuesTest: AbstractExposedR2dbcTest() {
     fun `multi-row와 ignore 조합은 입력 순회와 INSERT 전에 거부한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Rows) {
             Repository.batchInsert(listOf(Record(name = "dup")), insertStatement = bind)
+
             val observer = InsertLog()
             addLogger(observer)
             var iterated = 0
             var bound = 0
-            val iterable = Iterable<Record> { iterated++; listOf(Record(name = "secret")).iterator() }
-            val sequence = Sequence<Record> { iterated++; listOf(Record(name = "secret")).iterator() }
+            val iterable = Iterable { iterated++; listOf(Record(name = "secret")).iterator() }
+            val sequence = Sequence { iterated++; listOf(Record(name = "secret")).iterator() }
 
             for (generated in listOf(true, false)) {
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
-                        iterable, ignore = true, shouldReturnGeneratedValues = generated,
+                        iterable,
+                        ignore = true,
+                        shouldReturnGeneratedValues = generated,
                         useMultiRowValues = true
                     ) { bound++; bind(it) }
                 }
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
-                        sequence, ignore = true, shouldReturnGeneratedValues = generated,
+                        sequence,
+                        ignore = true,
+                        shouldReturnGeneratedValues = generated,
                         useMultiRowValues = true
                     ) { bound++; bind(it) }
                 }
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
-                        emptyList<Record>(), ignore = true,
-                        shouldReturnGeneratedValues = generated, useMultiRowValues = true
+                        emptyList<Record>(),
+                        ignore = true,
+                        shouldReturnGeneratedValues = generated,
+                        useMultiRowValues = true
                     ) { bound++ }
                 }
                 assertFailsWith<IllegalArgumentException> {
                     Repository.batchInsert(
-                        emptySequence<Record>(), ignore = true,
-                        shouldReturnGeneratedValues = generated, useMultiRowValues = true
+                        emptySequence<Record>(),
+                        ignore = true,
+                        shouldReturnGeneratedValues = generated,
+                        useMultiRowValues = true
                     ) { bound++ }
                 }
             }
