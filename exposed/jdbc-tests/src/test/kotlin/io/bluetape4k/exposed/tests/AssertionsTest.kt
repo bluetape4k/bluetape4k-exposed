@@ -19,10 +19,9 @@ class AssertionsTest: AbstractExposedTest() {
     @Test
     fun `assertTrue should fail when condition is false`() {
         withDb(TestDB.H2) {
-            val exception =
-                assertFailsWith<AssertionError> {
-                    assertTrue(false)
-                }
+            val exception = assertFailsWith<AssertionError> {
+                assertTrue(false)
+            }
             exception.message.shouldNotBeNull()
         }
     }
@@ -37,10 +36,9 @@ class AssertionsTest: AbstractExposedTest() {
     @Test
     fun `assertFalse should fail when condition is true`() {
         withDb(TestDB.H2) {
-            val exception =
-                assertFailsWith<AssertionError> {
-                    assertFalse(true)
-                }
+            val exception = assertFailsWith<AssertionError> {
+                assertFalse(true)
+            }
             exception.message.shouldNotBeNull()
         }
     }
@@ -56,10 +54,9 @@ class AssertionsTest: AbstractExposedTest() {
     @Test
     fun `assertEquals should fail when values are not equal`() {
         withDb(TestDB.H2) {
-            val exception =
-                assertFailsWith<AssertionError> {
-                    assertEquals(1, 2)
-                }
+            val exception = assertFailsWith<AssertionError> {
+                assertEquals(1, 2)
+            }
             exception.message.shouldNotBeNull()
         }
     }
