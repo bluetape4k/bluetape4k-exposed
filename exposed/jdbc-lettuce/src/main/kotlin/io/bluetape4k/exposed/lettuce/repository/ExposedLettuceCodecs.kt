@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.repository
 
+import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodecs
 import io.bluetape4k.redis.lettuce.codec.LettuceJsonCodecs
 import io.lettuce.core.codec.RedisCodec
 import java.nio.ByteBuffer
@@ -8,6 +9,10 @@ object ExposedLettuceCodecs {
 
     fun <E: Any> jackson3(valueType: Class<E>): RedisCodec<String, E> =
         LettuceJsonCodecs.jackson3(valueType)
+
+    fun <E: Any> fastFory(): RedisCodec<String, E> = LettuceBinaryCodecs.fastFory()
+
+    fun <E: Any> lz4FastFory(): RedisCodec<String, E> = LettuceBinaryCodecs.lz4FastFory()
 
     fun <E: Any> requireExplicit(): RedisCodec<String, E> =
         ExplicitLettuceCodecRequired()

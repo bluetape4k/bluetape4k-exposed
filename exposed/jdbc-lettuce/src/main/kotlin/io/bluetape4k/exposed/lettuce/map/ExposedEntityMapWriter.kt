@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.javatimes.millis
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.redis.lettuce.map.WriteMode
@@ -48,7 +49,7 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
     private val insertEntity: (BatchInsertStatement, E) -> Unit,
     private val chunkSize: Int = 1000,
     retryAttempts: Int = 3,
-    retryInterval: Duration = Duration.ofMillis(100),
+    retryInterval: Duration = 100.millis(),
 ): EntityMapWriter<ID, E>(
     RetryConfig
         .custom<Any>()
@@ -85,6 +86,7 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
         //      DUPLICATE KEY 오류가 발생할 수 있다. 따라서 AutoInc 테이블에는 신규 INSERT를 건너뛴다.
         val isAutoInc = table.id.autoIncColumnType != null
         val newIds = map.keys - existingIds
+
         if (newIds.isNotEmpty() && !isAutoInc) {
             newIds.chunked(chunkSize).forEach { chunk ->
                 log.debug { "inserting chunk: $chunk" }

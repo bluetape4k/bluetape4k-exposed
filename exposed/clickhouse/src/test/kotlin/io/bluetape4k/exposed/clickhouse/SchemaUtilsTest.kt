@@ -94,7 +94,10 @@ class SchemaUtilsTest: AbstractClickHouseTest() {
         }
         // 재생성 후 SELECT count (raw SQL — ClickHouse JDBC 드라이버 호환)
         val count = transaction(db) {
-            exec("SELECT count(*) FROM events") { rs -> rs.next(); rs.getLong(1) } ?: 0L
+            exec("SELECT count(*) FROM events") { rs ->
+                rs.next()
+                rs.getLong(1)
+            } ?: 0L
         }
         count shouldBeEqualTo 0L
     }

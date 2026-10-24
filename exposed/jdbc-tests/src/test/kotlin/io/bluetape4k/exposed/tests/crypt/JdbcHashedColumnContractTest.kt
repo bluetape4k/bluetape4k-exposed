@@ -175,7 +175,11 @@ class JdbcHashedColumnContractTest {
                     }
                 })
                 repeat(2) {
-                    table.insert { it[id] = 1; it[secret] = table.secret.hash(plainText); it[optional] = null }
+                    table.insert {
+                        it[id] = 1
+                        it[secret] = table.secret.hash(plainText)
+                        it[optional] = null
+                    }
                 }
             }
         }

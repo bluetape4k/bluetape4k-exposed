@@ -56,13 +56,7 @@ inline fun <reified T: Any> ResultRow.getJacksonOrNull(
     expression: Expression<*>,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): T? {
-    val value = anyValueOrNull(expression) ?: return null
-    return when (value) {
-        is T      -> value
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return anyValueOrNull(expression)?.let { deserializeOrNull(it, serializer) }
 }
 
 /**
@@ -106,11 +100,5 @@ fun ResultRow.getJsonNodeOrNull(
     expression: Expression<*>,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): JsonNode? {
-    val value = anyValueOrNull(expression) ?: return null
-    return when (value) {
-        is JsonNode -> value
-        is String   -> serializer.mapper.readTree(value)
-        is ByteArray -> serializer.mapper.readTree(value)
-        else        -> serializer.mapper.readTree(value.toString())
-    }
+    return anyValueOrNull(expression)?.let { readJsonNodeOrNull(it, serializer.mapper) }
 }

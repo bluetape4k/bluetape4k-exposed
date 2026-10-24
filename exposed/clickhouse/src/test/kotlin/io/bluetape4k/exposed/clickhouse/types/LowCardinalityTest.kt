@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.ClickHouseTable
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -68,6 +69,8 @@ class LowCardinalityTest: AbstractClickHouseTest() {
                 }
 
                 val rows = LcTable.selectAll().orderBy(LcTable.id).toList()
+                    .onEach { log.debug { "row=$it" } }
+
                 rows shouldHaveSize 4
                 rows[0][LcTable.category] shouldBeEqualTo "ALPHA"
                 rows[1][LcTable.category] shouldBeEqualTo "BETA"

@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.core.fastjson2
 
-import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
 import io.bluetape4k.fastjson2.FastjsonSerializer
@@ -72,13 +71,7 @@ inline fun <reified T: Any> Readable.getFastjsonOrNull(
     index: Int,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    val value = get(index) ?: return null
-    return when (value) {
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        is T      -> value
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return get(index)?.let { deserializeValueOrNull(it) }
 }
 
 /**
@@ -101,14 +94,9 @@ inline fun <reified T: Any> Readable.getFastjsonOrNull(
     name: String,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    val value = get(name) ?: return null
-    return when (value) {
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        is T      -> value
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return get(name)?.let { deserializeValueOrNull(it) }
 }
+
 
 /**
  * 인덱스 컬럼 값을 [JSONObject]로 읽어 non-null 결과를 반환합니다.
@@ -162,13 +150,7 @@ fun Readable.getFastjsonObject(name: String): JSONObject =
  * @param index 조회할 컬럼 인덱스입니다.
  */
 fun Readable.getFastjsonObjectOrNull(index: Int): JSONObject? {
-    val value = get(index) ?: return null
-    return when (value) {
-        is JSONObject -> value
-        is String    -> JSON.parseObject(value)
-        is ByteArray -> JSON.parseObject(value)
-        else         -> JSON.parseObject(value.toString())
-    }
+    return get(index)?.let { parseJsonObject(it) }
 }
 
 /**
@@ -187,14 +169,9 @@ fun Readable.getFastjsonObjectOrNull(index: Int): JSONObject? {
  * @param name 조회할 컬럼 이름입니다.
  */
 fun Readable.getFastjsonObjectOrNull(name: String): JSONObject? {
-    val value = get(name) ?: return null
-    return when (value) {
-        is JSONObject -> value
-        is String    -> JSON.parseObject(value)
-        is ByteArray -> JSON.parseObject(value)
-        else         -> JSON.parseObject(value.toString())
-    }
+    return get(name)?.let { parseJsonObject(it) }
 }
+
 
 /**
  * 인덱스 컬럼 값을 [JSONArray]로 읽어 non-null 결과를 반환합니다.
@@ -248,13 +225,7 @@ fun Readable.getFastjsonArray(name: String): JSONArray =
  * @param index 조회할 컬럼 인덱스입니다.
  */
 fun Readable.getFastjsonArrayOrNull(index: Int): JSONArray? {
-    val value = get(index) ?: return null
-    return when (value) {
-        is JSONArray -> value
-        is String -> JSON.parseArray(value)
-        is ByteArray -> JSON.parseArray(value)
-        else      -> JSON.parseArray(value.toString())
-    }
+    return get(index)?.let { parseJsonArray(it) }
 }
 
 /**
@@ -273,11 +244,5 @@ fun Readable.getFastjsonArrayOrNull(index: Int): JSONArray? {
  * @param name 조회할 컬럼 이름입니다.
  */
 fun Readable.getFastjsonArrayOrNull(name: String): JSONArray? {
-    val value = get(name) ?: return null
-    return when (value) {
-        is JSONArray -> value
-        is String -> JSON.parseArray(value)
-        is ByteArray -> JSON.parseArray(value)
-        else      -> JSON.parseArray(value.toString())
-    }
+    return get(name)?.let { parseJsonArray(it) }
 }

@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.warn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
@@ -49,7 +50,7 @@ internal fun <T> clickHouseQueryFlow(
             } catch (caught: Throwable) {
                 failure = caught
                 // 사용자 예외의 메시지·SQL·바인딩·스택은 이 logger에 넘기지 않는다.
-                ClickHouseStreamingLog.log.debug { "ClickHouse stream failed" }
+                ClickHouseStreamingLog.log.warn { "ClickHouse stream failed" }
             } finally {
                 ClickHouseStreamingLog.log.debug { "ClickHouse stream cleanup completed" }
                 channel.close(failure)
@@ -67,7 +68,9 @@ internal fun <T> clickHouseQueryFlow(
         } finally {
             channel.cancel()
             producer.cancel()
-            withContext(NonCancellable) { producer.join() }
+            withContext(NonCancellable) {
+                producer.join()
+            }
             consumerFailure?.let { primary ->
                 closeFailure?.let(primary::suppressDistinct)
             }
@@ -87,11 +90,15 @@ private suspend fun <T> JdbcTransaction.streamRows(
     currentCoroutineContext().ensureActive()
     val original = query()
     val distinct = original.set.fields.distinct()
+
     val selected = if (distinct.size < original.set.fields.size) {
         original.copy().adjustSelect { select(distinct) }
     } else original
+
     val fields = selected.set.realFields.toSet()
-        .mapIndexed { index, expression -> expression to index }.toMap()
+        .mapIndexed { index, expression -> expression to index }
+        .toMap()
+
     currentCoroutineContext().ensureActive()
     // Query.iterator()는 이 dialect에서 전체 결과를 수집하므로 직접 커서를 읽는다.
     val cursor = checkNotNull(execQuery(selected) { it })

@@ -7,6 +7,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -30,6 +31,7 @@ class ImplicitSelectAllTest: AbstractExposedTest() {
             val query = Tester.selectImplicitAll()
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
 
+            log.debug { "sql=$sql" }
             sql shouldContainIgnoringCase "SELECT * FROM"
             sql shouldNotContain Tester.name.name
             sql shouldNotContain Tester.amount.name

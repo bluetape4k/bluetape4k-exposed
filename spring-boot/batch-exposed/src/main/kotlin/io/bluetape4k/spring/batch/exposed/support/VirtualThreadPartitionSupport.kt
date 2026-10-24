@@ -1,5 +1,6 @@
 package io.bluetape4k.spring.batch.exposed.support
 
+import io.bluetape4k.utils.Runtimex
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.core.task.TaskExecutor
 
@@ -23,8 +24,10 @@ import org.springframework.core.task.TaskExecutor
  */
 fun virtualThreadPartitionTaskExecutor(
     threadNamePrefix: String = "batch-partition-",
-    concurrencyLimit: Int = Runtime.getRuntime().availableProcessors() * 2,
-): TaskExecutor = SimpleAsyncTaskExecutor(threadNamePrefix).apply {
-    setVirtualThreads(true)
-    setConcurrencyLimit(concurrencyLimit)
-}
+    concurrencyLimit: Int = Runtimex.availableProcessors * 2,
+): TaskExecutor =
+    SimpleAsyncTaskExecutor(threadNamePrefix)
+        .apply {
+            setVirtualThreads(true)
+            setConcurrencyLimit(concurrencyLimit)
+        }

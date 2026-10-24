@@ -1,11 +1,14 @@
 package io.bluetape4k.spring.data.exposed.common.mapping
 
-import io.bluetape4k.spring.data.exposed.common.repository.support.toSnakeCase
+import io.bluetape4k.spring.data.exposed.common.repository.support.snakeCase
+import io.bluetape4k.support.equalsIgnoreCase
 import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
+import org.springframework.data.mapping.PersistentPropertyPaths
 import org.springframework.data.mapping.context.AbstractMappingContext
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
+import java.util.function.Predicate
 
 /** Exposed DAO Entity를 위한 Spring Data MappingContext 구현체입니다. */
 class ExposedMappingContext:
@@ -23,7 +26,7 @@ class ExposedMappingContext:
                 .filter { descriptor ->
                     table.columns.any { column ->
                         column.name == descriptor.name ||
-                                column.name.equals(toSnakeCase(descriptor.name), ignoreCase = true)
+                                column.name.equalsIgnoreCase(descriptor.name.snakeCase())
                     }
                 }
                 .map { descriptor -> Property.of(typeInformation, descriptor) }
@@ -38,3 +41,18 @@ class ExposedMappingContext:
     ): ExposedPersistentProperty =
         DefaultExposedPersistentProperty(property, owner, simpleTypeHolder)
 }
+
+inline fun <reified T: Any> ExposedMappingContext.getPersistentEntity(): DefaultExposedPersistentEntity<*>? =
+    getPersistentEntity(T::class.java)
+
+inline fun <reified T: Any> ExposedMappingContext.getRequiredPersistentEntity(): DefaultExposedPersistentEntity<*> =
+    getRequiredPersistentEntity(T::class.java)
+
+inline fun <reified T: Any> ExposedMappingContext.hasPersistentEntityFor(): Boolean =
+    hasPersistentEntityFor(T::class.java)
+
+
+inline fun <reified T: Any> ExposedMappingContext.findPersistentPropertyPaths(
+    predicate: Predicate<ExposedPersistentProperty>,
+): PersistentPropertyPaths<T, ExposedPersistentProperty> =
+    findPersistentPropertyPaths(T::class.java, predicate)

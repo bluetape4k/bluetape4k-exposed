@@ -50,9 +50,7 @@ object UserSchema: KLogging() {
         val updatedAt = timestamp("updated_at").nullable()
     }
 
-    class UserEntity(
-        id: EntityID<Long>,
-    ): LongEntity(id) {
+    class UserEntity(id: EntityID<Long>): LongEntity(id) {
         // NOTE: EntityClass 는 직렬화/역직렬화가 불가능합니다. --> UserRecord 를 이용하여 캐시해야 합니다.
         companion object: LongEntityClass<UserEntity>(UserTable)
 
@@ -188,9 +186,7 @@ object UserSchema: KLogging() {
         val updatedAt = timestamp("updated_at").nullable()
     }
 
-    class UserCredentialsEntity(
-        id: EntityID<UUID>,
-    ): TimebasedUUIDEntity(id) {
+    class UserCredentialsEntity(id: EntityID<UUID>): TimebasedUUIDEntity(id) {
         // NOTE: EntityClass 는 직렬화/역직렬화가 불가능합니다. --> UserRecord 를 이용하여 캐시해야 합니다.
         companion object: TimebasedUUIDEntityClass<UserCredentialsEntity>(UserCredentialsTable)
 
@@ -206,6 +202,7 @@ object UserSchema: KLogging() {
         override fun toString(): String = entityToStringBuilder()
             .add("loginId", loginId)
             .add("email", email)
+            .add("lastLoginAt", lastLoginAt)
             .toString()
     }
 
@@ -289,7 +286,7 @@ object UserSchema: KLogging() {
         UserCredentialsRecord(
             id = Uuid.V7.nextId(),
             loginId = loginId ?: (faker.credentials().username() + "_" + Base58.randomString(8)),
-            email = Base58.randomString(4) + "." + faker.internet().emailAddress(),
+            email = Base58.randomString(8) + "." + faker.internet().emailAddress(),
             lastLoginAt = LocalDateTime.now().minusDays(200).toInstant()
         )
 

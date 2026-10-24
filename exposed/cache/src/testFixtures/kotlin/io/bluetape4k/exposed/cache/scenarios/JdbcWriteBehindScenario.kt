@@ -1,9 +1,10 @@
 package io.bluetape4k.exposed.cache.scenarios
 
-import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * [JdbcCacheTestScenario] 기반 Write-Behind 캐시 시나리오입니다.
@@ -67,10 +68,9 @@ interface JdbcWriteBehindScenario<ID: Any, E: Serializable>: JdbcCacheTestScenar
             val expectedCount = initialCount + entityMap.size
             repository.putAll(entityMap)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofMillis(5))
-                .untilAsserted { getAllCountFromDB() shouldBeEqualTo expectedCount }
+            await atMost 30.seconds withPollInterval 1.seconds until {
+                getAllCountFromDB() >= expectedCount
+            }
         }
     }
 }

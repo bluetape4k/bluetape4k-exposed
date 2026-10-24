@@ -23,8 +23,7 @@ open class KsuidMillisTable(
      * KSUID 문자열(27자)로 구성된 기본 키 컬럼입니다.
      * 기본값은 `Ksuid.Millis.nextId()`로 자동 생성됩니다.
      */
-    final override val id =
-        varchar(columnName, 27).ksuidMillisGenerated().entityId()
+    final override val id = varchar(columnName, 27).ksuidMillisGenerated().entityId()
 
     /** 테이블 기본키 정의입니다. */
     final override val primaryKey = PrimaryKey(id)

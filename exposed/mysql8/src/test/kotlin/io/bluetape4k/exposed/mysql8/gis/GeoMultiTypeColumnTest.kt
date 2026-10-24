@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -35,22 +36,24 @@ class GeoMultiTypeColumnTest: AbstractMySqlGisTest() {
 
     @Test
     fun `MultiPoint 저장 및 조회`() {
+        val multiPoints = wgs84MultiPoint(
+            wgs84Point(126.9780, 37.5665),  // 서울
+            wgs84Point(129.0756, 35.1796),  // 부산
+            wgs84Point(128.6014, 35.8714),  // 대구
+        )
         withGeoTables(MultiPointTable) {
             MultiPointTable.insert {
                 it[name] = "도시 클러스터"
-                it[points] = wgs84MultiPoint(
-                    wgs84Point(126.9780, 37.5665),  // 서울
-                    wgs84Point(129.0756, 35.1796),  // 부산
-                    wgs84Point(128.6014, 35.8714),  // 대구
-                )
+                it[points] = multiPoints
             }
 
             val rows = MultiPointTable.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[MultiPointTable.points]
+            val result = rows.single()[MultiPointTable.points]
             result.shouldNotBeNull()
             result.numGeometries shouldBeEqualTo 3
+            result shouldBeEqualTo multiPoints
         }
     }
 
@@ -116,6 +119,12 @@ class GeoMultiTypeColumnTest: AbstractMySqlGisTest() {
 
             val rows = MultiPointTable.selectAll().toList()
             rows shouldHaveSize 2
+            rows.forEach {
+                val name = it[MultiPointTable.name]
+                val points = it[MultiPointTable.points]
+                log.debug { "$name=$points" }
+            }
+            rows.map { it[MultiPointTable.name] to it[MultiPointTable.points] } shouldBeEqualTo clusters
         }
     }
 }

@@ -9,14 +9,16 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.IExpressionAlias
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -27,13 +29,15 @@ import org.junit.jupiter.params.provider.MethodSource
 
 class CteQueryTest: AbstractExposedR2dbcTest() {
 
-    private object CteUsers: Table("r2dbc_cte_query_users") {
-        val id = integer("id")
+    companion object: KLoggingChannel() {
+        private val cteCapableDialects: Set<TestDB> =
+            TestDB.ALL_H2 + TestDB.ALL_POSTGRES_LIKE + TestDB.MYSQL_V8
+    }
+
+    private object CteUsers: IntIdTable("r2dbc_cte_query_users") {
         val name = varchar("name", 64)
         val active = bool("active")
         val managerId = integer("manager_id").nullable()
-
-        override val primaryKey = PrimaryKey(id)
     }
 
     @ParameterizedTest
@@ -51,6 +55,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
                     .where { CteUsers.active eq true }
             )
             val activeName = activeUsers[CteUsers.name]
+
             val query = activeUsers
                 .select(activeName)
                 .withCte(activeUsers)
@@ -59,6 +64,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
             val builder = QueryBuilder(prepared = true)
             val sql = query.prepareSQL(builder)
 
+            log.debug { "cte sql=$sql" }
             sql shouldContain "WITH"
             sql.lowercase() shouldContain "active_users"
             builder.args.map { it.second } shouldBeEqualTo listOf(true)
@@ -95,6 +101,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
 
+            log.debug { "cte sql=$sql" }
             sql shouldContain "WITH RECURSIVE"
             query.map { it[hierarchyName] }.toList() shouldBeEqualTo listOf("root", "child", "inactive-child")
         }
@@ -134,6 +141,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
 
+            log.debug { "cte sql=$sql" }
             sql shouldContain "active_users"
             sql shouldContain ", root_users"
             query.map { "${it[activeName]}:${it[rootName]}" }.toList() shouldBeEqualTo expectedPairs
@@ -165,6 +173,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true))
 
+            log.debug { "sql=$sql" }
             sql shouldContain " UNION "
             sql shouldNotContain "UNION ALL"
         }
@@ -185,6 +194,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
                 idOnlyUsers[CteUsers.name]
             }
 
+            log.debug { "ex=$ex" }
             ex.message shouldContain "is not in CTE query set"
         }
     }
@@ -212,6 +222,7 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
 
             val sql = query.prepareSQL(QueryBuilder(prepared = true)).lowercase()
 
+            log.debug { "sql=$sql" }
             sql shouldContain "user_name"
             query.map { it[aliasedName] }.toList() shouldBeEqualTo listOf("root", "child")
         }
@@ -219,33 +230,24 @@ class CteQueryTest: AbstractExposedR2dbcTest() {
 
     private suspend fun seedUsers() {
         CteUsers.insert {
-            it[id] = 1
             it[name] = "root"
             it[active] = true
             it[managerId] = null
         }
         CteUsers.insert {
-            it[id] = 2
             it[name] = "child"
             it[active] = true
             it[managerId] = 1
         }
         CteUsers.insert {
-            it[id] = 3
             it[name] = "inactive-child"
             it[active] = false
             it[managerId] = 2
         }
         CteUsers.insert {
-            it[id] = 4
             it[name] = "other-root"
             it[active] = false
             it[managerId] = null
         }
-    }
-
-    companion object {
-        private val cteCapableDialects: Set<TestDB> =
-            TestDB.ALL_H2 + TestDB.ALL_POSTGRES_LIKE + TestDB.MYSQL_V8
     }
 }

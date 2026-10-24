@@ -14,6 +14,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -67,23 +68,24 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
     object AuditableEdgeCaseRepository:
         LongAuditableJdbcRepository<AuditableEdgeCaseRecord, AuditableEdgeCaseTable> {
 
-        override val table = AuditableEdgeCaseTable
+        override val table: AuditableEdgeCaseTable = AuditableEdgeCaseTable
+        private val entityTable = table
 
         override fun extractId(entity: AuditableEdgeCaseRecord): Long = entity.id
 
         override fun ResultRow.toEntity(): AuditableEdgeCaseRecord = AuditableEdgeCaseRecord(
-            id = this[AuditableEdgeCaseTable.id].value,
-            name = this[AuditableEdgeCaseTable.name],
-            age = this[AuditableEdgeCaseTable.age],
-            createdBy = this[AuditableEdgeCaseTable.createdBy],
-            createdAt = this[AuditableEdgeCaseTable.createdAt],
-            updatedBy = this[AuditableEdgeCaseTable.updatedBy],
-            updatedAt = this[AuditableEdgeCaseTable.updatedAt],
+            id = this[table.id].value,
+            name = this[table.name],
+            age = this[table.age],
+            createdBy = this[table.createdBy],
+            createdAt = this[table.createdAt],
+            updatedBy = this[table.updatedBy],
+            updatedAt = this[table.updatedAt],
         )
 
         override fun BatchInsertStatement.bindSave(entity: AuditableEdgeCaseRecord) {
-            this[AuditableEdgeCaseTable.name] = entity.name
-            this[AuditableEdgeCaseTable.age] = entity.age
+            this[entityTable.name] = entity.name
+            this[entityTable.age] = entity.age
         }
     }
 
@@ -117,10 +119,11 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             val ids = AuditableEdgeCaseRepository.saveAll(listOf(record))
 
             ids shouldHaveSize 1
-            ids.first().shouldBeGreaterThan(0L)
+            ids.single() shouldBeGreaterThan 0L
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo 1L
 
             val saved = findById(ids.first())
+            log.debug { "saved=$saved" }
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()
         }
@@ -141,6 +144,7 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             AuditableEdgeCaseTable.selectAll().count() shouldBeEqualTo records.size.toLong()
 
             val saved = findById(ids.first())
+            log.debug { "saved=$saved" }
             saved.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
             saved.createdAt.shouldNotBeNull()
         }
@@ -178,6 +182,8 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             val record1 = findById(id1)
             val record2 = findById(id2)
 
+            log.debug { "record1=$record1" }
+            log.debug { "record2=$record2" }
             record1.updatedAt.shouldNotBeNull()
             record2.updatedAt.shouldNotBeNull()
         }
@@ -237,6 +243,7 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             }
 
             val record = findById(id)
+            log.debug { "record=$record" }
             record.updatedBy.shouldNotBeNull()
             record.updatedBy shouldBeEqualTo "testUser"
         }
@@ -266,6 +273,7 @@ class AuditableJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             updatedCount shouldBeGreaterOrEqualTo 1
 
             val record = findById(id)
+            log.debug { "record=$record" }
             record.updatedAt.shouldNotBeNull()
             record.name shouldBeEqualTo "LimitUpdated"
         }

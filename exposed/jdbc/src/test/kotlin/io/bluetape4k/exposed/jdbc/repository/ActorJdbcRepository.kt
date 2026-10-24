@@ -10,7 +10,6 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.jdbc.andWhere
-import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import java.time.LocalDate
 
@@ -61,12 +60,12 @@ class ActorJdbcRepository: LongJdbcRepository<ActorRecord> {
     fun save(actor: ActorRecord): ActorRecord {
         log.debug { "Create new actor. actor: $actor" }
 
-        val id =
-            ActorTable.insertAndGetId {
-                it[firstName] = actor.firstName
-                it[lastName] = actor.lastName
-                it[birthday] = actor.birthday?.let { birthday -> LocalDate.parse(birthday) }
-            }
+        val id = insert(actor) {
+            it[ActorTable.firstName] = actor.firstName
+            it[ActorTable.lastName] = actor.lastName
+            it[ActorTable.birthday] = actor.birthday?.let { birthday -> LocalDate.parse(birthday) }
+
+        }
         return actor.withId(id = id.value)
     }
 }

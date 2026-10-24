@@ -101,10 +101,8 @@ class ExposedQueryMethodTest {
     }
 }
 
-private interface CommonQueryRepository: org.springframework.data.repository.Repository<
-        io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity,
-        Long,
-        > {
+private interface CommonQueryRepository:
+    org.springframework.data.repository.Repository<io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity, Long> {
     @CommonQuery(
         value = "SELECT * FROM users WHERE name = ?1",
         countQuery = "SELECT COUNT(*) FROM users WHERE name = ?1",

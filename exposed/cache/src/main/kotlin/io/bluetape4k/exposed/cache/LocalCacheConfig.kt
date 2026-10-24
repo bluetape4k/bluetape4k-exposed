@@ -1,6 +1,9 @@
 package io.bluetape4k.exposed.cache
 
+import io.bluetape4k.ToStringBuilder
 import io.bluetape4k.exposed.cache.internal.MAX_WRITE_BEHIND_QUEUE_CAPACITY
+import io.bluetape4k.javatimes.minutes
+import io.bluetape4k.javatimes.requirePositiveDuration
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.requireGt
 import io.bluetape4k.support.requireInRange
@@ -44,7 +47,7 @@ import java.time.Duration
 open class LocalCacheConfig(
     val keyPrefix: String = "local",
     val maximumSize: Long = 10_000L,
-    val expireAfterWrite: Duration = Duration.ofMinutes(10),
+    val expireAfterWrite: Duration = 10.minutes(),
     val expireAfterAccess: Duration? = null,
     val writeMode: CacheWriteMode = CacheWriteMode.READ_ONLY,
     val writeBehindBatchSize: Int = 100,
@@ -62,9 +65,7 @@ open class LocalCacheConfig(
         expireAfterWrite.requireGt(Duration.ZERO, "expireAfterWrite")
 
         // expireAfterAccess가 설정된 경우에도 0 이하 값은 즉시 만료를 의미한다.
-        expireAfterAccess?.let {
-            it.requireGt(Duration.ZERO, "expireAfterAccess")
-        }
+        expireAfterAccess?.requirePositiveDuration("expireAfterAccess")
 
         // batch와 queue 모두 canonical finite bound 안에 있어야 unbounded waiter와
         // 정수 overflow가 admission 경계를 우회하지 않는다.
@@ -103,4 +104,15 @@ open class LocalCacheConfig(
          */
         val WRITE_BEHIND = LocalCacheConfig(writeMode = CacheWriteMode.WRITE_BEHIND)
     }
+
+    override fun toString(): String =
+        ToStringBuilder(this)
+            .add("keyPrefix", keyPrefix)
+            .add("maximumSize", maximumSize)
+            .add("expireAfterWrite", expireAfterWrite)
+            .add("expireAfterAccess", expireAfterAccess)
+            .add("writeMode", writeMode)
+            .add("writeBehindBatchSize", writeBehindBatchSize)
+            .add("writeBehindQueueCapacity", writeBehindQueueCapacity)
+            .toString()
 }

@@ -9,6 +9,8 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.toUtf8Bytes
 import io.r2dbc.spi.Readable
 import org.junit.jupiter.api.Test
 import java.io.Serializable
@@ -27,14 +29,14 @@ class ReadableExtensionsTest {
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
         private val valuesByName: Map<String, Any?> = emptyMap(),
     ): Readable {
-        override fun <T: Any?> get(index: Int, type: Class<T>): T? {
+        override fun <T> get(index: Int, type: Class<T>): T? {
             val value = valuesByIndex[index] ?: return null
             if (!type.isInstance(value)) return null
             @Suppress("UNCHECKED_CAST")
             return value as T
         }
 
-        override fun <T: Any?> get(name: String, type: Class<T>): T? {
+        override fun <T> get(name: String, type: Class<T>): T? {
             val value = valuesByName[name] ?: return null
             if (!type.isInstance(value)) return null
             @Suppress("UNCHECKED_CAST")
@@ -47,14 +49,15 @@ class ReadableExtensionsTest {
 
     @Test
     fun `Readable fastjson getter supports index and name`() {
+        val payload = Payload("blue", 20)
         val jsonText = """{"name":"blue","age":20}"""
         val readable = FakeReadable(
             valuesByIndex = mapOf(0 to jsonText),
             valuesByName = mapOf("payload" to jsonText),
         )
 
-        readable.getFastjson<Payload>(0) shouldBeEqualTo Payload("blue", 20)
-        readable.getFastjson<Payload>("payload") shouldBeEqualTo Payload("blue", 20)
+        readable.getFastjson<Payload>(0) shouldBeEqualTo payload
+        readable.getFastjson<Payload>("payload") shouldBeEqualTo payload
     }
 
     @Test
@@ -93,24 +96,26 @@ class ReadableExtensionsTest {
 
     @Test
     fun `Readable fastjson getter handles else branch via toString by index`() {
+        val payload = Payload("tostring", 7)
         val jsonText = """{"name":"tostring","age":7}"""
         val customObj = object {
             override fun toString() = jsonText
         }
         val readable = FakeReadable(valuesByIndex = mapOf(0 to customObj))
 
-        readable.getFastjson<Payload>(0) shouldBeEqualTo Payload("tostring", 7)
+        readable.getFastjson<Payload>(0) shouldBeEqualTo payload
     }
 
     @Test
     fun `Readable fastjson getter handles else branch via toString by name`() {
+        val payload = Payload("tostring", 7)
         val jsonText = """{"name":"tostring","age":7}"""
         val customObj = object {
             override fun toString() = jsonText
         }
         val readable = FakeReadable(valuesByName = mapOf("payload" to customObj))
 
-        readable.getFastjson<Payload>("payload") shouldBeEqualTo Payload("tostring", 7)
+        readable.getFastjson<Payload>("payload") shouldBeEqualTo payload
     }
 
     @Test
@@ -121,15 +126,17 @@ class ReadableExtensionsTest {
             valuesByIndex = mapOf(1 to objectText, 2 to arrayText),
         )
 
-        readable.getFastjsonObject(1).getJSONObject("user")
+        readable.getFastjsonObject(1)
+            .getJSONObject("user")
             .getString("name") shouldBeEqualTo "tester"
+
         readable.getFastjsonArray(2) shouldHaveSize 3
     }
 
     @Test
     fun `Readable fastjson object getter supports ByteArray by index`() {
         val jsonText = """{"x":10}"""
-        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toUtf8Bytes()))
 
         readable.getFastjsonObject(0).getInteger("x") shouldBeEqualTo 10
     }
@@ -137,7 +144,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable fastjson object getter supports ByteArray by name`() {
         val jsonText = """{"x":10}"""
-        val readable = FakeReadable(valuesByName = mapOf("obj" to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByName = mapOf("obj" to jsonText.toUtf8Bytes()))
 
         readable.getFastjsonObject("obj").getInteger("x") shouldBeEqualTo 10
     }
@@ -183,7 +190,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable fastjson array getter supports ByteArray by index`() {
         val jsonText = """[10,20,30]"""
-        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByIndex = mapOf(0 to jsonText.toUtf8Bytes()))
 
         readable.getFastjsonArray(0) shouldHaveSize 3
     }
@@ -191,7 +198,7 @@ class ReadableExtensionsTest {
     @Test
     fun `Readable fastjson array getter supports ByteArray by name`() {
         val jsonText = """[10,20,30]"""
-        val readable = FakeReadable(valuesByName = mapOf("arr" to jsonText.toByteArray()))
+        val readable = FakeReadable(valuesByName = mapOf("arr" to jsonText.toUtf8Bytes()))
 
         readable.getFastjsonArray("arr") shouldHaveSize 3
     }
@@ -288,6 +295,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjson<Payload>("payload")
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[payload] is null or not convertible to Payload."
     }
 
@@ -298,6 +306,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjson<Payload>(0)
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[0] is null or not convertible to Payload."
     }
 
@@ -308,6 +317,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjsonObject(0)
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[0] is null or not convertible to JSONObject."
     }
 
@@ -318,6 +328,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjsonObject("obj")
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[obj] is null or not convertible to JSONObject."
     }
 
@@ -328,6 +339,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjsonArray(0)
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[0] is null or not convertible to JSONArray."
     }
 
@@ -338,6 +350,7 @@ class ReadableExtensionsTest {
         val ex = assertFailsWith<IllegalStateException> {
             readable.getFastjsonArray("arr")
         }
+        log.debug { "ex=$ex" }
         ex.message shouldBeEqualTo "Column[arr] is null or not convertible to JSONArray."
     }
 }

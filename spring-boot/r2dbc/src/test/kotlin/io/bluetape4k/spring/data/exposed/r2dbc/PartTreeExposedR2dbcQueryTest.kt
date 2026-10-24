@@ -7,16 +7,18 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.UserR2dbcRepository
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.support.ExposedR2dbcRepositoryFactory
 import kotlinx.coroutines.flow.toList
-import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,22 +35,22 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     private lateinit var userRepository: UserR2dbcRepository
 
     private suspend fun createUsers() {
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Alice"
             row[email] = "alice@example.com"
             row[age] = 30
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Bob"
             row[email] = "bob@example.com"
             row[age] = 25
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Charlie"
             row[email] = "charlie@example.com"
             row[age] = 35
         }
-        Users.insertAndGetId { row ->
+        Users.insert { row ->
             row[name] = "Alice"
             row[email] = "alice2@example.com"
             row[age] = 20
@@ -61,7 +63,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
         withTables(testDB, Users) {
             createUsers()
 
-            val results = userRepository.findByName("Alice")
+            val results = userRepository.findByName("Alice").onEach { log.debug { "found=$it" } }
             results shouldHaveSize 2
             results.all { it.name == "Alice" }.shouldBeTrue()
         }
@@ -74,7 +76,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
             createUsers()
 
             val sort = Sort.by(Direction.DESC, "age")
-            val results = userRepository.findByName("Alice", sort)
+            val results = userRepository.findByName("Alice", sort).onEach { log.debug { "found=$it" } }
             results.map { it.age } shouldBeEqualTo listOf(30, 20)
         }
     }
@@ -98,7 +100,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
         withTables(testDB, Users) {
             createUsers()
 
-            val results = userRepository.findByAgeGreaterThan(25)
+            val results = userRepository.findByAgeGreaterThan(25).onEach { log.debug { "found=$it" } }
             results.all { it.age > 25 }.shouldBeTrue()
             results shouldHaveSize 2
         }
@@ -112,6 +114,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
 
             val pageable = PageRequest.of(0, 2, Sort.by(Direction.ASC, "age"))
             val slice = userRepository.findByAgeGreaterThan(10, pageable)
+            log.debug { "slice=$slice" }
             slice.content.map { it.age } shouldBeEqualTo listOf(20, 25)
             slice.hasNext().shouldBeTrue()
         }
@@ -205,7 +208,7 @@ class PartTreeExposedR2dbcQueryTest: AbstractExposedR2dbcRepositoryTest() {
     fun `findByNameOrderByAgeAsc returns flow rows`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
             createUsers()
-            val results = userRepository.findByNameOrderByAgeAsc("Alice").toList()
+            val results = userRepository.findByNameOrderByAgeAsc("Alice").log("User").toList()
             results.map { it.age } shouldBeEqualTo listOf(20, 30)
         }
     }

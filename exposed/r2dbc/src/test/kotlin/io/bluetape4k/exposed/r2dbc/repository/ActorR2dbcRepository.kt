@@ -34,22 +34,11 @@ class ActorR2dbcRepository: LongR2dbcRepository<ActorRecord> {
 
         params.forEach { (key, value) ->
             when (key) {
-                ActorTable::id.name       -> {
-                    value?.run { query.andWhere { ActorTable.id eq value.toLong() } }
-                }
-                ActorTable::firstName.name -> {
-                    value?.run { query.andWhere { ActorTable.firstName eq value } }
-                }
-                ActorTable::lastName.name -> {
-                    value?.run { query.andWhere { ActorTable.lastName eq value } }
-                }
-                ActorTable::birthday.name -> {
-                    value?.run {
-                        query.andWhere {
-                            ActorTable.birthday eq
-                                    LocalDate.parse(value)
-                        }
-                    }
+                ActorTable::id.name        -> value?.run { query.andWhere { ActorTable.id eq value.toLong() } }
+                ActorTable::firstName.name -> value?.run { query.andWhere { ActorTable.firstName eq value } }
+                ActorTable::lastName.name  -> value?.run { query.andWhere { ActorTable.lastName eq value } }
+                ActorTable::birthday.name  -> value?.run {
+                    query.andWhere { ActorTable.birthday eq LocalDate.parse(value) }
                 }
             }
         }
@@ -60,12 +49,11 @@ class ActorR2dbcRepository: LongR2dbcRepository<ActorRecord> {
     suspend fun save(actor: ActorRecord): ActorRecord {
         log.debug { "Create new actor. actor: $actor" }
 
-        val id =
-            ActorTable.insertAndGetId {
-                it[firstName] = actor.firstName
-                it[lastName] = actor.lastName
-                it[birthday] = actor.birthday?.let { day -> LocalDate.parse(day) }
-            }
-        return actor.copy(id = id.value)
+        val id = ActorTable.insertAndGetId {
+            it[firstName] = actor.firstName
+            it[lastName] = actor.lastName
+            it[birthday] = actor.birthday?.let { day -> LocalDate.parse(day) }
+        }
+        return actor.withId(id = id.value)
     }
 }

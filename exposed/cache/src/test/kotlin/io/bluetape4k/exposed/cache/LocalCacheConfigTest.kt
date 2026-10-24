@@ -4,8 +4,11 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.io.serializer.JdkBinarySerializer
+import io.bluetape4k.javatimes.minutes
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -26,9 +29,10 @@ class LocalCacheConfigTest {
     fun `기본값으로 생성 시 모든 프로퍼티가 명세된 기본값을 가진다`() {
         val config = LocalCacheConfig()
 
+        log.debug { "config=$config" }
         config.keyPrefix shouldBeEqualTo "local"
         config.maximumSize shouldBeEqualTo 10_000L
-        config.expireAfterWrite shouldBeEqualTo Duration.ofMinutes(10)
+        config.expireAfterWrite shouldBeEqualTo 10.minutes()
         config.expireAfterAccess.shouldBeNull()
         config.writeMode shouldBeEqualTo CacheWriteMode.READ_ONLY
         config.writeBehindBatchSize shouldBeEqualTo 100
@@ -55,7 +59,7 @@ class LocalCacheConfigTest {
 
     @Test
     fun `expireAfterAccess를 설정하면 프로퍼티에 저장된다`() {
-        val access = Duration.ofMinutes(5)
+        val access = 5.minutes()
         val config = LocalCacheConfig(expireAfterAccess = access)
         config.expireAfterAccess.shouldNotBeNull() shouldBeEqualTo access
     }
@@ -146,7 +150,7 @@ class LocalCacheConfigTest {
     @Test
     fun `expireAfterAccess가 음수이면 IllegalArgumentException이 발생한다`() {
         assertFailsWith<IllegalArgumentException> {
-            LocalCacheConfig(expireAfterAccess = Duration.ofSeconds(-1))
+            LocalCacheConfig(expireAfterAccess = (-1).seconds())
         }
     }
 
@@ -209,13 +213,17 @@ class LocalCacheConfigTest {
         val original = LocalCacheConfig(
             keyPrefix = "actor",
             maximumSize = 5_000L,
-            expireAfterWrite = Duration.ofMinutes(30),
+            expireAfterWrite = 30.seconds(),
             writeMode = CacheWriteMode.WRITE_THROUGH,
         )
 
-        val bytes = BinarySerializers.FastFory.serialize(original)
-        val restored = BinarySerializers.FastFory.deserialize<LocalCacheConfig>(bytes).shouldNotBeNull()
+        val serializer = JdkBinarySerializer(objectInputFilter = null)
+        val bytes = serializer.serialize(original)
+        val restored = serializer.deserialize<LocalCacheConfig>(bytes).shouldNotBeNull()
 
+        log.debug { "original=$original" }
+        log.debug { "restored=$restored" }
+        
         restored.keyPrefix shouldBeEqualTo original.keyPrefix
         restored.maximumSize shouldBeEqualTo original.maximumSize
         restored.expireAfterWrite shouldBeEqualTo original.expireAfterWrite

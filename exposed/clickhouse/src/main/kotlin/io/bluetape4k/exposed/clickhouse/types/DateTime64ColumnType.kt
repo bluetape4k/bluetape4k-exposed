@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.support.requireInRange
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.Table
@@ -35,7 +36,7 @@ class DateTime64ColumnType(val precision: Int = 3): ColumnType<Instant>() {
     }
 
     init {
-        require(precision in 0..9) { "DateTime64 precision must be in 0..9: $precision" }
+        precision.requireInRange(0, 9) { "DateTime64 precision must be in 0..9: $precision" }
     }
 
     override fun sqlType(): String {
@@ -43,37 +44,40 @@ class DateTime64ColumnType(val precision: Int = 3): ColumnType<Instant>() {
         return "DateTime64($precision, '${zoneId.replace("'", "''")}')"
     }
 
-    override fun valueFromDB(value: Any): Instant = normalizePrecision(when (value) {
-        is Instant -> value
-        is java.sql.Timestamp -> value.toInstant()
-        is LocalDateTime -> value.toInstant(zone.rules.getOffset(value))
-        is OffsetDateTime -> value.toInstant()
-        is Long -> runCatching { Instant.ofEpochMilli(value) }
-            .getOrElse { error("DateTime64 epoch millis overflow: $value") }
-        is String -> parseDateTime(value)
-        else -> error("Unexpected DateTime64 value: $value (${value::class.simpleName})")
-    })
+    override fun valueFromDB(value: Any): Instant {
+        val instant = when (value) {
+            is Instant            -> value
+            is java.sql.Timestamp -> value.toInstant()
+            is LocalDateTime      -> value.toInstant(zone.rules.getOffset(value))
+            is OffsetDateTime     -> value.toInstant()
+            is Long               -> runCatching { Instant.ofEpochMilli(value) }.getOrElse { error("DateTime64 epoch millis overflow: $value") }
+            is String             -> parseDateTime(value)
+            else                  -> error("Unexpected DateTime64 value: $value (${value::class.simpleName})")
+        }
+        return normalizePrecision(instant)
+    }
 
     override fun notNullValueToDB(value: Instant): Any = java.sql.Timestamp.from(normalizePrecision(value))
 
-    override fun readObject(rs: RowApi, index: Int): Any? =
-        super.readObject(rs, index)?.let(::valueFromDB)
+    override fun readObject(rs: RowApi, index: Int): Any? = super.readObject(rs, index)?.let(::valueFromDB)
 
     override fun setParameter(stmt: PreparedStatementApi, index: Int, value: Any?) {
         clickHouseSetParameter(stmt, index, value, this)
     }
 
-    private fun parseDateTime(value: String): Instant = runCatching { Instant.parse(value) }
-        .recoverCatching { OffsetDateTime.parse(value).toInstant() }
-        .recoverCatching {
-            val localDateTime = LocalDateTime.parse(value)
-            localDateTime.toInstant(zone.rules.getOffset(localDateTime))
-        }
-        .getOrElse { error("Malformed DateTime64 value: $value") }
+    private fun parseDateTime(value: String): Instant =
+        runCatching { Instant.parse(value) }
+            .recoverCatching { OffsetDateTime.parse(value).toInstant() }
+            .recoverCatching {
+                val localDateTime = LocalDateTime.parse(value)
+                localDateTime.toInstant(zone.rules.getOffset(localDateTime))
+            }
+            .getOrElse { error("Malformed DateTime64 value: $value") }
 
     private fun normalizePrecision(value: Instant): Instant {
         val divisor = precisionDivisor(precision)
         val normalizedNanos = value.nano / divisor * divisor
+
         return if (normalizedNanos == value.nano) {
             value
         } else {

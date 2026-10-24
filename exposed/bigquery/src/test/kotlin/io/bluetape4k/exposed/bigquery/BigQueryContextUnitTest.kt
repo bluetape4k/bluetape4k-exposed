@@ -16,6 +16,7 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.mockk.CapturingSlot
 import io.mockk.clearMocks
 import io.mockk.every
@@ -74,7 +75,9 @@ class BigQueryContextUnitTest {
         val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
         val result = context.runRawQuery("SELECT 1")
 
+        log.debug { "result=$result" }
         result.shouldNotBeNull()
+
         verify(exactly = 1) { bq.jobs() }
     }
 
@@ -97,13 +100,15 @@ class BigQueryContextUnitTest {
             )
         )
 
-        request.captured.maximumBytesBilled shouldBeEqualTo 10_000L
-        request.captured.labels shouldBeEqualTo mapOf("workload" to "unit")
-        request.captured["priority"] shouldBeEqualTo "BATCH"
-        request.captured.location shouldBeEqualTo "US"
-        request.captured["destinationTable"].shouldBeInstanceOf<TableReference>().tableId shouldBeEqualTo "result_1"
-        request.captured.timeoutMs shouldBeEqualTo 7_000L
-        request.captured.useQueryCache.shouldBeFalse()
+        request.captured.let {
+            it.maximumBytesBilled shouldBeEqualTo 10_000L
+            it.labels shouldBeEqualTo mapOf("workload" to "unit")
+            it["priority"] shouldBeEqualTo "BATCH"
+            it.location shouldBeEqualTo "US"
+            it["destinationTable"].shouldBeInstanceOf<TableReference>().tableId shouldBeEqualTo "result_1"
+            it.timeoutMs shouldBeEqualTo 7_000L
+            it.useQueryCache.shouldBeFalse()
+        }
     }
 
     @Test
@@ -132,6 +137,7 @@ class BigQueryContextUnitTest {
         val errorResponse = QueryResponse()
             .setJobComplete(true)
             .setErrors(listOf(ErrorProto().setMessage("테이블을 찾을 수 없습니다").setReason("notFound")))
+
         val bq = mockBigquery { errorResponse }
 
         val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
@@ -139,9 +145,12 @@ class BigQueryContextUnitTest {
         val ex = assertFailsWith<BigQueryQueryException> {
             context.runRawQuery("SELECT * FROM missing_table")
         }
-        ex.message.shouldNotBeNull()
-        ex.message shouldContain "reasons=notFound"
-        ex.message shouldNotContain "테이블을 찾을 수 없습니다"
+
+        log.debug { "ex=$ex" }
+        ex.message.let {
+            it shouldContain "reasons=notFound"
+            it shouldNotContain "테이블을 찾을 수 없습니다"
+        }
     }
 
     @Test
@@ -149,6 +158,7 @@ class BigQueryContextUnitTest {
         val errorResponse = QueryResponse()
             .setJobComplete(true)
             .setErrors(listOf(ErrorProto().setMessage("권한 없음").setReason("accessDenied")))
+
         val bq = mockBigquery { errorResponse }
 
         val context = BigQueryContext(bq, "proj", "ds", sqlGenDb)
@@ -174,11 +184,15 @@ class BigQueryContextUnitTest {
         val ex = assertFailsWith<BigQueryQueryException> {
             context.runRawQuery(sql)
         }
-        ex.message shouldContain "statement=SELECT"
-        ex.message shouldContain "sqlFingerprint=sha256:"
-        ex.message shouldContain "jobId=job-safe-123"
-        ex.message shouldNotContain secret
-        ex.message shouldNotContain "bad_table"
+
+        log.debug { "ex=$ex" }
+        ex.message.let {
+            it shouldContain "statement=SELECT"
+            it shouldContain "sqlFingerprint=sha256:"
+            it shouldContain "jobId=job-safe-123"
+            it shouldNotContain secret
+            it shouldNotContain "bad_table"
+        }
     }
 
     @Test
@@ -194,8 +208,11 @@ class BigQueryContextUnitTest {
             context.runRawQuery("$secret is not SQL")
         }
 
-        ex.message shouldContain "statement=UNKNOWN"
-        ex.message shouldNotContain secret
+        log.debug { "ex=$ex" }
+        ex.message.let {
+            it shouldContain "statement=UNKNOWN"
+            it shouldNotContain secret
+        }
     }
 
     @Test
@@ -211,8 +228,11 @@ class BigQueryContextUnitTest {
             context.runRawQuery("SELECT 1")
         }
 
-        ex.message shouldContain "reasons=unknown"
-        ex.message shouldNotContain secretReason
+        log.debug { "ex=$ex" }
+        ex.message.let {
+            it shouldContain "reasons=unknown"
+            it shouldNotContain secretReason
+        }
     }
 
     @Test
@@ -238,6 +258,8 @@ class BigQueryContextUnitTest {
             val ex = assertFailsWith<IllegalArgumentException> {
                 with(context) { table.execDeleteAll() }
             }
+
+            log.debug { "ex=$ex" }
             ex.message shouldNotContain unsafeName
         }
 

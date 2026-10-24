@@ -7,8 +7,7 @@ import java.lang.reflect.Proxy
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
-import java.util.Collections
-import java.util.IdentityHashMap
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -45,16 +44,16 @@ internal class RowBinaryConnectionProviderFixture(
                     rowBinaryEnabled,
                     args?.firstOrNull() as String,
                 )
-                "close" -> {
+                "close"            -> {
                     if (closed.compareAndSet(false, true)) closedConnections += connection
                     null
                 }
-                "isClosed" -> closed.get()
-                "getAutoCommit" -> true
+                "isClosed"         -> closed.get()
+                "getAutoCommit"    -> true
                 "commit", "rollback" -> error("RowBinary executor must not call ${method.name}")
-                "getClientInfo" -> "rowBinary=$rowBinaryEnabled"
-                "toString" -> "RowBinaryConnection(rowBinary=$rowBinaryEnabled)"
-                else -> defaultValue(method.returnType)
+                "getClientInfo"    -> "rowBinary=$rowBinaryEnabled"
+                "toString"         -> "RowBinaryConnection(rowBinary=$rowBinaryEnabled)"
+                else               -> defaultValue(method.returnType)
             }
         } as Connection
         openedConnections += connection
@@ -93,14 +92,14 @@ internal class RowBinaryConnectionProviderFixture(
             arrayOf(PreparedStatement::class.java),
         ) { proxy, method, args ->
             when {
-                method.name == "close" -> {
+                method.name == "close"      -> {
                     if (!closed) {
                         closed = true
                         closedStatements += proxy as PreparedStatement
                     }
                     null
                 }
-                method.name == "addBatch" -> {
+                method.name == "addBatch"   -> {
                     firstByteFailure?.let { throw it }
                     addedRows++
                     null
@@ -120,8 +119,8 @@ internal class RowBinaryConnectionProviderFixture(
                     if (rowBinaryEnabled && setterInvocations == 1) setterFailure?.let { throw it }
                     null
                 }
-                method.name == "toString" -> "RowBinaryPreparedStatement(sql=$sql, rows=$addedRows)"
-                else -> defaultValue(method.returnType)
+                method.name == "toString"   -> "RowBinaryPreparedStatement(sql=$sql, rows=$addedRows)"
+                else                        -> defaultValue(method.returnType)
             }
         } as PreparedStatement
         openedStatements += statement
@@ -130,14 +129,14 @@ internal class RowBinaryConnectionProviderFixture(
 }
 
 private fun defaultValue(type: Class<*>): Any? = when {
-    !type.isPrimitive -> null
+    !type.isPrimitive                       -> null
     type == Boolean::class.javaPrimitiveType -> false
-    type == Char::class.javaPrimitiveType -> '\u0000'
-    type == Byte::class.javaPrimitiveType -> 0.toByte()
-    type == Short::class.javaPrimitiveType -> 0.toShort()
-    type == Int::class.javaPrimitiveType -> 0
-    type == Long::class.javaPrimitiveType -> 0L
-    type == Float::class.javaPrimitiveType -> 0f
+    type == Char::class.javaPrimitiveType   -> '\u0000'
+    type == Byte::class.javaPrimitiveType   -> 0.toByte()
+    type == Short::class.javaPrimitiveType  -> 0.toShort()
+    type == Int::class.javaPrimitiveType    -> 0
+    type == Long::class.javaPrimitiveType   -> 0L
+    type == Float::class.javaPrimitiveType  -> 0f
     type == Double::class.javaPrimitiveType -> 0.0
-    else -> null
+    else                                    -> null
 }

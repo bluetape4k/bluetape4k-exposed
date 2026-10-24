@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.exposed.core.CteTable
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.requireNotEmpty
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.jdbc.Query
@@ -22,6 +23,8 @@ class CteQuery(
     private val ctes: List<CteTable>,
     source: Query,
 ): Query(source.set, source.where) {
+
+    companion object: KLogging()
 
     init {
         source.copyTo(this)

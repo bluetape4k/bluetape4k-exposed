@@ -1,6 +1,8 @@
 package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -14,12 +16,15 @@ import org.junit.jupiter.api.TestInstance
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClickHouseDatabaseTest: AbstractClickHouseTest() {
 
-    private fun selectOne(database: org.jetbrains.exposed.v1.jdbc.Database): Int {
-        var value = -1
-        transaction(database) {
-            value = this.exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) } ?: -1
+    companion object: KLogging()
+
+    private fun selectOne(database: Database): Int {
+        return transaction(database) {
+            this.exec("SELECT 1") { rs ->
+                rs.next()
+                rs.getInt(1)
+            } ?: -1
         }
-        return value
     }
 
     @Test

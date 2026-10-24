@@ -32,6 +32,7 @@ suspend fun <ID: Comparable<ID>, E: Any> R2dbcRepository<ID, E>.findCursorPage(
 
     val basePredicate = predicate()
     val wherePredicate = cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
+
     val rows = table
         .selectAll()
         .where(wherePredicate)
@@ -45,10 +46,7 @@ suspend fun <ID: Comparable<ID>, E: Any> R2dbcRepository<ID, E>.findCursorPage(
         if (hasNext) row[table.id].value else null
     }
 
-    val content = mutableListOf<E>()
-    for (row in pageRows) {
-        content += row.toEntity()
-    }
+    val content = pageRows.map { it.toEntity() }
 
     return ExposedCursorPage(
         content = content,

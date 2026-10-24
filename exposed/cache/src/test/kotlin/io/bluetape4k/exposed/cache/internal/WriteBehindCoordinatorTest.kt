@@ -6,6 +6,8 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /**
@@ -13,11 +15,15 @@ import org.junit.jupiter.api.Test
  */
 class WriteBehindCoordinatorTest {
 
+    companion object: KLogging()
+
     @Test
     fun `admission은 한 번만 settle되고 accepted entry만 depth를 증가시킨다`() {
         val coordinator = WriteBehindCoordinator(CacheWriteMode.WRITE_BEHIND)
 
         val accepted = coordinator.reserveAdmission()
+        log.debug { "accepted=$accepted" }
+
         coordinator.markEnqueued(accepted)
         coordinator.settleEnqueue(accepted, accepted = true)
         coordinator.snapshot().queueDepth shouldBeEqualTo 1
@@ -28,6 +34,8 @@ class WriteBehindCoordinatorTest {
         }
 
         val rejected = coordinator.reserveAdmission()
+        log.debug { "rejected=$rejected" }
+
         coordinator.settleEnqueue(rejected, accepted = false)
         coordinator.snapshot().queueDepth shouldBeEqualTo 1
     }
@@ -42,7 +50,9 @@ class WriteBehindCoordinatorTest {
         coordinator.snapshot().failureKind shouldBeEqualTo WriteBehindFailureKind.FLUSH
 
         coordinator.onFlushSucceeded(1)
+
         val snapshot = coordinator.snapshot()
+        log.debug { "snapshot=$snapshot" }
         snapshot.queueDepth shouldBeEqualTo 0
         snapshot.failureKind.shouldBeNull()
 

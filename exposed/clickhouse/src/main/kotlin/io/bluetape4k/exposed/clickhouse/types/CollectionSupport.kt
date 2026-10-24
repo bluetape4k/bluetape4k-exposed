@@ -3,7 +3,7 @@ package io.bluetape4k.exposed.clickhouse.types
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import java.sql.ResultSet
-import java.util.Collections
+import java.util.*
 
 private const val JDBC_FIRST_COLUMN = 1
 private const val JDBC_ARRAY_VALUE_COLUMN = 2
@@ -28,10 +28,10 @@ internal inline fun <T> withClickHouseCleanup(cleanup: () -> Unit, block: () -> 
 internal fun clickHouseElements(value: Any): List<Any?> = when (value) {
     is java.sql.Array -> withClickHouseCleanup({ value.free() }) { clickHouseArrayElements(value.array) }
     is ResultSet -> clickHouseResultSetElements(value, valueColumn = null)
-    is List<*> -> value.toList()
-    is Array<*> -> value.toList()
-    is String -> error("ClickHouse collection value returned as String literal — unsupported")
-    else -> error("Unexpected ClickHouse collection value: $value (${value::class.simpleName})")
+    is List<*>   -> value.toList()
+    is Array<*>  -> value.toList()
+    is String    -> error("ClickHouse collection value returned as String literal — unsupported")
+    else         -> error("Unexpected ClickHouse collection value: $value (${value::class.simpleName})")
 }
 
 /** JDBC [java.sql.Array.getResultSet] exposes a one-based index in column 1 and
@@ -53,11 +53,13 @@ private fun clickHouseResultSetElements(value: ResultSet, valueColumn: Int?): Li
         }
         buildList {
             while (value.next()) {
-                add(if (valueColumn == null) {
+                val element = if (valueColumn == null) {
                     (JDBC_FIRST_COLUMN..columnCount).map(value::getObject)
                 } else {
                     value.getObject(valueColumn)
-                })
+                }
+
+                add(element)
             }
         }
     }

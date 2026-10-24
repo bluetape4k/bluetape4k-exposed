@@ -2,10 +2,13 @@
 
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.javatimes.requirePositiveDuration
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.requireGe
-import io.bluetape4k.support.requireGt
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requireNotBlank
 import io.bluetape4k.support.requirePositiveNumber
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import java.io.Serializable
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
@@ -76,6 +79,8 @@ class SnapshotCacheLookup<ID: Any, V: Serializable> private constructor(
             miss: SnapshotCacheMiss<ID, V>,
         ): SnapshotCacheLookup<ID, V> = SnapshotCacheLookup(null, miss)
     }
+
+    override fun toString(): String = "SnapshotCacheLookup(snapshot=$snapshot, miss=$miss)"
 }
 
 /**
@@ -200,8 +205,8 @@ data class SnapshotStoreId(
     val namespace: String,
 ): Serializable {
     init {
-        require(backend.isNotBlank()) { "backend must not be blank." }
-        require(namespace.isNotBlank()) { "namespace must not be blank." }
+        backend.requireNotBlank { "backend must not be blank." }
+        namespace.requireNotBlank { "namespace must not be blank." }
         require(backend.length <= MAX_BACKEND_LENGTH) {
             "backend length[${backend.length}] must not exceed $MAX_BACKEND_LENGTH."
         }
@@ -241,22 +246,10 @@ data class SnapshotCacheLimits(
     val localDrainBudget: Duration? = null,
 ): Serializable {
     init {
-        require(maxStagedMutations > 0) { "maxStagedMutations[$maxStagedMutations] must be positive." }
-        require(maxParticipatingStores > 0) {
-            "maxParticipatingStores[$maxParticipatingStores] must be positive."
-        }
-        require(maxStagedMutations <= MAX_STAGED_MUTATIONS) {
-            "maxStagedMutations[$maxStagedMutations] must not exceed $MAX_STAGED_MUTATIONS."
-        }
-        require(maxParticipatingStores <= MAX_PARTICIPATING_STORES) {
-            "maxParticipatingStores[$maxParticipatingStores] must not exceed $MAX_PARTICIPATING_STORES."
-        }
-        maxStagedWeight?.let {
-            require(it > 0L) { "maxStagedWeight[$it] must be positive when set." }
-        }
-        localDrainBudget?.let {
-            require(it > Duration.ZERO) { "localDrainBudget[$it] must be positive when set." }
-        }
+        maxStagedMutations.requireInRange(1, MAX_STAGED_MUTATIONS, "maxStatedMutations")
+        maxParticipatingStores.requireInRange(1, MAX_PARTICIPATING_STORES, "maxParticipatingStores")
+        maxStagedWeight?.requirePositiveNumber("maxStagedWeight")
+        localDrainBudget?.requirePositiveDuration("localDrainBudget")
     }
 
     private fun readResolve(): Any = SnapshotCacheLimits(
@@ -413,7 +406,7 @@ data class SnapshotCacheOperationResult(
     val exceptionType: String? = null,
 ): Serializable {
     init {
-        require(affectedCount >= 0) { "affectedCount[$affectedCount] must not be negative." }
+        affectedCount.requireZeroOrPositiveNumber("affectedCount")
         require(outcome != SnapshotCacheOutcome.OVERRUN || affectedCount == 0) {
             "OVERRUN must have an affectedCount of zero."
         }
@@ -480,7 +473,7 @@ internal class MonotonicSnapshotCacheDeadline(
     private val startedAtNanos: Long
 
     init {
-        timeout.requireGt(Duration.ZERO, "timeout")
+        timeout.requirePositiveDuration("timeout")
         timeoutNanos = try {
             timeout.toNanos()
         } catch (e: ArithmeticException) {

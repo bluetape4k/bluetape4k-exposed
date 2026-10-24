@@ -26,7 +26,8 @@ import java.lang.reflect.Proxy
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -48,14 +49,14 @@ class JdbcTransactionCancellationLifecycleTest {
     }
 
     // stacktrace recovery의 복사를 배제하고 transaction이 전달한 원인을 관측한다.
-    private class BoundaryCancellation(val boundary: Boundary): CancellationException(boundary.name)
-    private class BeginFailure(val boundary: Boundary): IllegalStateException(boundary.name)
+    private class BoundaryCancellation(boundary: Boundary): CancellationException(boundary.name)
+    private class BeginFailure(boundary: Boundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
     fun `취소와 begin 실패에서 획득한 자원을 정확히 한번 정리한다`(testDB: TestDB, boundary: Boundary) = runSuspendIO {
         val previousDatabase = TransactionManager.defaultDatabase
-        val events = CopyOnWriteArrayList<String>()
+        val events = ConcurrentLinkedQueue<String>()
         val reached = CompletableDeferred<Unit>()
         val release = CountDownLatch(1)
         val cancellation = BoundaryCancellation(boundary)
@@ -125,11 +126,10 @@ class JdbcTransactionCancellationLifecycleTest {
         }
     }
 
-
     private fun instrumentedDatabase(
         testDB: TestDB,
         boundary: Boundary,
-        events: MutableList<String>,
+        events: Queue<String>,
         beginFailure: Throwable,
         pause: (Boundary) -> Unit,
     ): Database = Database.connect(

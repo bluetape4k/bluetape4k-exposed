@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.toUtf8Bytes
@@ -90,7 +91,7 @@ class FastjsonColumnTypeUnitTest {
     @Test
     fun `nonNullValueToString 은 JSON SQL 리터럴 특수문자를 escape 한다`() {
         val json = "{\"name\":\"O'Reilly\",\r\n\"count\":1}"
-        val literalColumnType = FastjsonColumnType<SamplePayload>(
+        val literalColumnType = FastjsonColumnType(
             serilaize = { json },
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
@@ -116,7 +117,7 @@ class FastjsonColumnTypeUnitTest {
 
     @Test
     fun `FastjsonBColumnType 은 usesBinaryFormat 이 true 이다`() {
-        val bColumnType = FastjsonBColumnType<SamplePayload>(
+        val bColumnType = FastjsonBColumnType(
             serialize = { serializer.serializeAsString(it) },
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
@@ -125,7 +126,7 @@ class FastjsonColumnTypeUnitTest {
 
     @Test
     fun `FastjsonBColumnType 은 valueFromDB 에서 문자열을 역직렬화한다`() {
-        val bColumnType = FastjsonBColumnType<SamplePayload>(
+        val bColumnType = FastjsonBColumnType(
             serialize = { serializer.serializeAsString(it) },
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
@@ -163,15 +164,13 @@ class FastjsonColumnTypeUnitTest {
         // FastjsonSerializer.deserializeFromString returns null for empty string
         // The default fastjson column extension wraps this with requireNotNull
         val requireNotNullDeserialize: (String) -> SamplePayload = {
-            requireNotNull(serializer.deserializeFromString<SamplePayload>(it)) {
-                "JSON 문자열을 SamplePayload 타입으로 역직렬화한 결과가 null입니다. 입력: $it"
-            }
+            serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull()
         }
-        val ct = FastjsonColumnType<SamplePayload>(
+        val ct = FastjsonColumnType(
             serilaize = { serializer.serializeAsString(it) },
             deserialize = requireNotNullDeserialize
         )
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<AssertionError> {
             ct.valueFromDB("")
         }
     }
@@ -181,15 +180,13 @@ class FastjsonColumnTypeUnitTest {
      */
     @Test
     fun `fastjsonb 확장함수 역직렬화 람다는 빈 문자열 입력 시 IllegalArgumentException 을 던진다`() {
-        val bColumnType = FastjsonBColumnType<SamplePayload>(
+        val bColumnType = FastjsonBColumnType(
             serialize = { serializer.serializeAsString(it) },
             deserialize = {
-                requireNotNull(serializer.deserializeFromString<SamplePayload>(it)) {
-                    "JSON 문자열을 SamplePayload 타입으로 역직렬화한 결과가 null입니다. 입력: $it"
-                }
+                serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull()
             }
         )
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<AssertionError> {
             bColumnType.valueFromDB("")
         }
     }
@@ -199,7 +196,7 @@ class FastjsonColumnTypeUnitTest {
      */
     @Test
     fun `FastjsonBColumnType 도 왕복 변환이 일관된다`() {
-        val bColumnType = FastjsonBColumnType<SamplePayload>(
+        val bColumnType = FastjsonBColumnType(
             serialize = { serializer.serializeAsString(it) },
             deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
         )
@@ -252,7 +249,7 @@ class FastjsonColumnTypeUnitTest {
             val raw = columnType.readObject(row, 1)
 
             raw shouldBeEqualTo json
-            columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+            columnType.valueFromDB(raw.shouldNotBeNull()) shouldBeEqualTo source
         }
         reader.closed.get().shouldBeTrue()
     }
@@ -292,7 +289,7 @@ class FastjsonColumnTypeUnitTest {
                 val raw = columnType.readObject(JdbcResult(resultSet), 1)
 
                 raw shouldBeEqualTo json
-                columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+                columnType.valueFromDB(raw.shouldNotBeNull()) shouldBeEqualTo source
             }
         }
     }

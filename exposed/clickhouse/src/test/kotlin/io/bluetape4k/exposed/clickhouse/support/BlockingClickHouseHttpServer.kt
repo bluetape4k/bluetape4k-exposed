@@ -76,7 +76,7 @@ internal class BlockingClickHouseHttpServer: AutoCloseable {
         val body = when {
             header.isChunked() -> readChunkedBody(input)
             contentLength > 0 -> readFixedBody(input, contentLength)
-            else -> ""
+            else              -> ""
         }
         return header + body
     }

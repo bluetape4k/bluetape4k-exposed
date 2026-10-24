@@ -9,7 +9,8 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import org.jetbrains.exposed.v1.core.Table
+import io.bluetape4k.logging.debug
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.javatime.date
 import org.jetbrains.exposed.v1.javatime.datetime
 import org.jetbrains.exposed.v1.javatime.timestamp
@@ -31,7 +32,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    object TimeTable: Table("result_row_time_test") {
+    object TimeTable: IntIdTable("result_row_time_test") {
         val localDateCol = date("local_date_col")
         val localDateTimeCol = datetime("local_datetime_col")
         val instantCol = timestamp("instant_col")
@@ -53,6 +54,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getLocalDate(TimeTable.localDateCol) shouldBeEqualTo today
         }
     }
@@ -71,6 +73,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getLocalDateTime(TimeTable.localDateTimeCol) shouldBeEqualTo now
         }
     }
@@ -89,6 +92,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getInstant(TimeTable.instantCol).shouldNotBeNull()
             row.getInstant(TimeTable.instantCol).epochSecond shouldBeGreaterOrEqualTo 0L
         }
@@ -107,6 +111,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getInstantOrNull(TimeTable.nullableInstant).shouldBeNull()
         }
     }
@@ -124,6 +129,7 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
             row.getLocalDateOrNull(TimeTable.nullableLocalDate).shouldBeNull()
         }
     }
@@ -141,6 +147,8 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
+
             assertFailsWith<IllegalStateException> {
                 row.getInstant(TimeTable.nullableInstant)
             }
@@ -160,6 +168,8 @@ class ResultRowTimeExtensionsTest: AbstractExposedTest() {
             }
 
             val row = TimeTable.selectAll().single()
+            log.debug { "row=$row" }
+
             assertFailsWith<IllegalStateException> {
                 row.getLocalDate(TimeTable.nullableLocalDate)
             }

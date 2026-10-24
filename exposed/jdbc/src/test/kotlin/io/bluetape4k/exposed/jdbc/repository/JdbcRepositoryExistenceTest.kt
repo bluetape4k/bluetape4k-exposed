@@ -53,9 +53,7 @@ class JdbcRepositoryExistenceTest: AbstractExposedTest() {
     fun `isNotEmpty 는 isEmpty 의 부정값을 반환한다`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
             EdgeCaseRepository.isNotEmpty() shouldBeEqualTo !EdgeCaseRepository.isEmpty()
-
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Bob", age = 25))
-
             EdgeCaseRepository.isNotEmpty() shouldBeEqualTo !EdgeCaseRepository.isEmpty()
         }
     }
@@ -103,6 +101,7 @@ class JdbcRepositoryExistenceTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `existsById 는 없는 id 에 false`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
+            EdgeCaseRepository.existsById(Long.MIN_VALUE).shouldBeFalse()
             EdgeCaseRepository.existsById(Long.MAX_VALUE).shouldBeFalse()
         }
     }
@@ -169,6 +168,8 @@ class JdbcRepositoryExistenceTest: AbstractExposedTest() {
     fun `countBy 결과 0 일 때도 정상 동작`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Mia", age = 18))
+
+            EdgeCaseRepository.countBy { EdgeCaseTable.age eq 18 } shouldBeEqualTo 1L
 
             val op = EdgeCaseTable.age eq 99
             EdgeCaseRepository.countBy(op) shouldBeEqualTo 0L

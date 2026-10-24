@@ -102,7 +102,9 @@ class JdbcFixtureFailureInjectionTest {
 
         try {
             every { TransactionManager.closeAndUnregister(any()) } throws cleanup
-            val actual = assertFailsWith<FixtureFailure> { withDb(fixture) {} }
+            val actual = assertFailsWith<FixtureFailure> {
+                withDb(fixture) {}
+            }
             actual shouldBeSameInstanceAs primary
 
             actual.suppressed.toList() shouldBeEqualTo listOf(cleanup)

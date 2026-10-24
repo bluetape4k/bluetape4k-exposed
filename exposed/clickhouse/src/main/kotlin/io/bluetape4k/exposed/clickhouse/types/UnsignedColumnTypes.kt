@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.Table
@@ -20,7 +21,7 @@ class ClickHouseUByteColumnType: ColumnType<UByte>() {
         is UByte -> value
         is Number -> value.toInt().toUByte()
         is String -> value.toUByte()
-        else -> error("Unexpected UInt8 value: $value (${value::class.simpleName})")
+        else     -> error("Unexpected UInt8 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: UByte): Any = value.toShort()
@@ -56,7 +57,7 @@ class ClickHouseUIntColumnType: ColumnType<UInt>() {
         is UInt -> value
         is Number -> value.toLong().toUInt()
         is String -> value.toUInt()
-        else -> error("Unexpected UInt32 value: $value (${value::class.simpleName})")
+        else    -> error("Unexpected UInt32 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: UInt): Any = value.toLong()
@@ -72,9 +73,9 @@ class ClickHouseULongColumnType: ColumnType<ULong>() {
     override fun sqlType(): String = "UInt64"
 
     override fun valueFromDB(value: Any): ULong = when (value) {
-        is ULong -> value
-        is Long -> {
-            require(value >= 0) { "Signed Long value $value cannot represent UInt64 without truncation" }
+        is ULong      -> value
+        is Long       -> {
+            value.requireZeroOrPositiveNumber { "Signed Long value $value cannot represent UInt64 without truncation" }
             value.toULong()
         }
         is BigInteger -> {
@@ -84,14 +85,13 @@ class ClickHouseULongColumnType: ColumnType<ULong>() {
             value.toLong().toULong()
         }
         is java.math.BigDecimal -> value.toBigIntegerExact().requireClickHouseUInt64().toLong().toULong()
-        is Number -> {
+        is Number     -> {
             val longValue = value.toLong()
-            require(longValue >= 0) { "Signed numeric value $value cannot represent UInt64 without truncation" }
+            longValue.requireZeroOrPositiveNumber { "Signed numeric value $value cannot represent UInt64 without truncation" }
             longValue.toULong()
         }
-        is String -> runCatching { value.toULong() }
-            .getOrElse { error("Malformed UInt64 value: $value") }
-        else -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
+        is String     -> runCatching { value.toULong() }.getOrElse { error("Malformed UInt64 value: $value") }
+        else          -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: ULong): Any =
@@ -109,10 +109,11 @@ class ClickHouseUInt64BigIntColumnType: ColumnType<BigInteger>() {
     override fun valueFromDB(value: Any): BigInteger = when (value) {
         is BigInteger -> value.requireClickHouseUInt64()
         is Number -> BigInteger(value.toString()).requireClickHouseUInt64()
-        is String -> runCatching { BigInteger(value) }
-            .getOrElse { error("Malformed UInt64 value: $value") }
-            .requireClickHouseUInt64()
-        else -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
+        is String ->
+            runCatching { BigInteger(value) }
+                .getOrElse { error("Malformed UInt64 value: $value") }
+                .requireClickHouseUInt64()
+        else      -> error("Unexpected UInt64 value: $value (${value::class.simpleName})")
     }
 
     override fun notNullValueToDB(value: BigInteger): Any = value.requireClickHouseUInt64()

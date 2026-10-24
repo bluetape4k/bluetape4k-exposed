@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.javatimes.millis
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -31,8 +32,8 @@ class TimestampRangeTest {
         range.contains(Instant.parse("2024-06-15T12:00:00Z")).shouldBeTrue()
         range.contains(start).shouldBeTrue()          // 하한 포함
         range.contains(end).shouldBeFalse()            // 상한 미포함
-        range.contains(start.minusMillis(1)).shouldBeFalse()
-        range.contains(end.plusMillis(1)).shouldBeFalse()
+        range.contains(start - 1.millis()).shouldBeFalse()
+        range.contains(end + 1.millis()).shouldBeFalse()
     }
 
     @Test
@@ -42,8 +43,8 @@ class TimestampRangeTest {
         range.contains(start).shouldBeTrue()
         range.contains(end).shouldBeTrue()             // 상한도 포함
         range.contains(Instant.parse("2024-06-15T12:00:00Z")).shouldBeTrue()
-        range.contains(start.minusMillis(1)).shouldBeFalse()
-        range.contains(end.plusMillis(1)).shouldBeFalse()
+        range.contains(start - 1.millis()).shouldBeFalse()
+        range.contains(end + 1.millis()).shouldBeFalse()
     }
 
     @Test
@@ -52,8 +53,8 @@ class TimestampRangeTest {
 
         range.contains(start).shouldBeFalse()          // 하한 미포함
         range.contains(end).shouldBeFalse()            // 상한 미포함
-        range.contains(start.plusMillis(1)).shouldBeTrue()
-        range.contains(end.minusMillis(1)).shouldBeTrue()
+        range.contains(start + 1.millis()).shouldBeTrue()
+        range.contains(end - 1.millis()).shouldBeTrue()
     }
 
     @Test
@@ -62,8 +63,8 @@ class TimestampRangeTest {
 
         range.contains(start).shouldBeFalse()
         range.contains(end).shouldBeTrue()
-        range.contains(start.plusMillis(1)).shouldBeTrue()
-        range.contains(end.plusMillis(1)).shouldBeFalse()
+        range.contains(start + 1.millis()).shouldBeTrue()
+        range.contains(end + 1.millis()).shouldBeFalse()
     }
 
     // ──────────────────────────────────────────────
@@ -181,8 +182,8 @@ class TimestampRangeTest {
         val range = TimestampRange(point, point, lowerInclusive = true, upperInclusive = true) // [p, p]
 
         range.contains(point).shouldBeTrue()
-        range.contains(point.plusMillis(1)).shouldBeFalse()
-        range.contains(point.minusMillis(1)).shouldBeFalse()
+        range.contains(point + 1.millis()).shouldBeFalse()
+        range.contains(point - 1.millis()).shouldBeFalse()
     }
 
     @Test

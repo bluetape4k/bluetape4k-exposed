@@ -2,9 +2,13 @@ package io.bluetape4k.exposed.druid
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 class DruidConnectionOptionsTest {
+
+    companion object: KLogging()
 
     @Test
     fun `default options build official Avatica Router URL`() {
@@ -30,6 +34,7 @@ class DruidConnectionOptionsTest {
             extraProperties = mapOf("custom" to "value"),
         ).toProperties()
 
+        log.debug { "properties=$properties" }
         properties.getProperty("user") shouldBeEqualTo "admin"
         properties.getProperty("password") shouldBeEqualTo "secret"
         properties.getProperty("sqlTimeZone") shouldBeEqualTo "Etc/UTC"

@@ -67,6 +67,20 @@ class WithDbTest {
 
         @ParameterizedTest
         @MethodSource(ENABLE_DIALECTS_METHOD)
+        fun `withDb should allow database operations`(testDB: TestDB) = runSuspendIO {
+            withTablesSuspending(testDB, TestTable) {
+                TestTable.insert {
+                    it[name] = "test"
+                }
+                commit()
+
+                val count = TestTable.selectAll().count()
+                count shouldBeEqualTo 1L
+            }
+        }
+
+        @ParameterizedTest
+        @MethodSource(ENABLE_DIALECTS_METHOD)
         fun `withSuspendedDb should set currentTestDB`(testDB: TestDB) = runSuspendIO {
             withDbSuspending(testDB) {
                 currentTestDB.shouldNotBeNull()

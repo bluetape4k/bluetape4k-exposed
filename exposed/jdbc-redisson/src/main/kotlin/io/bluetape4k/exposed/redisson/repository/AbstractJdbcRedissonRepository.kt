@@ -119,10 +119,8 @@ abstract class AbstractJdbcRedissonRepository<ID: Any, E: Serializable>(
 
             RedissonCacheConfig.CacheMode.READ_WRITE -> ExposedEntityMapWriter(
                 entityTable = table,
-                updateBody = { stmt, entity -> with(this@AbstractJdbcRedissonRepository) { stmt.updateEntity(entity) } },
-                batchInsertBody = { entity ->
-                    val stmt = this; with(this@AbstractJdbcRedissonRepository) { stmt.insertEntity(entity) }
-                },
+                updateBody = { stmt, entity -> stmt.updateEntity(entity) },
+                batchInsertBody = { entity -> insertEntity(entity) },
                 deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate, // 캐시 invalidated 시 DB에서도 삭제할 것인지 여부
                 writeMode = config.writeMode // Write Through 모드
             )

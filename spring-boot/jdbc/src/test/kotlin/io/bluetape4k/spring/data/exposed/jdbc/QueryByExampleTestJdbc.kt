@@ -5,9 +5,11 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
+import io.bluetape4k.support.uninitialized
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -22,7 +24,7 @@ class QueryByExampleTestJdbc: AbstractExposedJdbcRepositoryTest() {
     companion object: KLogging()
 
     @Autowired
-    private lateinit var userJdbcRepository: UserJdbcRepository
+    private val userJdbcRepository: UserJdbcRepository = uninitialized()
 
     @AfterEach
     fun tearDown() {
@@ -40,6 +42,7 @@ class QueryByExampleTestJdbc: AbstractExposedJdbcRepositoryTest() {
         }
 
         val results = userJdbcRepository.findAll { Users.age eq 30 }
+            .onEach { log.debug { "result=$it" } }
         results shouldHaveSize 2
     }
 
@@ -51,6 +54,7 @@ class QueryByExampleTestJdbc: AbstractExposedJdbcRepositoryTest() {
         }
 
         val count = userJdbcRepository.count { Users.age eq 30 }
+
         count shouldBeEqualTo 1L
     }
 

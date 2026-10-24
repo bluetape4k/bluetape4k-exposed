@@ -6,9 +6,11 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformation
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import org.jetbrains.exposed.v1.dao.Entity
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.lang.reflect.InvocationTargetException
 
@@ -20,8 +22,14 @@ class SqlBindingConformanceTest {
 
     companion object: KLogging()
 
+    private val method = mockk<ExposedQueryMethod>()
+
+    @BeforeEach
+    fun beforeEach() {
+        clearMocks(method)
+    }
+
     private val query = run {
-        val method = mockk<ExposedQueryMethod>()
         every { method.getAnnotatedQuery() } returns "SELECT id FROM sample"
         val information = mockk<ExposedEntityInformation<Entity<Long>, Long>>()
         every { information.entityClass } returns mockk()

@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.jdbc.repository
 
+import io.bluetape4k.apache.containsIgnoreCase
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -31,8 +32,7 @@ import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.util.*
-
+import org.testcontainers.utility.Base58
 
 class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
 
@@ -163,7 +163,7 @@ class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
     @Test
     fun `커서 행 삭제와 앞뒤 삽입은 별도 커밋 트랜잭션에서 중복 없이 진행된다`() {
         val database = Database.connect(
-            url = "jdbc:h2:mem:cursor-mutation-${UUID.randomUUID()};DB_CLOSE_DELAY=-1",
+            url = "jdbc:h2:mem:cursor-mutation-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
         val connectionIds = mutableListOf<Int>()
@@ -182,6 +182,7 @@ class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
                 commit()
                 page.nextCursor
             }
+            log.debug { "firstCursor=$firstCursor" }
 
             transaction(database) {
                 connectionIds += System.identityHashCode(connection)
@@ -201,10 +202,9 @@ class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
             nextPage.content.map(CursorRecord::id) shouldBeEqualTo listOf(5L, 7L)
             nextPage.nextCursor shouldBeEqualTo 7L
             nextPage.hasNext.shouldBeTrue()
-            connectionIds.distinct().size shouldBeGreaterOrEqualTo 2
-//            assertTrue(connectionIds.distinct().size >= 2) {
-//                "cursor mutation checks must use at least two physical JDBC connections"
-//            }
+
+            log.debug { "connectionIds = $connectionIds" }
+            connectionIds.distinct().size shouldBeEqualTo 3
         } finally {
             transaction(database) {
                 SchemaUtils.drop(CursorPaginationTable)
@@ -227,13 +227,15 @@ class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
             val first = CursorPaginationRepository.findCursorPage(pageSize = 1) {
                 CursorPaginationTable.active eq true
             }
+            log.debug { "firstCursor=$first" }
             CursorPaginationRepository.insert(CursorRecord(2, false))
 
             val next = CursorPaginationRepository.findCursorPage(pageSize = 10, cursor = first.nextCursor) {
                 CursorPaginationTable.active eq true
             }
-            next.content.map(CursorRecord::id) shouldBeEqualTo listOf(3L, 20L)
-            next.content.map(CursorRecord::id) shouldNotContain 2L
+            val content = next.content.map(CursorRecord::id)
+            content shouldBeEqualTo listOf(3L, 20L)
+            content shouldNotContain 2L
         }
     }
 
@@ -259,18 +261,22 @@ class JdbcRepositoryCursorPaginationTest: AbstractExposedTest() {
                 CursorPaginationTable.active eq true
             }
 
-            val selectStatements = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+            val selectStatements = sqlStatements.filter {
+                it.trimStart().startsWith("SELECT", ignoreCase = true)
+            }
             selectStatements.size shouldBeEqualTo 1
-            sqlStatements.none { it.contains("count(", ignoreCase = true) }.shouldBeTrue()
+            sqlStatements.none { it.containsIgnoreCase("count(") }.shouldBeTrue()
+            
             val sql = selectStatements.single().lowercase()
             log.debug { "selectStatements=$sql" }
-            sql.contains("> ").shouldBeTrue()
-            sql.contains("active").shouldBeTrue()
-            sql.contains("order by").shouldBeTrue()
-            sql.contains("limit").shouldBeTrue()
+            sql shouldContain "> "
+            sql shouldContain "active"
+            sql shouldContain "order by"
+            sql shouldContain "limit"
         }
     }
 
+    @Suppress("UnusedReceiverParameter")
     private fun JdbcTransaction.seed(vararg records: CursorRecord) {
         records.forEach(CursorPaginationRepository::insert)
     }

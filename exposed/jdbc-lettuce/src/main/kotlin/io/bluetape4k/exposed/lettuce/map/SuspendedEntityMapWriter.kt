@@ -1,12 +1,12 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.github.resilience4j.kotlin.retry.executeSuspendFunction
 import io.github.resilience4j.retry.Retry
 import io.github.resilience4j.retry.RetryConfig
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 
 /**
  * JDBC `suspendedTransactionAsync`를 사용해 DB에 엔티티를 쓰는 추상 [SuspendedMapWriter] 구현체.
@@ -37,17 +37,15 @@ abstract class SuspendedEntityMapWriter<ID: Any, E: Any>(
 
     private val retry = Retry.of("exposed-jdbc-lettuce-suspended-writer", retryConfig)
 
-    @Suppress("DEPRECATION")
     override suspend fun write(map: Map<ID, E>) {
         retry.executeSuspendFunction {
-            suspendedTransactionAsync(Dispatchers.IO) { writeEntities(map) }.await()
+            inTopLevelSuspendTransactionWithIO { writeEntities(map) }
         }
     }
 
-    @Suppress("DEPRECATION")
     override suspend fun delete(keys: Collection<ID>) {
         retry.executeSuspendFunction {
-            suspendedTransactionAsync(Dispatchers.IO) { deleteEntities(keys) }.await()
+            inTopLevelSuspendTransactionWithIO { deleteEntities(keys) }
         }
     }
 

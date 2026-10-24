@@ -48,6 +48,6 @@ abstract class AbstractJdbcLettuceTest: AbstractExposedTest() {
         const val ENABLE_DIALECTS_METHOD = "getEnabledDialects"
 
         @JvmStatic
-        fun getEnabledDialects() = setOf(TestDB.H2_MYSQL, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
+        fun getEnabledDialects() = setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
     }
 }

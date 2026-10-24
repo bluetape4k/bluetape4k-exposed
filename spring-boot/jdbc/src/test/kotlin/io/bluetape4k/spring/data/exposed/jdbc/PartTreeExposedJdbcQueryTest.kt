@@ -9,6 +9,7 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
@@ -66,6 +67,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByName returns matching entities`() {
         createUsers()
         val results = userJdbcRepository.findByName("Alice")
+
+        results.forEach { log.debug { "entity=$it" } }
         results shouldHaveSize 2
         results.all { it.name == "Alice" }.shouldBeTrue()
     }
@@ -74,6 +77,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeGreaterThan filters correctly`() {
         createUsers()
         val results = userJdbcRepository.findByAgeGreaterThan(25)
+
+        results.forEach { log.debug { "entity=$it" } }
         results.all { it.age > 25 }.shouldBeTrue()
     }
 
@@ -81,6 +86,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByEmailContaining filters by substring`() {
         createUsers()
         val results = userJdbcRepository.findByEmailContaining("alice")
+
+        results.forEach { log.debug { "entity=$it" } }
         results shouldHaveSize 2
     }
 
@@ -88,6 +95,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameAndAge returns single result`() {
         createUsers()
         val user = userJdbcRepository.findByNameAndAge("Alice", 30)
+
+        log.debug { "user=$user" }
         user.shouldNotBeNull()
         user.email shouldBeEqualTo "alice@example.com"
     }
@@ -171,6 +180,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `@Query native - 위치 기반 파라미터 바인딩으로 단일 엔티티 조회`() {
         createUsers()
         val found = userJdbcRepository.findByEmailNative("alice@example.com")
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().name shouldBeEqualTo "Alice"
     }
@@ -179,6 +190,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `@Query native - 파라미터 순서가 역순이어도 올바르게 바인딩된다`() {
         createUsers()
         val found = userJdbcRepository.findByEmailAndAgeNative("alice@example.com", 30)
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().email shouldBeEqualTo "alice@example.com"
     }
@@ -197,6 +210,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
             UserEntity.new { name = "O'Hara"; email = "o'hara@example.com"; age = 41 }
         }
         val found = userJdbcRepository.findByEmailNative("o'hara@example.com")
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().name shouldBeEqualTo "O'Hara"
     }
@@ -213,6 +228,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `@Query native - 동일 placeholder 재사용 시 같은 인자가 재사용된다`() {
         createUsers()
         val found = userJdbcRepository.findByEmailNativeDuplicatedPlaceholder("alice@example.com")
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().email shouldBeEqualTo "alice@example.com"
     }
@@ -221,6 +238,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `@Query native - Long 타입 숫자 파라미터도 정상 바인딩된다`() {
         createUsers()
         val found = userJdbcRepository.findByAgeNativeLong(30L)
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().name shouldBeEqualTo "Alice"
     }
@@ -229,6 +248,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `@Query native - 범위 조건 파라미터를 순서대로 바인딩한다`() {
         createUsers()
         val found = userJdbcRepository.findByAgeRangeNative(25, 30)
+
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 2
         found.all { it.age in 25..30 }.shouldBeTrue()
     }
@@ -239,6 +260,7 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
         val found = userJdbcRepository.findByEmailNativeTenthPlaceholder(
             "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "alice@example.com"
         )
+        found.forEach { log.debug { "found=$it" } }
         found shouldHaveSize 1
         found.first().name shouldBeEqualTo "Alice"
     }
@@ -249,6 +271,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
         val failure = assertFailsWith<IllegalArgumentException> {
             userJdbcRepository.findWithoutIdNative("alice@example.com")
         }
+
+        log.debug { "failure=$failure" }
         failure.message shouldBeEqualTo "@Query method 'findWithoutIdNative' must select entity id column 'id'"
     }
 
@@ -258,6 +282,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
         val failure = assertFailsWith<IllegalArgumentException> {
             userJdbcRepository.findWithNullIdNative("alice@example.com")
         }
+
+        log.debug { "failure=$failure" }
         failure.message shouldBeEqualTo "@Query method 'findWithNullIdNative' returned null entity id"
     }
 
@@ -274,6 +300,9 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameNot - 특정 이름이 아닌 엔티티 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameNot("Alice")
+            .onEach { log.debug { "result=$it" } }
+
+
         results.none { it.name == "Alice" }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -282,6 +311,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeGreaterThanEqual - 같거나 큰 나이 조회`() {
         createUsers()
         val results = userJdbcRepository.findByAgeGreaterThanEqual(30)
+            .onEach { log.debug { "result=$it" } }
+
         results.all { it.age >= 30 }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -290,6 +321,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeLessThan - 작은 나이 조회`() {
         createUsers()
         val results = userJdbcRepository.findByAgeLessThan(30)
+            .onEach { log.debug { "result=$it" } }
+
         results.all { it.age < 30 }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -298,6 +331,7 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeLessThanEqual - 같거나 작은 나이 조회`() {
         createUsers()
         val results = userJdbcRepository.findByAgeLessThanEqual(30)
+            .onEach { log.debug { "result=$it" } }
         results.all { it.age <= 30 }.shouldBeTrue()
         results shouldHaveSize 3
     }
@@ -306,6 +340,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameStartingWith - 접두사로 시작하는 이름 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameStartingWith("Al")
+            .onEach { log.debug { "result=$it" } }
+
         results.all { it.name.startsWith("Al") }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -314,6 +350,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameEndingWith - 접미사로 끝나는 이름 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameEndingWith("e")
+            .onEach { log.debug { "result=$it" } }
+
         results.all { it.name.endsWith("e") }.shouldBeTrue()
         results shouldHaveSize 3
     }
@@ -322,6 +360,7 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameNotContaining - 특정 문자열을 포함하지 않는 이름 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameNotContaining("Ali")
+            .onEach { log.debug { "result=$it" } }
         results.none { it.name.contains("Ali") }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -330,6 +369,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameLike - LIKE 패턴으로 이름 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameLike("A%")
+            .onEach { log.debug { "result=$it" } }
+
         results.all { it.name.startsWith("A") }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -338,6 +379,8 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByNameNotLike - NOT LIKE 패턴으로 이름 조회`() {
         createUsers()
         val results = userJdbcRepository.findByNameNotLike("A%")
+            .onEach { log.debug { "result=$it" } }
+
         results.none { it.name.startsWith("A") }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -346,6 +389,7 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeIn - 특정 나이 목록에 포함된 엔티티 조회`() {
         createUsers()
         val results = userJdbcRepository.findByAgeIn(listOf(25, 35))
+            .onEach { log.debug { "result=$it" } }
         results.all { it.age in listOf(25, 35) }.shouldBeTrue()
         results shouldHaveSize 2
     }
@@ -354,6 +398,7 @@ class PartTreeExposedJdbcQueryTest: AbstractExposedJdbcRepositoryTest() {
     fun `findByAgeNotIn - 특정 나이 목록에 포함되지 않은 엔티티 조회`() {
         createUsers()
         val results = userJdbcRepository.findByAgeNotIn(listOf(25, 35))
+            .onEach { log.debug { "result=$it" } }
         results.none { it.age in listOf(25, 35) }.shouldBeTrue()
         results shouldHaveSize 2
     }

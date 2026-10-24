@@ -3,12 +3,14 @@ package io.bluetape4k.spring.data.exposed.jdbc.config
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.repository.config.EnableExposedJdbcRepositories
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContext
@@ -57,13 +59,13 @@ class ExposedSpringDataAutoConfigurationTest {
 
     @Test
     fun `ApplicationContext contains ExposedMappingContext bean`() {
-        val bean = applicationContext.getBean(ExposedMappingContext::class.java)
+        val bean = applicationContext.getBean<ExposedMappingContext>()
         bean.shouldNotBeNull()
     }
 
     @Test
     fun `ApplicationContext contains PlatformTransactionManager bean`() {
-        val txManager = applicationContext.getBean("secondTransactionManager", PlatformTransactionManager::class.java)
+        val txManager = applicationContext.getBean<PlatformTransactionManager>("secondTransactionManager")
         txManager.shouldNotBeNull()
     }
 
@@ -72,6 +74,7 @@ class ExposedSpringDataAutoConfigurationTest {
         val beanFactory = (applicationContext as ConfigurableApplicationContext).beanFactory
         val definition = beanFactory.getBeanDefinition("userJdbcRepository")
 
+        log.debug { "definition=$definition" }
         definition.propertyValues.get("transactionManager") shouldBeEqualTo "secondTransactionManager"
     }
 
@@ -80,6 +83,8 @@ class ExposedSpringDataAutoConfigurationTest {
         val entity = exposedMappingContext.getRequiredPersistentEntity(
             io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity::class.java
         )
+
+        log.debug { "entity=$entity" }
         entity.shouldNotBeNull()
         entity.getTable().shouldNotBeNull()
     }

@@ -13,12 +13,12 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedActor
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withSuspendedCredentialTable
 import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSuspendedJdbcCaffeineRepository
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialSuspendedJdbcCaffeineRepository
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.Nested
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -32,7 +32,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class SuspendedReadThroughCacheTest {
 
-    companion object: KLogging()
+    companion object: KLoggingChannel()
 
     // -------------------------------------------------------------------------
     // AutoIncrement Long ID — ActorTable
@@ -53,12 +53,12 @@ class SuspendedReadThroughCacheTest {
         ) = withSuspendedActorTable(testDB, context, statement)
 
         override suspend fun getExistingId(): Long =
-            newSuspendedTransaction {
+            inTopLevelSuspendTransactionWithIO {
                 ActorTable.select(ActorTable.id).first()[ActorTable.id].value
             }
 
         override suspend fun getExistingIds(): List<Long> =
-            newSuspendedTransaction {
+            inTopLevelSuspendTransactionWithIO {
                 ActorTable.select(ActorTable.id).map { it[ActorTable.id].value }
             }
 
@@ -71,7 +71,9 @@ class SuspendedReadThroughCacheTest {
             keyPrefix = "jdbc:caffeine:s-rt:actor",
             writeMode = CacheWriteMode.READ_ONLY,
         )
-        override val repository by lazy { ActorSuspendedJdbcCaffeineRepository(config) }
+        override val repository by lazy {
+            ActorSuspendedJdbcCaffeineRepository(config)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -93,12 +95,12 @@ class SuspendedReadThroughCacheTest {
         ) = withSuspendedCredentialTable(testDB, context, statement)
 
         override suspend fun getExistingId(): UUID =
-            newSuspendedTransaction {
+            inTopLevelSuspendTransactionWithIO {
                 CredentialTable.select(CredentialTable.id).first()[CredentialTable.id].value
             }
 
         override suspend fun getExistingIds(): List<UUID> =
-            newSuspendedTransaction {
+            inTopLevelSuspendTransactionWithIO {
                 CredentialTable.select(CredentialTable.id).map { it[CredentialTable.id].value }
             }
 
@@ -111,6 +113,8 @@ class SuspendedReadThroughCacheTest {
             keyPrefix = "jdbc:caffeine:s-rt:credential",
             writeMode = CacheWriteMode.READ_ONLY,
         )
-        override val repository by lazy { CredentialSuspendedJdbcCaffeineRepository(config) }
+        override val repository by lazy {
+            CredentialSuspendedJdbcCaffeineRepository(config)
+        }
     }
 }

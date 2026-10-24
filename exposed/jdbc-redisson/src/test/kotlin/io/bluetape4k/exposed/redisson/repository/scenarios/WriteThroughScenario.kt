@@ -122,30 +122,28 @@ interface WriteThroughScenario<ID: Any, E: java.io.Serializable>: CacheTestScena
 
             val entitiesFromCacheMap = repository.getAll(ids)
             entitiesFromCacheMap.shouldNotBeNull()
-            entitiesFromCacheMap.values
-                .forEach { entity ->
-                    assertSameEntityWithoutUpdatedAt(
-                        entity,
-                        updatedEntities
-                            .find {
-                                repository.extractId(it) == repository.extractId(entity)
-                            }.shouldNotBeNull()
-                    )
-                }
+            entitiesFromCacheMap.values.forEach { entity ->
+                assertSameEntityWithoutUpdatedAt(
+                    entity,
+                    updatedEntities
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
+                )
+            }
 
             val entitiesFromDB = repository.findAllFromDb(ids)
             entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
 
-            entitiesFromDB
-                .forEach { entity ->
-                    assertSameEntityWithoutUpdatedAt(
-                        entity,
-                        entitiesFromCacheMap.values
-                            .find {
-                                repository.extractId(it) == repository.extractId(entity)
-                            }.shouldNotBeNull()
-                    )
-                }
+            entitiesFromDB.forEach { entity ->
+                assertSameEntityWithoutUpdatedAt(
+                    entity,
+                    entitiesFromCacheMap.values
+                        .find {
+                            repository.extractId(it) == repository.extractId(entity)
+                        }.shouldNotBeNull()
+                )
+            }
         }
     }
 

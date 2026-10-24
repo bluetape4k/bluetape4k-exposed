@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.ClickHouseTable
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -44,6 +45,8 @@ class ArrayTypeTest: AbstractClickHouseTest() {
     @Test
     fun `createStatement contains Array(String) and Array(Int32)`() {
         val ddl = transaction(db) { ArrTable.createStatement().joinToString("\n") }
+
+        log.debug { "ddl=$ddl" }
         ddl shouldContain "Array(String)"
         ddl shouldContain "Array(Int32)"
     }
@@ -70,6 +73,7 @@ class ArrayTypeTest: AbstractClickHouseTest() {
                 }
 
                 val rows = ArrTable.selectAll().orderBy(ArrTable.id).toList()
+                    .onEach { log.debug { "row=$it" } }
 
                 rows shouldHaveSize 3
                 rows[0][ArrTable.tags].shouldBeEmpty()

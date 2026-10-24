@@ -62,20 +62,21 @@ class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
 
         while (true) {
             val cursor = lastId
-            val query = table.select(table.id).orderBy(table.id, SortOrder.ASC)
+            val query = table
+                .select(table.id)
+                .orderBy(table.id, SortOrder.ASC)
 
-            val batch =
-                if (keysetSupported == true && cursor != null) {
-                    query
-                        .where { table.rawIdColumn() greater cursor.asComparableKey() }
-                        .limit(batchSize)
-                        .map { it[table.id].value }
-                } else {
-                    query
-                        .limit(batchSize)
-                        .offset(offset)
-                        .map { it[table.id].value }
-                }
+            val batch = if (keysetSupported == true && cursor != null) {
+                query
+                    .where { table.rawIdColumn() greater cursor.asComparableKey() }
+                    .limit(batchSize)
+                    .map { it[table.id].value }
+            } else {
+                query
+                    .limit(batchSize)
+                    .offset(offset)
+                    .map { it[table.id].value }
+            }
 
             addAll(batch)
             if (batch.size < batchSize) break
@@ -91,13 +92,14 @@ class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
             }
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
+        this as? Comparable<Any>
+            ?: error("keyset paging requires a Comparable primary key")
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =
+        ((id.columnType as EntityIDColumnType<ID>).idColumn as Column<Comparable<Any>>)
+
 }
-
-@Suppress("UNCHECKED_CAST")
-private fun <ID: Any> ID.asComparableKey(): Comparable<Any> =
-    this as? Comparable<Any>
-        ?: error("keyset paging requires a Comparable primary key")
-
-@Suppress("UNCHECKED_CAST")
-private fun <ID: Any> IdTable<ID>.rawIdColumn(): Column<Comparable<Any>> =
-    ((id.columnType as EntityIDColumnType<ID>).idColumn as Column<Comparable<Any>>)

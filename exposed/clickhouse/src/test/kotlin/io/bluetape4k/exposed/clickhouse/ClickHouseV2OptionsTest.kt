@@ -4,7 +4,10 @@ import io.bluetape4k.AbstractValueObject
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.time.ZoneId
 
@@ -12,6 +15,8 @@ import java.time.ZoneId
  * ClickHouse JDBC V2 연결 옵션의 값 검증과 driver property 변환 계약을 고정합니다.
  */
 class ClickHouseV2OptionsTest {
+
+    companion object: KLogging()
 
     @Test
     fun `기본 V2 options는 유한한 socket timeout을 적용하고 명시적 zero는 driver default를 선택한다`() {
@@ -55,6 +60,7 @@ class ClickHouseV2OptionsTest {
         )
 
         val properties = options.toEffectiveProperties(user = "default", password = "")
+        log.debug { "properties=$properties" }
 
         properties.getProperty("connection_timeout") shouldBeEqualTo "1500"
         properties.getProperty("socket_timeout") shouldBeEqualTo "2000"
@@ -124,6 +130,7 @@ class ClickHouseV2OptionsTest {
         rawProperties["clickhouse_setting_injected"] = "injected"
 
         val properties = options.toEffectiveProperties("default", "")
+        log.debug { "properties=$properties" }
         properties.getProperty("session_db_roles") shouldBeEqualTo "role_a"
         properties.getProperty("clickhouse_setting_max_threads") shouldBeEqualTo "4"
         properties.getProperty("http_header_X-ClickHouse-User-Agent") shouldBeEqualTo "bluetape/865"
@@ -176,6 +183,8 @@ class ClickHouseV2OptionsTest {
     fun `authentication is one of basic access token or bearer token`() {
         val basic = ClickHouseV2Options(authentication = ClickHouseV2Authentication.Basic)
             .toEffectiveProperties(user = "u", password = "p")
+
+        log.debug { "basic=$basic" }
         basic.getProperty("http_use_basic_auth") shouldBeEqualTo "true"
         basic.getProperty("user") shouldBeEqualTo "u"
         basic.getProperty("password") shouldBeEqualTo "p"
@@ -188,6 +197,8 @@ class ClickHouseV2OptionsTest {
         val accessToken = ClickHouseV2Options(
             authentication = ClickHouseV2Authentication.AccessToken("access-canary"),
         ).toEffectiveProperties(user = "default", password = "")
+
+        log.debug { "accessToken=$accessToken" }
         accessToken.getProperty("access_token") shouldBeEqualTo "access-canary"
         accessToken.getProperty("http_use_basic_auth") shouldBeEqualTo "false"
         accessToken.containsKey("password").shouldBeFalse()
@@ -195,6 +206,8 @@ class ClickHouseV2OptionsTest {
         val bearerToken = ClickHouseV2Options(
             authentication = ClickHouseV2Authentication.BearerToken("bearer-canary"),
         ).toEffectiveProperties(user = "default", password = "")
+
+        log.debug { "bearerToken=$bearerToken" }
         bearerToken.getProperty("bearer_token") shouldBeEqualTo "bearer-canary"
         bearerToken.getProperty("http_use_basic_auth") shouldBeEqualTo "false"
         bearerToken.containsKey("user").shouldBeFalse()
@@ -220,6 +233,7 @@ class ClickHouseV2OptionsTest {
             jdbcUrl = "jdbc:clickhouse://localhost:8123/default?client_name=url%2Bclient&query_id=url%2Bquery",
         )
 
+        log.debug { "properties=$properties" }
         properties.getProperty("client_name") shouldBeEqualTo "typed-client"
         properties.getProperty("query_id") shouldBeEqualTo "typed-query"
     }
@@ -266,6 +280,8 @@ class ClickHouseV2OptionsTest {
                 sslCertReference = "secret://cert",
             ),
         )
+
+        log.debug { "options=$options" }
         options.toEffectiveProperties("default", "").getProperty("proxy_host") shouldBeEqualTo "proxy"
         options.toEffectiveProperties("default", "").getProperty("proxy_type") shouldBeEqualTo "HTTP"
         options.toEffectiveProperties("default", "").getProperty("trust_store") shouldBeEqualTo "file:/tmp/truststore"
@@ -278,6 +294,7 @@ class ClickHouseV2OptionsTest {
             tls = ClickHouseV2TlsOptions(sslAuthentication = true),
         ).toEffectiveProperties("default", "")
 
+        log.debug { "properties=$properties" }
         properties.getProperty("ssl_authentication") shouldBeEqualTo "true"
         properties.getProperty("ssl") shouldBeEqualTo "true"
     }
@@ -303,9 +320,10 @@ class ClickHouseV2OptionsTest {
 
         val valueObject: AbstractValueObject = first
         valueObject.hashCode() shouldBeEqualTo first.hashCode()
+
         first shouldBeEqualTo second
-        first.toString().contains("access-canary").shouldBeFalse()
-        first.toString().contains("authentication=AccessToken").shouldBeTrue()
+        first.toString() shouldNotContain "access-canary"
+        first.toString() shouldContain "authentication=AccessToken"
     }
 
     @Test
@@ -318,10 +336,10 @@ class ClickHouseV2OptionsTest {
 
         val rendered = options.toString()
 
-        rendered.contains("query-id-canary").shouldBeFalse()
-        rendered.contains("log-comment-canary").shouldBeFalse()
-        rendered.contains("queryId=***").shouldBeTrue()
-        rendered.contains("logComment=***").shouldBeTrue()
+        rendered shouldNotContain "query-id-canary"
+        rendered shouldNotContain "log-comment-canary"
+        rendered shouldContain "queryId=***"
+        rendered shouldContain "logComment=***"
     }
 
     @Test
@@ -334,7 +352,10 @@ class ClickHouseV2OptionsTest {
         val proxy = ClickHouseV2ProxyOptions(host = "proxy", port = 8080, password = provider)
         val tls = ClickHouseV2TlsOptions(keyStorePassword = provider)
 
-        proxy.toString().contains("proxy-secret").shouldBeFalse()
-        tls.toString().contains("proxy-secret").shouldBeFalse()
+        log.debug { "proxy=$proxy" }
+        log.debug { "tls=$tls" }
+
+        proxy.toString() shouldNotContain "proxy-secret"
+        tls.toString() shouldNotContain "proxy-secret"
     }
 }

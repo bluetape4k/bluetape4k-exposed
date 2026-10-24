@@ -92,13 +92,11 @@ class BigQueryResultRow(private val data: Map<String, Any?>) {
         if (s.equals("null", ignoreCase = true)) return null
         return try {
             when (column.columnType) {
-                is DecimalColumnType ->
-                    BigDecimal(s)
+                is DecimalColumnType -> BigDecimal(s)
                 is JavaInstantColumnType ->
                     // BigQuery REST API: TIMESTAMP = 초 단위 float 문자열 (예: "1.704067200E9")
                     Instant.ofEpochMilli((s.toDouble() * 1000).toLong())
-                else                 ->
-                    column.columnType.valueFromDB(s)
+                else                 -> column.columnType.valueFromDB(s)
             } as T?
         } catch (e: Exception) {
             throw IllegalArgumentException(

@@ -1,12 +1,13 @@
 package io.bluetape4k.exposed.cockroachdb
 
 import com.zaxxer.hikari.HikariDataSource
+import io.bluetape4k.apache.containsIgnoreCase
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEmpty
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.jdbc.JdbcDrivers
 import io.bluetape4k.jdbc.hikari.hikariDataSourceOf
 import io.bluetape4k.jdbc.sql.runQuery
@@ -74,9 +75,9 @@ class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
                 }
             }
 
-            (firstId.value > 0L).shouldBeTrue()
-            (secondId.value > 0L).shouldBeTrue()
-            (firstId.value != secondId.value).shouldBeTrue()
+            firstId.value shouldBeGreaterThan 0L
+            secondId.value shouldBeGreaterThan 0L
+            firstId.value shouldNotBeEqualTo secondId.value
 
             assertFailsWith<ExposedSQLException> {
                 transaction(db) {
@@ -121,7 +122,7 @@ class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
                     .also { statements ->
                         statements.shouldNotBeEmpty()
                         statements.any {
-                            it.contains("bt4k_cockroach_ddl_events_id_seq", ignoreCase = true)
+                            it.containsIgnoreCase("bt4k_cockroach_ddl_events_id_seq")
                         }.shouldBeTrue()
                     }
             }
@@ -136,8 +137,8 @@ class CockroachDdlCompatibilityTest: AbstractCockroachDbTest() {
                 exec("SELECT 1") { rs ->
                     rs.next()
                     rs.getInt(1)
-                }.shouldNotBeNull() shouldBeEqualTo 1
-            }
+                }
+            } shouldBeEqualTo 1
         }
 
     @Test

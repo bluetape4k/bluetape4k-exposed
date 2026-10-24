@@ -4,15 +4,14 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.io.serializer.BinarySerializationException
+import io.bluetape4k.io.serializer.BinarySerializers
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.io.ObjectStreamClass
 import java.io.Serializable
 import java.time.Duration
-import java.util.Base64
+import java.util.*
 
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotSerializationTest {
@@ -217,6 +216,7 @@ class SnapshotSerializationTest {
     fun `legacy report streams detach mutable result list aliases`() {
         val values = deserialize<List<Any>>(readFixture("legacy-snapshot-report-alias.base64"))
         val report = values[0] as SnapshotCacheApplyReport
+
         @Suppress("UNCHECKED_CAST")
         val sourceResults = values[1] as MutableList<SnapshotCacheOperationResult>
 
@@ -240,7 +240,7 @@ class SnapshotSerializationTest {
     }
 
     private fun assertInvalidStream(bytes: ByteArray) {
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<BinarySerializationException> {
             deserialize<Any>(bytes)
         }
     }
@@ -253,10 +253,8 @@ class SnapshotSerializationTest {
         return serialize(value)
     }
 
-    private fun serialize(value: Serializable): ByteArray = ByteArrayOutputStream().use { output ->
-        ObjectOutputStream(output).use { it.writeObject(value) }
-        output.toByteArray()
-    }
+    private fun serialize(value: Serializable): ByteArray =
+        BinarySerializers.JdkUnfiltered.serialize(value)
 
     private fun readFixture(name: String): ByteArray = requireNotNull(javaClass.getResourceAsStream("/$name")) {
         "Missing serialization fixture: $name"
@@ -265,9 +263,8 @@ class SnapshotSerializationTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T: Any> deserialize(bytes: ByteArray): T = ByteArrayInputStream(bytes).use { input ->
-        ObjectInputStream(input).use { it.readObject() as T }
-    }
+    private fun <T: Any> deserialize(bytes: ByteArray): T =
+        BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
 
     private data class Payload(val text: String): Serializable {
         companion object {

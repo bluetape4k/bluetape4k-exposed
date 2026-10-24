@@ -70,13 +70,7 @@ inline fun <reified T: Any> Readable.getJacksonOrNull(
     index: Int,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): T? {
-    val value = get(index) ?: return null
-    return when (value) {
-        is T      -> value
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return get(index)?.let { deserializeOrNull(it, serializer) } 
 }
 
 /**
@@ -99,13 +93,7 @@ inline fun <reified T: Any> Readable.getJacksonOrNull(
     name: String,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): T? {
-    val value = get(name) ?: return null
-    return when (value) {
-        is T      -> value
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return get(name)?.let { deserializeOrNull(it, serializer) }
 }
 
 /**
@@ -170,13 +158,7 @@ fun Readable.getJsonNodeOrNull(
     index: Int,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): JsonNode? {
-    val value = get(index) ?: return null
-    return when (value) {
-        is JsonNode -> value
-        is String   -> serializer.mapper.readTree(value)
-        is ByteArray -> serializer.mapper.readTree(value)
-        else        -> serializer.mapper.readTree(value.toString())
-    }
+    return get(index)?.let { readJsonNodeOrNull(it, serializer.mapper) }
 }
 
 /**
@@ -199,11 +181,5 @@ fun Readable.getJsonNodeOrNull(
     name: String,
     serializer: JacksonSerializer = DefaultJacksonSerializer,
 ): JsonNode? {
-    val value = get(name) ?: return null
-    return when (value) {
-        is JsonNode -> value
-        is String   -> serializer.mapper.readTree(value)
-        is ByteArray -> serializer.mapper.readTree(value)
-        else        -> serializer.mapper.readTree(value.toString())
-    }
+    return get(name)?.let { readJsonNodeOrNull(it, serializer.mapper) }
 }

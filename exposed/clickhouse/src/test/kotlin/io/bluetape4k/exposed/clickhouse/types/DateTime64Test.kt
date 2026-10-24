@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.ClickHouseTable
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -66,6 +67,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 1L }
                     .toList()
+                    .onEach { log.debug { "row=$it" } }
                 rows shouldHaveSize 1
                 rows[0][Dt64Table.ts3] shouldBeEqualTo nowMillis
             } finally {
@@ -91,6 +93,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 2L }
                     .toList()
+                    .onEach { log.debug { "row=$it" } }
                 rows shouldHaveSize 1
                 rows[0][Dt64Table.ts6].shouldNotBeNull()
             } finally {
@@ -115,6 +118,7 @@ class DateTime64Test: AbstractClickHouseTest() {
                 val rows = Dt64Table.selectAll()
                     .where { Dt64Table.id eq 3L }
                     .toList()
+                    .onEach { log.debug { "row=$it" } }
                 rows shouldHaveSize 1
                 rows[0][Dt64Table.tsNullable].shouldBeNull()
             } finally {

@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.jdbc.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.core.dao.id.SoftDeletedIdTable
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
@@ -37,6 +38,6 @@ class UuidRepositoryNamingTest {
 
         val aliases = listOf(kotlinJdbc, javaJdbc, kotlinSoftDeleted, javaSoftDeleted)
 
-        aliases.size shouldBeEqualTo 4
+        aliases shouldHaveSize 4
     }
 }

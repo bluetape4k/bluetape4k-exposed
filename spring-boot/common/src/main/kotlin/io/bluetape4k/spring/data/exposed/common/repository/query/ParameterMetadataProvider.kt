@@ -13,5 +13,9 @@ class ParameterMetadataProvider(
         /** 선언된 파라미터 메타데이터와 실제 호출 값을 하나의 accessor로 결합합니다. */
         fun of(parameters: Parameters<*, *>, values: Array<Any?>): ParameterMetadataProvider =
             ParameterMetadataProvider(ParametersParameterAccessor(parameters, values))
+
+        /** 선언된 파라미터 메타데이터와 실제 호출 값을 하나의 accessor로 결합합니다. */
+        operator fun invoke(parameters: Parameters<*, *>, values: Array<Any?>): ParameterMetadataProvider =
+            ParameterMetadataProvider(ParametersParameterAccessor(parameters, values))
     }
 }

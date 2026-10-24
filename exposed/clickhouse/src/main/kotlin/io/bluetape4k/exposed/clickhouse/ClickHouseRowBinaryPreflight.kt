@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.logging.KLogging
+
 /** RowBinary writer가 안전하게 처리할 수 있는 SQL인지 판정한 결과입니다. */
 internal data class ClickHouseRowBinaryPreflightResult(
     val eligible: Boolean,
@@ -13,7 +15,7 @@ internal data class ClickHouseRowBinaryPreflightResult(
  * 처리한다는 보장이 없으므로 JDBC fallback으로 보냅니다. 이 판정은 connection이나
  * statement를 만들기 전에 수행됩니다.
  */
-internal object ClickHouseRowBinaryPreflight {
+internal object ClickHouseRowBinaryPreflight: KLogging() {
 
     private const val INSERT = "insert"
     private const val VALUES = "values"
@@ -73,7 +75,7 @@ internal object ClickHouseRowBinaryPreflight {
 
     private fun startsWithWord(source: String, word: String): Boolean =
         source.regionMatches(0, word, 0, word.length, ignoreCase = true) &&
-            (source.length == word.length || !source[word.length].isIdentifierPart())
+                (source.length == word.length || !source[word.length].isIdentifierPart())
 
     @Suppress("LoopWithTooManyJumpStatements")
     private fun findKeyword(source: String, keyword: String): Int {
@@ -209,7 +211,7 @@ internal object ClickHouseRowBinaryPreflight {
                     while (index + 1 < source.length && !(source[index] == '*' && source[index + 1] == '/')) index++
                     index = (index + 2).coerceAtMost(source.length)
                 }
-                else -> {
+                else                                                -> {
                     result.append(current)
                     index++
                 }

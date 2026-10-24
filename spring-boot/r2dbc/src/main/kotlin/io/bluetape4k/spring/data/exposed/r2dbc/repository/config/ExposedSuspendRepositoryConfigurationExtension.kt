@@ -21,6 +21,8 @@ class ExposedSuspendRepositoryConfigurationExtension: RepositoryConfigurationExt
 
     companion object {
         private const val DEFAULT_TRANSACTION_MANAGER_REF = "springTransactionManager"
+
+        val Default = ExposedSuspendRepositoryConfigurationExtension()
     }
 
     override fun getModuleName(): String = "SUSPEND_EXPOSED"

@@ -2,13 +2,15 @@ package io.bluetape4k.exposed.duckdb
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.duckdb.domain.Events
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -83,7 +85,9 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
         val rows = queryFlow(db) {
             Events.selectAll()
                 .orderBy(Events.eventId to SortOrder.ASC)
-        }.toList()
+        }
+            .log("Event")
+            .toList()
 
         rows shouldHaveSize 3
         rows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L, 3L)
@@ -96,7 +100,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
         val rows = queryFlow(db) {
             Events.selectAll()
                 .orderBy(Events.eventId to SortOrder.ASC)
-        }.toList()
+        }.log("Event").toList()
 
         rows shouldHaveSize 0
     }
@@ -105,7 +109,7 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     fun `queryFlow 는 where 조건으로 필터된 결과만 emit 한다`() = runSuspendIO {
         val rows = queryFlow(db) {
             Events.selectAll().where { Events.region eq "kr" }
-        }.toList()
+        }.log("Event").toList()
 
         rows shouldHaveSize 1
         rows.all { it[Events.region] == "kr" }.shouldBeTrue()
@@ -115,7 +119,9 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     fun `queryFlow 는 take 로 일부만 소비할 수 있다`() = runSuspendIO {
         val rows = queryFlow(db) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
-        }.take(2).toList()
+        }.log("Event")
+            .take(2)
+            .toList()
 
         rows shouldHaveSize 2
         rows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L)
@@ -125,7 +131,8 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     fun `queryFlow 는 커스텀 디스패처에서도 결과를 반환한다`() = runSuspendIO {
         val rows = queryFlow(db, Dispatchers.Default) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
-        }.toList()
+        }.log("Event")
+            .toList()
 
         rows shouldHaveSize 3
     }
@@ -153,14 +160,18 @@ class DuckDBExtensionsTest: AbstractDuckDBTest() {
     fun `queryFlow 는 정렬 순서를 보장한다`() = runSuspendIO {
         val ascending = queryFlow(db) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
-        }.toList().map { it[Events.eventId] }
+        }.log("Event")
+            .map { it[Events.eventId] }
+            .toList()
 
         val descending = queryFlow(db) {
             Events.selectAll().orderBy(Events.eventId to SortOrder.DESC)
-        }.toList().map { it[Events.eventId] }
+        }.log("Event")
+            .map { it[Events.eventId] }
+            .toList()
 
         ascending shouldBeEqualTo listOf(1L, 2L, 3L)
         descending shouldBeEqualTo listOf(3L, 2L, 1L)
-        (ascending == descending).shouldBeFalse()
+        ascending shouldNotBeEqualTo descending
     }
 }

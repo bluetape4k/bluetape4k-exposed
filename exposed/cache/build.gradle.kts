@@ -23,6 +23,7 @@ dependencies {
 
     // Bluetape4k
     api(bt4k.bluetape4k.core)
+    api(bt4k.bluetape4k.cache.core)
     testImplementation(bt4k.bluetape4k.io)
     testImplementation(bt4k.fory.kotlin)
 
@@ -32,13 +33,15 @@ dependencies {
     compileOnly(bt4k.exposed.jdbc)
     compileOnly(libs.exposed.dao)
     compileOnly(bt4k.exposed.java.time)
+    api(project(":bluetape4k-exposed-core"))
 
     // Coroutines
+    compileOnly(bt4k.bluetape4k.coroutines)
     compileOnly(libs.kotlinx.coroutines.core)
 
     // Test Fixtures
     testFixturesApi(platform(bt4k.kotlinx.coroutines.bom))
-    testFixturesApi(bt4k.bluetape4k.logging)
+    testFixturesApi(bt4k.bluetape4k.core)
     testFixturesApi(platform(bt4k.exposed.bom))
     testFixturesApi(bt4k.exposed.core)
     testFixturesApi(bt4k.exposed.jdbc)

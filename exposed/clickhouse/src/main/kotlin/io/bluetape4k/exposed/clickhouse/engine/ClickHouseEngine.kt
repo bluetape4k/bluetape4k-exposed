@@ -9,6 +9,7 @@ import io.bluetape4k.exposed.clickhouse.functions.ToYYYYMM
 import io.bluetape4k.exposed.clickhouse.functions.ToYYYYMMDD
 import io.bluetape4k.exposed.clickhouse.functions.Uniq
 import io.bluetape4k.exposed.clickhouse.functions.UniqExact
+import io.bluetape4k.support.requireNotEmpty
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.QueryBuilder
@@ -185,18 +186,21 @@ sealed interface ClickHouseEngine: Serializable {
 
 /** 테스트와 임시 테이블에 사용할 Memory 엔진입니다. */
 data object Memory: ClickHouseEngine {
+    private fun readResolve(): Any = Memory
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = Memory()"
 }
 
 /** 작은 컬럼 파일 테이블에 사용할 TinyLog 엔진입니다. */
 data object TinyLog: ClickHouseEngine {
+    private fun readResolve(): Any = TinyLog
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = TinyLog()"
 }
 
 /** 작은 추가 중심 테이블에 사용할 Log 엔진입니다. */
 data object Log: ClickHouseEngine {
+    private fun readResolve(): Any = Log
     private const val serialVersionUID: Long = 1L
     override fun toClause(): String = "ENGINE = Log()"
 }
@@ -216,7 +220,7 @@ data class MergeTree(
     }
 
     init {
-        require(orderBy.isNotEmpty()) { "MergeTree requires at least one ORDER BY expression" }
+        orderBy.requireNotEmpty { "MergeTree requires at least one ORDER BY expression" }
     }
 
     override fun toClause(): String = buildString {
@@ -245,7 +249,7 @@ data class ReplacingMergeTree(
     }
 
     init {
-        require(orderBy.isNotEmpty()) { "ReplacingMergeTree requires at least one ORDER BY expression" }
+        orderBy.requireNotEmpty { "ReplacingMergeTree requires at least one ORDER BY expression" }
     }
 
     override fun toClause(): String = buildString {
@@ -271,7 +275,7 @@ data class SummingMergeTree(
     }
 
     init {
-        require(orderBy.isNotEmpty()) { "SummingMergeTree requires at least one ORDER BY expression" }
+        orderBy.requireNotEmpty { "SummingMergeTree requires at least one ORDER BY expression" }
     }
 
     override fun toClause(): String = buildString {
@@ -296,7 +300,7 @@ data class AggregatingMergeTree(
     }
 
     init {
-        require(orderBy.isNotEmpty()) { "AggregatingMergeTree requires at least one ORDER BY expression" }
+        orderBy.requireNotEmpty { "AggregatingMergeTree requires at least one ORDER BY expression" }
     }
 
     override fun toClause(): String = buildString {
@@ -336,7 +340,8 @@ private fun StringBuilder.appendSettings(settings: List<ClickHouseSetting>) {
 
 private fun validateUnsafeRawFragment(sql: String, label: String): String {
     val trimmed = sql.trim()
-    require(trimmed.isNotEmpty()) { "$label must not be blank" }
+    trimmed.requireNotEmpty { "$label must not be blank" }
+
     require(UNSAFE_RAW_FORBIDDEN_TOKENS.none { token -> trimmed.contains(token) }) {
         "$label contains a statement delimiter, comment, newline, or quote"
     }

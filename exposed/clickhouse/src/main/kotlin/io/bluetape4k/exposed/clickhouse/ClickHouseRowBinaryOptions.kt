@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.support.requirePositiveNumber
+
 /**
  * ClickHouse JDBC V2 RowBinary writer의 명시적 opt-in 설정입니다.
  *
@@ -13,9 +15,7 @@ data class ClickHouseRowBinaryOptions(
 ) {
 
     init {
-        require(maxRowsPerFlush > 0) {
-            "maxRowsPerFlush는 양수여야 합니다: $maxRowsPerFlush"
-        }
+        maxRowsPerFlush.requirePositiveNumber { "maxRowsPerFlush는 양수여야 합니다: $maxRowsPerFlush" }
     }
 
     private companion object {

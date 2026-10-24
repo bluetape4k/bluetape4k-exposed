@@ -27,7 +27,7 @@ class ColumnExtensionsTest: AbstractExposedTest() {
 
     object ClientGenerated: IntIdTable() {
         val timebasedUuid = javaUUID("timebased_uuid").timebasedGenerated()
-        val timebasedUuidBase62 = varchar("timebased_uuid_base62", 32).timebasedGenerated()
+        val timebasedUuidBase62 = varchar("timebased_uuid_base62", 22).timebasedGenerated()
         val snowflake = long("snowflake").snowflakeGenerated()
         val ksuid = varchar("ksuid", 27).ksuidGenerated()
         val ksuidMillis = varchar("ksuid_millis", 27).ksuidMillisGenerated()
@@ -61,6 +61,7 @@ class ColumnExtensionsTest: AbstractExposedTest() {
             val ids = List(entityCount) { it + 1 }
             val rows = ClientGenerated.batchInsert(ids) { }
 
+            rows shouldHaveSize entityCount
             rows.map { it[ClientGenerated.timebasedUuid] }.distinct() shouldHaveSize entityCount
             rows.map { it[ClientGenerated.timebasedUuidBase62] }.distinct() shouldHaveSize entityCount
             rows.map { it[ClientGenerated.snowflake] }.distinct() shouldHaveSize entityCount
@@ -78,6 +79,7 @@ class ColumnExtensionsTest: AbstractExposedTest() {
                 ClientGeneratedEntity.new {}
             }
 
+            entities shouldHaveSize entityCount
             entities.map { it.timebasedUuid }.distinct() shouldHaveSize entityCount
             entities.map { it.timebasedUuidBase62 }.distinct() shouldHaveSize entityCount
             entities.map { it.snowflake }.distinct() shouldHaveSize entityCount

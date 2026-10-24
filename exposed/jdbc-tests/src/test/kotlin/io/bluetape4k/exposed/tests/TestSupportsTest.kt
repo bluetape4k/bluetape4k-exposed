@@ -5,8 +5,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
@@ -51,7 +51,7 @@ class TestSupportsTest: AbstractExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withAutoCommitSuspending 은 예외가 발생해도 autoCommit 을 원복한다`(testDB: TestDB) = runBlocking {
+    fun `withAutoCommitSuspending 은 예외가 발생해도 autoCommit 을 원복한다`(testDB: TestDB) = runSuspendIO {
         withDbSuspending(testDB) {
             val original = connection.autoCommit
 
@@ -68,7 +68,7 @@ class TestSupportsTest: AbstractExposedTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `withTablesSuspending 에서 dropTables가 false 이면 테이블이 유지된다`(testDB: TestDB) = runBlocking {
+    fun `withTablesSuspending 에서 dropTables가 false 이면 테이블이 유지된다`(testDB: TestDB) = runSuspendIO {
         withTablesSuspending(testDB, UtilityTable, dropTables = false) {
             UtilityTable.exists().shouldBeTrue()
         }
@@ -86,7 +86,7 @@ class TestSupportsTest: AbstractExposedTest() {
         testDB.db.shouldNotBeNull() shouldBeEqualTo database
 
         if (testDB !in TestDB.ALL_MYSQL_MARIADB) {
-            testDB.getDatabaseForBatch().shouldNotBeNull() shouldBeEqualTo database
+            testDB.getDatabaseForBatch() shouldBeEqualTo database
         }
     }
 }

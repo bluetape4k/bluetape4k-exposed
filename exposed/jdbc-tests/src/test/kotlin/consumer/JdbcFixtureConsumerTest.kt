@@ -2,6 +2,7 @@ package consumer
 
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.exposed.tests.jdbcTestDbFixture
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withDbSuspending
@@ -28,9 +29,11 @@ class JdbcFixtureConsumerTest {
         HikariDataSource().use { pool ->
             pool.jdbcUrl = "jdbc:h2:mem:jdbc_external_consumer;DB_CLOSE_DELAY=-1"
             pool.maximumPoolSize = 2
+
             val fixture = jdbcTestDbFixture(ApplicationDb.PRIMARY, { configure ->
                 Database.connect(pool, databaseConfig = DatabaseConfig { configure() })
             })
+
             val table = object: Table("external_fixture_table") {
                 val id = integer("id")
             }
@@ -57,7 +60,7 @@ class JdbcFixtureConsumerTest {
             withSchemasSuspending(fixture, schema) { calls++ }
 
             calls shouldBeEqualTo 6
-            pool.isClosed shouldBeEqualTo false
+            pool.isClosed.shouldBeFalse()
         }
     }
 }

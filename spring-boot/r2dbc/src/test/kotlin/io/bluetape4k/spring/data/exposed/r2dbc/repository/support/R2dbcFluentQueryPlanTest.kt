@@ -4,12 +4,16 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeSameInstanceAs
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.Sort
 import kotlin.test.Test
 
 class R2dbcFluentQueryPlanTest {
+
+    companion object: KLogging()
 
     @Test
     fun `plan transitions are immutable and use last-wins rules`() {
@@ -36,14 +40,21 @@ class R2dbcFluentQueryPlanTest {
             .asType(NameView::class)
             .project("name")
 
+        log.debug { "original=$original" }
         original shouldNotBeSameInstanceAs changed
-        val sortProperties: List<String> = changed.sort.toList().map { order -> order.property }
-        sortProperties shouldBeEqualTo listOf("name", "age")
+        original.limit.shouldBeNull()
+        original.projectedProperties.shouldBeNull()
+
+        log.debug { "changed=$changed" }
         changed.limit shouldBeEqualTo 10
         changed.resultType shouldBeEqualTo NameView::class
         changed.projectedProperties shouldBeEqualTo listOf("name")
-        original.limit.shouldBeNull()
-        original.projectedProperties.shouldBeNull()
+
+        val sortProperties: List<String> = changed.sort.toList()
+            .onEach { log.debug { "order=$it" } }
+            .map { order -> order.property }
+
+        sortProperties shouldBeEqualTo listOf("name", "age")
     }
 
     @Test

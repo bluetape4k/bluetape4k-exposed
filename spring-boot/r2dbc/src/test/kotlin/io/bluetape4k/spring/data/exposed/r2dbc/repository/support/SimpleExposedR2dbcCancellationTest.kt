@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -42,7 +43,7 @@ class SimpleExposedR2dbcCancellationTest {
         try {
             // withTables 안에서 실행하면 outer transaction을 재사용하므로 setup과 검증을 분리한다.
             withTables(testDB, Users, dropTables = false) {}
-            TransactionManager.defaultDatabase = checkNotNull(testDB.db)
+            TransactionManager.defaultDatabase = testDB.db.shouldNotBeNull()
 
             val repository = SimpleExposedR2dbcRepository(
                 Users,

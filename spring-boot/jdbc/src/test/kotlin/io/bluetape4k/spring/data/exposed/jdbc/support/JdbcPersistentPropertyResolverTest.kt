@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
@@ -34,11 +35,13 @@ class JdbcPersistentPropertyResolverTest {
         val persistentEntity = ExposedMappingContext().getRequiredPersistentEntity(UserEntity::class.java)
         val resolved = JdbcPersistentPropertyResolver(persistentEntity).resolve("name")
 
+        log.debug { "persistent entity: $persistentEntity" }
+        persistentEntity.filter { it.name == "name" } shouldHaveSize 1
+
+        log.debug { "Resolved entity: $resolved" }
         resolved.logicalName shouldBeEqualTo "name"
         resolved.column shouldBeEqualTo Users.name
         resolved.valueType shouldBeEqualTo String::class.java
-
-        persistentEntity.filter { it.name == "name" } shouldHaveSize 1
     }
 
     @Test
@@ -64,6 +67,7 @@ class JdbcPersistentPropertyResolverTest {
             resolverFor(UserEntity::class.java).resolve(property)
         }
 
+        log.debug { "failure=$failure" }
         failure.message shouldNotContain "\n"
         failure.message shouldNotContain "\r"
         failure.message shouldNotContain "\t"

@@ -4,13 +4,23 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
 class BinarySerializedTransformersTest {
+
+    companion object: KLogging()
+
     private data class SamplePayload(
         val name: String,
         val age: Int,
+    ): Serializable
+
+    private data class ComplexPayload(
+        val id: Long,
+        val name: String,
+        val scores: List<Int>,
     ): Serializable
 
     // --- BinarySerializedBinaryTransformer ---
@@ -141,13 +151,7 @@ class BinarySerializedTransformersTest {
     }
 
     @Test
-    fun `binary transformer 는 여러 필드를 가진 복잡한 객체를 직렬화하고 복원한다`() {
-        data class ComplexPayload(
-            val id: Long,
-            val name: String,
-            val scores: List<Int>,
-        ): Serializable
-
+    fun `binary transformer 는 여러 필드를 가진 복잡한 객체를 LZ4Fory 직렬화하고 복원한다`() {
         val source = ComplexPayload(id = 1L, name = "복잡한 객체", scores = listOf(10, 20, 30))
         val transformer = BinarySerializedBinaryTransformer<ComplexPayload>(BinarySerializers.LZ4Fory)
 
@@ -158,15 +162,31 @@ class BinarySerializedTransformersTest {
     }
 
     @Test
-    fun `blob transformer 는 여러 필드를 가진 복잡한 객체를 직렬화하고 복원한다`() {
-        data class ComplexPayload(
-            val id: Long,
-            val name: String,
-            val scores: List<Int>,
-        ): Serializable
-
+    fun `blob transformer 는 여러 필드를 가진 복잡한 객체를 FastFory 직렬화하고 복원한다`() {
         val source = ComplexPayload(id = 2L, name = "blob 복잡한 객체", scores = listOf(1, 2, 3))
-        val transformer = BinarySerializedBlobTransformer<ComplexPayload>(BinarySerializers.LZ4Fory)
+        val transformer = BinarySerializedBlobTransformer<ComplexPayload>(BinarySerializers.FastFory)
+
+        val serialized = transformer.unwrap(source)
+        val restored = transformer.wrap(serialized)
+
+        restored shouldBeEqualTo source
+    }
+
+    @Test
+    fun `blob transformer 는 여러 필드를 가진 복잡한 객체를 ZstdFastFory 직렬화하고 복원한다`() {
+        val source = ComplexPayload(id = 2L, name = "blob 복잡한 객체", scores = listOf(1, 2, 3))
+        val transformer = BinarySerializedBlobTransformer<ComplexPayload>(BinarySerializers.ZstdFastFory)
+
+        val serialized = transformer.unwrap(source)
+        val restored = transformer.wrap(serialized)
+
+        restored shouldBeEqualTo source
+    }
+
+    @Test
+    fun `blob transformer 는 여러 필드를 가진 복잡한 객체를 Lz4FastFory 직렬화하고 복원한다`() {
+        val source = ComplexPayload(id = 2L, name = "blob 복잡한 객체", scores = listOf(1, 2, 3))
+        val transformer = BinarySerializedBlobTransformer<ComplexPayload>(BinarySerializers.LZ4FastFory)
 
         val serialized = transformer.unwrap(source)
         val restored = transformer.wrap(serialized)

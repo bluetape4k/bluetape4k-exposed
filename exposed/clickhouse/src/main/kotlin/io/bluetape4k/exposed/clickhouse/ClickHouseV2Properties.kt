@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.support.requireNullOrEmpty
 import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-import java.util.Properties
+import java.util.*
 
 /**
  * V2 옵션을 JDBC [Properties]로 변환하는 내부 경계입니다.
@@ -18,10 +18,10 @@ internal fun ClickHouseV2Options.toEffectiveProperties(
     validateUrlAuthenticationKeys(jdbcUrl)
     validateExplicitCredentials(authentication, user, password)
 
-    val properties = Properties().apply {
-        applyRawProperties(this@toEffectiveProperties)
-        applyTypedProperties(this@toEffectiveProperties)
-        applyAuthentication(authentication, user, password)
+    val properties = Properties().also {
+        it.applyRawProperties(this)
+        it.applyTypedProperties(this)
+        it.applyAuthentication(authentication, user, password)
     }
 
     return properties.copy()
@@ -42,8 +42,10 @@ private fun validateExplicitCredentials(
 private fun validateUrlAuthenticationKeys(jdbcUrl: String?) {
     if (jdbcUrl.isNullOrBlank()) return
 
-    val query = jdbcUrl.substringAfter('?', missingDelimiterValue = "")
+    val query = jdbcUrl
+        .substringAfter('?', missingDelimiterValue = "")
         .substringBefore('#')
+
     if (query.isBlank()) return
 
     val authenticationKeys = setOf("user", "password", "access_token", "bearer_token", "http_use_basic_auth")
@@ -53,10 +55,11 @@ private fun validateUrlAuthenticationKeys(jdbcUrl: String?) {
             pair.substringBefore('=').decodeUrlComponent().lowercase()
         }
         .filter { it in authenticationKeys }
-    require(present.isEmpty()) {
-        "JDBC URL 인증 property는 options connect에서 사용할 수 없습니다: " +
-            ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
+
+    present.requireNullOrEmpty {
+        "JDBC URL 인증 property는 options connect에서 사용할 수 없습니다: " + ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
     }
 }
 
-private fun String.decodeUrlComponent(): String = URLDecoder.decode(this, StandardCharsets.UTF_8)
+private fun String.decodeUrlComponent(): String =
+    URLDecoder.decode(this, Charsets.UTF_8)

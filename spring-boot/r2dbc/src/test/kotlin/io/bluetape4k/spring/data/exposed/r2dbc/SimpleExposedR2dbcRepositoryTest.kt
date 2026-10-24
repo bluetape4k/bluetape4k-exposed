@@ -8,6 +8,8 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
@@ -47,9 +49,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
@@ -102,7 +102,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             createUser("Alice", "alice@example.com", 30)
             createUser("Bob", "bob@example.com", 25)
 
-            val all = userRepository.findAll().toList()
+            val all = userRepository.findAll().log("ALL").toList()
             all shouldHaveSize 2
         }
     }
@@ -124,14 +124,14 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 .workers(workerSize)
                 .rounds(4)
                 .addAll(
-                    (1..workerSize).map { index ->
+                    List(workerSize) { index ->
                         suspend {
                             val active = activeWorkers.incrementAndGet()
                             peakWorkers.updateAndGet { current -> maxOf(current, active) }
                             readyWorkers.countDown()
 
                             try {
-                                check(readyWorkers.await(5, TimeUnit.SECONDS)) {
+                                check(readyWorkers.await(5.seconds)) {
                                     "모든 경쟁 worker가 bounded barrier에 도달하지 못했습니다."
                                 }
                                 // 경쟁 worker는 fixture의 외부 트랜잭션을 상속하지 않아야
@@ -156,7 +156,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
             peakWorkers.get() shouldBeEqualTo workerSize
             savedIds.distinct() shouldHaveSize workerSize * 4
-            userRepository.count() shouldBeEqualTo workerSize.toLong() * 4
+            userRepository.count() shouldBeEqualTo workerSize * 4L
         }
     }
 
@@ -168,11 +168,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             createUser("Bob", "bob@example.com", 25)
 
             log.debug { "findAllList ..." }
-            val all = userRepository.findAllAsList()
-
-            all.forEach {
-                log.debug { "User=$it" }
-            }
+            val all = userRepository.findAllAsList().onEach { log.debug { "User=$it" } }
             all shouldHaveSize 2
         }
     }
@@ -191,7 +187,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO(5.minutes) {
+    fun `findAllAsList - SuspendedJobTester 병렬 조회에서도 같은 개수를 본다`(testDB: TestDB) = runSuspendIO {
         Assumptions.assumeTrue { testDB in TestDB.ALL_H2 + TestDB.ALL_POSTGRES }
 
         val userCount = 4
@@ -228,7 +224,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             StructuredTaskScopeTester()
                 .rounds(4)
                 .add {
-                    val users = runBlocking { userRepository.streamAll(it.db).toList() }
+                    val users = runBlocking { userRepository.streamAll(it.db).log("STREAM").toList() }
                     collectedCounts += users.size
                 }
                 .run()
@@ -355,7 +351,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 User(id = null, name = "Bob", email = "bob@example.com", age = 25),
             )
 
-            val saved = userRepository.saveAll(users).toList()
+            val saved = userRepository.saveAll(users).log("SAVE").toList()
             saved shouldHaveSize 2
             saved.all { it.id != null }.shouldBeTrue()
             userRepository.count() shouldBeEqualTo 2L
@@ -434,12 +430,15 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `saveAll with Flow keeps committed rows after top-level finite first`(testDB: TestDB) = runSuspendIO {
         withTopLevelUsers(testDB) {
-            val first = userRepository.saveAll(
-                flowOf(
-                    User(id = null, name = "Alice", email = "alice@example.com", age = 30),
-                    User(id = null, name = "Bob", email = "bob@example.com", age = 25),
+            val first = userRepository
+                .saveAll(
+                    flowOf(
+                        User(id = null, name = "Alice", email = "alice@example.com", age = 30),
+                        User(id = null, name = "Bob", email = "bob@example.com", age = 25),
+                    )
                 )
-            ).first()
+                .log("SaveAll")
+                .first()
 
             first.id.shouldNotBeNull()
             userRepository.count() shouldBeEqualTo 2L
@@ -463,6 +462,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 }
             }
 
+            log.debug { "failure=$failure" }
             failure.message shouldBeEqualTo "downstream failure"
             emitted shouldHaveSize 1
             userRepository.count() shouldBeEqualTo 2L
@@ -477,7 +477,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 val callerTransaction = checkNotNull(TransactionManager.currentOrNull())
                 val saved = userRepository.saveAll(
                     flowOf(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
-                ).toList()
+                ).log("SaveAll").toList()
 
                 check(TransactionManager.currentOrNull() === callerTransaction) {
                     "saveAll(Flow) must preserve the caller-owned transaction when nested transactions are disabled"
@@ -496,9 +496,10 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
                 userRepository.saveAll(flow {
                     emit(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
                     error("upstream failure")
-                }).toList(emitted)
+                }).log("SaveAll").toList(emitted)
             }
 
+            log.debug { "failure=$failure" }
             failure.message shouldBeEqualTo "upstream failure"
             emitted.shouldBeEmpty()
             userRepository.count() shouldBeEqualTo 0L
@@ -527,7 +528,10 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             val bob = createUser("Bob", "bob@example.com", 25)
             createUser("Charlie", "charlie@example.com", 35)
 
-            val found = userRepository.findAllById(flowOf(alice.id!!, bob.id!!)).toList()
+            val found = userRepository.findAllById(flowOf(alice.id!!, bob.id!!))
+                .log("FindAllById")
+                .toList()
+
             found shouldHaveSize 2
             found.map { it.name }.toSet() shouldBeEqualTo setOf("Alice", "Bob")
         }
@@ -580,7 +584,7 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
             createUser("Alice", "alice@example.com", 30)
             createUser("Bob", "bob@example.com", 17)
 
-            val adults = userRepository.findAll { Users.age greaterEq 18 }.toList()
+            val adults = userRepository.findAll { Users.age greaterEq 18 }.log("findAll").toList()
             adults shouldHaveSize 1
             adults[0].name shouldBeEqualTo "Alice"
         }
@@ -628,6 +632,8 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
         withTables(testDB, Users) {
             repeat(7) { i -> createUser("User$i", "user$i@example.com", 20 + i) }
             val page = userRepository.findAll(PageRequest.of(1, 3))
+
+            log.debug { "users=${page.content}" }
             page.content shouldHaveSize 3
             page.totalElements shouldBeEqualTo 7L
             page.number shouldBeEqualTo 1
@@ -638,7 +644,10 @@ class SimpleExposedR2dbcRepositoryTest: AbstractExposedR2dbcRepositoryTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `deleteAllById with empty list does nothing`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, Users) {
+            userRepository.count() shouldBeEqualTo 0L
             createUser("Alice", "alice@example.com", 30)
+            userRepository.count() shouldBeEqualTo 1L
+
             userRepository.deleteAllById(emptyList())
             userRepository.count() shouldBeEqualTo 1L
         }

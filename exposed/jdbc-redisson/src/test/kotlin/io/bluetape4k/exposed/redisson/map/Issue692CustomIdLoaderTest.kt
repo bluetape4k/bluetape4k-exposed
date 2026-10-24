@@ -3,6 +3,9 @@ package io.bluetape4k.exposed.redisson.map
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -19,9 +22,9 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.sql.Connection
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 
 class Issue692CustomIdLoaderTest: AbstractExposedTest() {
 
@@ -51,13 +54,13 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                 toEntity = { this[Issue692CustomIdTable.id].value.value },
             )
 
-            val ids = requireNotNull(loader.loadAllKeys()).toList()
+            val ids = loader.loadAllKeys().shouldNotBeNull().toList()
             ids.map(Issue692CustomId::value) shouldBeEqualTo listOf("a01", "a02", "a03", "a04", "a05")
             ids shouldHaveSize 5
             ids.distinct() shouldBeEqualTo ids
 
             val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
-            selects.size shouldBeEqualTo 3
+            selects shouldHaveSize 3
             selects.all { it.contains("LIMIT", ignoreCase = true) }.shouldBeTrue()
             selects.drop(1).all { it.contains("OFFSET", ignoreCase = true) }.shouldBeTrue()
             selects.none { it.contains(">") }.shouldBeTrue()
@@ -93,7 +96,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                                 firstSelect.compareAndSet(false, true)
                             ) {
                                 firstSelectObserved.countDown()
-                                check(writerDone.await(5, TimeUnit.SECONDS)) {
+                                check(writerDone.await(5.seconds)) {
                                     "writer did not commit before the next page"
                                 }
                             }
@@ -113,13 +116,12 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
 
                 writerExecutor.submit {
                     try {
-                        check(firstSelectObserved.await(5, TimeUnit.SECONDS)) {
-                            "loader did not reach the first page"
-                        }
-                        val database = checkNotNull(testDB.db) { "test database is not initialized" }
+                        firstSelectObserved.await(5.seconds).shouldBeTrue()
+                        val database = testDB.db.shouldNotBeNull()
+
                         inTopLevelTransaction(
                             db = database,
-                            transactionIsolation = Connection.TRANSACTION_READ_COMMITTED,
+                            transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
                         ) {
                             Issue692CustomIdTable.deleteWhere {
                                 Issue692CustomIdTable.id eq Issue692CustomId("a03")
@@ -142,10 +144,10 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                     toEntity = { this[Issue692CustomIdTable.id].value.value },
                 )
                 val ids = loaderExecutor.submit<List<Issue692CustomId>> {
-                    requireNotNull(loader.loadAllKeys()).toList()
-                }.get(10, TimeUnit.SECONDS)
+                    loader.loadAllKeys().shouldNotBeNull().toList()
+                }.get(10.seconds)
 
-                check(writerDone.await(5, TimeUnit.SECONDS)) { "writer did not finish" }
+                writerDone.await(5.seconds).shouldBeTrue()
                 writerFailure.get()?.let { throw it }
                 ids.map(Issue692CustomId::value) shouldBeEqualTo listOf("a01", "a02", "a04", "a05", "a99")
                 ids.distinct() shouldBeEqualTo ids

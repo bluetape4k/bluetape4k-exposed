@@ -2,6 +2,7 @@ val springBootVersion = bt4k.versions.spring.boot.get()
 
 plugins {
     kotlin("plugin.spring")
+    kotlin("kapt")
 }
 
 configurations {
@@ -57,6 +58,8 @@ dependencies {
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-core"))
     api(bt4k.bluetape4k.virtualthread.api)
+
+    api(bt4k.bluetape4k.spring.boot.core)
 
     // Exposed
     api(bt4k.exposed.spring7.transaction)

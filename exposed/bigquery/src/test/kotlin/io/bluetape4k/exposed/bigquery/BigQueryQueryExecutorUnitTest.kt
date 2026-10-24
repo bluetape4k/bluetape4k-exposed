@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /**
@@ -27,6 +28,7 @@ class BigQueryQueryExecutorUnitTest {
         val row = BigQueryResultRow(mapOf("region" to "kr"))
         val str = row.toString()
 
+        log.debug { "str=$str" }
         str.shouldNotBeNull()
         str shouldContain "region"
         str shouldContain "kr"
@@ -71,5 +73,6 @@ class BigQueryQueryExecutorUnitTest {
         val ex = BigQueryQueryException("테스트")
 
         ex.shouldBeInstanceOf<RuntimeException>()
+        ex.shouldBeInstanceOf<BigQueryQueryException>()
     }
 }

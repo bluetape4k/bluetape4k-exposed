@@ -3,9 +3,10 @@ package io.bluetape4k.spring.data.exposed.jdbc.support
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toCamelCase
+import io.bluetape4k.logging.debug
+import io.bluetape4k.spring.data.exposed.jdbc.repository.support.camelCase
+import io.bluetape4k.spring.data.exposed.jdbc.repository.support.snakeCase
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toExposedOrderBy
-import io.bluetape4k.spring.data.exposed.jdbc.repository.support.toSnakeCase
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.junit.jupiter.api.Test
@@ -23,18 +24,18 @@ class ExposedSortSupportTest {
 
     @Test
     fun `toSnakeCase converts camelCase to snake_case`() {
-        toSnakeCase("createdAt") shouldBeEqualTo "created_at"
-        toSnakeCase("firstName") shouldBeEqualTo "first_name"
-        toSnakeCase("name") shouldBeEqualTo "name"
-        toSnakeCase("myLongPropertyName") shouldBeEqualTo "my_long_property_name"
+        "createdAt".snakeCase() shouldBeEqualTo "created_at"
+        "firstName".snakeCase() shouldBeEqualTo "first_name"
+        "name".snakeCase() shouldBeEqualTo "name"
+        "myLongPropertyName".snakeCase() shouldBeEqualTo "my_long_property_name"
     }
 
     @Test
     fun `toCamelCase converts snake_case to camelCase`() {
-        toCamelCase("created_at") shouldBeEqualTo "createdAt"
-        toCamelCase("first_name") shouldBeEqualTo "firstName"
-        toCamelCase("name") shouldBeEqualTo "name"
-        toCamelCase("my_long_property_name") shouldBeEqualTo "myLongPropertyName"
+        "created_at".camelCase() shouldBeEqualTo "createdAt"
+        "first_name".camelCase() shouldBeEqualTo "firstName"
+        "name".camelCase() shouldBeEqualTo "name"
+        "my_long_property_name".camelCase() shouldBeEqualTo "myLongPropertyName"
     }
 
     @Test
@@ -42,6 +43,7 @@ class ExposedSortSupportTest {
         val sort = Sort.by(Sort.Direction.ASC, "name")
         val orderBy = sort.toExposedOrderBy(TestTable)
 
+        log.debug { "orderBy=${orderBy.contentToString()}" }
         orderBy shouldHaveSize 1
         orderBy[0].second shouldBeEqualTo SortOrder.ASC
         orderBy[0].first shouldBeEqualTo TestTable.name
@@ -52,6 +54,7 @@ class ExposedSortSupportTest {
         val sort = Sort.by(Sort.Direction.DESC, "age")
         val orderBy = sort.toExposedOrderBy(TestTable)
 
+        log.debug { "orderBy=${orderBy.contentToString()}" }
         orderBy shouldHaveSize 1
         orderBy[0].second shouldBeEqualTo SortOrder.DESC
         orderBy[0].first shouldBeEqualTo TestTable.age
@@ -62,6 +65,7 @@ class ExposedSortSupportTest {
         val sort = Sort.by(Sort.Direction.ASC, "createdAt")
         val orderBy = sort.toExposedOrderBy(TestTable)
 
+        log.debug { "orderBy=${orderBy.contentToString()}" }
         orderBy shouldHaveSize 1
         orderBy[0].second shouldBeEqualTo SortOrder.ASC
         orderBy[0].first shouldBeEqualTo TestTable.created_at
@@ -75,6 +79,7 @@ class ExposedSortSupportTest {
         )
         val orderBy = sort.toExposedOrderBy(TestTable)
 
+        log.debug { "orderBy=${orderBy.contentToString()}" }
         orderBy shouldHaveSize 2
         orderBy[0].first shouldBeEqualTo TestTable.name
         orderBy[0].second shouldBeEqualTo SortOrder.ASC

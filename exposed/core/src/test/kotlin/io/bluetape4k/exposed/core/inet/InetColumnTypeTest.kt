@@ -7,6 +7,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -41,6 +42,8 @@ class InetColumnTypeTest: AbstractExposedTest() {
 
             val row = NetworkTable.selectAll().single()
             val result = row[NetworkTable.ip]
+
+            log.debug { "result=$result" }
             result.shouldNotBeNull()
             result.hostAddress shouldBeEqualTo "192.168.1.1"
         }
@@ -58,6 +61,8 @@ class InetColumnTypeTest: AbstractExposedTest() {
 
             val row = NetworkTable.selectAll().single()
             val result = row[NetworkTable.ip]
+
+            log.debug { "result=$result" }
             result.shouldNotBeNull()
             result shouldBeEqualTo addr
         }
@@ -74,6 +79,8 @@ class InetColumnTypeTest: AbstractExposedTest() {
 
             val row = NetworkTable.selectAll().single()
             val result = row[NetworkTable.network]
+
+            log.debug { "result=$result" }
             result shouldBeEqualTo "10.0.0.0/8"
         }
     }

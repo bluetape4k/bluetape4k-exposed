@@ -3,6 +3,8 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import org.springframework.dao.InvalidDataAccessApiUsageException
@@ -12,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 
 class R2dbcPersistentPropertyResolverTest {
+
+    companion object: KLogging()
 
     private val resolver = R2dbcPersistentPropertyResolver(User::class, Users)
 
@@ -47,7 +51,7 @@ class R2dbcPersistentPropertyResolverTest {
         val probe = User(name = "alpha", email = "ignored", age = 0)
 
         val snapshot = resolver.snapshot(Example.of(probe, matcher))
-
+        log.debug { "snapshot=$snapshot" }
         transformerCalls.get() shouldBeEqualTo 1
         snapshot.properties.map { it.property } shouldBeEqualTo listOf("name")
         snapshot.properties.single().value shouldBeEqualTo "alpha"
@@ -78,6 +82,7 @@ class R2dbcPersistentPropertyResolverTest {
 
         val snapshot = resolver.snapshot(Example.of(User(name = "alpha", email = "x", age = 1), matcher))
 
+        log.debug { "snapshot=$snapshot" }
         snapshot.properties.size shouldBeEqualTo 1
         snapshot.properties.single().property shouldBeEqualTo "id"
         snapshot.properties.single().includeNull.shouldBeTrue()

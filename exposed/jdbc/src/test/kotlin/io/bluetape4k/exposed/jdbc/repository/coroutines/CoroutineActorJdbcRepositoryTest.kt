@@ -15,7 +15,7 @@ import io.bluetape4k.exposed.jdbc.repository.ActorJdbcRepository
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -27,11 +27,12 @@ import org.junit.jupiter.params.provider.MethodSource
 
 class CoroutineActorJdbcRepositoryTest: AbstractExposedTest() {
 
-    companion object: KLogging() {
+    companion object: KLoggingChannel() {
+
         fun newActorRecord(): ActorRecord = ActorRecord(
             firstName = faker.name().firstName(),
             lastName = faker.name().lastName(),
-            birthday = faker.timeAndDate().birthday(20, 80).toString()
+            birthday = faker.timeAndDate().birthday(20, 90).toString()
         )
     }
 
@@ -43,6 +44,7 @@ class CoroutineActorJdbcRepositoryTest: AbstractExposedTest() {
         withSuspendedMovieAndActors(testDB) {
             val actorId = 1L
             val actor = repository.findById(actorId)
+            log.debug { "Found actor: $actor" }
             actor.shouldNotBeNull()
             actor.id shouldBeEqualTo actorId
         }
@@ -54,11 +56,9 @@ class CoroutineActorJdbcRepositoryTest: AbstractExposedTest() {
         withSuspendedMovieAndActors(testDB) {
             val params = mapOf("lastName" to "Depp")
             val actors = repository.searchActors(params).map { it.toActorRecord() }
+                .onEach { log.debug { "Found actor: $it" } }
 
             actors.shouldNotBeEmpty()
-            actors.forEach {
-                log.debug { "actor: $it" }
-            }
         }
     }
 
@@ -95,14 +95,14 @@ class CoroutineActorJdbcRepositoryTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `count of actors`(testDB: TestDB) = runSuspendIO {
         withSuspendedMovieAndActors(testDB) {
-            val count = repository.count()
-            log.debug { "count: $count" }
-            count shouldBeGreaterThan 0L
+            val currentCount = repository.count()
+            log.debug { "count: $currentCount" }
+            currentCount shouldBeGreaterThan 0L
 
             repository.save(newActorRecord())
 
             val newCount = repository.count()
-            newCount shouldBeEqualTo count + 1L
+            newCount shouldBeEqualTo currentCount + 1L
         }
     }
 
@@ -110,14 +110,14 @@ class CoroutineActorJdbcRepositoryTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `countBy with predicate`(testDB: TestDB) = runSuspendIO {
         withSuspendedMovieAndActors(testDB) {
-            val count = repository.countBy { ActorTable.lastName eq "Depp" }
-            log.debug { "count: $count" }
-            count shouldBeEqualTo 1L
+            val deppCount = repository.countBy { ActorTable.lastName eq "Depp" }
+            log.debug { "Depp count: $deppCount" }
+            deppCount shouldBeEqualTo 1L
 
             val op = ActorTable.lastName eq "Depp"
-            val count2 = repository.countBy(op)
-            log.debug { "count2: $count2" }
-            count2 shouldBeEqualTo 1L
+            val deppCount2 = repository.countBy(op)
+            log.debug { "Depp count2: $deppCount2" }
+            deppCount2 shouldBeEqualTo 1L
         }
     }
 

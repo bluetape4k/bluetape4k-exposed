@@ -3,9 +3,12 @@ package io.bluetape4k.exposed.druid
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class DruidJdbcTest {
+
+    companion object: KLogging()
 
     @Test
     fun `Avatica remote driver name is explicit`() {

@@ -19,7 +19,7 @@ internal enum class R2dbcQbeOperation(val label: String) {
 /** 공개 오류에 raw probe/value/cause를 넣지 않도록 진단 token을 정규화합니다. */
 internal object R2dbcDiagnosticSanitizer {
 
-    private const val MAX_TOKEN_LENGTH = 128
+    internal const val MAX_TOKEN_LENGTH = 128
 
     fun propertyToken(value: String): String = sanitizeToken(value)
 

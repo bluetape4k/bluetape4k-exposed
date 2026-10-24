@@ -13,8 +13,11 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.redissonClientOf
 import io.bluetape4k.testcontainers.infra.ToxiproxyServer
@@ -33,6 +36,7 @@ import org.redisson.config.ConstantDelay
 import org.redisson.connection.ConnectionListener
 import org.testcontainers.DockerClientFactory
 import org.testcontainers.Testcontainers
+import org.testcontainers.utility.Base58
 import java.net.InetSocketAddress
 import java.time.Duration
 import java.util.*
@@ -40,6 +44,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class JdbcRedissonSnapshotInvalidatorIntegrationTest {
 
@@ -79,8 +84,9 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
                     val keys = namespaces.flatMap { namespace ->
                         listOf(namespace, snapshotNamespaceMarkerKey(namespace))
                     }.toTypedArray()
+
                     cleanupClient.keys.delete(*keys)
-                    cleanupClient.keys.countExists(*keys).shouldBeEqualTo(0)
+                    cleanupClient.keys.countExists(*keys) shouldBeEqualTo 0L
                 } finally {
                     cleanupClient.shutdown()
                 }
@@ -90,6 +96,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         ownedProxies.clear()
         clientPolicies.clear()
         namespaces.clear()
+
         if (cleanupFailures.isNotEmpty()) {
             throw AssertionError("Integration cleanup failed: ${cleanupFailures.joinToString()}")
         }
@@ -103,12 +110,14 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         val fingerprint = "a".repeat(64)
         val codec = codec()
 
-        verifyOrClaimSnapshotNamespace(first, namespace, fingerprint, Duration.ofSeconds(2))
+        verifyOrClaimSnapshotNamespace(first, namespace, fingerprint, 2.seconds())
             .shouldBeEqualTo(SnapshotNamespaceMarkerVerification.CLAIMED)
-        verifyOrClaimSnapshotNamespace(second, namespace, fingerprint, Duration.ofSeconds(2))
+
+        verifyOrClaimSnapshotNamespace(second, namespace, fingerprint, 2.seconds())
             .shouldBeEqualTo(SnapshotNamespaceMarkerVerification.MATCHED)
+
         assertFailsWith<IllegalStateException> {
-            verifyOrClaimSnapshotNamespace(second, namespace, "b".repeat(64), Duration.ofSeconds(2))
+            verifyOrClaimSnapshotNamespace(second, namespace, "b".repeat(64), 2.seconds())
         }
 
         val map = localMap(first, codec, config(namespace))
@@ -116,8 +125,10 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
 
         clearMapRetainingMarker(second, codec, namespace, fingerprint).outcome
             .shouldBeEqualTo(SnapshotNamespaceCleanupOutcome.MARKER_RETAINED)
-        verifyOrClaimSnapshotNamespace(first, namespace, fingerprint, Duration.ofSeconds(2))
+
+        verifyOrClaimSnapshotNamespace(first, namespace, fingerprint, 2.seconds())
             .shouldBeEqualTo(SnapshotNamespaceMarkerVerification.MATCHED)
+
         clearSnapshotNamespace(first, codec, namespace, fingerprint).outcome
             .shouldBeEqualTo(SnapshotNamespaceCleanupOutcome.COMPLETED)
     }
@@ -170,7 +181,9 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         val namespace = namespace("reconnect")
         val codec = codec()
         val config = config(namespace)
+
         jdbcRedissonSnapshotInvalidator(clientA, codec, Long::class, String::class, config)
+
         val mapA = localMap(clientA, codec, config)
         val invalidationChannel = "{$namespace}:topic"
         val subscriptionEvents = ReconnectSubscriptions(invalidationChannel)
@@ -186,7 +199,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
             policy.commandTimeout in 1..5_000 &&
                     policy.connectTimeout in 1..5_000 &&
                     policy.retryAttempts >= 0 &&
-                    policy.retryDelay <= Duration.ofSeconds(5)
+                    policy.retryDelay <= 5.seconds()
         }.shouldBeTrue()
 
         mapA[3L] = "stale"
@@ -219,7 +232,8 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         val namespace = namespace("recovery")
         val codec = codec()
         val buffer = snapshotCacheFailureBuffer(4)
-        val old = jdbcRedissonSnapshotInvalidator(oldClient, codec, Long::class, String::class, config(namespace), buffer)
+        val old =
+            jdbcRedissonSnapshotInvalidator(oldClient, codec, Long::class, String::class, config(namespace), buffer)
         val database = Database.connect("jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
         pauseRedis()
         try {
@@ -227,7 +241,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
                 maxAttempts = 1
                 stageInvalidation(old, 9L)
             }
-            old.quotaHealth().outstandingChunks.shouldBeEqualTo(1)
+            old.quotaHealth().outstandingChunks shouldBeEqualTo 1
             oldClient.shutdown(0, 1, TimeUnit.SECONDS)
         } finally {
             restoreRedis()
@@ -236,8 +250,8 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
             old.quotaHealth().outstandingChunks == 0 && buffer.size == 1
         }
         buffer.drainTo(observer = { }).apply {
-            deliveredCount.shouldBeEqualTo(1)
-            remainingCount.shouldBeEqualTo(0)
+            deliveredCount shouldBeEqualTo 1
+            remainingCount shouldBeEqualTo 0
         }
         oldClient.isShutdown.shouldBeTrue()
         assertFailsWith<Exception> {
@@ -255,6 +269,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         replacement.quotaHealth().maxOutstandingChunks shouldBeEqualTo 2
 
         pauseRedis()
+
         try {
             assertFailsWith<Exception> {
                 jdbcRedissonSnapshotInvalidator(
@@ -310,7 +325,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
 
         trace += "v1-rollout-cleaned"
         verifyOrClaimSnapshotNamespace(
-            adminClient, v2.snapshot.namespace, v2Invalidator.compatibilityFingerprint, Duration.ofSeconds(2),
+            adminClient, v2.snapshot.namespace, v2Invalidator.compatibilityFingerprint, 2.seconds(),
         ) shouldBeEqualTo SnapshotNamespaceMarkerVerification.MATCHED
 
         val rollbackV1Client = newClient()
@@ -325,9 +340,11 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         shutdownAppClient(v2Client)
         trace += "v2-writers-stopped"
         clearMapRetainingMarker(
-            adminClient, codec, v1.snapshot.namespace, rollbackV1.compatibilityFingerprint,
-        )
-            .outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.MARKER_RETAINED
+            adminClient,
+            codec,
+            v1.snapshot.namespace,
+            rollbackV1.compatibilityFingerprint,
+        ).outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.MARKER_RETAINED
 
         trace += "v1-local-cleared-marker-retained"
 
@@ -337,6 +354,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         val freshV1Map = localMap(freshV1Client, codec, v1)
         freshV1Map[1L].shouldBeEqualTo(null)
         trace += "v1-fresh-client-empty"
+
         val rebuilt = transaction(database) {
             exec("SELECT payload FROM snapshot_source WHERE id = 1") { result ->
                 result.next()
@@ -393,15 +411,17 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
     ): RedissonClient {
         val redissonConfig = Config()
         connectionListener?.let(redissonConfig::setConnectionListener)
+
         val server = redissonConfig.useSingleServer()
             .setAddress(address)
             .setTimeout(2_000)
             .setConnectTimeout(2_000)
             .setPingConnectionInterval(500)
             .setRetryAttempts(1)
-            .setRetryDelay(ConstantDelay(Duration.ofMillis(250)))
+            .setRetryDelay(ConstantDelay(250.millis()))
             .setConnectionPoolSize(8)
             .setConnectionMinimumIdleSize(1)
+
         if (recordPolicy) {
             clientPolicies += ClientPolicy(
                 commandTimeout = server.timeout,
@@ -464,7 +484,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
     }
 
     private fun namespace(prefix: String): String =
-        trackNamespace("$prefix-${UUID.randomUUID().toString().take(8)}:v1")
+        trackNamespace("$prefix-${UUID.randomUUID()}:v1")
 
     private fun trackNamespace(namespace: String): String = namespace.also(namespaces::add)
 
@@ -489,7 +509,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         Testcontainers.exposeHostPorts(redis.port)
         val server = ToxiproxyServer.Launcher.toxiproxy
         val proxy = ToxiproxyClient(server.host, server.port).createProxy(
-            "redis-${UUID.randomUUID()}",
+            "redis-${Base58.randomString(12)}",
             "0.0.0.0:$PROXY_PORT",
             "host.testcontainers.internal:${redis.port}",
         )
@@ -511,7 +531,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
             }
         })
         try {
-            subscribed.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            subscribed.await(5.seconds).shouldBeTrue()
         } finally {
             topic.removeListener(listenerId)
         }
@@ -558,11 +578,11 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         }
 
         fun awaitDisconnect() {
-            disconnected.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            disconnected.await(5.seconds).shouldBeTrue()
         }
 
         fun awaitReconnect() {
-            reconnected.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            reconnected.await(5.seconds).shouldBeTrue()
         }
     }
 
@@ -580,11 +600,11 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
         }
 
         fun awaitInitialSubscription() {
-            initialSubscription.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            initialSubscription.await(5.seconds).shouldBeTrue()
         }
 
         fun awaitResubscription() {
-            resubscription.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            resubscription.await(5.seconds).shouldBeTrue()
         }
     }
 }

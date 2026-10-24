@@ -5,6 +5,7 @@ package io.bluetape4k.exposed.jdbc.caffeine.snapshot
 import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -14,7 +15,6 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
-import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
@@ -86,7 +86,7 @@ class JdbcCaffeineSnapshotCacheTest {
 
         jdbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted:v1", maximumWeight = 100L, maxStagedWeight = 200L),
-            valueSizer = SnapshotValueSizer { it.value.length.toLong() },
+            valueSizer = { it.value.length.toLong() },
         )
     }
 
@@ -94,7 +94,7 @@ class JdbcCaffeineSnapshotCacheTest {
     fun `factory rejects negative sizes returned by a value sizer when a miss is prepared`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("negative-weight:v1", maximumWeight = 100L),
-            valueSizer = SnapshotValueSizer { -1L },
+            valueSizer = { -1L },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
@@ -109,16 +109,18 @@ class JdbcCaffeineSnapshotCacheTest {
     fun `weighted factory accepts independent capacities but rejects values Caffeine cannot represent`() {
         jdbcCaffeineSnapshotCache<Long, Payload>(
             config("independent-capacity:v1", maximumWeight = Long.MAX_VALUE, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer { 1L },
+            valueSizer = { 1L },
         )
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("unrepresentable-value:v1", maximumWeight = Long.MAX_VALUE, maximumSize = Long.MAX_VALUE),
-            valueSizer = SnapshotValueSizer { Int.MAX_VALUE.toLong() + 1L },
+            valueSizer = { Int.MAX_VALUE.toLong() + 1L },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
         assertFailsWith<IllegalArgumentException> {
-            (cache as SnapshotCacheStore<Long, Payload>).claimMiss(miss).prepare(CacheSnapshot(Payload("too-large")))
+            (cache as SnapshotCacheStore<Long, Payload>)
+                .claimMiss(miss)
+                .prepare(CacheSnapshot(Payload("too-large")))
         }
     }
 
@@ -127,7 +129,7 @@ class JdbcCaffeineSnapshotCacheTest {
         val sizings = AtomicInteger()
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted-capacity:v1", maximumWeight = 4L, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer {
+            valueSizer = {
                 sizings.incrementAndGet()
                 1L
             },
@@ -146,7 +148,7 @@ class JdbcCaffeineSnapshotCacheTest {
     fun `weighted Caffeine receives the exact conservative value estimate`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("exact-weight:v1", maximumWeight = 100L, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer { 7L },
+            valueSizer = { 7L },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
@@ -161,7 +163,7 @@ class JdbcCaffeineSnapshotCacheTest {
     fun `weighted mode enforces maximum size independently from maximum weight`() {
         val cache = jdbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted-count:v1", maximumWeight = 1_000L, maximumSize = 2L),
-            valueSizer = SnapshotValueSizer { 1L },
+            valueSizer = { 1L },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val puts = (1L..3L).map { id ->
@@ -187,7 +189,7 @@ class JdbcCaffeineSnapshotCacheTest {
                         maximumSize = CONCURRENT_MAXIMUM_SIZE,
                         maxOutstandingMissTokens = CONCURRENT_PUTS,
                     ),
-                    valueSizer = SnapshotValueSizer { 1L },
+                    valueSizer = { 1L },
                 )
                 val store = cache as SnapshotCacheStore<Long, Payload>
                 val puts = (0 until CONCURRENT_PUTS).map { id ->
@@ -214,8 +216,8 @@ class JdbcCaffeineSnapshotCacheTest {
 
                 val caffeine = caffeineCache(cache)
                 caffeine.cleanUp()
-                (caffeine.estimatedSize() <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
-                (caffeine.asMap().size <= CONCURRENT_MAXIMUM_SIZE).shouldBeTrue()
+                caffeine.estimatedSize() shouldBeLessOrEqualTo CONCURRENT_MAXIMUM_SIZE
+                caffeine.asMap().size shouldBeLessOrEqualTo CONCURRENT_MAXIMUM_SIZE.toInt()
             }
         } finally {
             executor.close()

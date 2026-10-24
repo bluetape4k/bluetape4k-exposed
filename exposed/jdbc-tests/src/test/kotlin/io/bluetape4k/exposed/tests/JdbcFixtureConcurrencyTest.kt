@@ -51,6 +51,7 @@ class JdbcFixtureConcurrencyTest {
                 val fixture = fixture("jdbc_fifo")
                 val other = fixture("jdbc_fifo_other")
                 val order = mutableListOf<Int>()
+
                 fixture.semaphore.acquire()
                 var initialPermitHeld = true
 
@@ -60,13 +61,14 @@ class JdbcFixtureConcurrencyTest {
                             order.add(1)
                         }
                     }
-                    await.untilSuspending { fixture.semaphore.queueLength == 1 }
+                    await untilSuspending { fixture.semaphore.queueLength == 1 }
+
                     val second = launch {
                         withDbSuspending(fixture) {
                             order.add(2)
                         }
                     }
-                    await.untilSuspending { fixture.semaphore.queueLength == 2 }
+                    await untilSuspending { fixture.semaphore.queueLength == 2 }
 
                     withDbSuspending(other) {
                         order.shouldBeEmpty()
@@ -155,7 +157,7 @@ class JdbcFixtureConcurrencyTest {
                     }
                 }
                 waitingStarted.await()
-                await.untilSuspending { fixture.semaphore.hasQueuedThreads() }
+                await untilSuspending { fixture.semaphore.hasQueuedThreads() }
 
                 waiting.cancelAndJoin()
                 first.cancelAndJoin()

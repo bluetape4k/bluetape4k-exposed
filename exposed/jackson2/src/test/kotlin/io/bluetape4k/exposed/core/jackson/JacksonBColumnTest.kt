@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ComparisonOp
 import org.jetbrains.exposed.v1.core.Expression
@@ -67,6 +68,7 @@ class JacksonBColumnTest: AbstractExposedTest() {
             }
 
             val newRow = tester.selectAll().where { tester.id eq newId }.single()
+            log.debug { "newRow=$newRow" }
             newRow[tester.jacksonBColumn] shouldBeEqualTo newData
         }
     }
@@ -118,20 +120,20 @@ class JacksonBColumnTest: AbstractExposedTest() {
         withJacksonBTable(testDB) { tester, user1, data1 ->
             val pathPrefix = if (currentDialectTest is PostgreSQLDialect) "" else "."
             val isActive = tester.jacksonBColumn.extract<Boolean>("${pathPrefix}active", toScalar = false)
-            val row1 = tester.select(isActive).singleOrNull()
-            row1?.get(isActive) shouldBeEqualTo data1.active
+            val row1 = tester.select(isActive).single()
+            row1[isActive] shouldBeEqualTo data1.active
 
             val storedUser = tester.jacksonBColumn.extract<User>("${pathPrefix}user", toScalar = false)
-            val row2 = tester.select(storedUser).singleOrNull()
-            row2?.get(storedUser) shouldBeEqualTo user1
+            val row2 = tester.select(storedUser).single()
+            row2[storedUser] shouldBeEqualTo user1
 
             val path = when (currentDialectTest) {
                 is PostgreSQLDialect -> arrayOf("user", "name")
                 else -> arrayOf(".user.name")
             }
             val username = tester.jacksonBColumn.extract<String>(*path)
-            val row3 = tester.select(username).singleOrNull()
-            row3?.get(username) shouldBeEqualTo user1.name
+            val row3 = tester.select(username).single()
+            row3[username] shouldBeEqualTo user1.name
         }
     }
 
@@ -160,15 +162,14 @@ class JacksonBColumnTest: AbstractExposedTest() {
 
             // Postgres 는 jsonb 필드를 integer 값으로 비교하기 위해서 타입 캐스팅이 필요합니다.
             val logins = when (currentDialectTest) {
-                is PostgreSQLDialect ->
-                    tester.jacksonBColumn.extract<Int>("logins").castTo(IntegerColumnType())
-                else ->
-                    tester.jacksonBColumn.extract<Int>(".logins")
+                is PostgreSQLDialect -> tester.jacksonBColumn.extract<Int>("logins").castTo(IntegerColumnType())
+                else                 -> tester.jacksonBColumn.extract<Int>(".logins")
             }
             val tooManyLogins = logins greaterEq 1000
 
-            val row = tester.select(tester.id).where { tooManyLogins }.singleOrNull()
-            row?.get(tester.id) shouldBeEqualTo newId
+            val row = tester.select(tester.id).where { tooManyLogins }.single()
+            log.debug { "row=$row" }
+            row[tester.id] shouldBeEqualTo newId
         }
     }
 
@@ -220,6 +221,7 @@ class JacksonBColumnTest: AbstractExposedTest() {
                     else -> dataTable.jacksonBColumn.extract<Int>(".logins")
                 }
                 val frequentUser = dataEntity.find { loginCount greaterEq 50 }.single()
+                log.debug { "frequentUser=$frequentUser" }
                 frequentUser.jacksonBColumn shouldBeEqualTo updatedUser
             }
         }
@@ -454,6 +456,8 @@ class JacksonBColumnTest: AbstractExposedTest() {
                 defaultTester.insert { }
 
                 defaultTester.selectAll().single().also {
+                    log.debug { "row=$it" }
+                    
                     it[defaultTester.user1].name shouldBeEqualTo defaultUser.name
                     it[defaultTester.user1].team shouldBeEqualTo defaultUser.team
 
@@ -493,6 +497,7 @@ class JacksonBColumnTest: AbstractExposedTest() {
             }
 
             val row = iterables.selectAll().single()
+            log.debug { "row=$row" }
             row[iterables.userList] shouldBeEqualTo listOf(user1, user2)
             row[iterables.intList] shouldBeEqualTo integerList
             row[iterables.userArray] shouldBeEqualTo arrayOf(user1, user2)
@@ -619,12 +624,14 @@ class JacksonBColumnTest: AbstractExposedTest() {
                 .selectAll()
                 .where { tester.jacksonBColumn keyExists "logins" }
                 .single()
+            log.debug { "Top level key found: $topLevelKeyResult" }
             topLevelKeyResult[tester.jacksonBColumn] shouldBeEqualTo data1
 
             val nestedKeyResult = tester
                 .selectAll()
                 .where { tester.jacksonBColumn keyExists "name" }
                 .toList()
+            log.debug { "Nested key found: $nestedKeyResult" }
             nestedKeyResult.shouldBeEmpty()
         }
     }

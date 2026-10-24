@@ -3,7 +3,9 @@ package io.bluetape4k.spring.data.exposed.common.annotation
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
+import java.lang.reflect.Method
 
 class AnnotationMetadataTest {
 
@@ -16,9 +18,10 @@ class AnnotationMetadataTest {
 
     @Test
     fun `Query exposes value and countQuery to Spring Data metadata`() {
-        val method = QueryHolder::class.java.getDeclaredMethod("findByName", String::class.java)
-        val query = method.getAnnotation(Query::class.java)
+        val method: Method = QueryHolder::class.java.getDeclaredMethod("findByName", String::class.java)
+        val query: Query = method.getAnnotation(Query::class.java)
 
+        log.debug { "query=$query" }
         query.value shouldBeEqualTo "SELECT * FROM users WHERE name = ?1"
         query.countQuery shouldBeEqualTo "SELECT COUNT(*) FROM users WHERE name = ?1"
     }

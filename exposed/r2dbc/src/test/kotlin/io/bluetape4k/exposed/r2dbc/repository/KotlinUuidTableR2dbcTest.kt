@@ -6,6 +6,8 @@ import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.junit.jupiter.params.ParameterizedTest
@@ -13,6 +15,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import kotlin.uuid.Uuid
 
 class KotlinUuidTableR2dbcTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private object Items: KotlinUuidTable(
         name = "kotlin_uuid_r2dbc_items",
@@ -44,14 +48,15 @@ class KotlinUuidTableR2dbcTest: AbstractExposedR2dbcTest() {
             val id = Items.insertAndGetId {
                 it[Items.name] = "r2dbc-kotlin-uuid-item"
             }
+
             val loaded = ItemRepository().findById(id.value)
 
+            log.debug { "loaded=$loaded" }
             loaded.id shouldBeEqualTo id.value
             loaded.name shouldBeEqualTo "r2dbc-kotlin-uuid-item"
             loaded.id.uuidVersion() shouldBeEqualTo 7
         }
     }
 
-    // HINT: bluetape4k-core 에 UuidSupport.kt 에 추가하자 
     private fun Uuid.uuidVersion(): Int = (toByteArray()[6].toInt() ushr 4) and 0x0F
 }

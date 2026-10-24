@@ -22,10 +22,6 @@ import java.util.*
  * 일반 [JdbcRepository.updateById]를 사용하면 감사 필드가 자동 설정되지 않으므로
  * UPDATE 시에는 반드시 [auditedUpdateById] 또는 [auditedUpdateAll]을 사용하세요.
  *
- * @param ID 기본키 타입
- * @param E 엔티티 타입
- * @param T [AuditableIdTable] 구현체
- *
  * ## 사용 예
  *
  * ```kotlin
@@ -60,6 +56,10 @@ import java.util.*
  *     }
  * }
  * ```
+ *
+ * @param ID 기본키 타입
+ * @param E 엔티티 타입
+ * @param T [AuditableIdTable] 구현체
  */
 interface AuditableJdbcRepository<ID: Any, E: Any, T: AuditableIdTable<ID>>: JdbcRepository<ID, E> {
 

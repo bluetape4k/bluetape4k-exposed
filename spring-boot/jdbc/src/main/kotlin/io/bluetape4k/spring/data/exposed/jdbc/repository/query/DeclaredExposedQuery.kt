@@ -51,6 +51,7 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
         return tx.exec(boundSql.sql, boundSql.args) { rs ->
             val idColumnIndex = findIdColumn(rs)
             val results = mutableListOf<E>()
+
             while (rs.next()) {
                 val idVal = requireEntityQueryId(rs.getObject(idColumnIndex), queryMethod.name)
                 val normalizedId = coerceIdValue(idVal)
@@ -65,15 +66,14 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
         parameters: Array<out Any?>,
     ): BoundSql {
         val args = mutableListOf<Pair<ColumnType<*>, Any?>>()
-        val normalizedSql =
-            replaceSqlParameters(sql) { number ->
-                val placeholderIndex = number - 1
-                require(placeholderIndex in parameters.indices) {
-                    "Query placeholder index out of bounds: ?$number for parameter size ${parameters.size}"
-                }
-                args += toSqlArg(parameters[placeholderIndex])
-                "?"
+        val normalizedSql = replaceSqlParameters(sql) { number ->
+            val placeholderIndex = number - 1
+            require(placeholderIndex in parameters.indices) {
+                "Query placeholder index out of bounds: ?$number for parameter size ${parameters.size}"
             }
+            args += toSqlArg(parameters[placeholderIndex])
+            "?"
+        }
         return BoundSql(normalizedSql, args)
     }
 
@@ -81,11 +81,10 @@ class DeclaredExposedQuery<E: Entity<ID>, ID: Any>(
     private fun toSqlArg(value: Any?): Pair<ColumnType<*>, Any?> {
         if (value == null) return TextColumnType() to null
 
-        val columnType =
-            runCatching {
-                @Suppress("UNCHECKED_CAST")
-                resolveColumnType(value::class as kotlin.reflect.KClass<Any>, defaultType = TextColumnType())
-            }.getOrElse { TextColumnType() }
+        val columnType = runCatching {
+            @Suppress("UNCHECKED_CAST")
+            resolveColumnType(value::class as kotlin.reflect.KClass<Any>, defaultType = TextColumnType())
+        }.getOrElse { TextColumnType() }
 
         val normalizedValue = if (columnType is TextColumnType && value !is String) value.toString() else value
         return columnType to normalizedValue

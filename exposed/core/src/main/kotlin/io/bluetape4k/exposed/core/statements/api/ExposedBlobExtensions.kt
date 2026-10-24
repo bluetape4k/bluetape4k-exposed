@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.core.statements.api
 import io.bluetape4k.support.toUtf8String
 import org.jetbrains.exposed.v1.core.statements.api.ExposedBlob
 import java.io.InputStream
+import java.nio.charset.Charset
 
 /**
  * 문자열을 바이트 배열로 인코딩해 [ExposedBlob]으로 변환합니다.
@@ -16,7 +17,8 @@ import java.io.InputStream
  * // blob.bytes.size == 5
  * ```
  */
-fun String.toExposedBlob(): ExposedBlob = ExposedBlob(toByteArray())
+fun String.toExposedBlob(charset: Charset = Charsets.UTF_8): ExposedBlob =
+    ExposedBlob(toByteArray(charset))
 
 /**
  * 바이트 배열을 [ExposedBlob]으로 감쌉니다.

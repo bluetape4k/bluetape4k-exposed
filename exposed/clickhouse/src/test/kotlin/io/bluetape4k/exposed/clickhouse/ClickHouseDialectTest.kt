@@ -4,6 +4,8 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialect
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /**
@@ -14,6 +16,8 @@ import org.junit.jupiter.api.Test
  */
 class ClickHouseDialectTest {
 
+    companion object: KLogging()
+
     @Test
     fun `dialectName is clickhouse`() {
         ClickHouseDialect.dialectName shouldBeEqualTo "clickhouse"
@@ -23,6 +27,7 @@ class ClickHouseDialectTest {
     fun `dialect flags are set correctly`() {
         val dialect = ClickHouseDialect()
 
+        log.debug { "dialect=$dialect" }
         dialect.supportsColumnTypeChange.shouldBeFalse()
         dialect.supportsMultipleGeneratedKeys.shouldBeFalse()
         dialect.supportsCreateSequence.shouldBeFalse()

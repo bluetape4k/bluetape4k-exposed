@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.statements.api.PreparedStatementApi
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
-import org.jetbrains.exposed.v1.core.Table
 
 /**
  * ClickHouse `Array(T)` 컬럼 타입.
@@ -24,9 +25,7 @@ class ClickHouseArrayColumnType<T: Any>(val inner: ColumnType<T>): ColumnType<Li
 
     override fun valueFromDB(value: Any): List<T> = clickHouseImmutableList(
         clickHouseArrayElements(value).map { elem ->
-            require(elem != null) {
-                "Array element is null — use Array(Nullable(T)) for nullable elements"
-            }
+            elem.requireNotNull { "Array element is null — use Array(Nullable(T)) for nullable elements" }
             inner.valueFromDB(elem) as T
         },
     )

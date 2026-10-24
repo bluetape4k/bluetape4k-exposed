@@ -5,10 +5,11 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.io.lookup
 import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
-import java.io.ObjectStreamClass
 import java.time.Duration
 
 class SnapshotCacheConfigTest {
@@ -22,6 +23,7 @@ class SnapshotCacheConfigTest {
             schemaVersion = "order-v1",
         )
 
+        log.debug { "config=$config" }
         config.namespace shouldBeEqualTo "orders:v1"
         config.schemaVersion shouldBeEqualTo "order-v1"
         config.maxStagedMutations shouldBeEqualTo 10_000
@@ -30,7 +32,7 @@ class SnapshotCacheConfigTest {
 
     @Test
     fun `snapshot config declares stable serial version UID`() {
-        ObjectStreamClass.lookup(SnapshotCacheConfig::class.java).serialVersionUID shouldBeEqualTo 1L
+        SnapshotCacheConfig::class.lookup().serialVersionUID shouldBeEqualTo 1L
     }
 
     @Test
@@ -42,7 +44,19 @@ class SnapshotCacheConfigTest {
             maxParticipatingStores = 4,
         )
 
-        serializeRoundTrip(config) shouldBeEqualTo config
+        jdkRoundTrip(config) shouldBeEqualTo config
+    }
+
+    @Test
+    fun `snapshot config preserves limits through FastFory serialization`() {
+        val config = SnapshotCacheConfig(
+            namespace = "orders:v2",
+            schemaVersion = "order-v2",
+            maxStagedMutations = 123,
+            maxParticipatingStores = 4,
+        )
+
+        fastForyRoundTrip(config) shouldBeEqualTo config
     }
 
     @Test
@@ -121,7 +135,7 @@ class SnapshotCacheConfigTest {
 
     @Test
     fun `caffeine config declares stable serial version UID`() {
-        ObjectStreamClass.lookup(CaffeineSnapshotCacheConfig::class.java).serialVersionUID shouldBeEqualTo 1L
+        CaffeineSnapshotCacheConfig::class.lookup().serialVersionUID shouldBeEqualTo 1L
     }
 
     @Test
@@ -138,7 +152,7 @@ class SnapshotCacheConfigTest {
             maxOutstandingMissTokens = 321,
         )
 
-        serializeRoundTrip(config) shouldBeEqualTo config
+        jdkRoundTrip(config) shouldBeEqualTo config
     }
 
     @Test
@@ -202,7 +216,13 @@ class SnapshotCacheConfigTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T: Any> serializeRoundTrip(value: T): T {
+    private fun <T: Any> jdkRoundTrip(value: T): T {
+        val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
+        return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T: Any> fastForyRoundTrip(value: T): T {
         val bytes = BinarySerializers.FastFory.serialize(value)
         return BinarySerializers.FastFory.deserialize<T>(bytes).shouldNotBeNull()
     }

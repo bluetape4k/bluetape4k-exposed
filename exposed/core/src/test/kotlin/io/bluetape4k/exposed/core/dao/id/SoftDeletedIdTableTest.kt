@@ -5,6 +5,8 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -15,6 +17,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class SoftDeletedIdTableTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     private object SoftDeleteTable: SoftDeletedIdTable<Long>("soft_deleted_id_table") {
         override val id: Column<EntityID<Long>> = long("id").autoIncrement().entityId()
@@ -31,6 +35,7 @@ class SoftDeletedIdTableTest: AbstractExposedTest() {
             }
 
             val row = SoftDeleteTable.selectAll().where { SoftDeleteTable.id eq id }.single()
+            log.debug { "row=$row" }
             row[SoftDeleteTable.isDeleted].shouldBeFalse()
         }
     }
@@ -48,6 +53,7 @@ class SoftDeletedIdTableTest: AbstractExposedTest() {
             }
 
             val row = SoftDeleteTable.selectAll().where { SoftDeleteTable.id eq id }.single()
+            log.debug { "row=$row" }
             row[SoftDeleteTable.isDeleted].shouldBeTrue()
         }
     }

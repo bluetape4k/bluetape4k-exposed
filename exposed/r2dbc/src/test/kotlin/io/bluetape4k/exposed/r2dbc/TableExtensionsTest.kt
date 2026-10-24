@@ -38,11 +38,8 @@ class TableExtensionsTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `suspendColumnMetadata 는 테이블의 컬럼 메타데이터를 반환한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, tester) {
-            val metadatas = tester.suspendColumnMetadata()
-            metadatas.forEach {
-                log.debug { "columnMetadata=$it" }
-            }
-            metadatas.shouldNotBeEmpty()
+            val metadatas = tester.suspendColumnMetadata().onEach { log.debug { "column metadata=$it" } }
+            metadatas shouldHaveSize tester.columns.size
         }
     }
 
@@ -50,10 +47,7 @@ class TableExtensionsTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `suspendIndexes 는 테이블의 인덱스 목록을 반환한다`(testDB: TestDB) = runSuspendIO {
         withTables(testDB, tester) {
-            val indices = tester.suspendIndexes()
-            indices.forEach {
-                log.debug { "index=$it" }
-            }
+            val indices = tester.suspendIndexes().onEach { log.debug { "indexes=$it" } }
             // r2dbc_tester_by_name 비유니크 인덱스 1개가 반환된다 (PK는 별도)
             indices shouldHaveSize 1
         }
@@ -90,8 +84,7 @@ class TableExtensionsTest: AbstractExposedR2dbcTest() {
         Assumptions.assumeTrue { testDB !in TestDB.ALL_POSTGRES_LIKE }
 
         withTables(testDB, tester) {
-            val sequences = tester.suspendSequences()
-            log.debug { "sequences=$sequences" }
+            val sequences = tester.suspendSequences().onEach { log.debug { "sequences=$it" } }
             sequences.shouldBeEmpty()
         }
     }

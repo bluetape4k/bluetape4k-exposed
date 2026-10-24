@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.toUserCredentialsRecord
 import io.bluetape4k.exposed.redisson.repository.AbstractSuspendedJdbcRedissonRepository
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
@@ -15,7 +16,10 @@ import java.util.*
 
 class SuspendedUserCredentialCacheRepository(
     redissonClient: RedissonClient,
-    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:suspended:user-credentials"),
+    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
+        name = "exposed:remote:suspended:user-credentials",
+        codec = RedissonCodecs.FastForyComposite
+    ),
 ): AbstractSuspendedJdbcRedissonRepository<UUID, UserCredentialsRecord>(
     redissonClient,
     config,

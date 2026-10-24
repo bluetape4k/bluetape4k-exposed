@@ -5,16 +5,19 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.declaredMemberProperties
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotLocalFenceRegistryTest {
@@ -123,7 +126,7 @@ class SnapshotLocalFenceRegistryTest {
             }
 
             start.countDown()
-            attempts.map { it.get(5, TimeUnit.SECONDS) }.count { it } shouldBeEqualTo 1
+            attempts.map { it.get(5.seconds) }.count { it } shouldBeEqualTo 1
             applied.get() shouldBeEqualTo 1
         } finally {
             start.countDown()
@@ -147,7 +150,7 @@ class SnapshotLocalFenceRegistryTest {
             executor.submit {
                 val freshFence = registry.capture(1L)
                 registry.putIfCurrent(1L, freshFence) { applied = true }
-            }.get(5, TimeUnit.SECONDS).shouldBeTrue()
+            }.get(5.seconds).shouldBeTrue()
             applied.shouldBeTrue()
         } finally {
             executor.close()
@@ -169,7 +172,7 @@ class SnapshotLocalFenceRegistryTest {
             registry.putIfCurrent(1L, staleFence) { applied = true }.shouldBeFalse()
             executor.submit {
                 registry.invalidate(1L) { applied = true }
-            }.get(5, TimeUnit.SECONDS)
+            }.get(5.seconds)
             applied.shouldBeTrue()
         } finally {
             executor.close()
@@ -199,8 +202,8 @@ class SnapshotLocalFenceRegistryTest {
                 }
 
                 start.countDown()
-                invalidate.get(5, TimeUnit.SECONDS)
-                fill.get(5, TimeUnit.SECONDS).shouldBeFalse()
+                invalidate.get(5.seconds)
+                fill.get(5.seconds).shouldBeFalse()
                 cache[1L].shouldBeNull()
             }
         } finally {
@@ -224,16 +227,16 @@ class SnapshotLocalFenceRegistryTest {
                     release.await()
                 }
             }
-            held.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            held.await(5.seconds).shouldBeTrue()
 
             val unrelated = executor.submit {
                 registry.invalidate(1) { unrelatedCompleted.countDown() }
             }
 
-            unrelatedCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            unrelatedCompleted.await(5.seconds).shouldBeTrue()
             release.countDown()
-            holding.get(5, TimeUnit.SECONDS).shouldBeTrue()
-            unrelated.get(5, TimeUnit.SECONDS)
+            holding.get(5.seconds).shouldBeTrue()
+            unrelated.get(5.seconds)
         } finally {
             release.countDown()
             executor.close()
@@ -271,7 +274,7 @@ class SnapshotLocalFenceRegistryTest {
         override fun close() {
             futures.forEach { it.cancel(true) }
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
         }
     }
 }

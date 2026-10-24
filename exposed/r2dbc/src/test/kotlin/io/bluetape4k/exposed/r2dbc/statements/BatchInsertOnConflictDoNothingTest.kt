@@ -132,7 +132,7 @@ class BatchInsertOnConflictDoNothingTest: AbstractExposedR2dbcTest() {
 
             val numInserted = executable.run {
                 statement.addBatch()
-                statement[codeTester.code] = "alpha"
+                statement[codeTester.code] = "alpha"        // 중복
 
                 statement.addBatch()
                 statement[codeTester.code] = "beta"

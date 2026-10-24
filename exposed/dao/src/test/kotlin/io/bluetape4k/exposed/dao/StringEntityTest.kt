@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.dao
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -40,10 +41,9 @@ class StringEntityTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `StringEntity 는 문자열 ID로 저장 조회가 가능하다`(testDB: TestDB) {
         withTables(testDB, StringEntityTable) {
-            val user =
-                StringUser.new("user-001") {
-                    name = "Alice"
-                }
+            val user = StringUser.new("user-001") {
+                name = "Alice"
+            }
             entityCache.clear()
 
             val loaded = StringUser.findById("user-001")!!
@@ -114,7 +114,7 @@ class StringEntityTest: AbstractExposedTest() {
             StringUser.new("") { name = "EmptyId" }
             entityCache.clear()
 
-            val loaded = StringUser.findById("")!!
+            val loaded = StringUser.findById("").shouldNotBeNull()
             loaded.name shouldBeEqualTo "EmptyId"
             loaded.idValue.shouldBeEmpty()
         }
@@ -127,7 +127,7 @@ class StringEntityTest: AbstractExposedTest() {
             val user1 = StringUser.new("eq-test") { name = "User1" }
             entityCache.clear()
 
-            val user2 = StringUser.findById("eq-test")!!
+            val user2 = StringUser.findById("eq-test").shouldNotBeNull()
             user2 shouldBeEqualTo user1
             user2.hashCode() shouldBeEqualTo user1.hashCode()
         }

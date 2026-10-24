@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -67,6 +68,7 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
 
             // 캐시에서 조회한 값
             val entity = repository.get(id)
+            log.debug { "entity from cache=$entity" }
             entity.shouldNotBeNull()
 
             // 캐시에 갱신된 값 저장 -> DB에도 저장
@@ -75,6 +77,8 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
 
             // 캐시에서 조회한 값
             val entityFromCache = repository.get(id)
+
+            log.debug { "entity from cache=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
             assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
 
@@ -82,6 +86,8 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
 
             // DB에서 조회한 값
             val entityFromDB = repository.findByIdFromDb(id)
+
+            log.debug { "entity from DB=$entityFromDB" }
             entityFromDB.shouldNotBeNull()
             assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
         }
@@ -90,13 +96,14 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `putAll - 캐시에 저장하면 DB에도 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withSuspendedEntityTable(testDB) {
             val ids = getExistingIds()
 
             // 캐시에서 조회한 값
-            val entities = repository.getAll(ids)
+            val entities = repository.getAll(ids).onEach { log.debug { it } }
             entities.shouldNotBeEmpty()
             entities.shouldHaveSize(ids.size)
 
@@ -106,7 +113,7 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
             repository.putAll(updatedMap)
 
             // 캐시에서 조회한 값
-            val entitiesFromCache = repository.getAll(ids)
+            val entitiesFromCache = repository.getAll(ids).onEach { log.debug { it } }
             entitiesFromCache.shouldNotBeNull()
             entitiesFromCache.values.forEach { entity ->
                 assertSameEntityWithoutAudit(
@@ -120,17 +127,15 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
             delay(DEFAULT_DELAY.milliseconds)
 
             // DB에서 조회한 값
-            val entitiesFromDB = repository.findAllFromDb(ids)
-            entitiesFromDB.shouldNotBeEmpty()
-            entitiesFromDB shouldHaveSize ids.size
+            val entitiesFromDB = repository.findAllFromDb(ids).onEach { log.debug { it } }
+            entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
 
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    entitiesFromCache.values
-                        .find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }.shouldNotBeNull()
+                    entitiesFromCache.values.find {
+                        repository.extractId(it) == repository.extractId(entity)
+                    }.shouldNotBeNull()
                 )
             }
         }
@@ -145,6 +150,7 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
             val prevCount = repository.table.selectAll().count()
             val newEntities = List(5) { createNewEntity() }
             val newMap = newEntities.associateBy { repository.extractId(it) }
+
             repository.putAll(newMap)
 
             delay(DEFAULT_DELAY.milliseconds)
@@ -170,6 +176,7 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
 
             // 먼저 캐시에 로드
             val entityFromCache = repository.get(id)
+            log.debug { "entity from cache=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
 
             // 캐시에서 삭제
@@ -179,6 +186,7 @@ interface SuspendedJdbcWriteThroughScenario<ID: Any, E: Serializable>: Suspended
 
             // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
             val entityFromDB = repository.findByIdFromDb(id)
+            log.debug { "entity from DB=$entityFromDB" }
             entityFromDB shouldBeEqualTo entityFromCache
         }
     }

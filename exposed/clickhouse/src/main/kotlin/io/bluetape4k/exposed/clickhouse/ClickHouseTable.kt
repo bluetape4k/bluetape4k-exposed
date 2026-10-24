@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.clickhouse
 import io.bluetape4k.exposed.clickhouse.engine.ClickHouseEngine
 import io.bluetape4k.exposed.clickhouse.engine.mergeTree
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNullOrEmpty
 import org.jetbrains.exposed.v1.core.Table
 
 /**
@@ -34,8 +35,8 @@ abstract class ClickHouseTable(
     open val engine: ClickHouseEngine = engine ?: mergeTree { unsafeRawOrderBy("id") }
 
     override fun createStatement(): List<String> {
-        require(options.isEmpty()) { "ClickHouseTable.options is unsupported; use the engine DSL." }
-        require(storageParameters.isEmpty()) {
+        options.requireNullOrEmpty { "ClickHouseTable.options is unsupported; use the engine DSL." }
+        storageParameters.requireNullOrEmpty { 
             "ClickHouseTable.storageParameters is unsupported; use engine settings instead of WITH parameters."
         }
         return super.createStatement()

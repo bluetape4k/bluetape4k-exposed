@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.domain.model.ActorRecord
 import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.ActorTable
 import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.withMovieAndActors
@@ -18,6 +19,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -35,7 +37,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             id = 0L,
             firstName = faker.name().firstName(),
             lastName = faker.name().lastName(),
-            birthday = faker.timeAndDate().birthday(20, 80).toString()
+            birthday = faker.timeAndDate().birthday(10, 90).toString()
         )
     }
 
@@ -57,12 +59,8 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     fun `search actors by lastName`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
             val params = mapOf("lastName" to "Depp")
-            val actors = repository.searchActors(params).toList()
-
+            val actors = repository.searchActors(params).log("Actor").toList()
             actors.shouldNotBeEmpty()
-            actors.forEach {
-                log.debug { "actor: $it" }
-            }
         }
     }
 
@@ -102,9 +100,10 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val ids = repository.saveAll(listOf(newActorRecord()))
 
             ids shouldHaveSize 1
-            ids.first() shouldBeGreaterThan 0L
+            ids.single() shouldBeGreaterThan 0L
+
             repository.count() shouldBeEqualTo currentCount + 1
-            repository.findAllByIds(ids).toList() shouldHaveSize 1
+            repository.findAllByIds(ids).singleOrNull().shouldNotBeNull()
         }
     }
 
@@ -127,7 +126,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             ids shouldHaveSize actors.size
             ids.all { it > 0L }.shouldBeTrue()
             repository.count() shouldBeEqualTo currentCount + actors.size
-            repository.findAllByIds(ids).toList() shouldHaveSize actors.size
+            repository.findAllByIds(ids).log("FindByID").toList() shouldHaveSize actors.size
         }
     }
 
@@ -227,7 +226,7 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             exists2.shouldBeTrue()
 
             val op = ActorTable.firstName eq "Not-Exists"
-            val query = ActorTable.select(ActorTable.id).where(op).limit(1)
+            val query = ActorTable.select(ActorTable.id).where(op)
             val exists3 = repository.exists(query)
             log.debug { "exists3: $exists3" }
             exists3.shouldBeFalse()
@@ -599,14 +598,13 @@ class ActorR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `findPage 는 올바른 페이징 결과를 반환한다`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
-            // 기존 데이터 개수 확인 후 추가 삽입
-            val existing = repository.count()
             repeat(5) { repository.save(newActorRecord()) }
 
             val total = repository.count()
             val pageSize = 3
             val page0 = repository.findPage(pageNumber = 0, pageSize = pageSize)
 
+            log.debug { "page0=$page0" }
             page0.totalCount shouldBeEqualTo total
             page0.content shouldHaveSize pageSize
             page0.pageNumber shouldBeEqualTo 0

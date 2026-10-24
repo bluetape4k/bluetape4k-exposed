@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.core.fastjson2
 
-import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONArray
 import com.alibaba.fastjson2.JSONObject
 import io.bluetape4k.fastjson2.FastjsonSerializer
@@ -58,13 +57,7 @@ inline fun <reified T: Any> ResultRow.getFastjsonOrNull(
     expression: Expression<*>,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    val value = anyValueOrNull(expression) ?: return null
-    return when (value) {
-        is String -> serializer.deserializeFromString<T>(value)
-        is ByteArray -> serializer.deserialize<T>(value)
-        is T      -> value
-        else      -> serializer.deserializeFromString<T>(value.toString())
-    }
+    return anyValueOrNull(expression)?.let { deserializeValueOrNull(it) }
 }
 
 /**
@@ -101,13 +94,7 @@ fun ResultRow.getFastjsonObject(expression: Expression<*>): JSONObject =
  * @param expression 조회 대상 표현식입니다.
  */
 fun ResultRow.getFastjsonObjectOrNull(expression: Expression<*>): JSONObject? {
-    val value = anyValueOrNull(expression) ?: return null
-    return when (value) {
-        is JSONObject -> value
-        is String    -> JSON.parseObject(value)
-        is ByteArray -> JSON.parseObject(value)
-        else         -> JSON.parseObject(value.toString())
-    }
+    return anyValueOrNull(expression)?.let { parseJsonObject(it) }
 }
 
 /**
@@ -144,11 +131,5 @@ fun ResultRow.getFastjsonArray(expression: Expression<*>): JSONArray =
  * @param expression 조회 대상 표현식입니다.
  */
 fun ResultRow.getFastjsonArrayOrNull(expression: Expression<*>): JSONArray? {
-    val value = anyValueOrNull(expression) ?: return null
-    return when (value) {
-        is JSONArray -> value
-        is String -> JSON.parseArray(value)
-        is ByteArray -> JSON.parseArray(value)
-        else      -> JSON.parseArray(value.toString())
-    }
+    return anyValueOrNull(expression)?.let { parseJsonArray(it) }
 }

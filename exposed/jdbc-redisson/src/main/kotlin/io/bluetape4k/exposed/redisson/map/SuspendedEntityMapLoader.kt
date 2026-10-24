@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.map
 
+import io.bluetape4k.exposed.jdbc.suspendTransactionWithIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -15,7 +16,6 @@ import kotlinx.coroutines.channels.ChannelResult
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.redisson.api.AsyncIterator
@@ -23,6 +23,7 @@ import org.redisson.api.map.MapLoaderAsync
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Exposed를 사용하여 DB에서 데이터를 비동기적으로 로드하는 Redisson [MapLoaderAsync] 구현입니다.
@@ -57,9 +58,6 @@ import java.util.concurrent.CompletionStage
  * @param loadAllIdsFromDB 모든 ID를 [Channel]에 전송하는 suspend 함수
  * @param scope DB 조회 및 채널 처리에 사용할 [CoroutineScope]. 기본값은 `Dispatchers.IO` 기반 스코프입니다.
  */
-// WHY: @Suppress("DEPRECATION") — loadAllKeys()의 Channel<ID>(Channel.RENDEZVOUS) API가
-//      kotlinx.coroutines 1.8+ 에서 experimental → stable로 이동 중이며, 아직 일부 IDE/컴파일러가
-//      deprecated 경고를 내기 때문에 일시적으로 억제합니다. API 자체는 안정적으로 유지됩니다.
 open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     private val loadByIdFromDB: suspend (ID) -> E?,
     private val loadAllIdsFromDB: suspend (channel: Channel<ID>) -> Unit,
@@ -86,20 +84,18 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
     override fun load(id: ID): CompletionStage<E?> = scope.async {
         log.debug { "DB에서 단건 엔티티 로드를 시작합니다. id=$id" }
 
-        withContext(scope.coroutineContext) {
-            suspendTransaction {
-                try {
-                    loadByIdFromDB(id)
-                        .apply {
-                            log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
-                        }
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
-                    throw e
-                } catch (e: Throwable) {
-                    log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
-                    throw e
-                }
+        suspendTransactionWithIO {
+            try {
+                loadByIdFromDB(id)
+                    .apply {
+                        log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
+                    }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
+                throw e
+            } catch (e: Throwable) {
+                log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
+                throw e
             }
         }
     }.asCompletableFuture()
@@ -126,17 +122,15 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
             //      예외 인스턴스가 필요하기 때문입니다. 단순 channel.close()는 정상 종료와 구분할 수 없습니다.
             var cause: Throwable? = null
             try {
-                withContext(scope.coroutineContext) {
-                    suspendTransaction {
-                        // channel 방출은 외부 부작용이므로 transaction retry로 안전하게 재생할 수 없다.
-                        this.maxAttempts = 1
-                        this.queryTimeout = DEFAULT_QUERY_TIMEOUT_SECONDS
-                        withTimeout(timeMillis = DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
-                            loadAllIdsFromDB(channel)
-                        }
+                suspendTransactionWithIO {
+                    // channel 방출은 외부 부작용이므로 transaction retry로 안전하게 재생할 수 없다.
+                    this.maxAttempts = 1
+                    this.queryTimeout = DEFAULT_QUERY_TIMEOUT_SECONDS
+                    withTimeout(timeMillis = DEFAULT_LOAD_ALL_IDS_TIMEOUT) {
+                        loadAllIdsFromDB(channel)
                     }
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
+            } catch (e: CancellationException) {
                 if (e is TimeoutCancellationException) {
                     log.warn(e) { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
                 }
@@ -159,27 +153,30 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
             private var pendingReceive: CompletableFuture<ChannelResult<ID>>? = null
 
             private fun ensurePending(): CompletableFuture<ChannelResult<ID>> =
-                pendingReceive ?: scope.async {
-                    channel.receiveCatching()
-                }.asCompletableFuture()
-                    .also { pendingReceive = it }
+                pendingReceive
+                    ?: scope.async {
+                        channel.receiveCatching()
+                    }.asCompletableFuture()
+                        .also { pendingReceive = it }
 
-            override fun hasNext(): CompletionStage<Boolean?> = ensurePending()
-                .thenApply { result ->
-                    result.exceptionOrNull()?.let { cause ->
-                        throw CompletionException(cause)
+            override fun hasNext(): CompletionStage<Boolean?> =
+                ensurePending()
+                    .thenApply { result ->
+                        result.exceptionOrNull()?.let { cause ->
+                            throw CompletionException(cause)
+                        }
+                        result.isSuccess
                     }
-                    result.isSuccess
-                }
 
-            override fun next(): CompletionStage<ID> = ensurePending()
-                .thenApply { result ->
-                    pendingReceive = null
-                    result.exceptionOrNull()?.let { cause ->
-                        throw CompletionException(cause)
+            override fun next(): CompletionStage<ID> =
+                ensurePending()
+                    .thenApply { result ->
+                        pendingReceive = null
+                        result.exceptionOrNull()?.let { cause ->
+                            throw CompletionException(cause)
+                        }
+                        result.getOrNull() ?: throw NoSuchElementException("No more elements")
                     }
-                    result.getOrNull() ?: throw NoSuchElementException("No more elements")
-                }
         }
     }
 }

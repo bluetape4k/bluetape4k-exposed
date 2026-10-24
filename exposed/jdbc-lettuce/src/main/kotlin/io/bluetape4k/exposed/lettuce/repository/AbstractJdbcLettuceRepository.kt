@@ -10,6 +10,8 @@ import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.warn
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.closeSafe
+import io.bluetape4k.support.requireBeFalse
 import io.lettuce.core.RedisClient
 import io.lettuce.core.codec.RedisCodec
 import org.jetbrains.exposed.v1.core.Expression
@@ -66,9 +68,8 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
     companion object: KLogging()
 
     init {
-        require(!config.nearCacheEnabled) {
-            "AbstractJdbcLettuceRepository does not support nearCacheEnabled; " +
-                    "use AbstractSuspendedJdbcLettuceRepository"
+        config.nearCacheEnabled.requireBeFalse {
+            "AbstractJdbcLettuceRepository does not support nearCacheEnabled; use AbstractSuspendedJdbcLettuceRepository"
         }
         ExposedLettuceCodecs.requireConfigured(valueCodec)
     }
@@ -102,14 +103,14 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
             loader =
                 ExposedEntityMapLoader(
                     table = table,
-                    toEntity = { row -> with(this@AbstractJdbcLettuceRepository) { row.toEntity() } }
+                    toEntity = { it.toEntity() }
                 ),
             writer =
                 ExposedEntityMapWriter(
                     table = table,
                     writeMode = config.writeMode,
-                    updateEntity = { stmt, e -> with(this@AbstractJdbcLettuceRepository) { stmt.updateEntity(e) } },
-                    insertEntity = { stmt, e -> with(this@AbstractJdbcLettuceRepository) { stmt.insertEntity(e) } },
+                    updateEntity = { stmt, e -> stmt.updateEntity(e) },
+                    insertEntity = { stmt, e -> stmt.insertEntity(e) },
                     retryAttempts = config.writeRetryAttempts,
                     retryInterval = config.writeRetryInterval
                 ),
@@ -128,15 +129,16 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
             .selectAll()
             .where { table.id eq id }
             .singleOrNull()
-            ?.let { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+            ?.toEntity()
     }
 
     override fun findAllFromDb(ids: Collection<ID>): List<E> = transaction {
         if (ids.isEmpty()) return@transaction emptyList()
+
         table
             .selectAll()
             .where { table.id inList ids }
-            .map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+            .map { it.toEntity() }
     }
 
     override fun countFromDb(): Long =
@@ -165,7 +167,7 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
                     orderBy(sortBy, sortOrder)
                     limit?.let { limit(it) }
                     offset?.let { offset(it) }
-                }.map { with(this@AbstractJdbcLettuceRepository) { it.toEntity() } }
+                }.map { it.toEntity() }
         }
 
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
@@ -188,10 +190,11 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
      * 기본 구현은 [table]을 통한 DB 재조회이며, 서브클래스에서 직접 오버라이드 권장.
      */
     override fun extractId(entity: E): ID {
-        error(
-            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
-        )
+        error("findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다.")
     }
 
-    override fun close() = cache.close()
+    override fun close() {
+        log.debug { "Close cache." }
+        cache.closeSafe()
+    }
 }

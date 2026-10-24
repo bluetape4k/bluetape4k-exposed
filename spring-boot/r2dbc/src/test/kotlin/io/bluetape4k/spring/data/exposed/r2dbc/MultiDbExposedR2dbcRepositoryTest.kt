@@ -6,12 +6,14 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.TestDBConfig
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.support.SimpleExposedR2dbcRepository
@@ -79,7 +81,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
             repo.save(User(id = null, name = "Bob", email = "bob@example.com", age = 25))
 
-            repo.findAllAsList() shouldHaveSize 2
+            repo.findAllAsList().onEach { log.debug { "found=$it" } } shouldHaveSize 2
         }
     }
 
@@ -106,6 +108,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             val saved = repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
 
             repo.deleteById(saved.id!!)
+            repo.exists { Users.id eq saved.id }.shouldBeFalse()
             repo.findByIdOrNull(saved.id).shouldBeNull()
         }
     }
@@ -165,7 +168,11 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
             repo.save(User(id = null, name = "Bob", email = "bob@example.com", age = 25))
 
-            val results = repo.findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "age"))).content
+            val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "age"))
+            val results = repo.findAll(pageable).content
+                .onEach { log.debug { "user=$it" } }
+
+            results shouldHaveSize 3
             results.map { it.age } shouldBeEqualTo listOf(25, 30, 35)
         }
     }
@@ -181,6 +188,8 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             }
 
             val page = repo.findAll(PageRequest.of(0, 3))
+                .onEach { log.debug { "user=$it" } }
+
             page.content shouldHaveSize 3
             page.totalElements shouldBeEqualTo 5L
         }
@@ -195,9 +204,12 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
             repo.save(User(id = null, name = "Bob", email = "bob@example.com", age = 17))
 
-            val adults = repo.findAll { Users.age greaterEq 18 }.toList()
+            val adults = repo.findAll { Users.age greaterEq 18 }
+                .log("Adult")
+                .toList()
+
             adults shouldHaveSize 1
-            adults[0].name shouldBeEqualTo "Alice"
+            adults.single().name shouldBeEqualTo "Alice"
         }
     }
 
@@ -225,7 +237,7 @@ class MultiDbExposedR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             repo.save(User(id = null, name = "Alice", email = "alice@example.com", age = 30))
             repo.save(User(id = null, name = "Bob", email = "bob@example.com", age = 25))
 
-            val all = repo.streamAll().toList()
+            val all = repo.streamAll().log("Stream").toList()
             all shouldHaveSize 2
         }
     }

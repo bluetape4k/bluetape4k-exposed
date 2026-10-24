@@ -1,6 +1,7 @@
 package io.bluetape4k.spring.batch.exposed.dsl
 
 import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
+import io.bluetape4k.support.requireNotBlank
 import org.springframework.batch.core.job.Job
 import org.springframework.batch.core.job.builder.JobBuilder
 import org.springframework.batch.core.job.builder.SimpleJobBuilder
@@ -23,11 +24,12 @@ import org.springframework.batch.core.step.builder.StepBuilder
  * @param jobRepository [JobRepository]
  * @param block [JobBuilder] 설정 람다
  */
-fun partitionedBatchJob(
+inline fun partitionedBatchJob(
     name: String,
     jobRepository: JobRepository,
     block: JobBuilder.() -> SimpleJobBuilder,
-): Job = JobBuilder(name, jobRepository).block().build()
+): Job =
+    JobBuilder(name.requireNotBlank("name"), jobRepository).block().build()
 
 /**
  * Exposed Partitioned Step을 생성하는 DSL 확장.
@@ -44,6 +46,7 @@ fun partitionedBatchJob(
 fun StepBuilder.exposedPartitionedStep(
     partitioner: ExposedRangePartitioner,
     handler: PartitionHandler,
-): Step = this.partitioner("worker", partitioner)
-    .partitionHandler(handler)
-    .build()
+): Step =
+    this.partitioner("worker", partitioner)
+        .partitionHandler(handler)
+        .build()

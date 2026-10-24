@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.logging.KLogging
@@ -61,7 +62,7 @@ class ExposedSpringDataAutoConfigurationContextTest {
             .run { context ->
                 context.startupFailure?.let { throw it }
 
-                context.getBean(DatabaseConfig::class.java).defaultQueryTimeout shouldBeEqualTo 0
+                context.getBean<DatabaseConfig>().defaultQueryTimeout shouldBeEqualTo 0
                 context.containsBean("springTransactionManager").shouldBeTrue()
             }
     }
@@ -89,7 +90,8 @@ class ExposedSpringDataAutoConfigurationContextTest {
         contextRunner
             .withConfiguration(AutoConfigurations.of(ExposedR2dbcSpringDataAutoConfiguration::class.java))
             .run { context ->
-                context.startupFailure?.let { throw it }
+                // context.startupFailure?.let { throw it }
+                context.startupFailure.shouldBeNull()
 
                 context.getBeansOfType<CommonExposedMappingContext>() shouldHaveSize 1
                 context.getBean("exposedMappingContext").shouldBeInstanceOf<CommonExposedMappingContext>()

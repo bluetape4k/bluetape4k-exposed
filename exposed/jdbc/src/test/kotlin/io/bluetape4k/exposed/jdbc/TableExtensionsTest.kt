@@ -39,9 +39,8 @@ class TableExtensionsTest: AbstractExposedTest() {
             tester.exists().shouldBeTrue()
 
             val metadatas = tester.getColumnMetadata()
-            metadatas.forEach {
-                log.debug { "metadata=$it" }
-            }
+                .onEach { log.debug { it } }
+            
             metadatas shouldHaveSize 3
         }
     }
@@ -52,10 +51,7 @@ class TableExtensionsTest: AbstractExposedTest() {
         withTables(testDB, tester) {
             tester.exists().shouldBeTrue()
 
-            val indices = tester.getIndices()
-            indices.forEach {
-                log.debug { "index=$it" }
-            }
+            val indices = tester.getIndices().onEach { log.debug { it } }
             indices shouldHaveSize 1
         }
     }
