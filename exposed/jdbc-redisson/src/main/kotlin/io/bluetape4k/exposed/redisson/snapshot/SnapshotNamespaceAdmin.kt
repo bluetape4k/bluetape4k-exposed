@@ -4,6 +4,7 @@ package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.exposed.cache.snapshot.requireSafeSnapshotCacheExceptionType
 import io.bluetape4k.exposed.cache.snapshot.sanitizeSnapshotCacheExceptionType
+import io.bluetape4k.javatimes.seconds
 import org.redisson.api.RFuture
 import org.redisson.api.RScript
 import org.redisson.api.RedissonClient
@@ -138,7 +139,7 @@ fun <ID: Any> clearSnapshotNamespace(
     codec: SnapshotRedissonCodec<ID>,
     namespace: String,
     expectedFingerprint: String,
-    timeout: Duration = Duration.ofSeconds(2),
+    timeout: Duration = 2.seconds(),
 ): SnapshotNamespaceCleanupResult =
     clearNamespace(redissonClient, codec, namespace, expectedFingerprint, timeout, retainMarker = false)
 

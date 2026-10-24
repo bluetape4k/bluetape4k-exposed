@@ -9,6 +9,8 @@ import io.bluetape4k.assertions.shouldNotBe
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.redisson.repository.ExposedRedissonCodecSafety
+import io.bluetape4k.javatimes.nanos
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.junit.jupiter.api.Test
@@ -162,7 +164,7 @@ class SnapshotRedissonCodecTest {
         config.maxCommitEncodedKeyBytes shouldBeEqualTo 256 * 1024
         config.maxOutstandingChunks shouldBeEqualTo 64
         config.maxOutstandingEncodedBytes shouldBeEqualTo 4L * 1024 * 1024
-        config.namespaceVerificationTimeout shouldBeEqualTo Duration.ofSeconds(2)
+        config.namespaceVerificationTimeout shouldBeEqualTo 2.seconds()
         config.multiNode.shouldBeTrue()
         config.synchronizationStrategy shouldBeEqualTo LocalCachedMapOptions.SyncStrategy.INVALIDATE
         config.reconnectionStrategy shouldBeEqualTo LocalCachedMapOptions.ReconnectionStrategy.CLEAR
@@ -193,7 +195,7 @@ class SnapshotRedissonCodecTest {
         val valid = JdbcRedissonSnapshotInvalidatorConfig(snapshotConfig())
 
         assertFailsWith<IllegalArgumentException> {
-            valid.copy(namespaceVerificationTimeout = Duration.ofSeconds(Long.MAX_VALUE))
+            valid.copy(namespaceVerificationTimeout = Long.MAX_VALUE.seconds())
         }
     }
 
@@ -207,7 +209,7 @@ class SnapshotRedissonCodecTest {
             maxCommitEncodedKeyBytes = 1,
             maxOutstandingChunks = 1,
             maxOutstandingEncodedBytes = 1,
-            namespaceVerificationTimeout = Duration.ofNanos(1),
+            namespaceVerificationTimeout = 1.nanos(),
         )
 
         config.nearCacheMaximumSize shouldBeEqualTo 1
@@ -216,7 +218,7 @@ class SnapshotRedissonCodecTest {
         config.maxCommitEncodedKeyBytes shouldBeEqualTo 1
         config.maxOutstandingChunks shouldBeEqualTo 1
         config.maxOutstandingEncodedBytes shouldBeEqualTo 1L
-        config.namespaceVerificationTimeout shouldBeEqualTo Duration.ofNanos(1)
+        config.namespaceVerificationTimeout shouldBeEqualTo 1.nanos()
     }
 
     @Test

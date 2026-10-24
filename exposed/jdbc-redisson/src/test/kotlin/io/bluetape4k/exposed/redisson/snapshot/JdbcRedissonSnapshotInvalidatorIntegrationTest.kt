@@ -277,7 +277,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
                     codec,
                     Long::class,
                     String::class,
-                    config(namespace("expired")).copy(namespaceVerificationTimeout = Duration.ofMillis(20)),
+                    config(namespace("expired")).copy(namespaceVerificationTimeout = 20.millis()),
                 )
             }
         } finally {
@@ -460,7 +460,7 @@ class JdbcRedissonSnapshotInvalidatorIntegrationTest {
 
     private fun awaitCondition(
         description: String,
-        timeout: Duration = Duration.ofSeconds(5),
+        timeout: Duration = 5.seconds(),
         condition: () -> Boolean,
     ) {
         val started = System.nanoTime()
