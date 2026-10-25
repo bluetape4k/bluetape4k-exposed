@@ -3,27 +3,30 @@ package io.bluetape4k.exposed.r2dbc.redisson.map
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.r2dbc.ExposedR2dbcException
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
 class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLogging()
 
     private data class ComparableCustomId(val value: String): Comparable<ComparableCustomId> {
         override fun compareTo(other: ComparableCustomId): Int = value.compareTo(other.value)
@@ -41,8 +44,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
     private object MissingLoaderTable: LongIdTable("r2dbc_redisson_missing_log_table_credential_751")
 
     @Test
-    fun `loadAllKeys DB 오류 로그는 errorType만 기록하고 원시 예외를 첨부하지 않는다`() = runSuspendIO {
-        withDb(TestDB.H2) {
+    fun `loadAllKeys DB 오류 로그는 원시 예외를 첨부한다`() = runSuspendIO {
+        withDb(TestDB.H2) { testDB ->
             val secret = "R2DBC_REDISSON_MISSING_LOG_TABLE_CREDENTIAL_751"
             val loader = R2dbcExposedEntityMapLoader(
                 entityTable = MissingLoaderTable,
@@ -50,23 +53,19 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             )
 
             RecordingLogAppender().use { appender ->
-                val failure = assertFailsWith<Throwable> {
-                    loader.useLoader(TestDB.H2) {
+                assertFailsWith<ExposedR2dbcException> {
+                    loader.useLoader(testDB) {
                         loader.loadAllKeys().toList()
                     }
                 }
 
-                failure.javaClass.simpleName shouldBeEqualTo "ExposedR2dbcException"
                 val errorEvents = appender.events.filter { event ->
                     event.formattedMessage.contains("모든 ID") &&
                             event.level.levelInt >= ch.qos.logback.classic.Level.ERROR.levelInt
                 }
                 errorEvents.size shouldBeEqualTo 2
-                errorEvents.forEach { event ->
-                    event.formattedMessage shouldContain "errorType="
-                    event.throwableProxy.shouldBeNull()
-                }
-                appender.rendered shouldNotContain secret
+                errorEvents.any { it.formattedMessage.contains("errorType=") }.shouldBeTrue()
+                appender.rendered shouldContain secret
             }
         }
     }
@@ -85,7 +84,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
     @Test
     fun `batch loader는 배치 경계를 넘어 모든 id를 로드한다`() = runSuspendIO {
-        withTables(TestDB.H2, LoaderTable) {
+        withTables(TestDB.H2, LoaderTable) { testDB ->
             repeat(3) { index ->
                 LoaderTable.insert {
                     it[name] = "user-$index"
@@ -99,7 +98,9 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val ids = loader.useLoader(TestDB.H2) { loader.loadAllKeys().toList() }
+            val ids = loader.useLoader(testDB) {
+                loader.loadAllKeys().toList().onEach { log.debug { "id=$it" } }
+            }
             ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
@@ -118,7 +119,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     }
                 }
             },
-        ) {
+        ) { testDB ->
             repeat(5) { index ->
                 LoaderTable.insert { it[name] = "user-$index" }
             }
@@ -132,8 +133,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                 toLoaderEntity()
             }
 
-            val (ids, selects) = loader.useLoader(TestDB.H2) {
-                val loadedIds = loader.loadAllKeys().toList()
+            val (ids, selects) = loader.useLoader(testDB) {
+                val loadedIds = loader.loadAllKeys().toList().onEach { log.debug { "id=$it" } }
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
             selects.size shouldBeEqualTo 3
@@ -157,7 +158,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     }
                 }
             },
-        ) {
+        ) { testDB ->
             repeat(101) { index ->
                 LoaderTable.insert { it[name] = "large-user-$index" }
             }
@@ -170,8 +171,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val (ids, selects) = loader.useLoader(TestDB.H2) {
-                val loadedIds = loader.loadAllKeys().toList()
+            val (ids, selects) = loader.useLoader(testDB) {
+                val loadedIds = loader.loadAllKeys().toList().onEach { log.debug { "id=$it" } }
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
 
@@ -195,7 +196,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
                     }
                 }
             },
-        ) {
+        ) { testDB ->
             repeat(4) { index ->
                 LoaderTable.insert { it[name] = "exact-user-$index" }
             }
@@ -208,8 +209,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val (ids, selects) = loader.useLoader(TestDB.H2) {
-                val loadedIds = loader.loadAllKeys().toList()
+            val (ids, selects) = loader.useLoader(testDB) {
+                val loadedIds = loader.loadAllKeys().toList().onEach { log.debug { "id=$it" } }
                 loadedIds to sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
             }
 
@@ -221,11 +222,11 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
 
     @Test
     fun `loadAllKeys - sparse ID는 keyset 경계에서 중복 없이 순회한다`() = runSuspendIO {
-        withTables(TestDB.H2, LoaderTable) {
-            val initialIds =
-                List(5) { index ->
-                    LoaderTable.insert { it[name] = "user-$index" } get LoaderTable.id
-                }.map { it.value }
+        withTables(TestDB.H2, LoaderTable) { testDB ->
+            val initialIds = List(5) { index ->
+                LoaderTable.insert { it[name] = "user-$index" } get LoaderTable.id
+            }.map { it.value }
+
             commit()
 
             val loader = R2dbcExposedEntityMapLoader(
@@ -234,7 +235,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
             ) {
                 toLoaderEntity()
             }
-            val ids = loader.useLoader(TestDB.H2) {
+            val ids = loader.useLoader(testDB) {
                 val iterator = loader.loadAllKeys()
                 buildList {
                     while (iterator.hasNext().await() == true) {

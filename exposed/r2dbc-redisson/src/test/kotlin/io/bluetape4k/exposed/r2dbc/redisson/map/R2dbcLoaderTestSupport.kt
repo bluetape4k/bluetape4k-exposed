@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.support.checkNotNull
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 
 /**
@@ -29,7 +30,7 @@ internal suspend inline fun <ID: Any, E: Any, T> R2dbcEntityMapLoader<ID, E>.use
     block: suspend () -> T,
 ): T {
     val previousDefault = TransactionManager.defaultDatabase
-    TransactionManager.defaultDatabase = checkNotNull(testDB.db) {
+    TransactionManager.defaultDatabase = testDB.db.checkNotNull {
         "testDB.db must be initialized for $testDB"
     }
     return try {

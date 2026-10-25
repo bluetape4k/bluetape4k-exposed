@@ -8,6 +8,7 @@ import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapLoader
 import io.bluetape4k.exposed.r2dbc.redisson.map.R2dbcExposedEntityMapWriter
 import io.bluetape4k.exposed.r2dbc.redisson.map.linkedSupervisorScope
 import io.bluetape4k.exposed.r2dbc.redisson.map.newR2dbcMapCoroutineScope
+import io.bluetape4k.exposed.r2dbc.redisson.repository.R2dbcRedissonRepository.Companion.DEFAULT_BATCH_SIZE
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.info
@@ -71,12 +72,11 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     trustedBinaryCache: Boolean = false,
     protected val scope: CoroutineScope = newR2dbcMapCoroutineScope("R2dbc-RedissonRepository"),
 ): R2dbcRedissonRepository<ID, E> {
-    private val lifecycleScope = scope.linkedSupervisorScope("R2dbc-RedissonRepository-Lifecycle")
-    private val lifecycleJob = requireNotNull(lifecycleScope.coroutineContext[Job])
 
-    companion object: KLoggingChannel() {
-        const val DEFAULT_BATCH_SIZE = R2dbcRedissonRepository.DEFAULT_BATCH_SIZE
-    }
+    private val lifecycleScope = scope.linkedSupervisorScope("R2dbc-RedissonRepository-Lifecycle")
+    private val lifecycleJob = lifecycleScope.coroutineContext[Job].requireNotNull { "lifecycle job can not be null." }
+
+    companion object: KLoggingChannel()
 
     init {
         ExposedR2dbcRedissonCodecSafety.requireSafe(config, trustedBinaryCache)
@@ -130,10 +130,8 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
             R2dbcExposedEntityMapWriter(
                 scope = CoroutineScope(lifecycleScope.coroutineContext),
                 entityTable = table,
-                updateBody = { stmt, entity -> with(this@AbstractR2dbcRedissonRepository) { stmt.updateEntity(entity) } },
-                batchInsertBody = { entity ->
-                    val stmt = this; with(this@AbstractR2dbcRedissonRepository) { stmt.insertEntity(entity) }
-                },
+                updateBody = { stmt, entity -> stmt.updateEntity(entity) },
+                batchInsertBody = { entity -> insertEntity(entity) },
                 deleteFromDBOnInvalidate = config.deleteFromDBOnInvalidate,
                 writeMode = config.writeMode
             )
@@ -141,7 +139,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     }
 
     override val cache: RMap<ID, E?> by lazy {
-        log.info { "캐시용 RMap을 생성합니다." }
+        log.info { "캐시용 Redisson RMap을 생성합니다." }
 
         if (config.isNearCacheEnabled) {
             createLocalCacheMap()
@@ -160,7 +158,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
         if (config.isNearCacheEnabled) {
             createCacheOnlyLocalCacheMap()
         } else {
-            redissonClient.getMapCache<ID, E?>(cacheName, config.codec)
+            redissonClient.getMapCache(cacheName, config.codec)
         }
     }
 
@@ -169,18 +167,20 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
      * 삭제 이벤트는 Redisson local-cache sync 경로를 타지만 DB writer는 호출하지 않습니다.
      */
     protected fun createCacheOnlyLocalCacheMap(): RLocalCachedMap<ID, E?> =
-        LocalCachedMapOptions.name<ID, E?>(cacheName).apply {
-            codec(config.codec)
-            syncStrategy(config.nearCacheSyncStrategy)
-            timeToLive(config.ttl)
-            if (config.nearCacheMaxIdleTime > Duration.ZERO) {
-                maxIdle(config.nearCacheMaxIdleTime)
+        LocalCachedMapOptions.name<ID, E?>(cacheName)
+            .apply {
+                codec(config.codec)
+                syncStrategy(config.nearCacheSyncStrategy)
+                timeToLive(config.ttl)
+                if (config.nearCacheMaxIdleTime > Duration.ZERO) {
+                    maxIdle(config.nearCacheMaxIdleTime)
+                }
             }
-        }.let { redissonClient.getLocalCachedMap(it) }
+            .let { redissonClient.getLocalCachedMap(it) }
 
     protected fun createLocalCacheMap(): RLocalCachedMap<ID, E?> =
         localCachedMap(cacheName, redissonClient) {
-            log.info { "RLocalCacheMap 를 생성합니다." }
+            log.info { "Redisson RLocalCacheMap 를 생성합니다." }
 
             if (config.isReadOnly) {
                 loaderAsync(r2dbcEntityMapLoader)
@@ -196,6 +196,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
             writeRetryAttempts(config.writeRetryAttempts)
             writeRetryInterval(config.writeRetryInterval)
             timeToLive(config.ttl)
+
             if (config.nearCacheMaxIdleTime > Duration.ZERO) {
                 maxIdle(config.nearCacheMaxIdleTime)
             }
@@ -203,7 +204,7 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
 
     protected fun createMapCache(): RMapCache<ID, E?> =
         mapCache(cacheName, redissonClient) {
-            log.info { "RMapCache 를 생성합니다." }
+            log.info { "Redisson RMapCache 를 생성합니다." }
 
             if (config.isReadOnly) {
                 loaderAsync(r2dbcEntityMapLoader)
@@ -231,8 +232,8 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     ) {
         batchSize.requirePositiveNumber("batchSize")
         if (entities.isEmpty()) return
-        @Suppress("UNCHECKED_CAST")
-        cache.putAllAsync(entities as Map<ID, E?>, batchSize).await()
+
+        cache.putAllAsync(entities, batchSize).await()
     }
 
     /**
@@ -337,18 +338,17 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
     ): List<E> {
-        val entities =
-            suspendTransaction {
-                table
-                    .selectAll()
-                    .where(where)
-                    .apply {
-                        orderBy(sortBy, sortOrder)
-                        limit?.run { limit(limit) }
-                        offset?.run { offset(offset) }
-                    }.map { it.toEntity() }
-                    .toList()
-            }
+        val entities = suspendTransaction {
+            table
+                .selectAll()
+                .where(where)
+                .apply {
+                    orderBy(sortBy, sortOrder)
+                    limit?.run { limit(limit) }
+                    offset?.run { offset(offset) }
+                }.map { it.toEntity() }
+                .toList()
+        }
 
         if (entities.isNotEmpty()) {
             upsertAll(entities.associateBy { extractId(it) }, DEFAULT_BATCH_SIZE)
@@ -367,7 +367,8 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
         return ids
             .chunked(DEFAULT_BATCH_SIZE)
             .flatMap { chunk ->
-                log.debug { "캐시에서 엔티티를 가져옵니다. count=${chunk.size}" }
+                log.debug { "캐시에서 엔티티를 가져옵니다. chunk size=${chunk.size}" }
+
                 cache
                     .getAllAsync(chunk.toSet())
                     .await()

@@ -10,21 +10,22 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
-import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCacheTestScenario<ID, E> {
 
     companion object: KLoggingChannel() {
-        const val DEFAULT_DELAY = 200L
+        const val DEFAULT_DELAY = 500L
     }
 
     suspend fun createNewEntity(): E
@@ -46,7 +47,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
             val id = getExistingId()
 
             // 캐시에서 조회한 값
-            val entity = repository.get(id)
+            val entity = repository.get(id).also { log.debug { "entity=$it" } }
             entity.shouldNotBeNull()
 
             // 캐시에 갱신된 값 저장 -> DB에도 저장
@@ -54,14 +55,14 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
             repository.put(repository.extractId(updatedEntity), updatedEntity)
 
             // 캐시에서 조회한 값
-            val entityFromCache = repository.get(id)
+            val entityFromCache = repository.get(id).also { log.debug { "entity=$it" } }
             entityFromCache.shouldNotBeNull()
             assertSameEntityWithoutAudit(entityFromCache, updatedEntity)
 
             delay(DEFAULT_DELAY.milliseconds)
 
             // DB에서 조회한 값
-            val entityFromDB = repository.findByIdFromDb(id)
+            val entityFromDB = repository.findByIdFromDb(id).also { log.debug { "entity=$it" } }
             entityFromDB.shouldNotBeNull()
 
             assertSameEntityWithoutAudit(entityFromDB, entityFromCache)
@@ -75,13 +76,12 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
         Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
         withR2dbcEntityTable(testDB) {
-            val ids = getExistingIds()
+            val ids = getExistingIds().onEach { log.debug { "id=$it" } }
             delay(10.milliseconds)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofMillis(100))
-                .untilSuspending { getExistingIds().size == 3 }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                repository.countFromDb() >= ids.size
+            }
 
             // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
             if (cacheConfig.isReadWrite) {
@@ -119,7 +119,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    entityMapFromCache[repository.extractId(entity)]!!
+                    entityMapFromCache[repository.extractId(entity)].shouldNotBeNull()
                 )
             }
         }
@@ -135,10 +135,9 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
             val ids = getExistingIds()
             delay(10.milliseconds)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofMillis(500))
-                .untilSuspending { getExistingIds().size >= 3 }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                repository.countFromDb() >= ids.size
+            }
 
             // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
             if (cacheConfig.isReadWrite) {
@@ -180,31 +179,31 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `putAll - 새로운 Record를 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
-            Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
+    fun `putAll - 새로운 Record를 추가하면 AutoInc Id 는 DB 저장을 하지 않고, Client 생성 Id는 DB에 저장된다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: MySQL/MariaDB 에서는 Isolation level을 java.sql.Connection.TRANSACTION_READ_COMMITTED 로 설정해야 제대로 작동합니다.
+        Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
-            withR2dbcEntityTable(testDB) {
-                val prevCount = repository.table.selectAll().count()
-                val newEntities = List(5) { createNewEntity() }
-                repository.putAll(newEntities.associateBy { repository.extractId(it) })
+        withR2dbcEntityTable(testDB) {
+            val prevCount = repository.countFromDb()
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            val newEntities = List(5) { createNewEntity() }
+            repository.putAll(newEntities.associateBy { repository.extractId(it) })
 
-                val newCount = repository.table.selectAll().count()
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                // id가 DB에서 자동증가하지 않는 경우에만 batchInsert 를 수행합니다.
-                if (repository.table.id.autoIncColumnType == null) {
-                    newCount shouldBeEqualTo prevCount + newEntities.size
-                } else {
-                    newCount shouldBeEqualTo prevCount
-                }
+            val newCount = repository.countFromDb()
+
+            // id가 DB에서 자동증가하지 않는 경우에만 batchInsert 를 수행합니다.
+            if (repository.table.id.autoIncColumnType == null) {
+                newCount shouldBeEqualTo prevCount + newEntities.size
+            } else {
+                newCount shouldBeEqualTo prevCount
             }
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -214,7 +213,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
             Assumptions.assumeTrue { testDB !in TestDB.ALL_MYSQL_MARIADB }
 
             withR2dbcEntityTable(testDB) {
-                val prevCount = repository.table.selectAll().count()
+                val prevCount = repository.countFromDb()
                 val newEntities = List(5) { createNewEntity() }
                 repository.upsertAll(newEntities.associateBy { repository.extractId(it) }, batchSize = 2)
 
@@ -223,7 +222,7 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
                     delay(DEFAULT_DELAY.milliseconds)
                 }
 
-                val newCount = repository.table.selectAll().count()
+                val newCount = repository.countFromDb()
 
                 // id가 DB에서 자동증가하지 않는 경우에만 batchInsert 를 수행합니다.
                 if (repository.table.id.autoIncColumnType == null) {
@@ -236,69 +235,67 @@ interface R2dbcWriteThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCach
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) =
-        runSuspendIO {
-            // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
-            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
+    fun `invalidte(id) - 캐시 invalidate 시 DB에 영향을 줄 수 있다`(testDB: TestDB) = runSuspendIO {
+        // NOTE: DB 삭제를 동반하는 invalidate는 MySQL/MariaDB에서 격리 수준에 민감하므로 기존처럼 제외한다.
+        Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
-            withR2dbcEntityTable(testDB) {
-                val id = getExistingId()
+        withR2dbcEntityTable(testDB) {
+            val id = getExistingId()
 
-                // 먼저 캐시에 로드
-                val entityFromCache = repository.get(id)
-                entityFromCache.shouldNotBeNull()
+            // 먼저 캐시에 로드
+            val entityFromCache = repository.get(id)
+            entityFromCache.shouldNotBeNull()
 
-                // 캐시에서 삭제
-                repository.invalidate(id)
+            // 캐시에서 삭제
+            repository.invalidate(id)
 
-                // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
+            // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
 
-                if (cacheConfig.deleteFromDBOnInvalidate) {
-                    // 캐시에서 삭제했으므로, DB에서도 삭제된다.
-                    val userFromDB = repository.findByIdFromDb(id)
-                    userFromDB.shouldBeNull()
-                } else {
-                    // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
-                    val userFromDB = repository.findByIdFromDb(id)
-                    userFromDB shouldBeEqualTo entityFromCache
+            if (cacheConfig.deleteFromDBOnInvalidate) {
+                // 캐시에서 삭제했으므로, DB에서도 삭제된다.
+                val userFromDB = repository.findByIdFromDb(id)
+                userFromDB.shouldBeNull()
+            } else {
+                // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
+                val userFromDB = repository.findByIdFromDb(id)
+                userFromDB shouldBeEqualTo entityFromCache
 
-                    // get()은 캐시 miss 후 DB Read-Through로 다시 로드한다.
-                    repository.get(id) shouldBeEqualTo entityFromCache
-                }
+                // get()은 캐시 miss 후 DB Read-Through로 다시 로드한다.
+                repository.get(id) shouldBeEqualTo entityFromCache
             }
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) =
-        runSuspendIO {
-            Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
+    fun `invalidateAll - 설정에 따라 캐시만 또는 DB까지 삭제한다`(testDB: TestDB) = runSuspendIO {
+        Assumptions.assumeFalse(testDB in TestDB.ALL_MYSQL_MARIADB && cacheConfig.deleteFromDBOnInvalidate)
 
-            withR2dbcEntityTable(testDB) {
-                val ids = getExistingIds()
-                val entities = ids.associateWith { id ->
-                    repository.get(id).shouldNotBeNull()
+        withR2dbcEntityTable(testDB) {
+            val ids = getExistingIds()
+            val entities = ids.associateWith { id ->
+                repository.get(id).shouldNotBeNull()
+            }
+
+            repository.invalidateAll(ids)
+
+            if (cacheConfig.isReadWrite) {
+                delay(DEFAULT_DELAY.milliseconds)
+            }
+
+            if (cacheConfig.deleteFromDBOnInvalidate) {
+                ids.forEach { id ->
+                    repository.findByIdFromDb(id).shouldBeNull()
                 }
-
-                repository.invalidateAll(ids)
-
-                if (cacheConfig.isReadWrite) {
-                    delay(DEFAULT_DELAY.milliseconds)
-                }
-
-                if (cacheConfig.deleteFromDBOnInvalidate) {
-                    ids.forEach { id ->
-                        repository.findByIdFromDb(id).shouldBeNull()
-                    }
-                } else {
-                    ids.forEach { id ->
-                        repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
-                        repository.get(id) shouldBeEqualTo entities[id]
-                    }
+            } else {
+                ids.forEach { id ->
+                    repository.findByIdFromDb(id) shouldBeEqualTo entities[id]
+                    repository.get(id) shouldBeEqualTo entities[id]
                 }
             }
         }
+    }
 }

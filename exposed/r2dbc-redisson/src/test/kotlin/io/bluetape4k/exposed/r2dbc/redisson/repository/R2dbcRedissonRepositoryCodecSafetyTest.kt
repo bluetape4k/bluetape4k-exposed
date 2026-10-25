@@ -30,7 +30,8 @@ class R2dbcRedissonRepositoryCodecSafetyTest: AbstractR2dbcRedissonTest() {
         assertFailsWith<IllegalArgumentException> {
             object: AbstractR2dbcRedissonRepository<Long, UserSchema.UserRecord>(
                 redissonClient = redissonClient,
-                config = RedissonCacheConfig.READ_WRITE_THROUGH
+                config = RedissonCacheConfig.READ_WRITE_THROUGH,
+                // trustedBinaryCache = true
             ) {
                 override val table: UserSchema.UserTable = UserSchema.UserTable
                 override suspend fun ResultRow.toEntity(): UserSchema.UserRecord = error("not used")

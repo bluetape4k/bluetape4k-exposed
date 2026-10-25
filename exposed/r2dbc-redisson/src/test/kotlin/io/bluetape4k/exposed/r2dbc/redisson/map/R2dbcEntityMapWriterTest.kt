@@ -5,11 +5,13 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -17,17 +19,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.future.await
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.api.Test
-import java.util.concurrent.ExecutionException
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * [R2dbcEntityMapWriter]의 lifecycle과 close 이후 write 계약을 검증합니다.
  */
 class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private object TestTable: LongIdTable("r2dbc_entity_map_writer_test") {
         val value = varchar("value", 64)
@@ -43,11 +47,10 @@ class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
             )
 
             RecordingLogAppender().use { appender ->
-                val failure = assertFailsWith<ExecutionException> {
-                    writer.write(mapOf(1L to "value")).toCompletableFuture().get()
+                assertFailsWith<IllegalStateException> {
+                    writer.write(mapOf(1L to "value")).await()
                 }
 
-                failure.cause?.javaClass shouldBeEqualTo IllegalStateException::class.java
                 val errorEvent = appender.events.first { event ->
                     event.formattedMessage.contains("엔티티 Write 중 오류")
                 }
@@ -69,11 +72,10 @@ class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
             )
 
             RecordingLogAppender().use { appender ->
-                val failure = assertFailsWith<ExecutionException> {
-                    writer.delete(listOf(1L)).toCompletableFuture().get()
+                assertFailsWith<IllegalArgumentException> {
+                    writer.delete(listOf(1L)).await()
                 }
 
-                failure.cause?.javaClass shouldBeEqualTo IllegalArgumentException::class.java
                 val errorEvent = appender.events.first { event ->
                     event.formattedMessage.contains("엔티티 삭제 중 오류")
                 }
@@ -99,16 +101,14 @@ class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
 
             writer.close()
 
-            val failure = assertFailsWith<ExecutionException> {
-                writer.write(mapOf(1L to "after-close")).toCompletableFuture().get()
+            assertFailsWith<IllegalStateException> {
+                writer.write(mapOf(1L to "after-close")).await()
             }
-            failure.cause?.javaClass shouldBeEqualTo IllegalStateException::class.java
             TestTable.selectAll().count() shouldBeEqualTo 0L
 
-            val deleteFailure = assertFailsWith<ExecutionException> {
-                writer.delete(listOf(1L)).toCompletableFuture().get()
+            assertFailsWith<IllegalStateException> {
+                writer.delete(listOf(1L)).await()
             }
-            deleteFailure.cause?.javaClass shouldBeEqualTo IllegalStateException::class.java
         }
     }
 
@@ -138,12 +138,12 @@ class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
                 )
 
                 writer.write(mapOf(1L to "in-flight"))
-                withTimeout(timeMillis = 5_000) { started.await() }
+                started.awaitUntil(5.seconds)
 
                 writer.closeAndJoin()
 
-                withTimeout(timeMillis = 5_000) { cancelled.await() }
-                withTimeout(timeMillis = 5_000) { completed.await() }
+                cancelled.awaitUntil(5.seconds)
+                completed.awaitUntil(5.seconds)
             } finally {
                 scope.cancel()
             }

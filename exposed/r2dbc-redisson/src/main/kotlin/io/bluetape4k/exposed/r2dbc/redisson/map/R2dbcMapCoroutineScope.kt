@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
+import io.bluetape4k.support.requireNotBlank
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,9 @@ internal fun newR2dbcMapCoroutineScope(name: String): CoroutineScope =
 internal fun CoroutineScope.linkedSupervisorScope(name: String): CoroutineScope {
     if (this is R2dbcMapCoroutineScope) return this
 
+    name.requireNotBlank("name")
     val parentJob = coroutineContext[Job]
     val lifecycleJob = SupervisorJob(parentJob)
+
     return CoroutineScope(coroutineContext + lifecycleJob + CoroutineName(name))
 }

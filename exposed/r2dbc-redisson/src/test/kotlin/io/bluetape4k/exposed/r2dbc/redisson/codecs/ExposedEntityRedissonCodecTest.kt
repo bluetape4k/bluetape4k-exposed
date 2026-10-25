@@ -6,29 +6,24 @@ import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.toUserRecord
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.junit5.faker.Fakers
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.dao.flushCache
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.redisson.client.codec.ByteArrayCodec
 import org.redisson.client.codec.Codec
-import org.redisson.client.codec.StringCodec
 import org.redisson.client.handler.State
-import org.redisson.codec.CborJacksonCodec
 
 /**
  * NOTE: Exposed Entity 는 Redis 의 Codec 으로는 변환이 불가능하다.
  * NOTE: 그래서 ExposedRedisRepository 는 Entity 가 아닌 data class를 캐시하도록 한다.
  */
-@Disabled("Exposed Entity 는 직렬화가 불가합니다")
 class ExposedEntityRedissonCodecTest: AbstractExposedR2dbcTest() {
 
     companion object: KLogging() {
@@ -37,10 +32,6 @@ class ExposedEntityRedissonCodecTest: AbstractExposedR2dbcTest() {
     }
 
     private fun getRedissonBinaryCodecs() = listOf(
-        CborJacksonCodec(),
-        ByteArrayCodec(),
-        StringCodec(),
-
         RedissonCodecs.Default,
 
         RedissonCodecs.Kryo5,
@@ -86,7 +77,7 @@ class ExposedEntityRedissonCodecTest: AbstractExposedR2dbcTest() {
 
     @ParameterizedTest(name = "codec={0}")
     @MethodSource(METHOD_SOURCE)
-    fun `codec for kotlin data class`(codec: Codec) = runTest {
+    fun `codec for kotlin data class`(codec: Codec) = runSuspendIO {
         withTables(TestDB.H2, UserTable) {
             val entityId = UserTable.insertAndGetId {
                 it[UserTable.firstName] = Fakers.randomString(1, 10)
@@ -104,10 +95,9 @@ class ExposedEntityRedissonCodecTest: AbstractExposedR2dbcTest() {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T: Any> Codec.verifyCodec(origin: T) {
+    private inline fun <reified T: Any> Codec.verifyCodec(origin: T) {
         val buf = valueEncoder.encode(origin)
-        val actual = valueDecoder.decode(buf, State()) as? T
-        actual shouldBeEqualTo origin
+        val restored = valueDecoder.decode(buf, State())
+        restored shouldBeEqualTo origin
     }
 }

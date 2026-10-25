@@ -1,35 +1,39 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.concurrent.completableFutureOf
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.junit.jupiter.api.Test
 import org.redisson.api.AsyncIterator
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 class AsyncIteratorSupportTest {
 
+    companion object: KLoggingChannel()
+
     @Test
     fun `toList 는 AsyncIterator 의 모든 값을 순서대로 수집한다`() = runSuspendIO {
+
         val iterator = object: AsyncIterator<Int> {
             private val values = listOf(1, 2, 3).iterator()
             private var nextValue: Int? = null
 
             override fun hasNext(): CompletionStage<Boolean?> {
-                if (nextValue != null) return CompletableFuture.completedFuture(true)
+                if (nextValue != null) return completableFutureOf(true)
 
                 return if (values.hasNext()) {
                     nextValue = values.next()
-                    CompletableFuture.completedFuture(true)
+                    completableFutureOf(true)
                 } else {
-                    CompletableFuture.completedFuture(false)
+                    completableFutureOf(false)
                 }
             }
 
             override fun next(): CompletionStage<Int> {
                 val value = nextValue ?: throw NoSuchElementException("No more elements")
                 nextValue = null
-                return CompletableFuture.completedFuture(value)
+                return completableFutureOf(value)
             }
         }
 

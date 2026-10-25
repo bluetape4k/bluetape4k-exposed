@@ -16,7 +16,6 @@ import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
-import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import kotlin.time.Duration.Companion.milliseconds
@@ -24,7 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
 interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCacheTestScenario<ID, E> {
 
     companion object: KLoggingChannel() {
-        const val DEFAULT_DELAY = 200L
+        const val DEFAULT_DELAY = 500L
     }
 
     @ParameterizedTest
@@ -34,7 +33,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
             val id = getExistingId()
 
             // DB에서 조회한 값
-            val entityFromDB = repository.findByIdFromDb(id)
+            val entityFromDB = repository.findByIdFromDb(id).also { log.debug { "entity=$it" } }
             entityFromDB.shouldNotBeNull()
 
             // 캐시에서 조회한 값
@@ -51,6 +50,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     fun `exists(id) - 캐시에 해당 ID가 존재하는지 검사, 실제 없다면 DB에서 로드한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val ids = getExistingIds()
+            log.debug { "existingIds: $ids" }
 
             // 캐시에 없다면, Read through로 DB에서 로드합니다. DB에도 없다면 false를 반환합니다.
             ids.all { repository.containsKey(it) }.shouldBeTrue()
@@ -68,7 +68,7 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
             log.debug { "existingId: $id" }
 
             // 먼저 캐시에 로드
-            val entityFromCache = repository.get(id)
+            val entityFromCache = repository.get(id).also { log.debug { "entity from cache=$it" } }
             entityFromCache.shouldNotBeNull()
 
             // 캐시에서 삭제 (Read Through Only 인 경우에는 DB에는 영향을 주지 않음)
@@ -104,10 +104,8 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
         withR2dbcEntityTable(testDB) {
             val entities = repository.findAll()
             entities.shouldNotBeEmpty()
-            entities shouldHaveSize repository.table
-                .selectAll()
-                .count()
-                .toInt()
+
+            entities shouldHaveSize repository.countFromDb().toInt()
 
             // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
             delay(DEFAULT_DELAY.milliseconds)
@@ -119,7 +117,8 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     fun `getAll - 여러 ID의 엔티티를 한번에 조회한다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
             val ids = getExistingIds() + getNonExistentId()
-            val entities = repository.getAll(ids)
+
+            val entities = repository.getAll(ids).onEach { log.debug { "entity=$it" } }
             entities.shouldNotBeEmpty()
 
             entities shouldHaveSize getExistingIds().size
@@ -148,10 +147,10 @@ interface R2dbcReadThroughScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
 
             repository.getAll(getExistingIds())
 
-            val invalidated =
-                repository.invalidateByPattern("*1*") +
-                        ('A'..'Z').sumOf { repository.invalidateByPattern("*$it*") }
+            val invalidated = repository.invalidateByPattern("*1*") +
+                    ('A'..'Z').sumOf { repository.invalidateByPattern("*$it*") }
 
+            log.debug { "invalidated=$invalidated" }
             invalidated shouldBeGreaterThan 0
         }
     }

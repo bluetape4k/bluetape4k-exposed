@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.r2dbc.redisson.repository
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,8 @@ import java.io.Serializable
 
 /** repository close가 loader/writer lifecycle child까지 종료하는지 검증합니다. */
 class R2dbcRedissonRepositoryLifecycleTest: AbstractR2dbcRedissonTest() {
+
+    companion object: KLoggingChannel()
 
     private data class TestEntity(val id: Long): Serializable {
         companion object {
@@ -58,7 +61,7 @@ class R2dbcRedissonRepositoryLifecycleTest: AbstractR2dbcRedissonTest() {
             repository.initializeAdapters()
             repository.closeAndJoin()
 
-            parentScope.coroutineContext[Job]?.children?.toList().orEmpty().any { it.isActive }.shouldBeFalse()
+            parentScope.coroutineContext[Job]?.children?.toList()?.any { it.isActive }.shouldBeFalse()
         } finally {
             parentScope.cancel()
         }

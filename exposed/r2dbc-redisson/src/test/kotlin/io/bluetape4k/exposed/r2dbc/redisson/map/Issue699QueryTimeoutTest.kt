@@ -1,9 +1,11 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.support.checkNotNull
 import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -30,7 +32,7 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
     fun `PostgreSQL R2DBC loader timeout은 AsyncIterator 원인을 전달하고 transaction을 정리한다`() = runSuspendIO {
         assumePostgreSQLNightly()
         withDb(TestDB.POSTGRESQL) {}
-        val database = checkNotNull(TestDB.POSTGRESQL.db) { "PostgreSQL database must be initialized" }
+        val database = TestDB.POSTGRESQL.db.checkNotNull { "PostgreSQL database must be initialized" }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         try {
@@ -44,7 +46,7 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
                 )
                 try {
                     val failure = try {
-                        loader.loadAllKeys().hasNext().toCompletableFuture().await()
+                        loader.loadAllKeys().hasNext().await()
                         null
                     } catch (e: CancellationException) {
                         throw e
@@ -53,9 +55,9 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
                     }
 
                     assertPostgreSQLStatementTimeout(failure)
-                    check(TransactionManager.currentOrNull() == null) {
-                        "loader timeout must close the current R2DBC transaction"
-                    }
+
+                    // "loader timeout must close the current R2DBC transaction"
+                    TransactionManager.currentOrNull().shouldBeNull()
                 } finally {
                     loader.closeAndJoin()
                 }
@@ -86,9 +88,10 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
         }
     }
 
-    private suspend fun <T> withDefaultDatabase(database: R2dbcDatabase, block: suspend () -> T): T {
+    private suspend inline fun <T> withDefaultDatabase(database: R2dbcDatabase, block: suspend () -> T): T {
         val previousDefault = TransactionManager.defaultDatabase
         TransactionManager.defaultDatabase = database
+
         return try {
             block()
         } finally {
@@ -97,7 +100,8 @@ class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
     }
 
     private fun assertPostgreSQLStatementTimeout(failure: Throwable?) {
-        checkNotNull(failure) { "the 31-second PostgreSQL statement must be cancelled" }
+        failure.checkNotNull { "the 31-second PostgreSQL statement must be cancelled" }
+
         val chain = generateSequence(failure) { it.cause }.toList()
         val sqlState = chain.filterIsInstance<R2dbcException>().firstNotNullOfOrNull { it.sqlState }
         check(sqlState == "57014") {

@@ -8,9 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.junit.jupiter.api.BeforeEach
+import java.io.Serializable
 import kotlin.coroutines.CoroutineContext
 
-interface R2dbcCacheTestScenario<ID: Any, E: java.io.Serializable> {
+interface R2dbcCacheTestScenario<ID: Any, E: Serializable> {
+
     companion object: KLoggingChannel() {
         val DefaultCacheDispatcher = Dispatchers.IO
     }

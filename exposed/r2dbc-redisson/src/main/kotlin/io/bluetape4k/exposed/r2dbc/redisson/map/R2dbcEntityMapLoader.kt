@@ -93,15 +93,14 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 log.debug { "DB에서 단건 엔티티 로드를 시작합니다." }
                 suspendTransaction {
                     try {
-                        loadByIdFromDB(id)
-                            .apply {
-                                log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
-                            }
+                        loadByIdFromDB(id).apply {
+                            log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }
+                        }
                     } catch (e: CancellationException) {
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
+                        log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. id=$id" }
                         throw e
                     }
                 }
@@ -138,12 +137,10 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                     // WHY: timeout은 transaction block에서 예외로 재전파해야 Exposed가 rollback한다.
                     //      채널만 닫고 transaction을 정상 종료하면 marker write가 commit될 수 있다.
                     val timeoutMillis = loadAllIdsTimeoutMillis()
-                    withTimeoutOrNull(timeoutMillis) {
+                    withTimeoutOrNull(timeMillis = timeoutMillis) {
                         loadAllIdsFromDB(channel)
                     } ?: run {
-                        val timeout = TimeoutException(
-                            "Loading all IDs exceeded $timeoutMillis ms",
-                        )
+                        val timeout = TimeoutException("Loading all IDs exceeded $timeoutMillis ms")
                         log.warn {
                             "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. " +
                                     "timeout=$timeoutMillis msec, errorType=${timeout::class.simpleName}"
@@ -160,7 +157,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 channel.close(e)
                 throw e
             } catch (e: Exception) {
-                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
+                log.error(e) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
                 channel.close(e)
             } finally {
                 // 정상 완료(오류 없음) 시 채널을 닫는다; 오류 경로에서는 이미 위에서 닫혔다
@@ -206,6 +203,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 if (iteratorClosed.compareAndSet(false, true)) {
                     pendingReceive?.cancel(true)
                     pendingReceive = null
+
                     val cancellation = CancellationException("R2dbcEntityMapLoader iterator is closed")
                     channel.cancel(cancellation)
                     producerJob.cancel(cancellation)
