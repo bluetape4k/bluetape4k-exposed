@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc.lettuce.map
 
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.checkNotNull
 import io.bluetape4k.support.requirePositiveNumber
 import io.github.resilience4j.retry.RetryConfig
 import kotlinx.coroutines.flow.map
@@ -95,7 +96,7 @@ class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
         // existingIds는 map.keys의 부분집합이므로 map[id]는 항상 존재하지만,
         // checkNotNull로 의도를 명확히 하고 버그 발생 시 명확한 메시지를 제공한다.
         for (id in existingIds) {
-            val entity = checkNotNull(map[id]) { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
+            val entity = map[id].checkNotNull { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
             table.update({ table.id eq id }) { updateEntity(it, entity) }
         }
 
@@ -104,7 +105,7 @@ class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
             for (chunk in newIds.chunked(chunkSize)) {
                 table.batchInsert(chunk, shouldReturnGeneratedValues = false) { id ->
                     // newIds는 map.keys의 부분집합이므로 map[id]는 항상 존재한다.
-                    val entity = checkNotNull(map[id]) { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
+                    val entity = map[id].checkNotNull { "map에 id=$id 에 해당하는 엔티티가 없습니다" }
                     insertEntity(this, entity)
                 }
             }

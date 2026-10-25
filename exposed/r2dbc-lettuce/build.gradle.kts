@@ -4,8 +4,12 @@ configurations {
 
 dependencies {
     api(platform(bt4k.kotlinx.coroutines.bom))
+
+    // Lettuce
     api(bt4k.bluetape4k.lettuce)
     api(bt4k.bluetape4k.cache.lettuce)
+    api(bt4k.lettuce.core)
+
     api(project(":bluetape4k-exposed-r2dbc"))
     api(project(":bluetape4k-exposed-cache"))
     api(bt4k.bluetape4k.jackson3)
@@ -17,9 +21,6 @@ dependencies {
     api(bt4k.exposed.r2dbc)
     compileOnly(bt4k.exposed.java.time)
     compileOnly(libs.exposed.kotlin.datetime)
-
-    // Lettuce
-    api(bt4k.lettuce.core)
 
     // Serializer (LettuceLoadedMap 코덱용)
     compileOnly(bt4k.fory.kotlin)
@@ -34,6 +35,7 @@ dependencies {
     implementation(bt4k.bluetape4k.coroutines)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactive)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     // R2DBC drivers (test)
     testRuntimeOnly(bt4k.r2dbc.h2)
@@ -42,9 +44,12 @@ dependencies {
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.mysql)
     testImplementation(project(":bluetape4k-exposed-r2dbc-tests"))
     testImplementation(testFixtures(project(":bluetape4k-exposed-cache")))
     testImplementation(bt4k.h2.v2)
-    testImplementation(libs.kotlinx.coroutines.test)
+
     testImplementation(bt4k.bluetape4k.idgenerators)
+    testRuntimeOnly(bt4k.bluetape4k.netty)
 }

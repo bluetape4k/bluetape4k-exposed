@@ -77,11 +77,10 @@ class R2dbcLettuceReadThroughCacheTest {
     @Nested
     inner class R2dbcAutoIncIdReadThroughRemoteCache: R2dbcAutoIncIdReadThrough() {
         override val config = LettuceCacheConfig.READ_ONLY
+            .copy(keyPrefix = "r2dbc:read-through:remote:users")
+
         override val repository by lazy {
-            R2dbcUserLettuceRepository(
-                redisClient,
-                LettuceCacheConfig.READ_ONLY.copy(keyPrefix = "r2dbc:read-through:remote:users")
-            )
+            R2dbcUserLettuceRepository(redisClient, config)
         }
     }
 
@@ -90,11 +89,12 @@ class R2dbcLettuceReadThroughCacheTest {
      */
     @Nested
     inner class R2dbcAutoIncIdReadThroughNearCache: R2dbcAutoIncIdReadThrough() {
-        override val config =
-            LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(
-                nearCacheName = "r2dbc-lettuce-users-read-near"
-            )
-        override val repository by lazy { R2dbcUserLettuceRepository(redisClient, config) }
+        override val config = LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE
+            .copy(nearCacheName = "r2dbc-lettuce-users-read-near")
+
+        override val repository by lazy {
+            R2dbcUserLettuceRepository(redisClient, config)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -146,9 +146,12 @@ class R2dbcLettuceReadThroughCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughRemoteCache: R2dbcClientGeneratedIdReadThrough() {
-        override val config =
-            LettuceCacheConfig.READ_ONLY.copy(keyPrefix = "r2dbc:read-through:remote:user-credentials")
-        override val repository by lazy { R2dbcUserCredentialLettuceRepository(redisClient, config) }
+        override val config = LettuceCacheConfig.READ_ONLY
+            .copy(keyPrefix = "r2dbc:read-through:remote:user-credentials")
+
+        override val repository by lazy {
+            R2dbcUserCredentialLettuceRepository(redisClient, config)
+        }
     }
 
     /**
@@ -156,10 +159,11 @@ class R2dbcLettuceReadThroughCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughNearCache: R2dbcClientGeneratedIdReadThrough() {
-        override val config =
-            LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE.copy(
-                nearCacheName = "r2dbc-lettuce-cred-read-near"
-            )
-        override val repository by lazy { R2dbcUserCredentialLettuceRepository(redisClient, config) }
+        override val config = LettuceCacheConfig.READ_ONLY_WITH_NEAR_CACHE
+            .copy(nearCacheName = "r2dbc-lettuce-cred-read-near")
+
+        override val repository by lazy {
+            R2dbcUserCredentialLettuceRepository(redisClient, config)
+        }
     }
 }

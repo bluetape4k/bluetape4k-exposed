@@ -1,10 +1,10 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.codec
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema
 import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.UserRecord
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodec
 import io.bluetape4k.redis.lettuce.codec.LettuceBinaryCodecs
 import org.junit.jupiter.params.ParameterizedTest
@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource
  *       [UserRecord] 같은 data class는 [java.io.Serializable]을 구현하여 정상 동작한다.
  */
 class LettuceBinaryCodecUserRecordTest {
+
     companion object: KLogging() {
         @JvmStatic
         @Suppress("unused")
@@ -57,7 +58,7 @@ class LettuceBinaryCodecUserRecordTest {
         val encoded = codec.encodeValue(origin)
         val decoded = codec.decodeValue(encoded)
 
-        decoded.shouldNotBeNull()
+        log.debug { "decoded=$decoded" }
         decoded shouldBeEqualTo origin
     }
 }

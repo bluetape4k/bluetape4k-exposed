@@ -22,7 +22,7 @@ class R2dbcUserLettuceRepository(
 ): AbstractR2dbcLettuceRepository<Long, UserRecord>(
     client,
     config,
-    ExposedR2dbcLettuceCodecs.jackson3(UserRecord::class.java)
+    valueCodec = ExposedR2dbcLettuceCodecs.fastFory() // jackson3(UserRecord::class.java)
 ) {
     companion object: KLoggingChannel()
 

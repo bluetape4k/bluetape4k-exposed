@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.lettuce.map
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
@@ -8,8 +9,10 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.redis.lettuce.map.WriteMode
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -27,9 +30,10 @@ import org.junit.jupiter.api.Test
  * R2DBC `suspendTransaction` 기반으로 동작하며, `runBlocking` 없이 코루틴 네이티브로 실행한다.
  */
 class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
+
     companion object: KLoggingChannel()
 
-    private data class WriterEntity(
+    private data class WriterRecord(
         val id: Long,
         val name: String,
     )
@@ -38,158 +42,156 @@ class R2dbcExposedEntityMapWriterTest: AbstractR2dbcLettuceTest() {
         val name = varchar("name", 64)
     }
 
-    private fun ResultRow.toWriterEntity(): WriterEntity =
-        WriterEntity(
-            id = this[WriterTable.id].value,
-            name = this[WriterTable.name]
-        )
+    private fun ResultRow.toWriterEntity(): WriterRecord = WriterRecord(
+        id = this[WriterTable.id].value,
+        name = this[WriterTable.name]
+    )
 
     private fun newWriter(
         writeMode: WriteMode = WriteMode.WRITE_THROUGH,
-    ): R2dbcExposedEntityMapWriter<Long, WriterEntity> =
+    ): R2dbcExposedEntityMapWriter<Long, WriterRecord> =
         R2dbcExposedEntityMapWriter(
             table = WriterTable,
             writeMode = writeMode,
-            updateEntity = { stmt: UpdateStatement, entity: WriterEntity ->
+            updateEntity = { stmt: UpdateStatement, entity: WriterRecord ->
                 stmt[WriterTable.name] = entity.name
             },
-            insertEntity = { stmt: BatchInsertStatement, entity: WriterEntity ->
+            insertEntity = { stmt: BatchInsertStatement, entity: WriterRecord ->
                 stmt[WriterTable.id] = entity.id
                 stmt[WriterTable.name] = entity.name
             }
         )
 
     /** writer 동작 후 DB의 모든 행을 별도 트랜잭션에서 조회한다 */
-    private suspend fun allRows(): List<WriterEntity> =
-        suspendTransaction {
-            WriterTable.selectAll().map { it.toWriterEntity() }.toList()
-        }
+    private suspend fun allRows(): List<WriterRecord> = suspendTransaction {
+        WriterTable.selectAll()
+            .map { it.toWriterEntity() }
+            .onEach { log.debug { "Entity=$it" } }
+            .toList()
+    }
 
     @Test
-    fun `write - 새 엔티티를 DB에 삽입한다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val writer = newWriter()
+    fun `write - 새 엔티티를 DB에 삽입한다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val writer = newWriter()
 
-                val entity = WriterEntity(id = 1L, name = "alice")
-                writer.write(mapOf(entity.id to entity))
+            val entity = WriterRecord(id = 1L, name = "alice")
+            writer.write(mapOf(entity.id to entity))
 
-                val rows = allRows()
-                rows shouldHaveSize 1
-                rows.first().name shouldBeEqualTo "alice"
-            }
+            val rows = allRows()
+            rows shouldHaveSize 1
+            rows.single().name shouldBeEqualTo "alice"
         }
+    }
 
     @Test
-    fun `write - 기존 엔티티를 업데이트한다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val insertedId = WriterTable.insertAndGetId { it[name] = "alice" }.value
-                commit()
+    fun `write - 기존 엔티티를 업데이트한다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val insertedId = WriterTable.insertAndGetId { it[name] = "alice" }.value
+            commit()
 
-                val writer = newWriter()
-                writer.write(mapOf(insertedId to WriterEntity(id = insertedId, name = "updated-alice")))
+            val writer = newWriter()
+            writer.write(mapOf(insertedId to WriterRecord(id = insertedId, name = "updated-alice")))
 
-                val rows = allRows()
-                rows shouldHaveSize 1
-                rows.first().name shouldBeEqualTo "updated-alice"
-            }
+            val rows = allRows()
+            rows shouldHaveSize 1
+            rows.single().name shouldBeEqualTo "updated-alice"
         }
+    }
 
     @Test
-    fun `write - 빈 map은 아무것도 하지 않는다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val writer = newWriter()
-                writer.write(emptyMap())
+    fun `write - 빈 map은 아무것도 하지 않는다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val writer = newWriter()
+            writer.write(emptyMap())
 
-                allRows() shouldHaveSize 0
-            }
+            allRows().shouldBeEmpty()
         }
+    }
 
     @Test
-    fun `write - NONE 모드에서는 DB에 쓰지 않는다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val writer = newWriter(WriteMode.NONE)
-                writer.write(mapOf(1L to WriterEntity(id = 1L, name = "alice")))
+    fun `write - NONE 모드에서는 DB에 쓰지 않는다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val writer = newWriter(WriteMode.NONE)
+            writer.write(mapOf(1L to WriterRecord(id = 1L, name = "alice")))
 
-                allRows() shouldHaveSize 0
-            }
+            allRows().shouldBeEmpty()
         }
+    }
 
     @Test
-    fun `delete - 엔티티를 DB에서 삭제한다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val id1 = WriterTable.insertAndGetId { it[name] = "alice" }.value
-                val id2 = WriterTable.insertAndGetId { it[name] = "bob" }.value
-                commit()
+    fun `delete - 엔티티를 DB에서 삭제한다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val id1 = WriterTable.insertAndGetId { it[name] = "alice" }.value
+            val id2 = WriterTable.insertAndGetId { it[name] = "bob" }.value
+            commit()
 
-                val writer = newWriter()
-                writer.delete(listOf(id1))
+            allRows() shouldHaveSize 2
 
-                val rows = allRows()
-                rows shouldHaveSize 1
-                rows.first().id shouldBeEqualTo id2
-            }
+            val writer = newWriter()
+            writer.delete(listOf(id1))
+
+            val rows = allRows()
+            rows shouldHaveSize 1
+            rows.single().id shouldBeEqualTo id2
         }
+    }
 
     @Test
-    fun `delete - 빈 컬렉션은 아무것도 하지 않는다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                WriterTable.insert { it[name] = "alice" }
-                commit()
+    fun `delete - 빈 컬렉션은 아무것도 하지 않는다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            WriterTable.insert { it[name] = "alice" }
+            commit()
 
-                val writer = newWriter()
-                writer.delete(emptyList())
+            allRows() shouldHaveSize 1
 
-                allRows() shouldHaveSize 1
-            }
+            val writer = newWriter()
+            writer.delete(emptyList())
+
+            allRows() shouldHaveSize 1
         }
+    }
 
     @Test
-    fun `write - 신규와 기존 엔티티가 혼재할 때 각각 insert와 update를 수행한다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                val existingId = WriterTable.insertAndGetId { it[name] = "alice" }.value
-                commit()
+    fun `write - 신규와 기존 엔티티가 혼재할 때 각각 insert와 update를 수행한다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            val existingId = WriterTable.insertAndGetId { it[name] = "alice" }.value
+            commit()
+            allRows() shouldHaveSize 1
 
-                val newId = existingId + 1000L
-                val writer = newWriter()
-                writer.write(
-                    mapOf(
-                        existingId to WriterEntity(id = existingId, name = "alice-updated"),
-                        newId to WriterEntity(id = newId, name = "bob-new")
-                    )
+            val newId = existingId + 1000L
+            val writer = newWriter()
+            writer.write(
+                mapOf(
+                    existingId to WriterRecord(id = existingId, name = "alice-updated"),
+                    newId to WriterRecord(id = newId, name = "bob-new")
                 )
+            )
 
-                val rows = allRows().sortedBy { it.id }
-                rows shouldHaveSize 2
-                rows[0].name shouldBeEqualTo "alice-updated"
-                rows[1].name shouldBeEqualTo "bob-new"
-            }
+            val rows = allRows().sortedBy { it.id }
+            rows shouldHaveSize 2
+            rows[0].name shouldBeEqualTo "alice-updated"
+            rows[1].name shouldBeEqualTo "bob-new"
         }
+    }
 
     @Test
-    fun `chunkSize는 0보다 커야 한다`() =
-        runSuspendIO {
-            withTables(TestDB.H2, WriterTable) {
-                assertFailsWith<IllegalArgumentException> {
-                    R2dbcExposedEntityMapWriter(
-                        table = WriterTable,
-                        writeMode = WriteMode.WRITE_THROUGH,
-                        chunkSize = 0,
-                        updateEntity = { stmt: UpdateStatement, entity: WriterEntity ->
-                            stmt[WriterTable.name] = entity.name
-                        },
-                        insertEntity = { stmt: BatchInsertStatement, entity: WriterEntity ->
-                            stmt[WriterTable.id] = entity.id
-                            stmt[WriterTable.name] = entity.name
-                        }
-                    )
-                }
-            }
+    fun `chunkSize는 0보다 커야 한다`() = runSuspendIO {
+        withTables(TestDB.H2, WriterTable) {
+            assertFailsWith<IllegalArgumentException> {
+                R2dbcExposedEntityMapWriter(
+                    table = WriterTable,
+                    writeMode = WriteMode.WRITE_THROUGH,
+                    chunkSize = 0,
+                    updateEntity = { stmt: UpdateStatement, entity: WriterRecord ->
+                        stmt[WriterTable.name] = entity.name
+                    },
+                    insertEntity = { stmt: BatchInsertStatement, entity: WriterRecord ->
+                        stmt[WriterTable.id] = entity.id
+                        stmt[WriterTable.name] = entity.name
+                    }
+                )
+            }.also { log.debug { "e=$it" } }
         }
+    }
 }

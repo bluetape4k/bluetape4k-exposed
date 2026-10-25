@@ -16,6 +16,7 @@ import java.io.Serializable
  * - 서브 인터페이스(Read-through / Write-through / Write-behind)가 테스트 메서드를 추가한다.
  */
 interface R2DbcLettuceJCacheTestScenario<ID: Any, E: Serializable> {
+
     companion object: KLoggingChannel() {
         @JvmStatic
         fun enableDialects() = setOf(TestDB.H2)
