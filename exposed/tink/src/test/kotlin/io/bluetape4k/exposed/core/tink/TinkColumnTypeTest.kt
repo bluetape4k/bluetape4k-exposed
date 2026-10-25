@@ -55,8 +55,8 @@ class TinkColumnTypeTest: AbstractExposedTest() {
             val row = secretTable.selectAll().where { secretTable.id eq id }.single()
 
             row[secretTable.secret] shouldBeEqualTo insertedSecret
-            row[secretTable.data]!!.toUtf8String() shouldBeEqualTo insertedData
-            row[secretTable.blob]!!.toUtf8String() shouldBeEqualTo insertedBlob
+            row[secretTable.data]?.toUtf8String() shouldBeEqualTo insertedData
+            row[secretTable.blob]?.toUtf8String() shouldBeEqualTo insertedBlob
         }
     }
 
@@ -82,12 +82,14 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
             searchableTable.selectAll().count() shouldBeEqualTo 1L
 
-            val row = searchableTable.selectAll().where { searchableTable.id eq id }.single()
+            val row = searchableTable
+                .selectAll()
+                .where { searchableTable.id eq id }
+                .single()
 
             row[searchableTable.email] shouldBeEqualTo insertedEmail
-            row[searchableTable.fingerprint]!!.toUtf8String() shouldBeEqualTo insertedFingerprint
-            row[searchableTable.blob]!!.toUtf8String() shouldBeEqualTo insertedBlob
-
+            row[searchableTable.fingerprint]?.toUtf8String() shouldBeEqualTo insertedFingerprint
+            row[searchableTable.blob]?.toUtf8String() shouldBeEqualTo insertedBlob
 
             /**
              * DAEAD(결정적 암호화)는 WHERE 절로 검색이 가능합니다.
@@ -148,13 +150,19 @@ class TinkColumnTypeTest: AbstractExposedTest() {
                 it[rightSecret] = faker.lorem().sentence()
             }
 
-            val leftCipherText = rawTable.selectAll().where { rawTable.id eq id }.single()[rawTable.leftSecret]
+            val leftCipherText = rawTable
+                .selectAll()
+                .where { rawTable.id eq id }
+                .single()[rawTable.leftSecret]
+            
             rawTable.update({ rawTable.id eq id }) {
                 it[rightSecret] = leftCipherText
             }
 
             assertFailsWith<Exception> {
-                encryptedTable.selectAll().where { encryptedTable.id eq id }.single()[encryptedTable.rightSecret]
+                encryptedTable.selectAll()
+                    .where { encryptedTable.id eq id }
+                    .single()[encryptedTable.rightSecret]
             }
         }
     }
@@ -164,6 +172,7 @@ class TinkColumnTypeTest: AbstractExposedTest() {
     fun `DAEAD 암호문은 다른 테이블에서 복호화할 수 없다`(testDB: TestDB) {
         val sourceTableName = "tink_daead_ad_source_$testDB"
         val targetTableName = "tink_daead_ad_target_$testDB"
+
         val sourceEncryptedTable = object: IntIdTable(sourceTableName) {
             val email = tinkDaeadVarChar("email", 512, TinkDaeads.AES256_SIV)
         }
@@ -188,6 +197,7 @@ class TinkColumnTypeTest: AbstractExposedTest() {
             val sourceCipherText = sourceRawTable.selectAll()
                 .where { sourceRawTable.id eq sourceId }
                 .single()[sourceRawTable.email]
+
             targetRawTable.update({ targetRawTable.id eq targetId }) {
                 it[email] = sourceCipherText
             }
@@ -282,8 +292,8 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
             val insertedRow = secretTable.selectAll().where { secretTable.id eq id }.single()
             insertedRow[secretTable.secret] shouldBeEqualTo insertedSecret
-            insertedRow[secretTable.data]!!.toUtf8String() shouldBeEqualTo insertedData
-            insertedRow[secretTable.blob]!!.toUtf8String() shouldBeEqualTo insertedBlob
+            insertedRow[secretTable.data]?.toUtf8String() shouldBeEqualTo insertedData
+            insertedRow[secretTable.blob]?.toUtf8String() shouldBeEqualTo insertedBlob
 
 
             val updatedSecret = faker.lorem().sentence()
@@ -298,8 +308,8 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
             val updatedRow = secretTable.selectAll().where { secretTable.id eq id }.single()
             updatedRow[secretTable.secret] shouldBeEqualTo updatedSecret
-            updatedRow[secretTable.data]!!.toUtf8String() shouldBeEqualTo updatedData
-            updatedRow[secretTable.blob]!!.toUtf8String() shouldBeEqualTo updatedBlob
+            updatedRow[secretTable.data]?.toUtf8String() shouldBeEqualTo updatedData
+            updatedRow[secretTable.blob]?.toUtf8String() shouldBeEqualTo updatedBlob
         }
     }
 
@@ -381,7 +391,10 @@ class TinkColumnTypeTest: AbstractExposedTest() {
                 it[chacha20] = value
             }
 
-            val row = multiAlgoTable.selectAll().where { multiAlgoTable.id eq id }.single()
+            val row = multiAlgoTable
+                .selectAll()
+                .where { multiAlgoTable.id eq id }
+                .single()
 
             row[multiAlgoTable.aes256] shouldBeEqualTo value
             row[multiAlgoTable.aes128] shouldBeEqualTo value
@@ -421,7 +434,11 @@ class TinkColumnTypeTest: AbstractExposedTest() {
                 it[secret] = longEmail
             }
 
-            val row = roomyTable.selectAll().where { roomyTable.id eq id }.single()
+            val row = roomyTable
+                .selectAll()
+                .where { roomyTable.id eq id }
+                .single()
+            
             row[roomyTable.secret] shouldBeEqualTo longEmail
         }
     }
@@ -447,8 +464,9 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
             // 결정적 암호화로 WHERE 절 검색이 정확히 1건을 반환해야 한다.
             multiRowTable.selectAll().where { multiRowTable.email eq email2 }.count() shouldBeEqualTo 1L
-            multiRowTable.selectAll().where { multiRowTable.email eq email2 }.single()
-                .let { it[multiRowTable.email] shouldBeEqualTo email2 }
+            multiRowTable.selectAll()
+                .where { multiRowTable.email eq email2 }
+                .single()[multiRowTable.email] shouldBeEqualTo email2 
         }
     }
 
@@ -475,6 +493,7 @@ class TinkColumnTypeTest: AbstractExposedTest() {
 
             // 업데이트 후 새 값 검색
             updateSearchTable.selectAll().where { updateSearchTable.email eq updated }.count() shouldBeEqualTo 1L
+
             // 이전 값으로 검색하면 0건
             updateSearchTable.selectAll().where { updateSearchTable.email eq original }.count() shouldBeEqualTo 0L
         }
@@ -509,7 +528,9 @@ class TinkColumnTypeTest: AbstractExposedTest() {
             restored shouldBeEqualTo plaintext
 
             assertFailsWith<Exception> {
-                generatedTable.selectAll().where { generatedTable.id eq id }.single()[generatedTable.secret]
+                generatedTable.selectAll()
+                    .where { generatedTable.id eq id }
+                    .single()[generatedTable.secret]
             }
         }
     }
@@ -543,7 +564,9 @@ class TinkColumnTypeTest: AbstractExposedTest() {
                 .single()[reconstructedTable.email] shouldBeEqualTo email
 
             assertFailsWith<Exception> {
-                generatedTable.selectAll().where { generatedTable.id eq id }.single()[generatedTable.email]
+                generatedTable.selectAll()
+                    .where { generatedTable.id eq id }
+                    .single()[generatedTable.email]
             }
         }
     }

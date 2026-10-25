@@ -3,11 +3,16 @@ package io.bluetape4k.exposed.core.tink
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.toUtf8Bytes
 import io.bluetape4k.tink.aead.TinkAeads
 import io.bluetape4k.tink.daead.TinkDaeads
 import org.junit.jupiter.api.Test
 
 class TinkTransformersTest {
+
+    companion object: KLogging()
+
     @Test
     fun `AEAD 문자열 transformer 는 암복호화 round-trip 을 보장한다`() {
         val transformer = StringTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
@@ -22,7 +27,7 @@ class TinkTransformersTest {
     @Test
     fun `AEAD 바이너리 transformer 는 암복호화 round-trip 을 보장한다`() {
         val transformer = ByteArrayTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
-        val source = "tink-aead-binary-source".toByteArray()
+        val source = "tink-aead-binary-source".toUtf8Bytes()
 
         val encrypted = transformer.unwrap(source)
         val restored = transformer.wrap(encrypted)
@@ -56,7 +61,7 @@ class TinkTransformersTest {
     @Test
     fun `DAEAD 바이너리 transformer 는 암복호화 round-trip 을 보장한다`() {
         val transformer = ByteArrayTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
-        val source = "tink-daead-binary-source".toByteArray()
+        val source = "tink-daead-binary-source".toUtf8Bytes()
 
         val encrypted = transformer.unwrap(source)
         val restored = transformer.wrap(encrypted)
@@ -79,7 +84,7 @@ class TinkTransformersTest {
     @Test
     fun `DAEAD 바이너리 transformer 는 동일 입력에 대해 항상 같은 암호문을 생성한다`() {
         val transformer = ByteArrayTinkDaeadEncryptionTransformer(TinkDaeads.AES256_SIV)
-        val source = "deterministic-binary-source".toByteArray()
+        val source = "deterministic-binary-source".toUtf8Bytes()
 
         val encrypted1 = transformer.unwrap(source)
         val encrypted2 = transformer.unwrap(source)
@@ -102,7 +107,7 @@ class TinkTransformersTest {
     @Test
     fun `AEAD 바이너리 transformer 는 동일 입력에 대해 매번 다른 암호문을 생성한다`() {
         val transformer = ByteArrayTinkAeadEncryptionTransformer(TinkAeads.AES256_GCM)
-        val source = "non-deterministic-binary-source".toByteArray()
+        val source = "non-deterministic-binary-source".toUtf8Bytes()
 
         val encrypted1 = transformer.unwrap(source)
         val encrypted2 = transformer.unwrap(source)
@@ -114,7 +119,7 @@ class TinkTransformersTest {
     @Test
     fun `AEAD Blob transformer 는 암복호화 round-trip 을 보장한다`() {
         val transformer = TinkAeadBlobTransformer(TinkAeads.AES256_GCM)
-        val source = "tink-aead-blob-source".toByteArray()
+        val source = "tink-aead-blob-source".toUtf8Bytes()
 
         val encrypted = transformer.unwrap(source)
         val restored = transformer.wrap(encrypted)
@@ -125,7 +130,7 @@ class TinkTransformersTest {
     @Test
     fun `DAEAD Blob transformer 는 암복호화 round-trip 을 보장한다`() {
         val transformer = TinkDaeadBlobTransformer(TinkDaeads.AES256_SIV)
-        val source = "tink-daead-blob-source".toByteArray()
+        val source = "tink-daead-blob-source".toUtf8Bytes()
 
         val encrypted = transformer.unwrap(source)
         val restored = transformer.wrap(encrypted)
@@ -136,7 +141,7 @@ class TinkTransformersTest {
     @Test
     fun `DAEAD Blob transformer 는 동일 입력에 대해 항상 같은 암호문을 생성한다`() {
         val transformer = TinkDaeadBlobTransformer(TinkDaeads.AES256_SIV)
-        val source = "deterministic-blob-source".toByteArray()
+        val source = "deterministic-blob-source".toUtf8Bytes()
 
         val encrypted1 = transformer.unwrap(source)
         val encrypted2 = transformer.unwrap(source)
@@ -151,7 +156,7 @@ class TinkTransformersTest {
     fun `AEAD Blob transformer 는 동일 입력에 대해 매번 다른 암호문을 생성한다`() {
         // AEAD(비결정적)이므로 동일 평문이라도 암호문이 달라야 한다.
         val transformer = TinkAeadBlobTransformer(TinkAeads.AES256_GCM)
-        val source = "non-deterministic-blob-source".toByteArray()
+        val source = "non-deterministic-blob-source".toUtf8Bytes()
 
         val encrypted1 = transformer.unwrap(source)
         val encrypted2 = transformer.unwrap(source)

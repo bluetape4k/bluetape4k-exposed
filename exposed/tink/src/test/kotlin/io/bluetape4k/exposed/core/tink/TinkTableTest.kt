@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -56,9 +57,9 @@ class TinkTableTest: AbstractExposedTest() {
     fun `TinkAeadTable 컬럼이 올바른 타입으로 등록된다`(testDB: TestDB) {
         withTables(testDB, TinkAeadTable) {
             // 컬럼이 정상적으로 등록되었는지 null-check로 검증
-            (TinkAeadTable.varchar as Column<*>).shouldNotBeNull()
-            (TinkAeadTable.binary as Column<*>).shouldNotBeNull()
-            (TinkAeadTable.blob as Column<*>).shouldNotBeNull()
+            (TinkAeadTable.varchar as? Column<*>).shouldNotBeNull()
+            (TinkAeadTable.binary as? Column<*>).shouldNotBeNull()
+            (TinkAeadTable.blob as? Column<*>).shouldNotBeNull()
         }
     }
 
@@ -66,9 +67,9 @@ class TinkTableTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TinkDaeadTable 컬럼이 올바른 타입으로 등록된다`(testDB: TestDB) {
         withTables(testDB, TinkDaeadTable) {
-            (TinkDaeadTable.varchar as Column<*>).shouldNotBeNull()
-            (TinkDaeadTable.binary as Column<*>).shouldNotBeNull()
-            (TinkDaeadTable.blob as Column<*>).shouldNotBeNull()
+            (TinkDaeadTable.varchar as? Column<*>).shouldNotBeNull()
+            (TinkDaeadTable.binary as? Column<*>).shouldNotBeNull()
+            (TinkDaeadTable.blob as? Column<*>).shouldNotBeNull()
         }
     }
 
@@ -93,8 +94,8 @@ class TinkTableTest: AbstractExposedTest() {
             val row = TinkAeadTable.selectAll().where { TinkAeadTable.id eq id }.single()
 
             row[TinkAeadTable.varchar] shouldBeEqualTo text
-            row[TinkAeadTable.binary]!!.toUtf8String() shouldBeEqualTo bytes.toUtf8String()
-            row[TinkAeadTable.blob]!!.toUtf8String() shouldBeEqualTo blobBytes.toUtf8String()
+            row[TinkAeadTable.binary]?.toUtf8String() shouldBeEqualTo bytes.toUtf8String()
+            row[TinkAeadTable.blob]?.toUtf8String() shouldBeEqualTo blobBytes.toUtf8String()
         }
     }
 
@@ -110,9 +111,9 @@ class TinkTableTest: AbstractExposedTest() {
 
             val row = TinkAeadTable.selectAll().where { TinkAeadTable.id eq id }.single()
 
-            row[TinkAeadTable.varchar] shouldBeEqualTo null
-            row[TinkAeadTable.binary] shouldBeEqualTo null
-            row[TinkAeadTable.blob] shouldBeEqualTo null
+            row[TinkAeadTable.varchar].shouldBeNull()
+            row[TinkAeadTable.binary].shouldBeNull()
+            row[TinkAeadTable.blob].shouldBeNull()
         }
     }
 
@@ -138,8 +139,8 @@ class TinkTableTest: AbstractExposedTest() {
             val row = TinkAeadTable.selectAll().where { TinkAeadTable.id eq id }.single()
 
             row[TinkAeadTable.varchar] shouldBeEqualTo updated
-            row[TinkAeadTable.binary]!!.toUtf8String() shouldBeEqualTo updated
-            row[TinkAeadTable.blob]!!.toUtf8String() shouldBeEqualTo updated
+            row[TinkAeadTable.binary]?.toUtf8String() shouldBeEqualTo updated
+            row[TinkAeadTable.blob]?.toUtf8String() shouldBeEqualTo updated
         }
     }
 
@@ -164,8 +165,8 @@ class TinkTableTest: AbstractExposedTest() {
             val row = TinkDaeadTable.selectAll().where { TinkDaeadTable.id eq id }.single()
 
             row[TinkDaeadTable.varchar] shouldBeEqualTo text
-            row[TinkDaeadTable.binary]!!.toUtf8String() shouldBeEqualTo bytes.toUtf8String()
-            row[TinkDaeadTable.blob]!!.toUtf8String() shouldBeEqualTo blobBytes.toUtf8String()
+            row[TinkDaeadTable.binary]?.toUtf8String() shouldBeEqualTo bytes.toUtf8String()
+            row[TinkDaeadTable.blob]?.toUtf8String() shouldBeEqualTo blobBytes.toUtf8String()
         }
     }
 
@@ -218,9 +219,9 @@ class TinkTableTest: AbstractExposedTest() {
 
             val row = TinkDaeadTable.selectAll().where { TinkDaeadTable.id eq id }.single()
 
-            row[TinkDaeadTable.varchar] shouldBeEqualTo null
-            row[TinkDaeadTable.binary] shouldBeEqualTo null
-            row[TinkDaeadTable.blob] shouldBeEqualTo null
+            row[TinkDaeadTable.varchar].shouldBeNull()
+            row[TinkDaeadTable.binary].shouldBeNull()
+            row[TinkDaeadTable.blob].shouldBeNull()
         }
     }
 
@@ -259,7 +260,7 @@ class TinkTableTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TinkAeadTable 여러 행을 저장하고 각각 올바르게 복호화된다`(testDB: TestDB) {
         withTables(testDB, TinkAeadTable) {
-            val records = (1..5).map { faker.lorem().sentence() }
+            val records = List(5) { faker.lorem().sentence() }
 
             val ids = records.map { text ->
                 TinkAeadTable.insertAndGetId { it[varchar] = text }
@@ -268,7 +269,11 @@ class TinkTableTest: AbstractExposedTest() {
             TinkAeadTable.selectAll().count() shouldBeEqualTo 5L
 
             ids.zip(records).forEach { (id, expected) ->
-                val row = TinkAeadTable.selectAll().where { TinkAeadTable.id eq id }.single()
+                val row = TinkAeadTable
+                    .selectAll()
+                    .where { TinkAeadTable.id eq id }
+                    .single()
+                
                 row[TinkAeadTable.varchar] shouldBeEqualTo expected
             }
         }
