@@ -42,25 +42,28 @@ abstract class AbstractStarRocksTest {
         val dataSource by lazy {
             val config = HikariConfig().also {
                 it.jdbcUrl = jdbcUrl
-                it.catalog = StarRocksTestServer.CATALOG
                 it.driverClassName = StarRocksDatabase.DRIVER
                 it.username = StarRocksTestServer.USER
                 it.password = ""
-                it.dataSourceProperties = connectionProperties
+
+                // it.catalog = StarRocksTestServer.CATALOG   // jdbcUrl 에 이미 catalog, databaseName 이 포함되어 있다.
+
+                connectionProperties.forEach { (k, v) ->
+                    it.dataSourceProperties[k] = v
+                }
             }
             HikariDataSource(config)
         }
 
         val db: Database by lazy {
-            // FIXME: HikariCP 를 사용할 수 없다.
-//             StarRocksDatabase.connect(dataSource)
-            StarRocksDatabase.connect(
-                host = host,
-                port = port,
-                catalog = StarRocksTestServer.CATALOG,
-                database = databaseName,
-                user = StarRocksTestServer.USER,
-            )
+            StarRocksDatabase.connect(dataSource)
+//            StarRocksDatabase.connect(
+//                host = host,
+//                port = port,
+//                catalog = StarRocksTestServer.CATALOG,
+//                database = databaseName,
+//                user = StarRocksTestServer.USER,
+//            )
         }
 
         private const val MAX_ATTEMPTS = 60
