@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.starrocks
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -37,7 +39,21 @@ abstract class AbstractStarRocksTest {
         val connectionProperties
             get() = starRocks.connectionProperties
 
+        val dataSource by lazy {
+            val config = HikariConfig().also {
+                it.jdbcUrl = jdbcUrl
+                it.catalog = StarRocksTestServer.CATALOG
+                it.driverClassName = StarRocksDatabase.DRIVER
+                it.username = StarRocksTestServer.USER
+                it.password = ""
+                it.dataSourceProperties = connectionProperties
+            }
+            HikariDataSource(config)
+        }
+
         val db: Database by lazy {
+            // FIXME: HikariCP 를 사용할 수 없다.
+//             StarRocksDatabase.connect(dataSource)
             StarRocksDatabase.connect(
                 host = host,
                 port = port,
@@ -45,17 +61,6 @@ abstract class AbstractStarRocksTest {
                 database = databaseName,
                 user = StarRocksTestServer.USER,
             )
-        }
-
-        @JvmStatic
-        @BeforeAll
-        fun startStarRocks() {
-            Class.forName(StarRocksDatabase.DRIVER)
-            starRocks.verifyHostPortMapping()
-            waitForStarRocksReady()
-            createDatabase()
-            Thread.sleep(3000L)
-            waitForClusterCapacity()
         }
 
         private const val MAX_ATTEMPTS = 60
@@ -147,6 +152,16 @@ abstract class AbstractStarRocksTest {
                 }
             }
         }
+    }
+
+    @BeforeAll
+    fun startStarRocks() {
+        Class.forName(StarRocksDatabase.DRIVER)
+        starRocks.verifyHostPortMapping()
+        waitForStarRocksReady()
+        createDatabase()
+        Thread.sleep(3000L)
+        waitForClusterCapacity()
     }
 
     @BeforeEach

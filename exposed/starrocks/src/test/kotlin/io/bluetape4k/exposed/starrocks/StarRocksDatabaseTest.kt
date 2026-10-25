@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.starrocks
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -63,6 +65,31 @@ class StarRocksDatabaseTest: AbstractStarRocksTest() {
                 rs.next()
                 rs.getInt(1)
             }.shouldNotBeNull()
+        }
+    }
+
+    @Test
+    fun `connect by hikari datasource`() {
+        val config = HikariConfig().also {
+            it.jdbcUrl = jdbcUrl
+            it.catalog = StarRocksTestServer.CATALOG
+            it.driverClassName = StarRocksDatabase.DRIVER
+            it.username = StarRocksTestServer.USER
+            it.password = ""
+            it.dataSourceProperties = connectionProperties
+        }
+        val dataSource = HikariDataSource(config)
+        try {
+            val newDb = StarRocksDatabase.connect(dataSource)
+
+            transaction(newDb) {
+                exec("SELECT 1") { rs ->
+                    rs.next()
+                    rs.getInt(1)
+                }.shouldNotBeNull()
+            }
+        } finally {
+            dataSource.close()
         }
     }
 

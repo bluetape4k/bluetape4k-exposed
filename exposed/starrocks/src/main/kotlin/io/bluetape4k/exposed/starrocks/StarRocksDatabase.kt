@@ -39,7 +39,7 @@ object StarRocksDatabase: KLogging() {
      *
      * `val`이므로 property 접근 시 이 객체의 initializer를 통해 dialect 등록이 실행됩니다.
      */
-    val DRIVER: String = "com.starrocks.cj.jdbc.Driver"
+    const val DRIVER: String = "com.starrocks.cj.jdbc.Driver"
 
     init {
         Database.registerJdbcDriver("jdbc:starrocks", DRIVER, StarRocksDialect.dialectName)
@@ -93,14 +93,16 @@ object StarRocksDatabase: KLogging() {
             getNewConnection = {
                 val props = options.toProperties(user, password)
                 val raw = DriverManager.getConnection(jdbcUrl, props)
-                runCatching { StarRocksConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }
-                            .onFailure { closeEx ->
-                                e.addSuppressed(closeEx)
-                            }
-                        throw e
+                runCatching {
+                    StarRocksConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
     }
@@ -110,14 +112,16 @@ object StarRocksDatabase: KLogging() {
         Database.connect(
             getNewConnection = {
                 val raw = dataSource.connection
-                runCatching { StarRocksConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }
-                            .onFailure { closeEx ->
-                                e.addSuppressed(closeEx)
-                            }
-                        throw e
+                runCatching {
+                    StarRocksConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
 
@@ -130,5 +134,5 @@ object StarRocksDatabase: KLogging() {
         return "jdbc:starrocks://$host:$port"
     }
 
-    private const val STARROCKS_JDBC_PREFIX: String = "jdbc:starrocks://"
+    const val STARROCKS_JDBC_PREFIX: String = "jdbc:starrocks://"
 }
