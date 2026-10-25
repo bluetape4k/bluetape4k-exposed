@@ -6,9 +6,12 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.trino.domain.Events
+import io.bluetape4k.io.lookup
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -18,7 +21,6 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.io.ObjectStreamClass
 import java.io.Serializable
 import java.sql.Connection
 import java.time.Instant
@@ -80,9 +82,9 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
         TrinoBatchInsertOptions() shouldBeInstanceOf Serializable::class
         TrinoConnectionOptions() shouldBeInstanceOf Serializable::class
 
-        ObjectStreamClass.lookup(TrinoPagedQueryOptions::class.java).serialVersionUID shouldBeEqualTo 1L
-        ObjectStreamClass.lookup(TrinoBatchInsertOptions::class.java).serialVersionUID shouldBeEqualTo 1L
-        ObjectStreamClass.lookup(TrinoConnectionOptions::class.java).serialVersionUID shouldBeEqualTo 1L
+        TrinoPagedQueryOptions::class.lookup().serialVersionUID shouldBeEqualTo 1L
+        TrinoBatchInsertOptions::class.lookup().serialVersionUID shouldBeEqualTo 1L
+        TrinoConnectionOptions::class.lookup().serialVersionUID shouldBeEqualTo 1L
     }
 
     @Test
@@ -148,6 +150,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
                         }
                     }
 
+                log.debug { "plan=$plan" }
                 plan shouldContain "TopN"
                 plan shouldContain "region"
             }
@@ -175,6 +178,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
                 Events.selectAll()
                     .orderBy(Events.eventId to SortOrder.ASC)
                     .toList()
+                    .onEach { log.debug { "rows=$it" } }
             }
 
             rows shouldHaveSize 3
@@ -191,8 +195,12 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
             }
 
             val rows = queryFlow(db) {
-                Events.selectAll().orderBy(Events.eventId to SortOrder.ASC)
-            }.toList()
+                Events
+                    .selectAll()
+                    .orderBy(Events.eventId to SortOrder.ASC)
+            }
+                .log("ROW")
+                .toList()
 
             rows shouldHaveSize 3
             rows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L, 3L)
@@ -217,7 +225,9 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
                     .toList()
             }.onEach {
                 transactionActiveDuringEmit += (TransactionManager.currentOrNull() != null)
-            }.toList()
+            }
+                .log("ROW")
+                .toList()
 
             rows shouldHaveSize 3
             transactionActiveInBlock shouldBeEqualTo listOf(true)
@@ -228,7 +238,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
     @Test
     fun `queryFlow 는 빈 테이블에서 빈 리스트를 반환한다`() = runSuspendIO {
         withEventsTableSuspend {
-            val rows = queryFlow(db) { Events.selectAll() }.toList()
+            val rows = queryFlow(db) { Events.selectAll() }.log("ROW").toList()
             rows.shouldBeEmpty()
         }
     }
@@ -247,7 +257,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
                     .orderBy(Events.eventId to SortOrder.ASC)
                     .limit(limit)
                     .offset(offset)
-            }.toList()
+            }.log("PAGING").toList()
 
             rows shouldHaveSize 5
             rows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L, 3L, 4L, 5L)
@@ -270,7 +280,7 @@ class TrinoExtensionsTest: AbstractTrinoTest() {
                     .orderBy(Events.eventId to SortOrder.ASC)
                     .limit(limit)
                     .offset(offset)
-            }.take(3).toList()
+            }.log("TAKE").take(3).toList()
 
             rows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L, 3L)
             requestedOffsets shouldBeEqualTo listOf(0L, 2L)

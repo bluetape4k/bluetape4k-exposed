@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.exposed.trino.AbstractTrinoTest
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
 import org.jetbrains.exposed.v1.core.eq
@@ -54,6 +55,8 @@ class SelectTest: AbstractTrinoTest() {
             insertFixtures()
 
             val rows = Events.selectAll().toList()
+                .onEach { log.debug { "row=$it" } }
+
             rows.shouldNotBeEmpty()
             rows shouldHaveSize 5
         }
@@ -65,6 +68,8 @@ class SelectTest: AbstractTrinoTest() {
             insertFixtures()
 
             val rows = Events.selectAll().where { Events.region eq "kr" }.toList()
+                .onEach { log.debug { "row=$it" } }
+
             rows shouldHaveSize 2
             rows.all { it[Events.region] == "kr" }.shouldBeTrue()
         }
@@ -78,6 +83,7 @@ class SelectTest: AbstractTrinoTest() {
             val rows = Events.selectAll()
                 .orderBy(Events.eventId to SortOrder.ASC)
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows.size shouldBeGreaterOrEqualTo FIXTURES.size
             rows.first()[Events.eventId] shouldBeEqualTo FIXTURES.first().first
@@ -94,6 +100,7 @@ class SelectTest: AbstractTrinoTest() {
                 .orderBy(Events.eventId to SortOrder.ASC)
                 .limit(2)
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows shouldHaveSize 2
         }
@@ -120,6 +127,7 @@ class SelectTest: AbstractTrinoTest() {
                 .groupBy(Events.region)
                 .orderBy(Events.region to SortOrder.ASC)
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows shouldHaveSize 3
 
@@ -144,6 +152,7 @@ class SelectTest: AbstractTrinoTest() {
                 .groupBy(Events.region)
                 .orderBy(Events.region to SortOrder.ASC)
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             val regionNames = rows.associate { it[Events.region] to it[names] }
             regionNames["eu"] shouldBeEqualTo "impression"
@@ -172,6 +181,7 @@ class SelectTest: AbstractTrinoTest() {
                 .select(Events.eventId, position)
                 .orderBy(Events.eventId to SortOrder.ASC)
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows.map { it[position] } shouldBeEqualTo listOf(1, 0, 4, 2, 0)
         }

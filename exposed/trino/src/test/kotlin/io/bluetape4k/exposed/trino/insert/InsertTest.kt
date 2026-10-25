@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.trino.TrinoBatchInsertOptions
 import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.exposed.trino.trinoBatchInsert
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -114,6 +115,7 @@ class InsertTest: AbstractTrinoTest() {
                 this[Events.region] = region
                 this[Events.createdAt] = Instant.parse("2024-01-01T00:00:00Z")
             }
+                .onEach { log.debug { "row=$it" } }
         }
         returnedRows.map { it[Events.eventId] } shouldBeEqualTo listOf(1L, 2L)
 
@@ -165,6 +167,7 @@ class InsertTest: AbstractTrinoTest() {
             Events
                 .select(Events.eventId)
                 .orderBy(Events.eventId to SortOrder.ASC)
+                .onEach { log.debug { "row=$it" } }
                 .map { it[Events.eventId] }
         }
         ids shouldBeEqualTo listOf(1L, 2L)
