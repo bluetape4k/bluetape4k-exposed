@@ -35,7 +35,7 @@ class R2dbcTestDbFixture<K> internal constructor(
 
     internal suspend fun initialize(): R2dbcDatabase {
         database?.let { return it }
-        val created = createDatabase({})
+        val created = createDatabase {}
         try {
             registerShutdown(onShutdown)
         } catch (failure: Throwable) {

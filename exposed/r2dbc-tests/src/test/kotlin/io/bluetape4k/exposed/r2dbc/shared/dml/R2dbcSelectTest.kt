@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.shared.dml.DMLTestData.withCitiesAndUsers
 import io.bluetape4k.exposed.r2dbc.shared.dml.DMLTestData.withSales
 import io.bluetape4k.exposed.r2dbc.shared.dml.DMLTestData.withSalesAndSomeAmounts
@@ -74,6 +75,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val row = users.selectAll()
                 .where { users.id eq "andrey" }
+                .log("USER")
                 .single()
 
             val userId = row[users.id]
@@ -101,6 +103,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
             val row = users.selectAll()
                 .where { users.id eq "andrey" }
                 .andWhere { users.name.isNotNull() }
+                .log("USER")
                 .single()
 
             val userId = row[users.id]
@@ -110,6 +113,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
 
             val row2 = users.selectAll()
                 .where { (users.id eq "andrey") and (users.name.isNotNull()) }   // where 함수 내에서 조합해도 된다
+                .log("USER")
                 .single()
 
             val userId2 = row2[users.id]
@@ -139,6 +143,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val row = users.selectAll()
                 .where { users.id.eq("andrey") or users.name.eq("Andrey") } // orWhere 를 써도 된다.
+                .log("USER")
                 .single()
 
             val userId = row[users.id]
@@ -164,6 +169,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
         withCitiesAndUsers(testDB) { _, users, _ ->
             val rows = users.selectAll()
                 .where { users.id neq "andrey" }
+                .log("USER")
                 .toList()
 
             rows.map { it[users.id] } shouldNotContain "andrey"
@@ -180,7 +186,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
         withCitiesAndUsers(testDB) { cities, users, _ ->
 
             // SELECT cities.city_id, cities."name" FROM cities
-            cities.selectAll().toList().shouldNotBeEmpty()
+            cities.selectAll().log("CITY").toList().shouldNotBeEmpty()
 
             // SELECT cities.city_id, cities."name" FROM cities WHERE cities."name" = 'Qwertt'
             cities.selectAll().where { cities.name eq "Qwertt" }.toList().shouldBeEmpty()
@@ -217,6 +223,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
             val r1 = users.selectAll()
                 .where { users.id inList listOf("andrey", "alex") }
                 .orderBy(users.name)
+                .log("USER")
                 .toList()
 
             r1 shouldHaveSize 2
@@ -233,6 +240,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
              */
             val r2 = users.selectAll()
                 .where { users.id notInList listOf("ABC", "DEF") }
+                .log("USER")
                 .toList()
 
             users.selectAll().count() shouldBeEqualTo r2.size.toLong()
@@ -451,6 +459,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     users.id eq anyFrom(arrayOf("andrey", "alex"))
                 }
                 .orderBy(users.name)
+                .log("USER")
                 .toList()
 
             rows shouldHaveSize 2
@@ -484,6 +493,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     users.id eq anyFrom(listOf("andrey", "alex"))
                 }
                 .orderBy(users.name)
+                .log("USER")
                 .toList()
 
             rows shouldHaveSize 2
@@ -574,6 +584,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     sales.amount greaterEq anyFrom(amounts)
                 }
                 .orderBy(sales.amount)
+                .log("SALES")
                 .map { it[sales.product] }
                 .toList()
 
@@ -607,6 +618,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     sales.amount greaterEq anyFrom(amounts)
                 }
                 .orderBy(sales.amount)
+                .log("SALES")
                 .map { it[sales.product] }
                 .toList()
 
@@ -700,6 +712,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     sales.amount greaterEq allFrom(subquery)
                 }
                 .orderBy(sales.amount)
+                .log("SALES")
                 .map { it[sales.product] }
                 .toList()
 
@@ -734,6 +747,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                 .where {
                     sales.amount greaterEq allFrom(amounts)
                 }
+                .log("SALES")
                 .toList()
 
             rows shouldHaveSize 3
@@ -764,6 +778,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
             val rows = sales
                 .selectAll()
                 .where { sales.amount greaterEq allFrom(amounts) }
+                .log("SALES")
                 .toList()
 
             rows shouldHaveSize 3
@@ -791,6 +806,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
             val rows = sales
                 .selectAll()
                 .where { sales.amount greaterEq allFrom(someAmounts) }
+                .log("SALES")
                 .toList()
 
             rows shouldHaveSize 3
@@ -891,6 +907,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
             val userNameOr = users
                 .selectAll()
                 .where(orOp).map { it[users.name] }
+                .log("USERS")
                 .toSet()
             userNameOr shouldBeEqualTo allUsers
 
@@ -962,15 +979,19 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
 
             val originalQuery = query.copy()
             val originalSql = query.prepareSQL(this, false)
+            log.debug { "originalSql: $originalSql" }
 
             // query 선두에 comment 추가
             val commentedFrontSql = query.comment(text).prepareSQL(this, false)
+            log.debug { "commentedFrontSql: $commentedFrontSql" }
             commentedFrontSql shouldBeEqualTo "/*$text*/ $originalSql"
 
             // query에는 comment가 선두에 추가되었고, 후미에 추가한다.
             val commentedTwiceSql = query
                 .comment(text, AbstractQuery.CommentPosition.BACK)
                 .prepareSQL(this, false)
+
+            log.debug { "commentedTwiceSql: $commentedTwiceSql" }
             commentedTwiceSql shouldBeEqualTo "/*$text*/ $originalSql /*$text*/"
 
             // 이미 query에는 comment가 존재하므로 IllegalStateException 발생
@@ -1016,6 +1037,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                 .selectAll()
                 .limit(amount)
                 .map { it[alphabet.letter] }
+                .log("alphabet")
                 .toList()
             limitResult shouldBeEqualTo allLetters.take(amount)
 
@@ -1025,6 +1047,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                 .limit(amount)
                 .offset(start)
                 .map { it[alphabet.letter] }
+                .log("alphabet")
                 .toList()
             limitOffsetResult shouldBeEqualTo allLetters.drop(start.toInt()).take(amount)
 
@@ -1034,6 +1057,7 @@ class R2dbcSelectTest: AbstractExposedR2dbcTest() {
                     .selectAll()
                     .offset(start)
                     .map { it[alphabet.letter] }
+                    .log("alphabet")
                     .toList()
 
                 offsetResult shouldBeEqualTo allLetters.drop(start.toInt())

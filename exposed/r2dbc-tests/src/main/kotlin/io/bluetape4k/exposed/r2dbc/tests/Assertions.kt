@@ -130,18 +130,16 @@ suspend inline fun <reified T: Throwable> expectExceptionSuspending(crossinline 
     }
 
     when {
-        thrown == null -> {
+        thrown == null                   ->
             throw AssertionError(
                 "Failed on ${currentDialectTest.name}. Expected exception ${expectedType.simpleName}.",
             )
-        }
 
-        !expectedType.isInstance(thrown) -> {
+        !expectedType.isInstance(thrown) ->
             throw AssertionError(
                 "Failed on ${currentDialectTest.name}. Unexpected exception type: ${thrown::class}",
                 thrown,
             )
-        }
     }
 }
 

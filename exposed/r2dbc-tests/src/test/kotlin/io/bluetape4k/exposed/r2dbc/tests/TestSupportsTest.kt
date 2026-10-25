@@ -99,7 +99,10 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
 
             statementEntered.await()
             job.cancel()
-            assertFailsWith<CancellationException> { job.await() }
+
+            assertFailsWith<CancellationException> {
+                job.await()
+            }
         }
 
         cancellation.suppressed.shouldBeEmpty()
@@ -120,6 +123,7 @@ class TestSupportsTest: AbstractExposedR2dbcTest() {
                 .last { it.message == "statement failure" }
                 .suppressed
                 .size shouldBeEqualTo 2
+
         } finally {
             FailingCleanupTable.resetDropAttempts()
             withDb(TestDB.H2) {
