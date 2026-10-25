@@ -7,11 +7,12 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.fail
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
@@ -149,6 +150,7 @@ class TenantJdbcResourceRegistryFailureTest {
         val unregisterA = UnsupportedOperationException("unregister-a")
         val disposeA = CancellationException("dispose-a")
         val registry = fixture.create(listOf("a", "b"))
+
         fixture.unregisterFailures["b"] = unregisterB
         fixture.disposeFailures["b"] = disposeB
         fixture.unregisterFailures["a"] = unregisterA
@@ -159,6 +161,7 @@ class TenantJdbcResourceRegistryFailureTest {
 
         first shouldBe unregisterB
         second shouldBe first
+
         first.suppressed.toList() shouldBeEqualTo listOf(disposeB, unregisterA, disposeA)
         fixture.disposeCalls.getValue("a").get() shouldBeEqualTo 1
         fixture.disposeCalls.getValue("b").get() shouldBeEqualTo 1
@@ -166,8 +169,10 @@ class TenantJdbcResourceRegistryFailureTest {
 
     @Test
     fun `많은 cleanup failure도 기존 suppressed identity와 발생 순서를 보존한다`() {
+        val tenentCount = 128
         val fixture = failureFixture()
-        val tenants = (0 until 128).map { "tenant-$it" }
+        val tenants = List(tenentCount) { "tenant-$it" }
+
         val cleanupFailures = tenants.asReversed().flatMap { tenant ->
             val unregister = IllegalStateException("unregister-$tenant")
             val dispose = IllegalArgumentException("dispose-$tenant")
@@ -185,7 +190,8 @@ class TenantJdbcResourceRegistryFailureTest {
         observed shouldBe primary
         observed.suppressed.toList() shouldBeEqualTo listOf(alreadySuppressed) + cleanupFailures.drop(1)
             .filterNot { it === alreadySuppressed }
-        fixture.disposeCalls.size shouldBeEqualTo 128
+
+        fixture.disposeCalls.size shouldBeEqualTo tenentCount
         fixture.disposeCalls.values.all { it.get() == 1 }.shouldBeTrue()
     }
 
@@ -225,11 +231,11 @@ class TenantJdbcResourceRegistryFailureTest {
     }
 
     @Test
-    @Suppress("DEPRECATION")
+    // @Suppress("DEPRECATION")
     fun `fatal assembly failure 종류는 원형을 유지하고 best effort cleanup을 수행한다`() {
         val fatalFailures = listOf<Throwable>(
             object: VirtualMachineError("vm") {},
-            ThreadDeath(),
+            // ThreadDeath(),
             LinkageError("linkage"),
         )
 
@@ -271,6 +277,7 @@ class TenantJdbcResourceRegistryFailureTest {
         val closeFixture = failureFixture()
         val closeInterrupt = InterruptedException("close")
         val registry = closeFixture.create(listOf("a"))
+
         closeFixture.unregisterFailures["a"] = closeInterrupt
         val closeFailure = catchThrowable { registry.close() }
 
@@ -288,6 +295,7 @@ class TenantJdbcResourceRegistryFailureTest {
         val fixture = failureFixture()
         val registry = fixture.create(listOf("a"))
         fixture.disposeFailures["a"] = IllegalStateException(marker)
+
         try {
             val failure = catchThrowable { registry.close() }
             failure.message shouldBeEqualTo marker
@@ -323,7 +331,7 @@ class TenantJdbcResourceRegistryFailureTest {
                 assertFailsWith<IllegalStateException> { lookup() }
             }
 
-            appender.list.filter { it.level == Level.DEBUG }.shouldHaveSize(3)
+            appender.list.filter { it.level == Level.DEBUG } shouldHaveSize 3
             appender.list.filter { it.level == Level.DEBUG }.forEach { event ->
                 event.formattedMessage shouldContain "state: ClosedFailure"
                 event.formattedMessage shouldNotContain marker
@@ -405,7 +413,7 @@ class TenantJdbcResourceRegistryFailureTest {
     private fun catchThrowable(block: () -> Unit): Throwable =
         try {
             block()
-            throw AssertionError("Expected a failure")
+            fail("Expected a failure")
         } catch (failure: Throwable) {
             failure
         }

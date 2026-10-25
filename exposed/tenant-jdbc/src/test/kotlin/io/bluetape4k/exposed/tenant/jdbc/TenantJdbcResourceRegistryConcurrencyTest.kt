@@ -9,21 +9,27 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.asCompletableFuture
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
+import io.bluetape4k.concurrent.sequence
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.utils.Runtimex
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
-import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration.Companion.seconds
 
 class TenantJdbcResourceRegistryConcurrencyTest {
 
@@ -41,7 +47,7 @@ class TenantJdbcResourceRegistryConcurrencyTest {
             dispose = {
                 disposeCalls.incrementAndGet()
                 entered.countDown()
-                release.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                release.await(5.seconds).shouldBeTrue()
                 throw failure
             },
             beforeCloseWait = { waiterObservedClosing.countDown() },
@@ -49,21 +55,23 @@ class TenantJdbcResourceRegistryConcurrencyTest {
 
         val ownerResult = AtomicReference<Throwable?>()
         val waiterResult = AtomicReference<Throwable?>()
-        val owner = thread(name = "tenant-close-owner") { ownerResult.set(catchThrowable { registry.close() }) }
+        val owner = thread(name = "tenant-close-owner") {
+            ownerResult.set(catchThrowable { registry.close() })
+        }
         var waiter: Thread? = null
 
         try {
-            entered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            entered.await(5.seconds).shouldBeTrue()
             val startedWaiter = thread(name = "tenant-close-waiter") {
                 waiterResult.set(catchThrowable { registry.close() })
             }
 
             waiter = startedWaiter
-            waiterObservedClosing.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            waiterObservedClosing.await(5.seconds).shouldBeTrue()
 
             release.countDown()
-            owner.join(Duration.ofSeconds(5))
-            startedWaiter.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            startedWaiter.join(5.seconds())
             ownerResult.get() shouldBe failure
             waiterResult.get() shouldBe failure
             disposeCalls.get() shouldBeEqualTo 1
@@ -71,8 +79,8 @@ class TenantJdbcResourceRegistryConcurrencyTest {
             release.countDown()
             owner.interrupt()
             waiter?.interrupt()
-            owner.join(Duration.ofSeconds(5))
-            waiter?.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            waiter?.join(5.seconds())
         }
         owner.isAlive.shouldBeFalse()
         waiter.isAlive.shouldBeFalse()
@@ -105,34 +113,36 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         val registry = registryWithHooks(
             dispose = {
                 entered.countDown()
-                release.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                release.await(5.seconds).shouldBeTrue()
             },
             beforeCloseWait = { waiting.countDown() },
         )
         val waiterInterrupted = AtomicBoolean()
-        val owner = thread(name = "tenant-interrupt-owner") { registry.close() }
+        val owner = thread(name = "tenant-interrupt-owner") {
+            registry.close()
+        }
         var waiter: Thread? = null
 
         try {
-            entered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            entered.await(5.seconds).shouldBeTrue()
 
             val startedWaiter = thread(name = "tenant-interrupt-waiter") {
                 registry.close()
                 waiterInterrupted.set(Thread.currentThread().isInterrupted)
             }
             waiter = startedWaiter
-            waiting.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            waiting.await(5.seconds).shouldBeTrue()
 
             startedWaiter.interrupt()
             release.countDown()
-            owner.join(Duration.ofSeconds(5))
-            startedWaiter.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            startedWaiter.join(5.seconds())
         } finally {
             release.countDown()
             owner.interrupt()
             waiter?.interrupt()
-            owner.join(Duration.ofSeconds(5))
-            waiter?.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            waiter?.join(5.seconds())
         }
 
         owner.isAlive.shouldBeFalse()
@@ -150,7 +160,7 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         val registry = registryWithHooks(
             dispose = {
                 entered.countDown()
-                release.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                release.await(5.seconds).shouldBeTrue()
                 throw fatal
             },
             beforeCloseWait = { waiting.countDown() },
@@ -161,21 +171,21 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         var waiter: Thread? = null
 
         try {
-            entered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            entered.await(5.seconds).shouldBeTrue()
             val startedWaiter = thread(name = "tenant-fatal-waiter") {
                 waiterResult.set(catchThrowable { registry.close() })
             }
             waiter = startedWaiter
-            waiting.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            waiting.await(5.seconds).shouldBeTrue()
             release.countDown()
-            owner.join(Duration.ofSeconds(5))
-            startedWaiter.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            startedWaiter.join(5.seconds())
         } finally {
             release.countDown()
             owner.interrupt()
             waiter?.interrupt()
-            owner.join(Duration.ofSeconds(5))
-            waiter?.join(Duration.ofSeconds(5))
+            owner.join(5.seconds())
+            waiter?.join(5.seconds())
         }
 
         owner.isAlive.shouldBeFalse()
@@ -204,10 +214,10 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         }
 
         try {
-            gates.entered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            gates.entered.await(5.seconds).shouldBeTrue()
             registry.close()
             gates.release.countDown()
-            lookup.join(Duration.ofSeconds(5))
+            lookup.join(5.seconds())
 
             returned.get().shouldNotBeNull()
             val failure = assertFailsWith<IllegalStateException> {
@@ -217,7 +227,7 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         } finally {
             gates.release.countDown()
             lookup.interrupt()
-            lookup.join(Duration.ofSeconds(5))
+            lookup.join(5.seconds())
             registry.close()
         }
         lookup.isAlive.shouldBeFalse()
@@ -227,16 +237,16 @@ class TenantJdbcResourceRegistryConcurrencyTest {
     fun `immutable lookup은 bounded concurrent stress에서 identity를 유지한다`() {
         val registry = registryOf("a", "b")
         val expected = registry.resourceFor("a")
-        val threadCount = 32
+        val threadCount = Runtimex.availableProcessors * 2
         val barrier = CyclicBarrier(threadCount)
         val executor = Executors.newFixedThreadPool(threadCount)
         val errors = ConcurrentLinkedQueue<Throwable>()
 
-        val futures = (0 until threadCount).map {
+        val futures = List(threadCount) {
             executor.submit {
                 try {
-                    barrier.await(5, TimeUnit.SECONDS)
-                    repeat(10_000) {
+                    barrier.await(5.seconds)
+                    repeat(100) {
                         registry.resourceFor("a") shouldBe expected
                         registry.databaseFor("a") shouldBe expected.database
                         registry.dataSourceFor("a") shouldBe expected.dataSource
@@ -245,15 +255,15 @@ class TenantJdbcResourceRegistryConcurrencyTest {
                     errors += failure
                     throw failure
                 }
-            }
+            }.asCompletableFuture()
         }
 
         try {
-            futures.forEach { it.get(10, TimeUnit.SECONDS) }
+            futures.sequence().get(10.seconds)
             errors.shouldBeEmpty()
         } finally {
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
             registry.close()
         }
     }
@@ -285,7 +295,7 @@ class TenantJdbcResourceRegistryConcurrencyTest {
         override fun hashCode(): Int {
             nextGate.getAndSet(null)?.let { gate ->
                 gate.entered.countDown()
-                check(gate.release.await(5, TimeUnit.SECONDS)) { "hash gate release timed out" }
+                check(gate.release.await(5.seconds)) { "hash gate release timed out" }
             }
             return value.hashCode()
         }

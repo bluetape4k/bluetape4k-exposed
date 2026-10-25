@@ -8,6 +8,7 @@ dependencies {
     api(bt4k.exposed.jdbc)
 
     implementation(bt4k.bluetape4k.core)
+    implementation(bt4k.bluetape4k.tenant)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.h2.v2)

@@ -4,8 +4,8 @@ package io.bluetape4k.exposed.tenant.jdbc
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.bluetape4k.codec.Base58
 import org.h2.jdbcx.JdbcDataSource
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
@@ -34,23 +34,28 @@ class ConstantHashTenant(val value: String) {
 
 /** Java interop 및 빠른 registry 단위 테스트에 사용하는 H2 DataSource입니다. */
 @JvmOverloads
-fun dataSource(name: String, closeDelay: Boolean = true): JdbcDataSource = JdbcDataSource().apply {
-    setURL("jdbc:h2:mem:$name-${UUID.randomUUID()}" + if (closeDelay) ";DB_CLOSE_DELAY=-1" else "")
-    setUser("sa")
-    setPassword("")
-}
+fun dataSource(name: String, closeDelay: Boolean = true): JdbcDataSource =
+    JdbcDataSource().apply {
+        setURL("jdbc:h2:mem:$name-${Base58.randomString(8)}" + if (closeDelay) ";DB_CLOSE_DELAY=-1" else "")
+        setUser("sa")
+        setPassword("")
+    }
 
 /** 실제 pool ownership 및 tenant별 H2 schema 격리에 사용하는 Hikari DataSource입니다. */
-fun h2DataSource(name: String): HikariDataSource = HikariDataSource(HikariConfig().apply {
-    jdbcUrl = "jdbc:h2:mem:$name-${UUID.randomUUID()};DB_CLOSE_DELAY=-1"
-    username = "sa"
-    password = ""
-    maximumPoolSize = 2
-    minimumIdle = 0
-    poolName = "tenant-jdbc-test-$name"
-})
+fun h2DataSource(name: String): HikariDataSource {
+    val configuration = HikariConfig().apply {
+        jdbcUrl = "jdbc:h2:mem:$name-${Base58.randomString(8)};DB_CLOSE_DELAY=-1"
+        username = "sa"
+        password = ""
+        maximumPoolSize = 2
+        minimumIdle = 0
+        poolName = "tenant-jdbc-test-$name"
+    }
+    return HikariDataSource(configuration)
+}
 
 /** 테스트의 DataSource close와 callback 순서를 기록하는 얇은 delegate입니다. */
+@Suppress("JavaDefaultMethodsNotOverriddenByDelegation")
 class TrackingDataSource(
     private val delegate: HikariDataSource,
     private val events: MutableList<String>,
@@ -69,6 +74,6 @@ class TrackingDataSource(
 fun <K: Any> registryOf(vararg tenants: K): TenantJdbcResourceRegistry<K> =
     TenantJdbcResourceRegistry.create(
         tenants = tenants.asList(),
-        dataSourceFactory = { tenant -> dataSource("registry-${tenant.hashCode()}-${UUID.randomUUID()}") },
+        dataSourceFactory = { tenant -> dataSource("registry-${tenant.hashCode()}-${Base58.randomString(8)}") },
         disposeDataSource = { _, _ -> },
     )

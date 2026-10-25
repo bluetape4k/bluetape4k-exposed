@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.tenant.jdbc
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
@@ -23,6 +24,7 @@ class TenantJdbcResourceRegistryTest {
     @Test
     fun `string과 enum tenant가 같은 resource identity를 반환한다`() {
         val registry = registryOf("alpha", "beta")
+
         registry.use {
             it.resourceFor("alpha").database shouldBeSameInstanceAs it.databaseFor("alpha")
             it.resourceFor("alpha").dataSource shouldBeSameInstanceAs it.dataSourceFor("alpha")
@@ -45,7 +47,10 @@ class TenantJdbcResourceRegistryTest {
         )
         registry.use {
             it.configuredTenants shouldBeEqualTo emptySet()
-            assertFailsWith<UnknownTenantJdbcResourceException> { it.resourceFor("missing") }
+
+            assertFailsWith<UnknownTenantJdbcResourceException> {
+                it.resourceFor("missing")
+            }
         }
     }
 
@@ -176,7 +181,7 @@ class TenantJdbcResourceRegistryTest {
             registry.close()
         }
 
-        dataSources.values.forEach { it.isClosed shouldBeEqualTo true }
+        dataSources.values.all { it.isClosed }.shouldBeTrue()
     }
 
     @Test
@@ -184,6 +189,7 @@ class TenantJdbcResourceRegistryTest {
         repeat(20) { round ->
             val dataSource = h2DataSource("manager-$round")
             lateinit var database: Database
+
             val registry = TenantJdbcResourceRegistry.create(
                 tenants = listOf("tenant-$round"),
                 dataSourceFactory = { dataSource },
@@ -198,6 +204,7 @@ class TenantJdbcResourceRegistryTest {
                 },
             )
             database = registry.databaseFor("tenant-$round")
+
             try {
                 TransactionManager.managerFor(database)
             } finally {
@@ -206,7 +213,7 @@ class TenantJdbcResourceRegistryTest {
             assertFailsWith<IllegalStateException> {
                 TransactionManager.managerFor(database)
             }
-            dataSource.isClosed shouldBeEqualTo true
+            dataSource.isClosed.shouldBeTrue()
         }
     }
 
