@@ -45,13 +45,13 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
-            // 먼저 캐시에 로드
             val ids = UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
                 .log("ID")
                 .toList()
 
+            // 먼저 캐시에 로드
             ids.forEach { id -> repository.get(id) }  // 캐시에 채움
             ids.all { repository.containsKey(it) }.shouldBeTrue()
 

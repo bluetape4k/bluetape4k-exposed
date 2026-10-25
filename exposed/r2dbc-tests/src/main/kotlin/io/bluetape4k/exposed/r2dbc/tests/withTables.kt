@@ -40,7 +40,9 @@ suspend fun <K> withTables(
         r2dbcPreDrop { SchemaUtils.drop(*tables) }
         var failure: Throwable? = null
         try {
-            if (tables.isNotEmpty()) SchemaUtils.create(*tables)
+            if (tables.isNotEmpty()) {
+                SchemaUtils.create(*tables)
+            }
             statement(key)
             commit()
         } catch (thrown: CancellationException) {

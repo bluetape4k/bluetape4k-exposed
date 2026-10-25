@@ -13,7 +13,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.concurrent.completableFutureOf
 import io.bluetape4k.coroutines.support.awaitUntil
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -51,7 +51,7 @@ import kotlin.time.Duration.Companion.seconds
  * - 빈 채널에서 `toList()`가 빈 결과 반환
  * - `AsyncIterator.toList` 확장 함수 정상 동작 확인
  */
-class R2dbcEntityMapLoaderTest: AbstractExposedR2dbcTest() {
+class R2dbcEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
 
     private data class TestEntity(val id: Long, val name: String): Serializable
 

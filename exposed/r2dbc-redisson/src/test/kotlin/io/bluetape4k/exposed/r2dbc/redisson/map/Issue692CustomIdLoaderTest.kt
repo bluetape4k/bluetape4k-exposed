@@ -8,7 +8,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.concurrent.await
 import io.bluetape4k.coroutines.support.joinUntil
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
+class Issue692CustomIdLoaderTest: AbstractR2dbcRedissonTest() {
 
     companion object: KLoggingChannel()
 

@@ -6,7 +6,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.coroutines.support.awaitUntil
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * [R2dbcEntityMapWriter]의 lifecycle과 close 이후 write 계약을 검증합니다.
  */
-class R2dbcEntityMapWriterTest: AbstractExposedR2dbcTest() {
+class R2dbcEntityMapWriterTest: AbstractR2dbcRedissonTest() {
 
     companion object: KLoggingChannel()
 

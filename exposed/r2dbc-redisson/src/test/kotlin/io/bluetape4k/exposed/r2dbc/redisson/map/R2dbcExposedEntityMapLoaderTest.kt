@@ -6,7 +6,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -24,7 +24,7 @@ import org.jetbrains.exposed.v1.r2dbc.insert
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
-class R2dbcExposedEntityMapLoaderTest: AbstractExposedR2dbcTest() {
+class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
 
     companion object: KLogging()
 

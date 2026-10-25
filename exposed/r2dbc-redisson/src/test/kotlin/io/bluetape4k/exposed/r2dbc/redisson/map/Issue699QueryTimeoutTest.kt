@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
 /** PostgreSQL R2DBC loader의 statement timeout과 transaction cleanup을 검증합니다. */
-class Issue699QueryTimeoutTest: AbstractExposedR2dbcTest() {
+class Issue699QueryTimeoutTest: AbstractR2dbcRedissonTest() {
 
     @Test
     @EnabledIfEnvironmentVariable(
