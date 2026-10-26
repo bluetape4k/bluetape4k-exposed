@@ -39,7 +39,6 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requirePositiveNumber
 import io.bluetape4k.support.requireZeroOrPositiveNumber
-import io.bluetape4k.utils.Runtimex
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Job
@@ -127,7 +126,7 @@ class JdbcCaffeineRepositoryExtraTest {
         val results = ConcurrentLinkedQueue<ActorRecord>()
 
         MultithreadingTester()
-            .workers(Runtimex.availableProcessors)
+            .workers(8)
             .rounds(2)
             .addAll(
                 List(8) {
@@ -149,7 +148,7 @@ class JdbcCaffeineRepositoryExtraTest {
         val results = ConcurrentLinkedQueue<Map<Long, ActorRecord>>()
 
         MultithreadingTester()
-            .workers(Runtimex.availableProcessors)
+            .workers(8)
             .rounds(2)
             .addAll(
                 List(8) {
