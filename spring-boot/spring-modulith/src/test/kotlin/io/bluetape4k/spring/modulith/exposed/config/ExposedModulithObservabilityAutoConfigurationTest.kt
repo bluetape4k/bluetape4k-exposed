@@ -13,6 +13,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.TestConfiguration
@@ -20,6 +21,18 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 
 class ExposedModulithObservabilityAutoConfigurationTest {
+
+    companion object: KLogging() {
+
+        private fun meteredRepository(): ExposedEventPublicationRepository {
+            return mockk(relaxed = true) {
+                every { countIncompletePublications() } returns 2
+                every { countCompletedPublications() } returns 1
+                every { countFailedPublications() } returns 1
+                every { countUnloadablePublications() } returns 1
+            }
+        }
+    }
 
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedModulithObservabilityAutoConfiguration::class.java))
@@ -31,7 +44,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
             .run { context ->
                 context.containsBean("exposedModulithEventPublicationMetrics").shouldBeTrue()
 
-                val registry = context.getBean(MeterRegistry::class.java)
+                val registry = context.getBean<MeterRegistry>()
 
                 registry.publicationGauge("incomplete") shouldBeEqualTo 2.0
                 registry.publicationGauge("completed") shouldBeEqualTo 1.0
@@ -101,7 +114,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
         contextRunner
             .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
-                val registry = context.getBean(MeterRegistry::class.java)
+                val registry = context.getBean<MeterRegistry>()
                 val publicationMeters = registry.find(ExposedEventPublicationMetrics.METER_NAME).meters()
                 val tagMaps = publicationMeters.map { meter ->
                     meter.id.tags.associate { tag -> tag.key to tag.value }
@@ -163,7 +176,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
             .withPropertyValues("bluetape4k.spring.modulith.exposed.observability.include-unloadable=false")
             .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
-                val registry = context.getBean(MeterRegistry::class.java)
+                val registry = context.getBean<MeterRegistry>()
 
                 registry.find(ExposedEventPublicationMetrics.METER_NAME)
                     .tag("state", "unloadable")
@@ -181,7 +194,7 @@ class ExposedModulithObservabilityAutoConfigurationTest {
             )
             .withUserConfiguration<MeteredRepositoryConfiguration>()
             .run { context ->
-                val registry = context.getBean(MeterRegistry::class.java)
+                val registry = context.getBean<MeterRegistry>()
 
                 registry.find(ExposedEventPublicationMetrics.METER_NAME)
                     .tag("state", "incomplete")
@@ -225,18 +238,6 @@ class ExposedModulithObservabilityAutoConfigurationTest {
             .gauge()
             .shouldNotBeNull()
             .value()
-
-    companion object: KLogging() {
-
-        private fun meteredRepository(): ExposedEventPublicationRepository {
-            return mockk(relaxed = true) {
-                every { countIncompletePublications() } returns 2
-                every { countCompletedPublications() } returns 1
-                every { countFailedPublications() } returns 1
-                every { countUnloadablePublications() } returns 1
-            }
-        }
-    }
 
 }
 

@@ -59,7 +59,7 @@ class R2dbcFluentQueryMultiDbTest: AbstractExposedR2dbcRepositoryTest() {
                 .log("NameView")
                 .toList()
                 .map { it.name }
-            
+
             projectedNames shouldBeEqualTo listOf("Alice")
         }
     }

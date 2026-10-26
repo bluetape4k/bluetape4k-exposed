@@ -44,6 +44,7 @@ import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.modulith.events.core.EventSerializer
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
+import org.testcontainers.utility.Base58
 import java.io.Serializable
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
@@ -131,7 +132,7 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
                     "spring.datasource.driver-class-name" to testDB.driver,
                     "spring.datasource.username" to testDB.user,
                     "spring.datasource.password" to testDB.pass,
-                    "bluetape4k.spring.modulith.exposed.table-name" to "EVENT_PUBLICATION_${System.nanoTime()}",
+                    "bluetape4k.spring.modulith.exposed.table-name" to "EVENT_PUBLICATION_${Base58.randomString(8)}",
                     "bluetape4k.spring.modulith.exposed.initialize-schema" to "true",
                     "test.cache.actor.table-name" to tableName,
                     "test.cache.actor.write-mode" to writeMode.name,

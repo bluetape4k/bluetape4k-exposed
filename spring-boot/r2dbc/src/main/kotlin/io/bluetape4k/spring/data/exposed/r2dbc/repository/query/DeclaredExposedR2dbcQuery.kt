@@ -4,6 +4,7 @@ import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.warn
 import io.bluetape4k.spring.data.exposed.common.repository.query.replaceSqlParameters
 import io.bluetape4k.spring.data.exposed.common.repository.query.requireEntityQueryId
+import io.bluetape4k.support.requireNotNull
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.IColumnType
@@ -47,7 +48,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
 
     override fun getQueryMethod(): ExposedR2dbcQueryMethod = queryMethod
 
-    override fun execute(parameters: Array<out Any?>): Any? =
+    override fun execute(parameters: Array<out Any?>): Any =
         error("DeclaredExposedR2dbcQuery '${queryMethod.name}' must be invoked as a suspend method")
 
     suspend fun executeSuspending(parameters: Array<out Any?>): Any? {
@@ -62,7 +63,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         }
     }
 
-    private suspend fun executeInTransaction(tx: R2dbcTransaction, boundSql: BoundSql): Any? {
+    private suspend fun executeInTransaction(tx: R2dbcTransaction, boundSql: BoundSql): Any {
         val idColumnName = mapper.table.id.name
         val rawIds = try {
             tx.exec(boundSql.sql, boundSql.args, StatementType.SELECT) { row ->
@@ -127,7 +128,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
             val char = this[index]
             when {
                 dollarQuote != null                                  -> {
-                    val delimiter = requireNotNull(dollarQuote)
+                    val delimiter = dollarQuote.requireNotNull("dollarQuote")
                     if (startsWith(delimiter, index)) {
                         sanitized.append(delimiter)
                         index += delimiter.length - 1
@@ -201,7 +202,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
             val char = sql[index]
             when {
                 dollarQuote != null                                      -> {
-                    val delimiter = requireNotNull(dollarQuote)
+                    val delimiter = dollarQuote.requireNotNull("dollarQuote")
                     if (sql.startsWith(delimiter, index)) {
                         index += delimiter.length - 1
                         dollarQuote = null
@@ -268,7 +269,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
             val char = selectedColumns[index]
             when {
                 dollarQuote != null                                                  -> {
-                    val delimiter = requireNotNull(dollarQuote)
+                    val delimiter = dollarQuote.requireNotNull("dollarQuote")
                     if (selectedColumns.startsWith(delimiter, index)) {
                         index += delimiter.length - 1
                         dollarQuote = null

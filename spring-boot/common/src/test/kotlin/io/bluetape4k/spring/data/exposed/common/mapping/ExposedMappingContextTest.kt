@@ -86,8 +86,6 @@ class ExposedMappingContextTest {
         val first = entities.first()
         entities.all { it === first }.shouldBeTrue()
 
-        entities.all { entity ->
-            entity.getTable()?.tableName == "users"
-        }.shouldBeTrue()
+        entities.all { it.getTable()?.tableName == "users" }.shouldBeTrue()
     }
 }

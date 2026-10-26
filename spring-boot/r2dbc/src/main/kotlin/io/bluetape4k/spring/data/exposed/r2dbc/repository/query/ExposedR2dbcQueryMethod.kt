@@ -15,7 +15,7 @@ import kotlin.reflect.jvm.kotlinFunction
  * Exposed R2DBC Repository 메서드에 대한 메타데이터입니다.
  */
 internal class ExposedR2dbcQueryMethod(
-    val sourceMethod: Method,
+    sourceMethod: Method,
     metadata: RepositoryMetadata,
     factory: ProjectionFactory,
     parametersFunction: ((ParametersSource) -> Parameters<*, *>)? = null,

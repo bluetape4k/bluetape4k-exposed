@@ -11,6 +11,7 @@ import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineQueryB
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -123,8 +124,8 @@ private suspend fun compileCoroutineQbeConsumer(
     example: Example<User>,
 ): List<NameProjection> {
     repository.findOne(example)
-    repository.findAll(example)
-    repository.findAll(example, Sort.by("name"))
+    repository.findAll(example).collect()
+    repository.findAll(example, Sort.by("name")).collect()
     repository.count(example)
     repository.exists(example)
 

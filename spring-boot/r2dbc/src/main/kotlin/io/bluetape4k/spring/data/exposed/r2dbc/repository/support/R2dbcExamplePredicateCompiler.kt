@@ -15,7 +15,7 @@ internal class R2dbcExamplePredicateCompiler(
 ) {
 
     fun compile(snapshot: R2dbcExampleSnapshot): Op<Boolean> {
-        val conditions = snapshot.properties.mapNotNull { property ->
+        val conditions = snapshot.properties.map { property ->
             val resolved = propertyResolver.resolve(property.property)
             if (property.value == null && property.includeNull) {
                 resolved.column.isNull()

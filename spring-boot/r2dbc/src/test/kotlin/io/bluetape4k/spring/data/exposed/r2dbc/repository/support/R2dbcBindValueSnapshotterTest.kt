@@ -27,6 +27,7 @@ class R2dbcBindValueSnapshotterTest {
         @Suppress("UNCHECKED_CAST")
         val copy = R2dbcBindValueSnapshotter.snapshot(original) as Map<String, Any?>
         bytes[0] = 9
+        @Suppress("UNCHECKED_CAST")
         (original["values"] as MutableList<Any?>)[0] = "changed"
         buffer.put(0, 8)
 

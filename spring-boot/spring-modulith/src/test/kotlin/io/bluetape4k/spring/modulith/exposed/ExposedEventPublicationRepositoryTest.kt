@@ -81,10 +81,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
         fun enabledDialects(): Set<TestDB> = TestDB.enabledDialects()
 
         @JvmStatic
-        fun dialectCompletionModes(): List<Arguments> =
-            enabledDialects().flatMap { testDB ->
-                CompletionMode.entries.map { completionMode -> Arguments.of(testDB, completionMode) }
-            }
+        fun dialectCompletionModes(): List<Arguments> = enabledDialects().flatMap { testDB ->
+            CompletionMode.entries.map { completionMode -> Arguments.of(testDB, completionMode) }
+        }
     }
 
     @ParameterizedTest(name = "{0}")
