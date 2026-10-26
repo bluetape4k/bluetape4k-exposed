@@ -32,7 +32,6 @@ import org.springframework.batch.core.step.StepExecution
 import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.infrastructure.item.Chunk
 import org.springframework.batch.infrastructure.item.ExecutionContext
-import org.springframework.batch.infrastructure.item.ItemReader
 import org.springframework.batch.infrastructure.item.ItemWriter
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.transaction.support.TransactionTemplate
@@ -264,7 +263,7 @@ class ExposedItemWriterMultiRowValuesTest {
         val step = StepBuilder("multi-row-step", repository)
             .chunk<Row, Row>(2)
             .transactionManager(checkNotNull(tx.transactionManager))
-            .reader(ItemReader { if (input.hasNext()) input.next() else null })
+            .reader { if (input.hasNext()) input.next() else null }
             .writer(writer)
             .build()
         step.execute(execution)

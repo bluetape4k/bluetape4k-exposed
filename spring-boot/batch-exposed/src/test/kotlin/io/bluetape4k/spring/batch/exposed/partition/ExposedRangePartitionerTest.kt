@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInRange
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
@@ -51,10 +52,8 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
             )
 
             val partitions = partitioner.partition(4)
+                .onEach { log.debug { "partition=$it" } }
 
-            partitions.forEach { (key, context) ->
-                log.debug { "key=$key, context=$context" }
-            }
             partitions shouldHaveSize 4
 
             val ranges = partitions.values.map { ctx ->
@@ -82,11 +81,12 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                 database = testDB.db,
             )
 
-            val partitions = partitioner.partition(8)
-            log.debug { "partitions=$partitions" }
+            val partitions = partitioner.partition(8).onEach { log.debug { "partition=$it" } }
             partitions shouldHaveSize 1
-            partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 1L
-            partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo 1L
+            partitions["partition-0"].shouldNotBeNull().let {
+                it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 1L
+                it.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo 1L
+            }
         }
     }
 

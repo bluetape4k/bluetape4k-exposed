@@ -25,7 +25,6 @@ import org.springframework.batch.core.partition.support.TaskExecutorPartitionHan
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
-import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -80,12 +79,12 @@ class ParallelQueryIntegrationTest: AbstractExposedBatchJobTest() {
             .chunk<SourceRecord, TargetRecord>(500)
             .transactionManager(transactionManager)
             .reader(keysetReader())
-            .processor(ItemProcessor { source ->
+            .processor { source ->
                 TargetRecord(
                     sourceName = source.name.uppercase(),
                     transformedValue = source.value * 2,
                 )
-            })
+            }
             .writer(itemWriter())
             .build()
 

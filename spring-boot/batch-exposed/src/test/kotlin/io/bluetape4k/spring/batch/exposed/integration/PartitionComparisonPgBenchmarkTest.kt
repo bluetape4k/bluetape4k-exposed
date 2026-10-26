@@ -31,7 +31,6 @@ import org.springframework.batch.core.partition.support.TaskExecutorPartitionHan
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
-import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -89,9 +88,9 @@ class PartitionComparisonPgBenchmarkTest: AbstractExposedBatchJobTest() {
             .chunk<SourceRecord, TargetRecord>(500)
             .transactionManager(transactionManager)
             .reader(keysetReader())
-            .processor(ItemProcessor { source ->
+            .processor { source ->
                 TargetRecord(sourceName = source.name.uppercase(), transformedValue = source.value * 2)
-            })
+            }
             .writer(itemWriter())
             .build()
 
@@ -169,7 +168,7 @@ class PartitionComparisonPgBenchmarkTest: AbstractExposedBatchJobTest() {
 
         @Bean(name = ["pgPar4PartitionHandler"])
         fun par4PartitionHandler(): TaskExecutorPartitionHandler = TaskExecutorPartitionHandler().apply {
-            setStep(workerStep())
+            step = workerStep()
             setTaskExecutor(virtualThreadPartitionTaskExecutor(concurrencyLimit = 4))
             gridSize = 4
         }
@@ -202,7 +201,7 @@ class PartitionComparisonPgBenchmarkTest: AbstractExposedBatchJobTest() {
 
         @Bean(name = ["pgPar8PartitionHandler"])
         fun par8PartitionHandler(): TaskExecutorPartitionHandler = TaskExecutorPartitionHandler().apply {
-            setStep(workerStep())
+            step = workerStep()
             setTaskExecutor(virtualThreadPartitionTaskExecutor(concurrencyLimit = 8))
             gridSize = 8
         }
@@ -265,6 +264,6 @@ class PartitionComparisonPgBenchmarkTest: AbstractExposedBatchJobTest() {
     }
 
     private fun uniqueParams() = JobParametersBuilder()
-        .addLong("run.id", System.currentTimeMillis())
+        .addLong("run.id", System.nanoTime())
         .toJobParameters()
 }

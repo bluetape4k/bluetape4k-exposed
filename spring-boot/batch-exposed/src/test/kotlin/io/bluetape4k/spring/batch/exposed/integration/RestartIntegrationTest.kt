@@ -27,7 +27,6 @@ import org.springframework.batch.core.partition.support.TaskExecutorPartitionHan
 import org.springframework.batch.core.repository.JobRepository
 import org.springframework.batch.core.step.Step
 import org.springframework.batch.core.step.builder.StepBuilder
-import org.springframework.batch.infrastructure.item.ItemProcessor
 import org.springframework.batch.test.JobOperatorTestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -94,13 +93,13 @@ class RestartIntegrationTest: AbstractExposedBatchJobTest() {
             .chunk<SourceRecord, TargetRecord>(100)
             .transactionManager(transactionManager)
             .reader(keysetReader())
-            .processor(ItemProcessor { source ->
+            .processor { source ->
                 // shouldFail=true 이고 name이 "item-300"이면 예외 → 청크 롤백 → Job FAILED
                 if (shouldFail.get() && source.name == "item-300") {
                     throw RuntimeException("item-300 처리 중 의도적 실패")
                 }
                 TargetRecord(sourceName = source.name.uppercase(), transformedValue = source.value * 2)
-            })
+            }
             .writer(itemWriter())
             .build()
 
