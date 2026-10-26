@@ -11,7 +11,7 @@ inline fun <reified T: Any> deserializeOrNull(value: Any, serializer: JacksonSer
     else         -> serializer.deserializeFromString<T>(value.toString())
 }
 
-fun readJsonNodeOrNull(value: Any, mapper: ObjectMapper): JsonNode? = when (value) {
+internal fun readJsonNodeOrNull(value: Any, mapper: ObjectMapper): JsonNode? = when (value) {
     is JsonNode  -> value
     is String    -> mapper.readTree(value)
     is ByteArray -> mapper.readTree(value)

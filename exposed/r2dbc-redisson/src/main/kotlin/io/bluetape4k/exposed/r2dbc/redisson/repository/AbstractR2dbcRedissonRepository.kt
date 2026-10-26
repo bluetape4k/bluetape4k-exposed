@@ -76,7 +76,9 @@ abstract class AbstractR2dbcRedissonRepository<ID: Any, E: Serializable>(
     private val lifecycleScope = scope.linkedSupervisorScope("R2dbc-RedissonRepository-Lifecycle")
     private val lifecycleJob = lifecycleScope.coroutineContext[Job].requireNotNull { "lifecycle job can not be null." }
 
-    companion object: KLoggingChannel()
+    companion object: KLoggingChannel() {
+        const val DEFAULT_BATCH_SIZE = R2dbcRedissonRepository.DEFAULT_BATCH_SIZE
+    }
 
     init {
         ExposedR2dbcRedissonCodecSafety.requireSafe(config, trustedBinaryCache)

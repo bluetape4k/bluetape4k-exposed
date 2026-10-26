@@ -16,14 +16,14 @@ import java.util.concurrent.locks.ReentrantLock
  * [io.bluetape4k.exposed.cache.LocalCacheConfig]가 동일한 fail-closed 상한을
  * 사용하도록 이 파일에만 선언합니다.
  */
-const val MAX_WRITE_BEHIND_QUEUE_CAPACITY: Int = 100_000
+internal const val MAX_WRITE_BEHIND_QUEUE_CAPACITY: Int = 100_000
 
 /** Adapter-owned bounded retry policy constants shared by the conformance contract. */
-const val MAX_FLUSH_RETRY_ATTEMPTS: Int = 8
-const val INITIAL_FLUSH_RETRY_BACKOFF_MILLIS: Long = 10L
-const val MAX_FLUSH_RETRY_BACKOFF_MILLIS: Long = 1_000L
+internal const val MAX_FLUSH_RETRY_ATTEMPTS: Int = 8
+internal const val INITIAL_FLUSH_RETRY_BACKOFF_MILLIS: Long = 10L
+internal const val MAX_FLUSH_RETRY_BACKOFF_MILLIS: Long = 1_000L
 
-fun flushRetryBackoffMillis(failedAttempt: Int): Long {
+internal fun flushRetryBackoffMillis(failedAttempt: Int): Long {
     failedAttempt.requirePositiveNumber("failedAttempt")
 
     val exponent = (failedAttempt - 1).coerceAtMost(7)
@@ -31,7 +31,7 @@ fun flushRetryBackoffMillis(failedAttempt: Int): Long {
 }
 
 /** Worker가 flush를 포기한 이유를 안정적인 상태 값으로 표현합니다. */
-enum class WriteBehindFailureKind {
+internal enum class WriteBehindFailureKind {
     FLUSH,
     WORKER,
     CLOSE_TIMEOUT,
@@ -39,14 +39,14 @@ enum class WriteBehindFailureKind {
 }
 
 /** Worker가 close 이후 관찰한 terminal 결과입니다. */
-enum class WriteBehindWorkerCompletion {
+internal enum class WriteBehindWorkerCompletion {
     DRAINED,
     CANCELLED,
     FAILED,
 }
 
 /** Coordinator가 adapter에 제공하는 raw 예외 없는 lifecycle snapshot입니다. */
-data class CoordinatorSnapshot(
+internal data class CoordinatorSnapshot(
     val mode: CacheWriteMode,
     val queueDepth: Int,
     val workerState: CacheWorkerState,
@@ -59,13 +59,13 @@ data class CoordinatorSnapshot(
  * Token은 coordinator가 발급한 인스턴스 identity로만 유효합니다. adapter가
  * 임의의 token을 만들거나 이미 정산된 token을 재사용하면 거부됩니다.
  */
-data class AdmissionToken(
-    val owner: WriteBehindCoordinator,
-    val sequence: Long,
+internal class AdmissionToken internal constructor(
+    internal val owner: WriteBehindCoordinator,
+    internal val sequence: Long,
 )
 
 /** close owner만 completion을 발행할 수 있도록 하는 내부 lease입니다. */
-sealed interface CloseLease {
+internal sealed interface CloseLease {
 
     class Owner private constructor(internal val token: Any): CloseLease {
         internal companion object {
@@ -76,14 +76,14 @@ sealed interface CloseLease {
     data object Follower: CloseLease
 }
 
-enum class CloseCompletionKind {
+internal enum class CloseCompletionKind {
     COMPLETED,
     TIMEOUT,
     INTERRUPTED,
     FAILED,
 }
 
-data class CloseCompletion(
+internal data class CloseCompletion(
     val kind: CloseCompletionKind,
     val workerState: CacheWorkerState,
     val queueDepth: Int,
@@ -98,7 +98,7 @@ data class CloseCompletion(
  */
 // admission, flush, worker, close 전환이 하나의 lock 경계를 공유하는 상태 머신입니다.
 @Suppress("TooManyFunctions")
-class WriteBehindCoordinator(
+internal class WriteBehindCoordinator(
     private val mode: CacheWriteMode,
 ) {
 

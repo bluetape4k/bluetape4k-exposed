@@ -58,10 +58,11 @@ object ClickHouseDatabase: KLogging() {
      * ClickHouse JDBC 드라이버 클래스 이름입니다.
      *
      * 이 값은 의도적으로 `const val`이 아니라 `val`입니다. 프로퍼티 접근이 객체 초기화(`init {}`)
-     * 를 반드시 트리거해야 JDBC driver/dialect 등록이 실행되기 때문입니다. `const val`은 컴파일 시점에
-     * inline되어 객체 초기화를 건너뛸 수 있습니다.
+     * 를 반드시 트리거해야 JDBC driver/dialect 등록이 실행되기 때문입니다. 이 값은 객체 초기화를
+     * 보존하기 위해 일반 `val`로 유지합니다.
      */
-    const val DRIVER = "com.clickhouse.jdbc.ClickHouseDriver"
+    @Suppress("MayBeConstant")
+    val DRIVER = "com.clickhouse.jdbc.ClickHouseDriver"
 
     init {
         Database.registerJdbcDriver("jdbc:clickhouse", DRIVER, ClickHouseDialect.dialectName)

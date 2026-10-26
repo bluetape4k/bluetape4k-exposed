@@ -412,6 +412,7 @@ public final class io/bluetape4k/exposed/core/statements/api/ExposedBlobExtensio
 	public static final fun toByteArray (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)[B
 	public static final fun toExposedBlob (Ljava/io/InputStream;)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
 	public static final fun toExposedBlob (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
+	public static final fun toExposedBlob (Ljava/lang/String;Ljava/nio/charset/Charset;)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
 	public static final fun toExposedBlob ([B)Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;
 	public static final fun toInputStream (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/io/InputStream;
 	public static final fun toUtf8String (Lorg/jetbrains/exposed/v1/core/statements/api/ExposedBlob;)Ljava/lang/String;

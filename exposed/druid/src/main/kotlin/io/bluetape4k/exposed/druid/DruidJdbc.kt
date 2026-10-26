@@ -16,7 +16,9 @@ import java.sql.ResultSet
 object DruidJdbc: KLogging() {
 
     /** Apache Calcite Avatica remote JDBC driver class name입니다. */
-    const val DRIVER = "org.apache.calcite.avatica.remote.Driver"
+    // 기존 JVM getter ABI와 object 초기화 순서를 보존하므로 const로 바꾸지 않습니다.
+    @Suppress("MayBeConstant")
+    val DRIVER = "org.apache.calcite.avatica.remote.Driver"
 
     init {
         Class.forName(DRIVER)

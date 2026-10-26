@@ -1,3 +1,5 @@
+@file:JvmName("TablesKt")
+
 package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.support.requireNotBlank

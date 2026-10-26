@@ -30,7 +30,9 @@ import javax.sql.DataSource
 object CockroachDatabase: KLogging() {
 
     /** CockroachDB의 PostgreSQL wire protocol에 사용하는 PostgreSQL JDBC driver입니다. */
-    const val DRIVER: String = "org.postgresql.Driver"
+    // 기존 JVM getter ABI를 보존하므로 const로 바꾸지 않습니다.
+    @Suppress("MayBeConstant")
+    val DRIVER: String = "org.postgresql.Driver"
 
     /** Host, SQL port, database, credential을 사용해 CockroachDB에 연결합니다. */
     @Suppress("LongParameterList")

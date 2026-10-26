@@ -1,6 +1,5 @@
 package io.bluetape4k.exposed.cache
 
-import io.bluetape4k.ToStringBuilder
 import io.bluetape4k.exposed.cache.internal.MAX_WRITE_BEHIND_QUEUE_CAPACITY
 import io.bluetape4k.javatimes.minutes
 import io.bluetape4k.javatimes.requirePositiveDuration
@@ -105,14 +104,4 @@ open class LocalCacheConfig(
         val WRITE_BEHIND = LocalCacheConfig(writeMode = CacheWriteMode.WRITE_BEHIND)
     }
 
-    override fun toString(): String =
-        ToStringBuilder(this)
-            .add("keyPrefix", keyPrefix)
-            .add("maximumSize", maximumSize)
-            .add("expireAfterWrite", expireAfterWrite)
-            .add("expireAfterAccess", expireAfterAccess)
-            .add("writeMode", writeMode)
-            .add("writeBehindBatchSize", writeBehindBatchSize)
-            .add("writeBehindQueueCapacity", writeBehindQueueCapacity)
-            .toString()
 }

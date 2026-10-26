@@ -21,7 +21,7 @@ class ClickHouseRowBinaryExecutor(
     private val options: ClickHouseRowBinaryOptions,
 ) {
 
-    companion object: KLogging()
+    private companion object: KLogging()
 
     private var unusable = false
 

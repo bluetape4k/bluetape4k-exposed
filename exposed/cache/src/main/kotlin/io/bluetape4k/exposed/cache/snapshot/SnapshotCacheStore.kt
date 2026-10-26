@@ -80,7 +80,6 @@ class SnapshotCacheLookup<ID: Any, V: Serializable> private constructor(
         ): SnapshotCacheLookup<ID, V> = SnapshotCacheLookup(null, miss)
     }
 
-    override fun toString(): String = "SnapshotCacheLookup(snapshot=$snapshot, miss=$miss)"
 }
 
 /**

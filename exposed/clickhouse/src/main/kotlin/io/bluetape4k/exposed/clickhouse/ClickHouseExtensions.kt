@@ -121,6 +121,17 @@ suspend fun <T> withSuspendTransaction(
 }
 
 /**
+ * 기존 호출 호환성을 위해 유지하는 ClickHouse suspend transaction 별칭입니다.
+ * 새 코드는 [withSuspendTransaction]을 사용하세요.
+ */
+@Deprecated("Use withSuspendTransaction instead", ReplaceWith("withSuspendTransaction(db, dispatcher, block)"))
+suspend fun <T> suspendTransaction(
+    db: Database,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    block: JdbcTransaction.() -> T,
+): T = withSuspendTransaction(db, dispatcher, block)
+
+/**
  * ClickHouse 쿼리 결과를 [Flow]로 반환합니다.
  *
  * 구현상 JDBC `ResultSet` 수명과 Exposed 트랜잭션 경계를 안전하게 유지하기 위해

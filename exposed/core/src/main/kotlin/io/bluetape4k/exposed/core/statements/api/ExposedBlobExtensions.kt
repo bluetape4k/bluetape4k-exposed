@@ -17,7 +17,10 @@ import java.nio.charset.Charset
  * // blob.bytes.size == 5
  * ```
  */
-fun String.toExposedBlob(charset: Charset = Charsets.UTF_8): ExposedBlob =
+fun String.toExposedBlob(): ExposedBlob = toExposedBlob(Charsets.UTF_8)
+
+/** 지정한 [charset]으로 문자열을 인코딩해 [ExposedBlob]으로 변환합니다. */
+fun String.toExposedBlob(charset: Charset): ExposedBlob =
     ExposedBlob(toByteArray(charset))
 
 /**
