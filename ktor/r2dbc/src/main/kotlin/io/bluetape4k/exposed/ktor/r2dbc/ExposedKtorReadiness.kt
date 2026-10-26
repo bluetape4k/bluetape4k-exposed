@@ -28,6 +28,7 @@ private class R2dbcReadinessProbe(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun probe(timeout: kotlin.time.Duration): ExposedKtorReadinessOutcome {
         require(timeout.isFinite() && timeout.isPositive()) { "timeout must be finite and positive." }
+
         return try {
             suspendTransaction(db = db) {
                 exec("SELECT 1")

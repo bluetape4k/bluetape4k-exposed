@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.ktor.tenant.r2dbc
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
 import io.bluetape4k.ktor.tenant.KtorTenantContext
 import io.bluetape4k.logging.KLogging
@@ -27,15 +28,16 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedTenantR2dbcTransactionTest {
 
@@ -221,7 +223,7 @@ class ExposedTenantR2dbcTransactionTest {
     @Test
     fun `cancelled request does not contaminate later tenant routing`() = testApplication {
         val meterRegistry = SimpleMeterRegistry()
-        val resolverInputs = CopyOnWriteArrayList<TenantId>()
+        val resolverInputs = ConcurrentLinkedQueue<TenantId>()
         val databaseResolver = recordingDatabaseResolver(resolverInputs)
         val transactionStarted = CompletableDeferred<Unit>()
         val transactionCompleted = CompletableDeferred<Unit>()
@@ -252,9 +254,9 @@ class ExposedTenantR2dbcTransactionTest {
                         databaseResolver = databaseResolver,
                         meterRegistry = meterRegistry,
                     ) {
-                        checkNotNull(exec("SELECT marker FROM tenant_marker") { row ->
+                        exec("SELECT marker FROM tenant_marker") { row ->
                             row.get(0, String::class.java)
-                        }.shouldNotBeNull().single())
+                        }?.single().shouldNotBeNull()
                     }
                     call.respondText(marker)
                 }
@@ -263,11 +265,11 @@ class ExposedTenantR2dbcTransactionTest {
 
         coroutineScope {
             val request = async { client.get("/cancel/a") }
-            withTimeout(5_000.milliseconds) { transactionStarted.await() }
-            val serverRequest = withTimeout(5_000.milliseconds) { requestJob.await() }
+            transactionStarted.awaitUntil(5.seconds)
+            val serverRequest = requestJob.awaitUntil(5.seconds)
             serverRequest.cancelAndJoin()
             serverRequest.isCancelled.shouldBeTrue()
-            withTimeout(5_000.milliseconds) { transactionCompleted.await() }
+            transactionCompleted.awaitUntil(5.seconds)
             request.cancelAndJoin()
         }
 
@@ -292,7 +294,7 @@ class ExposedTenantR2dbcTransactionTest {
     }
 
     private suspend fun recordingDatabaseResolver(
-        resolverInputs: MutableList<TenantId>,
+        resolverInputs: Queue<TenantId>,
     ): (TenantId) -> R2dbcDatabase {
         val databases = mapOf(
             TenantId("a") to tenantDatabase("tenant-a"),
@@ -320,7 +322,7 @@ class ExposedTenantR2dbcTransactionTest {
 
     private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
         config().meterFilter(object: MeterFilter {
-            override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+            override fun map(id: Meter.Id): Meter.Id = error("metric recording failed")
         })
     }
 }

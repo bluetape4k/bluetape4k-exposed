@@ -23,6 +23,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorR2dbcCancellationTest {
 
@@ -46,6 +47,7 @@ class ExposedKtorR2dbcCancellationTest {
         val database = testDB.connect()
         val primary = if (fatal) RequestError("transaction failed") else RequestFailure("transaction failed")
         val metricFailure = IllegalStateException("metric recording failed")
+
         val registry = SimpleMeterRegistry()
         registry.config().meterFilter(object: MeterFilter {
             override fun map(id: Meter.Id): Meter.Id = throw metricFailure
@@ -89,7 +91,7 @@ class ExposedKtorR2dbcCancellationTest {
         }
         try {
             // 단계별 barrier가 필요한 단일 취소 시나리오이므로 stress tester 대신 실제 자식 Job을 사용한다.
-            withTimeout(timeMillis = 10_000) {
+            withTimeout(10.seconds) {
                 coroutineScope {
                     val entered = CompletableDeferred<Unit>()
                     val observed = CompletableDeferred<Throwable>()

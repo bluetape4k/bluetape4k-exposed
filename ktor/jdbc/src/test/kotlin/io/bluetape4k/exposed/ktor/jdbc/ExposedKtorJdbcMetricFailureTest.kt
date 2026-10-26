@@ -9,6 +9,7 @@ import io.ktor.server.application.ApplicationCall
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.clearMocks
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -19,6 +20,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 
@@ -28,12 +30,19 @@ class ExposedKtorJdbcMetricFailureTest {
     private class RequestError: AssertionError("transaction failed")
     private class RequestCancellation: CancellationException("transaction cancelled")
 
+    private val applicationCall = mockk<ApplicationCall>()
+
+    @BeforeEach
+    fun beforeEach() {
+        clearMocks(applicationCall)
+    }
+
     @Test
     fun `success metric failure does not change committed jdbc result`() = runSuspendIO {
         withJdbcResources { database, dispatcher, registry, _ ->
             transaction(database) { SchemaUtils.create(MetricItems) }
 
-            val result = mockk<ApplicationCall>().exposedJdbcTransaction(database, dispatcher, registry) {
+            val result = applicationCall.exposedJdbcTransaction(database, dispatcher, registry) {
                 MetricItems.insert { it[value] = "committed" }
                 "committed"
             }
@@ -51,7 +60,7 @@ class ExposedKtorJdbcMetricFailureTest {
             val primary = RequestFailure()
 
             val failure = assertFailsWith<ExposedKtorTransactionException> {
-                mockk<ApplicationCall>().exposedJdbcTransaction(database, dispatcher, registry) {
+                applicationCall.exposedJdbcTransaction(database, dispatcher, registry) {
                     throw primary
                 }
             }
@@ -68,7 +77,7 @@ class ExposedKtorJdbcMetricFailureTest {
             val primary = RequestCancellation()
 
             val failure = assertFailsWith<RequestCancellation> {
-                mockk<ApplicationCall>().exposedJdbcTransaction(database, dispatcher, registry) {
+                applicationCall.exposedJdbcTransaction(database, dispatcher, registry) {
                     throw primary
                 }
             }
@@ -85,7 +94,7 @@ class ExposedKtorJdbcMetricFailureTest {
             val primary = RequestError()
 
             val failure = assertFailsWith<RequestError> {
-                mockk<ApplicationCall>().exposedJdbcTransaction(database, dispatcher, registry) {
+                applicationCall.exposedJdbcTransaction(database, dispatcher, registry) {
                     throw primary
                 }
             }

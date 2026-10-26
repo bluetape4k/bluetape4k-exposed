@@ -200,7 +200,7 @@ class ExposedKtorAbiCompatibilityTest {
                     currentMember = if (declaredName == owner) "<init>" else declaredName
                 }
 
-                trimmed.isNotEmpty() -> currentMember = null
+                trimmed.isNotEmpty()              -> currentMember = null
             }
         }
         return descriptors
