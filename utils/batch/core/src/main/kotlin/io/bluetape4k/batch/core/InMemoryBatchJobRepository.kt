@@ -473,7 +473,8 @@ class InMemoryBatchJobRepository(
             checkpoint?.let { checkpoints[execution.id] = it }
         }
         log.debug {
-            "StepExecution 완료: status=${report.status}, read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
+            "StepExecution 완료: status=${report.status}, " +
+                    "read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
         }
     }
 

@@ -24,9 +24,12 @@ private val SAFE_SETTING_NAMES = setOf(
     "min_rows_for_wide_part",
     "storage_policy",
 )
-private val UNSAFE_RAW_FORBIDDEN_TOKENS = listOf(";", "--", "/*", "*/", "\n", "\r", "'", "\"")
+private val UNSAFE_RAW_FORBIDDEN_TOKENS = listOf(
+    ";", "--", "/*", "*/", "\n", "\r", "'", "\"",
+)
 private val UNSAFE_RAW_CLAUSE_BOUNDARY = Regex(
-    pattern = "\\b(engine|order\\s+by|partition\\s+by|primary\\s+key|sample\\s+by|settings|create|alter|drop|truncate|insert|update|delete)\\b",
+    pattern = "\\b(engine|order\\s+by|partition\\s+by|primary\\s+key|" +
+        "sample\\s+by|settings|create|alter|drop|truncate|insert|update|delete)\\b",
     option = RegexOption.IGNORE_CASE,
 )
 

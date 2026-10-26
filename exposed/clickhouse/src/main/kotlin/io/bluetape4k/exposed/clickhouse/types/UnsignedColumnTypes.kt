@@ -84,10 +84,15 @@ class ClickHouseULongColumnType: ColumnType<ULong>() {
             }
             value.toLong().toULong()
         }
-        is java.math.BigDecimal -> value.toBigIntegerExact().requireClickHouseUInt64().toLong().toULong()
+        is java.math.BigDecimal -> value.toBigIntegerExact()
+            .requireClickHouseUInt64()
+            .toLong()
+            .toULong()
         is Number     -> {
             val longValue = value.toLong()
-            longValue.requireZeroOrPositiveNumber { "Signed numeric value $value cannot represent UInt64 without truncation" }
+            longValue.requireZeroOrPositiveNumber {
+                "Signed numeric value $value cannot represent UInt64 without truncation"
+            }
             longValue.toULong()
         }
         is String     -> runCatching { value.toULong() }.getOrElse { error("Malformed UInt64 value: $value") }

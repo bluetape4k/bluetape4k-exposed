@@ -71,7 +71,7 @@ inline fun <reified T: Any> Readable.getFastjsonOrNull(
     index: Int,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    return get(index)?.let { deserializeValueOrNull(it) }
+    return get(index)?.let { deserializeValueOrNull<T>(it, serializer) }
 }
 
 /**
@@ -94,7 +94,7 @@ inline fun <reified T: Any> Readable.getFastjsonOrNull(
     name: String,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    return get(name)?.let { deserializeValueOrNull(it) }
+    return get(name)?.let { deserializeValueOrNull<T>(it, serializer) }
 }
 
 

@@ -57,6 +57,7 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
     }
 
     @Test
+    @Suppress("LongMethod") // projection/page/slice 계약을 하나의 실제 repository 흐름으로 검증합니다.
     fun `fluent query uses immutable plan, projection, page and slice`() = runSuspendIO {
         withTables(TestDB.H2, Users) {
             insertUser("Alice", "alice@example.com", 30)

@@ -37,8 +37,10 @@ data class JdbcRedissonSnapshotInvalidatorConfig(
     val maxOutstandingEncodedBytes: Long = 4L * 1024 * 1024,
     val namespaceVerificationTimeout: Duration = 2.seconds(),
     val multiNode: Boolean = true,
-    val synchronizationStrategy: LocalCachedMapOptions.SyncStrategy = LocalCachedMapOptions.SyncStrategy.INVALIDATE,
-    val reconnectionStrategy: LocalCachedMapOptions.ReconnectionStrategy = LocalCachedMapOptions.ReconnectionStrategy.CLEAR,
+    val synchronizationStrategy: LocalCachedMapOptions.SyncStrategy =
+        LocalCachedMapOptions.SyncStrategy.INVALIDATE,
+    val reconnectionStrategy: LocalCachedMapOptions.ReconnectionStrategy =
+        LocalCachedMapOptions.ReconnectionStrategy.CLEAR,
     val trustedBinaryCache: Boolean = false,
 ): Serializable {
 

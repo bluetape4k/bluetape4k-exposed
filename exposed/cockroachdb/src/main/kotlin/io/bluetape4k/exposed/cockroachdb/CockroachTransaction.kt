@@ -151,6 +151,7 @@ inline fun <T> withCockroachTransaction(
 internal object CockroachTransactionRetry {
 
     @PublishedApi
+    @Suppress("ThrowsCount")
     internal fun <T> execute(
         options: CockroachTransactionRetryOptions,
         block: () -> T,

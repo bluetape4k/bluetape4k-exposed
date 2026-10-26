@@ -140,7 +140,8 @@ open class ExposedKeysetItemReader<T: Any>(
     ) {
         fun isBefore(other: CursorPosition): Boolean =
             key < other.key ||
-                    (key == other.key && tieBreaker != null && other.tieBreaker != null && tieBreaker < other.tieBreaker)
+                    (key == other.key && tieBreaker != null && other.tieBreaker != null &&
+                            tieBreaker < other.tieBreaker)
     }
 
     private var minId: Long = 0L

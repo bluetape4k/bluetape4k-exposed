@@ -69,6 +69,7 @@ class BatchInsertTest: AbstractClickHouseTest() {
     }
 
     @Test
+    @Suppress("TooGenericExceptionThrown") // ClickHouse의 transaction 부재 경계를 의도적으로 시뮬레이션합니다.
     fun `트랜잭션 원자성 없음 - 예외 발생해도 앞선 INSERT 유지`() {
         val firstHalf = List(HALF_BATCH) { i ->
             Triple(i.toLong(), "event_$i", "kr")

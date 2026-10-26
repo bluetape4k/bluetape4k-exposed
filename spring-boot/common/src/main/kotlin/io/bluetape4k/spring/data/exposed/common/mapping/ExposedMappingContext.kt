@@ -1,7 +1,6 @@
 package io.bluetape4k.spring.data.exposed.common.mapping
 
 import io.bluetape4k.spring.data.exposed.common.repository.support.snakeCase
-import io.bluetape4k.support.equalsIgnoreCase
 import org.springframework.beans.BeanUtils
 import org.springframework.data.core.TypeInformation
 import org.springframework.data.mapping.PersistentPropertyPaths
@@ -26,7 +25,7 @@ class ExposedMappingContext:
                 .filter { descriptor ->
                     table.columns.any { column ->
                         column.name == descriptor.name ||
-                                column.name.equalsIgnoreCase(descriptor.name.snakeCase())
+                        column.name.equals(descriptor.name.snakeCase(), ignoreCase = true)
                     }
                 }
                 .map { descriptor -> Property.of(typeInformation, descriptor) }

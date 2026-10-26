@@ -15,13 +15,21 @@ class BinarySerializedTransformersTest {
     private data class SamplePayload(
         val name: String,
         val age: Int,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     private data class ComplexPayload(
         val id: Long,
         val name: String,
         val scores: List<Int>,
-    ): Serializable
+    ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+    }
 
     // --- BinarySerializedBinaryTransformer ---
 

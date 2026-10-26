@@ -771,6 +771,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
     }
 
     @Test
+    @Suppress("ExplicitGarbageCollectionCall") // weak-reference retention 계약을 검증하려면 GC 힌트가 필요합니다.
     fun `never completing future retains no measured invalidation payload`() {
         val never = CompletableFuture<Long>()
         val map = RecordingLocalMap<Long>(retainSubmittedIds = false).thenReturn(rFuture(never))

@@ -61,8 +61,9 @@ class ClickHouseDefaultLiteralTest: AbstractClickHouseTest() {
             try {
                 SchemaUtils.create(table)
                 val defaultExpression = exec(
-                    "SELECT default_expression FROM system.columns " +
-                            "WHERE database = currentDatabase() AND table = 'issue821_default_literal' AND name = 'value'",
+                        "SELECT default_expression FROM system.columns " +
+                                "WHERE database = currentDatabase() AND " +
+                                "table = 'issue821_default_literal' AND name = 'value'",
                 ) { rs ->
                     check(rs.next())
                     rs.getString(1)

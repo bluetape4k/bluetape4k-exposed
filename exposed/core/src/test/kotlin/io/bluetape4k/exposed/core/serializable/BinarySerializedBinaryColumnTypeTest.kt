@@ -76,6 +76,10 @@ class BinarySerializedBinaryColumnTypeTest: AbstractExposedTest() {
         val age: Int,
         val address: String,
     ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
         val bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
     }
 
@@ -85,6 +89,10 @@ class BinarySerializedBinaryColumnTypeTest: AbstractExposedTest() {
         val address: String,
         val zipcode: String,
     ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
         val bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
         val bytes2: ByteArray = Fakers.faker.image().base64PNG().toUtf8Bytes()
     }

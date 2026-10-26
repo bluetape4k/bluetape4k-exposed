@@ -70,6 +70,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Suppress("LargeClass") // 연결/취소/정리 계약을 한 fixture에서 함께 검증하는 통합 테스트입니다.
 class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
 
     companion object: KLogging()

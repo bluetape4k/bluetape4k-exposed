@@ -225,6 +225,7 @@ class SuspendedJdbcCaffeineRepositoryExtraTest {
     }
 
     @Test
+    @Suppress("LongMethod") // release/acquire 경계의 동시성 순서를 한 시나리오로 검증합니다.
     fun `get - release and new acquire boundary keeps successful loaders non-overlapping`() = runSuspendIO {
         val loadStarted = CompletableDeferred<Unit>()
         val releaseLoad = CompletableDeferred<Unit>()

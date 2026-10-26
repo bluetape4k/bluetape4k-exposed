@@ -88,7 +88,8 @@ class UnsignedTypesTest {
     fun `Nullable wraps inner sqlType`() {
         ClickHouseNullableColumnType(ClickHouseInt32ColumnType()).sqlType() shouldBeEqualTo "Nullable(Int32)"
         ClickHouseNullableColumnType(ClickHouseStringColumnType()).sqlType() shouldBeEqualTo "Nullable(String)"
-        ClickHouseNullableColumnType(ClickHouseFixedStringColumnType(8)).sqlType() shouldBeEqualTo "Nullable(FixedString(8))"
+        ClickHouseNullableColumnType(ClickHouseFixedStringColumnType(8)).sqlType() shouldBeEqualTo
+            "Nullable(FixedString(8))"
     }
 
     // ────────────────────────────────────────────────────────────

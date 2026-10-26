@@ -2,7 +2,6 @@ package io.bluetape4k.spring.data.exposed.common.repository.support
 
 import io.bluetape4k.logging.KotlinLogging
 import io.bluetape4k.logging.warn
-import io.bluetape4k.support.equalsIgnoreCase
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -19,8 +18,8 @@ fun Sort.toExposedOrderBy(table: Table): Array<Pair<Expression<*>, SortOrder>> {
     for (order in this) {
         val column: Column<*> = table.columns
             .firstOrNull { candidate ->
-                candidate.name.equalsIgnoreCase(order.property) ||
-                        candidate.name.equalsIgnoreCase(order.property.snakeCase())
+                candidate.name.equals(order.property, ignoreCase = true) ||
+                        candidate.name.equals(order.property.snakeCase(), ignoreCase = true)
             }
             ?: run {
                 log.warn { "Sort property '${order.property}' not found in table '${table.tableName}', skipped." }

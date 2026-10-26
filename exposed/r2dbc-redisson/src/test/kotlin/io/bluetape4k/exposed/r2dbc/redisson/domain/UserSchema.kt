@@ -49,7 +49,7 @@ object UserSchema: KLoggingChannel() {
         val updatedAt: Instant? = null,
     ): Serializable {
         companion object {
-            private val serialVersionUID: Long = 1L
+            private const val serialVersionUID: Long = 1L
         }
 
         fun withId(id: Long) = copy(id = id)

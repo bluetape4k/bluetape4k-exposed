@@ -625,6 +625,7 @@ class ExposedJdbcBatchJobRepository(
                 withLeaseDatabaseTimeout(leaseDuration.toRenewalTimeoutSeconds()) {
                     val now = currentDatabaseTime()
                     val leaseUntil = now.plus(leaseDuration)
+                    val leaseUntilColumn = BatchStepExecutionTable.leaseUntil
                     val updatedRows = BatchStepExecutionTable.update({
                         (BatchStepExecutionTable.id eq execution.id) and
                                 (BatchStepExecutionTable.version eq execution.version) and
@@ -641,10 +642,10 @@ class ExposedJdbcBatchJobRepository(
                                                 (
                                                         (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
                                                                 (
-                                                                        BatchStepExecutionTable.ownerId.isNull() or
-                                                                                BatchStepExecutionTable.leaseUntil.isNull() or
-                                                                                (BatchStepExecutionTable.leaseUntil less now)
-                                                                        )
+                                                                    BatchStepExecutionTable.ownerId.isNull() or
+                                                                            leaseUntilColumn.isNull() or
+                                                                            (leaseUntilColumn less now)
+                                                                )
                                                         )
                                         )
                     }) { row ->

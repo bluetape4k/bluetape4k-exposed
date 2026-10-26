@@ -207,7 +207,10 @@ internal class BatchStepRunner<I: Any, O: Any>(
                         } catch (e: Exception) {
                             if (step.skipPolicy.shouldSkip(e, skipCount)) {
                                 skipCount++
-                                log.warn { "processor.process() 실패 — skip: skipCount=$skipCount, errorType=${e::class.simpleName}" }
+                                log.warn {
+                                    "processor.process() 실패 — skip: " +
+                                            "skipCount=$skipCount, errorType=${e::class.simpleName}"
+                                }
                                 null
                             } else {
                                 throw e
@@ -449,7 +452,10 @@ internal class BatchStepRunner<I: Any, O: Any>(
         if (failure !== primary) {
             primary.addSuppressed(diagnostic)
         }
-        log.warn { "실패 상태 checkpoint 조회 실패 — category=${diagnostic.category}, correlationId=${diagnostic.correlationId}" }
+        log.warn {
+            "실패 상태 checkpoint 조회 실패 — " +
+                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+        }
         null
     }
 
@@ -578,7 +584,8 @@ internal class BatchStepRunner<I: Any, O: Any>(
             repository.completeStepExecution(execution, report)
         } catch (persistenceCancellation: CancellationException) {
             log.error {
-                "${report.status} 상태 저장 취소됨 — step=${step.name}, executionId=${execution.id}, 실행 원인 예외와 함께 전파합니다"
+                "${report.status} 상태 저장 취소됨 — " +
+                        "step=${step.name}, executionId=${execution.id}, 실행 원인 예외와 함께 전파합니다"
             }
             propagateCompletionCancellation(primary, persistenceCancellation)
         } catch (persistenceFailure: Exception) {

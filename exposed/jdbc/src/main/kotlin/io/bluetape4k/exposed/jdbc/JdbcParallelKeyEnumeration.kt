@@ -436,7 +436,8 @@ private fun <ID: Any> IdTable<ID>.readParallelKeyRange(range: JdbcKeyRange<ID>):
     val upper = range.upperExclusive
 
     val predicate: Op<Boolean> = when {
-        lower != null && upper != null -> (rawIdColumn greaterEq lower.asComparableKey()) and (rawIdColumn less upper.asComparableKey())
+        lower != null && upper != null ->
+            (rawIdColumn greaterEq lower.asComparableKey()) and (rawIdColumn less upper.asComparableKey())
         lower != null                  -> rawIdColumn greaterEq lower.asComparableKey()
         upper != null                  -> rawIdColumn less upper.asComparableKey()
         else                           -> error("JdbcKeyRange must have a lowerInclusive or upperExclusive boundary")

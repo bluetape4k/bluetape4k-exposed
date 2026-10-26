@@ -57,7 +57,7 @@ inline fun <reified T: Any> ResultRow.getFastjsonOrNull(
     expression: Expression<*>,
     serializer: FastjsonSerializer = DefaultFastjsonSerializer,
 ): T? {
-    return anyValueOrNull(expression)?.let { deserializeValueOrNull(it) }
+    return anyValueOrNull(expression)?.let { deserializeValueOrNull<T>(it, serializer) }
 }
 
 /**

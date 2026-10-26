@@ -197,15 +197,21 @@ class ClickHouseV2Options(
         }
         httpKeepAliveTimeoutMillis?.requirePositiveNumber("httpKeepAliveTimeoutMillis")
         maxOpenConnections?.requirePositiveNumber { "maxOpenConnections는 양수여야 합니다: $maxOpenConnections" }
-        lz4UncompressedBufferSize?.requirePositiveNumber { "lz4UncompressedBufferSize는 양수여야 합니다: $lz4UncompressedBufferSize" }
-        retryOnFailure?.requireZeroOrPositiveNumber { "retryOnFailure는 음수가 아니어야 합니다: $retryOnFailure" }
+        lz4UncompressedBufferSize?.requirePositiveNumber {
+            "lz4UncompressedBufferSize는 양수여야 합니다: $lz4UncompressedBufferSize"
+        }
+        retryOnFailure?.requireZeroOrPositiveNumber {
+            "retryOnFailure는 음수가 아니어야 합니다: $retryOnFailure"
+        }
 
         clientName?.let { validateText("clientName", it, allowBlank = true) }
         sessionDbRoles.forEach {
             validateText("sessionDbRoles", it, allowBlank = false)
             require(',' !in it) { "sessionDbRoles에는 comma를 사용할 수 없습니다." }
         }
-        require(sessionDbRoles.distinct().size == sessionDbRoles.size) { "sessionDbRoles에는 중복 역할을 사용할 수 없습니다." }
+        require(sessionDbRoles.distinct().size == sessionDbRoles.size) {
+            "sessionDbRoles에는 중복 역할을 사용할 수 없습니다."
+        }
         queryId?.let { validateText("queryId", it, allowBlank = false) }
         logComment?.let { validateText("logComment", it, allowBlank = false) }
 
@@ -447,7 +453,9 @@ private fun validateRawProperties(properties: Map<String, String>) {
         require(key.isNotBlank()) { "rawProperties key는 공백일 수 없습니다." }
         require(key.none(Char::isISOControl)) { "rawProperties key에는 제어 문자를 사용할 수 없습니다." }
         require(value.none(Char::isISOControl)) { "rawProperties[$key]에는 제어 문자를 사용할 수 없습니다." }
-        require(key !in FORBIDDEN_RAW_KEYS) { "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key" }
+        require(key !in FORBIDDEN_RAW_KEYS) {
+            "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key"
+        }
         if (key.startsWith(HTTP_HEADER_PREFIX)) {
             val headerName = key.removePrefix(HTTP_HEADER_PREFIX)
             validateHeaderName(headerName)

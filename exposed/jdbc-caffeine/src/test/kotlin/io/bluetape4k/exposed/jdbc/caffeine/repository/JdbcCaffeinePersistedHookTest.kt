@@ -74,7 +74,8 @@ class JdbcCaffeinePersistedHookTest: AbstractJdbcCaffeineTest() {
         }
 
         log.debug { "failure=$failure" }
-        failure.message shouldContain "Condition with Lambda expression in org.awaitility.kotlin.AwaitilityKt was not fulfilled within 5 seconds"
+        failure.message shouldContain
+            "Condition with Lambda expression in org.awaitility.kotlin.AwaitilityKt was not fulfilled within 5 seconds"
     }
 
     @Test

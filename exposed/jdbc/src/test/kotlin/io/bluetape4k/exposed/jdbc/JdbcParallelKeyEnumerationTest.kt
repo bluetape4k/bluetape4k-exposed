@@ -91,8 +91,9 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             preparedStatement: PreparedStatementApi,
                         ) {
                             observed.set(
-                                handle.currentConnection(handle.generation) != null &&
-                                        (handle.currentStatement(handle.generation) === preparedStatement as? JdbcPreparedStatementApi),
+                                        handle.currentConnection(handle.generation) != null &&
+                                                (handle.currentStatement(handle.generation) ===
+                                                        preparedStatement as? JdbcPreparedStatementApi),
                             )
                         }
 

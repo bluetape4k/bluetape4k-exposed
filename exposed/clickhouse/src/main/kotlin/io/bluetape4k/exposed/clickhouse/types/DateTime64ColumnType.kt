@@ -50,7 +50,8 @@ class DateTime64ColumnType(val precision: Int = 3): ColumnType<Instant>() {
             is java.sql.Timestamp -> value.toInstant()
             is LocalDateTime      -> value.toInstant(zone.rules.getOffset(value))
             is OffsetDateTime     -> value.toInstant()
-            is Long               -> runCatching { Instant.ofEpochMilli(value) }.getOrElse { error("DateTime64 epoch millis overflow: $value") }
+            is Long               -> runCatching { Instant.ofEpochMilli(value) }
+                .getOrElse { error("DateTime64 epoch millis overflow: $value") }
             is String             -> parseDateTime(value)
             else                  -> error("Unexpected DateTime64 value: $value (${value::class.simpleName})")
         }

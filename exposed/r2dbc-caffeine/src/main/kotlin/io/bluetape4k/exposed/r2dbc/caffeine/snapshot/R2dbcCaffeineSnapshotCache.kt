@@ -104,7 +104,9 @@ class R2dbcCaffeineSnapshotCache<ID: Any, V: Serializable> private constructor(
             val estimatedWeight = valueSizer?.estimatedRetainedBytes(snapshot.value)?.also {
                 it.requireGe(0L) { "Snapshot value size[$it] must be non-negative." }
                 if (config.maximumWeight != null) {
-                    it.requireLe(Int.MAX_VALUE.toLong()) { "Snapshot value size[$it] exceeds Caffeine's per-entry weight limit." }
+                    it.requireLe(Int.MAX_VALUE.toLong()) {
+                        "Snapshot value size[$it] exceeds Caffeine's per-entry weight limit."
+                    }
                 }
             }
             claimed.prepare(snapshot).copy(estimatedWeight = estimatedWeight)

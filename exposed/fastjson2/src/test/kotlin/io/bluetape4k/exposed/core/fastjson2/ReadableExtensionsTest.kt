@@ -15,6 +15,12 @@ import io.r2dbc.spi.Readable
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 
+private fun <T> castReadableValue(value: Any?, type: Class<T>): T? {
+    if (value == null || !type.isInstance(value)) return null
+    @Suppress("UNCHECKED_CAST")
+    return value as T
+}
+
 class ReadableExtensionsTest {
 
     companion object: KLogging()
@@ -29,19 +35,9 @@ class ReadableExtensionsTest {
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
         private val valuesByName: Map<String, Any?> = emptyMap(),
     ): Readable {
-        override fun <T> get(index: Int, type: Class<T>): T? {
-            val value = valuesByIndex[index] ?: return null
-            if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as T
-        }
+        override fun <T> get(index: Int, type: Class<T>): T? = castReadableValue(valuesByIndex[index], type)
 
-        override fun <T> get(name: String, type: Class<T>): T? {
-            val value = valuesByName[name] ?: return null
-            if (!type.isInstance(value)) return null
-            @Suppress("UNCHECKED_CAST")
-            return value as T
-        }
+        override fun <T> get(name: String, type: Class<T>): T? = castReadableValue(valuesByName[name], type)
 
         override fun get(index: Int): Any? = valuesByIndex[index]
         override fun get(name: String): Any? = valuesByName[name]

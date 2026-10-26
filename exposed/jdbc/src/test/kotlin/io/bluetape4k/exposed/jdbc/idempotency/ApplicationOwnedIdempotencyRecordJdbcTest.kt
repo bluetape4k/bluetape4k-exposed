@@ -141,6 +141,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
     }
 
     @Test
+    @Suppress("LongMethod") // interrupted-owner 재진입 정책의 전체 상태 전이를 한 시나리오로 고정합니다.
     fun `interrupted owner is diagnosed and replaced only by stale-record policy`() {
         withTables(TestDB.POSTGRESQL, IdempotencyRecords) {
             val fixture = JdbcIdempotencyFixture(db)

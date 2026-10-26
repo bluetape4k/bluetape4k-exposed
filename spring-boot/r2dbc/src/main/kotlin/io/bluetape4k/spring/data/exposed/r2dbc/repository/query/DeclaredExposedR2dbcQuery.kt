@@ -63,6 +63,7 @@ internal class DeclaredExposedR2dbcQuery<R: Any, ID: Any>(
         }
     }
 
+    @Suppress("ThrowsCount") // row shape/transaction 경계의 원래 예외를 보존하면서 domain 예외만 변환합니다.
     private suspend fun executeInTransaction(tx: R2dbcTransaction, boundSql: BoundSql): Any {
         val idColumnName = mapper.table.id.name
         val rawIds = try {

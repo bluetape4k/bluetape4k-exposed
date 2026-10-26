@@ -206,7 +206,7 @@ class ExposedR2dbcBatchJobRepository(
                                                     (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
                                                             (
                                                                     BatchJobExecutionTable.ownerId.isNull() or
-                                                                            BatchJobExecutionTable.leaseUntil.isNull() or
+                                                                    BatchJobExecutionTable.leaseUntil.isNull() or
                                                                             (BatchJobExecutionTable.leaseUntil less now)
                                                                     )
                                                     )
@@ -259,7 +259,7 @@ class ExposedR2dbcBatchJobRepository(
                                                     (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
                                                             (
                                                                     BatchJobExecutionTable.ownerId.isNull() or
-                                                                            BatchJobExecutionTable.leaseUntil.isNull() or
+                                                                    BatchJobExecutionTable.leaseUntil.isNull() or
                                                                             (BatchJobExecutionTable.leaseUntil less now)
                                                                     )
                                                     )
@@ -533,10 +533,10 @@ class ExposedR2dbcBatchJobRepository(
                                             (
                                                     (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
                                                             (
-                                                                    BatchStepExecutionTable.ownerId.isNull() or
-                                                                            BatchStepExecutionTable.leaseUntil.isNull() or
-                                                                            (BatchStepExecutionTable.leaseUntil less now)
-                                                                    )
+                                                                BatchStepExecutionTable.ownerId.isNull() or
+                                                                        BatchStepExecutionTable.leaseUntil.isNull() or
+                                                                        (BatchStepExecutionTable.leaseUntil less now)
+                                                            )
                                                     )
                                     )
                 }) { row ->
@@ -586,10 +586,10 @@ class ExposedR2dbcBatchJobRepository(
                                             (
                                                     (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
                                                             (
-                                                                    BatchStepExecutionTable.ownerId.isNull() or
-                                                                            BatchStepExecutionTable.leaseUntil.isNull() or
-                                                                            (BatchStepExecutionTable.leaseUntil less now)
-                                                                    )
+                                                                BatchStepExecutionTable.ownerId.isNull() or
+                                                                        BatchStepExecutionTable.leaseUntil.isNull() or
+                                                                        (BatchStepExecutionTable.leaseUntil less now)
+                                                            )
                                                     )
                                     )
                 }) { row ->

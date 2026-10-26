@@ -197,7 +197,9 @@ internal fun verifyOrClaimSnapshotNamespace(
     return when {
         state.marker == RemoteMarker.ABSENT && state.mapAbsent -> SnapshotNamespaceMarkerVerification.CLAIMED
         state.marker == RemoteMarker.EXACT -> SnapshotNamespaceMarkerVerification.MATCHED
-        else                               -> throw IllegalStateException("Snapshot namespace compatibility marker could not be verified.")
+        else                               -> throw IllegalStateException(
+            "Snapshot namespace compatibility marker could not be verified.",
+        )
     }
 }
 
@@ -206,7 +208,7 @@ internal fun snapshotNamespaceMarkerKey(mappedNamespace: String): String {
     val namespaceHash = MessageDigest.getInstance("SHA-256")
         .digest(mappedNamespace.toByteArray(Charsets.UTF_8))
         .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
-    return "{$slotTag}:__bt4k_snapshot_fingerprint:$namespaceHash"
+    return "{$slotTag}:__bt4k_snapshot_fingerprint:" + namespaceHash
 }
 
 private class SnapshotNamespaceScriptKeys(
@@ -251,6 +253,12 @@ private fun redisClusterSlotTag(key: String): String {
     return key.substring(open + 1, close)
 }
 
+@Suppress(
+    "CyclomaticComplexMethod",
+    "LongMethod",
+    "ReturnCount",
+    "ThrowsCount",
+) // Lua/Redisson cleanup protocol의 단계별 terminal 결과를 한 경계에서 보존합니다.
 private fun <ID: Any> clearNamespace(
     redissonClient: RedissonClient,
     codec: SnapshotRedissonCodec<ID>,

@@ -69,7 +69,8 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
 
     init {
         config.nearCacheEnabled.requireBeFalse {
-            "AbstractJdbcLettuceRepository does not support nearCacheEnabled; use AbstractSuspendedJdbcLettuceRepository"
+            "AbstractJdbcLettuceRepository does not support nearCacheEnabled; " +
+                    "use AbstractSuspendedJdbcLettuceRepository"
         }
         ExposedLettuceCodecs.requireConfigured(valueCodec)
     }
@@ -190,7 +191,10 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
      * 기본 구현은 [table]을 통한 DB 재조회이며, 서브클래스에서 직접 오버라이드 권장.
      */
     override fun extractId(entity: E): ID {
-        error("findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다.")
+        error(
+            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 " +
+                    "엔티티에서 ID를 추출하는 방법을 제공해야 합니다.",
+        )
     }
 
     override fun close() {

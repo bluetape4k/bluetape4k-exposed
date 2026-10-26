@@ -372,21 +372,27 @@ private fun numericType(value: Any): String? = when (value) {
     else      -> null
 }
 
-private fun temporalType(value: Any): String? = when (value) {
-    is UUID          -> "uuid"
-    is Uuid          -> "kotlin-uuid"
-    is Instant       -> "instant"
-    is LocalDate     -> "local-date"
-    is LocalDateTime -> "local-date-time"
-    is LocalTime     -> "local-time"
+private fun temporalType(value: Any): String? = javaTemporalType(value) ?: kotlinTemporalType(value)
+
+private fun javaTemporalType(value: Any): String? = when (value) {
+    is UUID           -> "uuid"
+    is Instant        -> "instant"
+    is LocalDate      -> "local-date"
+    is LocalDateTime  -> "local-date-time"
+    is LocalTime      -> "local-time"
     is OffsetDateTime -> "offset-date-time"
-    is OffsetTime    -> "offset-time"
-    is ZonedDateTime -> "zoned-date-time"
-    is Year          -> "year"
-    is YearMonth     -> "year-month"
-    is ZoneOffset    -> "zone-offset"
-    is ZoneId        -> "zone-id"
-    else             -> null
+    is OffsetTime     -> "offset-time"
+    is ZonedDateTime  -> "zoned-date-time"
+    is Year           -> "year"
+    is YearMonth      -> "year-month"
+    is ZoneOffset     -> "zone-offset"
+    is ZoneId         -> "zone-id"
+    else              -> null
+}
+
+private fun kotlinTemporalType(value: Any): String? = when (value) {
+    is Uuid -> "kotlin-uuid"
+    else    -> null
 }
 
 private fun containerType(value: Any): String? = when (value) {

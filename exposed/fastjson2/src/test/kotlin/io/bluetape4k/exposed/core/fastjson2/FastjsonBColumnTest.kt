@@ -293,11 +293,13 @@ class FastjsonBColumnTest: AbstractExposedTest() {
             val hasAnyData = tester.fastjsonBColumn.exists(optional = optional)
             tester.selectAll().where { hasAnyData }.count() shouldBeEqualTo 2L
 
-            // SELECT COUNT(*) FROM fastjson_b_table WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.fakeKey')
+            // SELECT COUNT(*) FROM fastjson_b_table
+            // WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.fakeKey')
             val hasFakeKey = tester.fastjsonBColumn.exists(".fakeKey", optional = optional)
             tester.selectAll().where { hasFakeKey }.count() shouldBeEqualTo 0L
 
-            // SELECT COUNT(*) FROM fastjson_b_table WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.logins')
+            // SELECT COUNT(*) FROM fastjson_b_table
+            // WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.logins')
             val hasLogins = tester.fastjsonBColumn.exists(".logins", optional = optional)
             tester.selectAll().where { hasLogins }.count() shouldBeEqualTo 2L
 
@@ -311,7 +313,8 @@ class FastjsonBColumnTest: AbstractExposedTest() {
                 usersWithMaxLogin.single()[tester.id] shouldBeEqualTo newId
 
                 // SELECT fastjson_b_table.id FROM fastjson_b_table
-                //  WHERE JSONB_PATH_EXISTS(fastjson_b_table.fastjson_b_column, '$.user.team ? (@ == $team)', '{"team":"A"}')
+                //  WHERE JSONB_PATH_EXISTS(
+                //      fastjson_b_table.fastjson_b_column, '$.user.team ? (@ == $team)', '{"team":"A"}')
                 val (jsonPath, optionalArg) = $$".user.team ? (@ == $team)" to "{\"team\":\"$teamA\"}"
                 val isOnTeamA = tester.fastjsonBColumn.exists(jsonPath, optional = optionalArg)
                 val usersOnTeamA = tester.select(tester.id).where { isOnTeamA }

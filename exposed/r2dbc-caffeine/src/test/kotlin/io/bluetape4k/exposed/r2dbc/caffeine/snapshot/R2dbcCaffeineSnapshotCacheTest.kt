@@ -229,7 +229,8 @@ class R2dbcCaffeineSnapshotCacheTest {
                 futures.forEach { future ->
                     future.get(5.seconds)
                         .results
-                        .map { it.outcome to it.affectedCount } shouldBeEqualTo listOf(SnapshotCacheOutcome.SUCCESS to 1)
+                        .map { it.outcome to it.affectedCount } shouldBeEqualTo
+                            listOf(SnapshotCacheOutcome.SUCCESS to 1)
                 }
 
                 val caffeine = caffeineCache(cache)

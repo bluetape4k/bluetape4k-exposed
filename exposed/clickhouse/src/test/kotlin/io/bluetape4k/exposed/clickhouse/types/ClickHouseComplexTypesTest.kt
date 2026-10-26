@@ -156,7 +156,8 @@ class ClickHouseComplexTypesTest: AbstractClickHouseTest() {
             check(resultSet.next())
             val jdbcArray = resultSet.getArray(1)
             try {
-                arrayType.valueFromDB(jdbcArray.resultSet) shouldBeEqualTo ClickHouseTypeBoundaryFixture.nullableArrayValue
+                arrayType.valueFromDB(jdbcArray.resultSet) shouldBeEqualTo
+                    ClickHouseTypeBoundaryFixture.nullableArrayValue
 
             } finally {
                 jdbcArray.free()

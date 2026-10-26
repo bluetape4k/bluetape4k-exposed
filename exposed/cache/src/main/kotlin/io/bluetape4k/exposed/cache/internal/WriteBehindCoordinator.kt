@@ -96,6 +96,8 @@ data class CloseCompletion(
  * Throwable을 보유하지 않습니다. 실제 I/O와 close wait는 adapter가 소유하고,
  * 이 클래스는 admission token과 immutable lifecycle state만 선형화합니다.
  */
+// admission, flush, worker, close 전환이 하나의 lock 경계를 공유하는 상태 머신입니다.
+@Suppress("TooManyFunctions")
 class WriteBehindCoordinator(
     private val mode: CacheWriteMode,
 ) {
