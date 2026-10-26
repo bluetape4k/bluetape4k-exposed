@@ -1,10 +1,10 @@
 package io.bluetape4k.batch
 
+import java.io.Serializable
 import java.lang.reflect.Array
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.nio.CharBuffer
-import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.MessageDigest
@@ -19,10 +19,8 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.io.Serializable
-import java.util.IdentityHashMap
-import java.util.Locale
-import java.util.UUID
+import java.util.*
+import kotlin.uuid.Uuid
 
 private const val CANONICAL_PREFIX = "bluetape4k-batch-params"
 
@@ -75,7 +73,7 @@ object BatchParameterHash {
 private data class EncodedText(
     val text: String,
     val utf8Bytes: Long,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -102,6 +100,7 @@ private class ParameterEncoder {
                     add(encodedKey to encodedMappedValue)
                 }
             }.sortedWith(compareBy({ it.first.text }, { it.second.text }))
+
             EncodedText(
                 buildString {
                     appendField("count", entries.size.toString())
@@ -174,12 +173,12 @@ private class ParameterEncoder {
     }
 
     private fun valueText(value: Any?, depth: Int): EncodedText = when (value) {
-        null -> EncodedText("", 0)
+        null       -> EncodedText("", 0)
         is Enum<*> -> boundedScalar(value.name)
-        is Float -> boundedScalar(
+        is Float   -> boundedScalar(
             Integer.toUnsignedString(value.toRawBits(), HEX_RADIX).padStart(FLOAT_HEX_WIDTH, '0'),
         )
-        is Double -> boundedScalar(
+        is Double  -> boundedScalar(
             java.lang.Long.toUnsignedString(value.toRawBits(), HEX_RADIX).padStart(DOUBLE_HEX_WIDTH, '0'),
         )
         is ByteArray -> {
@@ -192,8 +191,8 @@ private class ParameterEncoder {
         }
         is Map<*, *> -> encodeMap(value, depth)
         is List<*> -> containerItems(value, value, depth, false)
-        is Set<*> -> containerItems(value, value, depth, true)
-        else -> if (value.javaClass.isArray) {
+        is Set<*>  -> containerItems(value, value, depth, true)
+        else       -> if (value.javaClass.isArray) {
             withContainer(value) {
                 val length = Array.getLength(value)
                 checkContainerSize(length)
@@ -300,7 +299,7 @@ private class ParameterEncoder {
     private fun checkCanonicalSize(size: Long) {
         require(size <= BatchParameterHash.MAX_CANONICAL_UTF8_BYTES) {
             "Batch parameter canonical UTF-8 크기는 " +
-                "${BatchParameterHash.MAX_CANONICAL_UTF8_BYTES} bytes 이하여야 합니다."
+                    "${BatchParameterHash.MAX_CANONICAL_UTF8_BYTES} bytes 이하여야 합니다."
         }
     }
 }
@@ -349,49 +348,50 @@ private fun valueType(value: Any?): String {
         ?: containerType(value)
         ?: throw IllegalArgumentException(
             "지원하지 않는 Batch parameter type입니다: ${value.javaClass.name}. " +
-                "지원되는 scalar, Map, List, Set 또는 array로 정규화하세요.",
+                    "지원되는 scalar, Map, List, Set 또는 array로 정규화하세요.",
         )
 }
 
 private fun simpleType(value: Any): String? = when (value) {
     is String -> "string"
-    is Char -> "char"
+    is Char   -> "char"
     is Boolean -> "boolean"
     is Enum<*> -> "enum:${value.declaringJavaClass.name}"
-    else -> null
+    else      -> null
 }
 
 private fun numericType(value: Any): String? = when (value) {
-    is Byte -> "byte"
-    is Short -> "short"
-    is Int -> "int"
-    is Long -> "long"
-    is Float -> "float"
+    is Byte   -> "byte"
+    is Short  -> "short"
+    is Int    -> "int"
+    is Long   -> "long"
+    is Float  -> "float"
     is Double -> "double"
     is BigInteger -> "big-integer"
     is BigDecimal -> "big-decimal"
-    else -> null
+    else      -> null
 }
 
 private fun temporalType(value: Any): String? = when (value) {
-    is UUID -> "uuid"
-    is Instant -> "instant"
-    is LocalDate -> "local-date"
+    is UUID          -> "uuid"
+    is Uuid          -> "kotlin-uuid"
+    is Instant       -> "instant"
+    is LocalDate     -> "local-date"
     is LocalDateTime -> "local-date-time"
-    is LocalTime -> "local-time"
+    is LocalTime     -> "local-time"
     is OffsetDateTime -> "offset-date-time"
-    is OffsetTime -> "offset-time"
+    is OffsetTime    -> "offset-time"
     is ZonedDateTime -> "zoned-date-time"
-    is Year -> "year"
-    is YearMonth -> "year-month"
-    is ZoneOffset -> "zone-offset"
-    is ZoneId -> "zone-id"
-    else -> null
+    is Year          -> "year"
+    is YearMonth     -> "year-month"
+    is ZoneOffset    -> "zone-offset"
+    is ZoneId        -> "zone-id"
+    else             -> null
 }
 
 private fun containerType(value: Any): String? = when (value) {
     is Map<*, *> -> "map"
     is List<*> -> "list"
-    is Set<*> -> "set"
-    else -> if (value.javaClass.isArray) "array:${value.javaClass.componentType.name}" else null
+    is Set<*>  -> "set"
+    else       -> if (value.javaClass.isArray) "array:${value.javaClass.componentType.name}" else null
 }

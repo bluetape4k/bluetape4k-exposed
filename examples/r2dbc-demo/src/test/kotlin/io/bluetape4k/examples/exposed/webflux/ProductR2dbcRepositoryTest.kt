@@ -1,25 +1,25 @@
 package io.bluetape4k.examples.exposed.webflux
 
-import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
-import io.bluetape4k.examples.exposed.webflux.domain.Products
-import io.bluetape4k.examples.exposed.webflux.repository.ProductR2dbcRepository
-import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.logging.coroutines.KLoggingChannel
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
+import io.bluetape4k.examples.exposed.webflux.config.DataInitializer
+import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
+import io.bluetape4k.examples.exposed.webflux.repository.ProductR2dbcRepository
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.deleteAll
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -37,17 +37,26 @@ class ProductR2dbcRepositoryTest {
     private lateinit var productRepository: ProductR2dbcRepository
 
     @Autowired
+    private lateinit var dataInitializer: DataInitializer
+
+    @Autowired
     private lateinit var r2dbcDatabase: R2dbcDatabase
 
-    @AfterEach
-    fun tearDown(): Unit = runBlocking {
-        suspendTransaction(r2dbcDatabase) { Products.deleteAll() }
+    @BeforeAll
+    fun beforeAll() = runBlocking {
+        dataInitializer.awaitReady()
+    }
+
+    @BeforeEach
+    fun beforeEach(): Unit = runBlocking {
+        productRepository.deleteAll()
     }
 
     private suspend fun createProduct(name: String, price: String, stock: Int): ProductRecord =
         productRepository.save(
             ProductRecord(id = null, name = name, price = BigDecimal(price), stock = stock)
         )
+
 
     @Test
     fun `save and findByIdOrNull`() = runSuspendIO {
@@ -57,7 +66,7 @@ class ProductR2dbcRepositoryTest {
         val found = productRepository.findByIdOrNull(id)
         found.shouldNotBeNull()
         found.name shouldBeEqualTo "Kotlin Book"
-        found.price shouldBeEqualTo BigDecimal("39.99")
+        found.price shouldBeEqualTo 39.99.toBigDecimal()
     }
 
     @Test
@@ -72,6 +81,7 @@ class ProductR2dbcRepositoryTest {
         createProduct("Book C", "30.00", 30)
 
         val all = productRepository.findAllAsList()
+            .onEach { log.debug { "product=$it" } }
         all shouldHaveSize 3
     }
 
@@ -80,7 +90,7 @@ class ProductR2dbcRepositoryTest {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
 
-        val all = productRepository.findAll().toList()
+        val all = productRepository.findAll().log("Product").toList()
         all shouldHaveSize 2
     }
 
@@ -105,7 +115,7 @@ class ProductR2dbcRepositoryTest {
     @Test
     fun `deleteById removes entity`() = runSuspendIO {
         val product = createProduct("To Delete", "5.00", 1)
-        val id = product.id!!
+        val id = product.id.shouldNotBeNull()
         productRepository.deleteById(id)
         productRepository.findByIdOrNull(id).shouldBeNull()
     }
@@ -155,7 +165,7 @@ class ProductR2dbcRepositoryTest {
             ProductRecord(id = null, name = "Book A", price = BigDecimal("10.00"), stock = 10),
             ProductRecord(id = null, name = "Book B", price = BigDecimal("20.00"), stock = 20),
         )
-        val saved = productRepository.saveAll(dtos).toList()
+        val saved = productRepository.saveAll(dtos).log("SaveAll").toList()
         saved shouldHaveSize 2
         saved.all { it.id != null }.shouldBeTrue()
         productRepository.count() shouldBeEqualTo 2L
@@ -167,7 +177,7 @@ class ProductR2dbcRepositoryTest {
             ProductRecord(id = null, name = "Book A", price = BigDecimal("10.00"), stock = 10),
             ProductRecord(id = null, name = "Book B", price = BigDecimal("20.00"), stock = 20),
         ).asFlow()
-        val saved = productRepository.saveAll(dtoFlow).toList()
+        val saved = productRepository.saveAll(dtoFlow).log("SaveAll").toList()
         saved shouldHaveSize 2
         saved.all { it.id != null }.shouldBeTrue()
         productRepository.count() shouldBeEqualTo 2L
@@ -179,7 +189,8 @@ class ProductR2dbcRepositoryTest {
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
 
-        val found = productRepository.findAllById(listOf(a.id!!, b.id!!)).toList()
+        val found = productRepository.findAllById(listOf(a.id!!, b.id!!))
+            .log("FindAllById").toList()
         found shouldHaveSize 2
         found.map { it.name }.toSet() shouldBeEqualTo setOf("Book A", "Book B")
     }
@@ -190,7 +201,8 @@ class ProductR2dbcRepositoryTest {
         val b = createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
 
-        val found = productRepository.findAllById(flowOf(a.id!!, b.id!!)).toList()
+        val found = productRepository.findAllById(flowOf(a.id!!, b.id!!))
+            .log("FindAllById").toList()
         found shouldHaveSize 2
         found.map { it.name }.toSet() shouldBeEqualTo setOf("Book A", "Book B")
     }
@@ -200,7 +212,7 @@ class ProductR2dbcRepositoryTest {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
 
-        val all = productRepository.streamAll().toList()
+        val all = productRepository.streamAll().log("streamAll").toList()
         all shouldHaveSize 2
     }
 

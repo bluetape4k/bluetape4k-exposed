@@ -1,13 +1,13 @@
 package io.bluetape4k.batch.internal
 
-import io.bluetape4k.batch.CheckpointJson as StableCheckpointJson
-
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
+import io.bluetape4k.batch.CheckpointJson as StableCheckpointJson
 
 private data class KeyState(val lastId: Long, val pageIndex: Int)
 
@@ -23,6 +23,8 @@ private data class KeyState(val lastId: Long, val pageIndex: Int)
  *   - 없으면 IllegalStateException (테스트 환경에서는 있으므로 성공 경로만 검증)
  */
 class CheckpointJsonTest {
+
+    companion object: KLogging()
 
     private val sut: StableCheckpointJson = StableCheckpointJson.jackson3()
 
@@ -69,10 +71,9 @@ class CheckpointJsonTest {
         val json = sut.write(original)
         val restored = sut.read(json)
 
-        restored shouldBeInstanceOf KeyState::class
-        val restoredState = restored as KeyState
-        restoredState.lastId shouldBeEqualTo 999L
-        restoredState.pageIndex shouldBeEqualTo 5
+        restored.shouldBeInstanceOf<KeyState>()
+        restored.lastId shouldBeEqualTo 999L
+        restored.pageIndex shouldBeEqualTo 5
     }
 
     @Test
@@ -91,8 +92,8 @@ class CheckpointJsonTest {
         val json = sut.write(original)
         val restored = sut.read(json)
 
-        restored shouldBeInstanceOf Double::class
-        (restored as Double) shouldBeEqualTo 3.14159
+        restored.shouldBeInstanceOf<Double>()
+        restored shouldBeEqualTo 3.14159
     }
 
     @Test
@@ -100,8 +101,8 @@ class CheckpointJsonTest {
         val json = sut.write(true)
         val restored = sut.read(json)
 
-        restored shouldBeInstanceOf Boolean::class
-        restored shouldBe true
+        restored.shouldBeInstanceOf<Boolean>()
+        restored.shouldBeTrue()
     }
 
     @Test
@@ -111,7 +112,7 @@ class CheckpointJsonTest {
         val json = sut.write(original)
         val restored = sut.read(json)
 
-        restored shouldBeInstanceOf Long::class
+        restored.shouldBeInstanceOf<Long>()
         restored shouldBeEqualTo Long.MAX_VALUE
     }
 
@@ -131,7 +132,7 @@ class CheckpointJsonTest {
         // 테스트 환경에는 bluetape4k-jackson3가 있으므로 성공해야 함
         val result = runCatching { StableCheckpointJson.jackson3() }
 
-        result.isSuccess shouldBe true
+        result.isSuccess.shouldBeTrue()
         result.getOrNull().shouldNotBeNull()
     }
 
@@ -142,7 +143,7 @@ class CheckpointJsonTest {
 
     @Test
     fun `Jackson3CheckpointJson - write는 non-null JSON 문자열 반환`() {
-        sut.write(100L).isNotBlank() shouldBe true
+        sut.write(100L).isNotBlank().shouldBeTrue()
     }
 
     @Test
@@ -161,7 +162,7 @@ class CheckpointJsonTest {
         val legacy = CheckpointJson.jackson3()
         val restored = legacy.read(legacy.write(42L))
 
-        restored shouldBeInstanceOf Long::class
+        restored.shouldBeInstanceOf<Long>()
         restored shouldBeEqualTo 42L
     }
 }

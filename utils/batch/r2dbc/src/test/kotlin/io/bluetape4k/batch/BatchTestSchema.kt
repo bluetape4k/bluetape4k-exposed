@@ -9,10 +9,11 @@ import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
  * Reader가 이 테이블에서 데이터를 읽고, Writer가 [BatchTargetTable]로 변환/저장한다.
  * keyColumn으로 사용하기 위해 [Column<Long>] 타입의 id를 명시적으로 선언한다.
  */
-object BatchSourceTable : Table("batch_source") {
+object BatchSourceTable: Table("batch_source") {
     val id = long("id").autoIncrement()
     val name = varchar("name", 255)
     val value = integer("value")
+
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -21,7 +22,7 @@ object BatchSourceTable : Table("batch_source") {
  *
  * [BatchSourceTable]에서 읽은 데이터를 Writer가 이 테이블에 저장한다.
  */
-object BatchTargetTable : LongIdTable("batch_target") {
+object BatchTargetTable: LongIdTable("batch_target") {
     val sourceName = varchar("source_name", 255).uniqueIndex()
     val transformedValue = integer("transformed_value")
 }

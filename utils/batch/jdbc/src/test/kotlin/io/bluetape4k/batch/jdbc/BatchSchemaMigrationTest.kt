@@ -3,13 +3,16 @@ package io.bluetape4k.batch.jdbc
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
-class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
+class BatchSchemaMigrationTest: AbstractBatchJdbcTest() {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
@@ -36,7 +39,7 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
                     put(resultSet.getString("status"), resultSet.getLong("null_params_hash_count"))
                 }
             }
-        }.orEmpty()
+        }
         terminalNulls shouldBeEqualTo mapOf("COMPLETED" to 1L)
 
         exec("UPDATE batch_job_execution SET params_hash = 'legacy-terminal' WHERE params_hash IS NULL")
@@ -49,6 +52,7 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
         assertLegacyActiveHash(preflight, expectedCount = 0L)
     }
 
+    @Suppress("UnusedReceiverParameter")
     private fun JdbcTransaction.insertSharedLegacyRows() {
         listOf("STARTING", "COMPLETED").forEach { batchStatus ->
             LegacyBatchJobExecutionTable.insert { row ->
@@ -72,7 +76,7 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
     private fun JdbcTransaction.assertRerunnableMigration(dialect: String) {
         exec(
             "CREATE UNIQUE INDEX batch_job_exec_active_uidx " +
-                "ON batch_job_execution (job_name, params_hash, status)",
+                    "ON batch_job_execution (job_name, params_hash, status)",
         )
         val migration = schemaScript(dialect, "V001__active_job_execution_key_migrate.sql")
         repeat(2) {
@@ -94,10 +98,10 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
     }
 
     private fun TestDB.schemaDialect(): String = when {
-        this in TestDB.ALL_H2 -> "h2"
+        this in TestDB.ALL_H2       -> "h2"
         this in TestDB.ALL_POSTGRES -> "postgresql"
         this in TestDB.ALL_MYSQL_MARIADB -> "mysql"
-        else -> error("Unsupported batch schema migration test database: $this")
+        else                        -> error("Unsupported batch schema migration test database: $this")
     }
 
     private fun schemaScript(dialect: String, fileName: String): String {
@@ -120,8 +124,8 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
         scriptStatements(script)
             .filterNot { statement ->
                 statement.equals("BEGIN", ignoreCase = true) ||
-                    statement.equals("COMMIT", ignoreCase = true) ||
-                    statement.equals("ROLLBACK", ignoreCase = true)
+                        statement.equals("COMMIT", ignoreCase = true) ||
+                        statement.equals("ROLLBACK", ignoreCase = true)
             }
             .forEach { statement -> exec(statement) }
     }
@@ -138,7 +142,7 @@ class BatchSchemaMigrationTest : AbstractBatchJdbcTest() {
         }.orEmpty()
 }
 
-private object LegacyBatchJobExecutionTable : LongIdTable("batch_job_execution") {
+private object LegacyBatchJobExecutionTable: LongIdTable("batch_job_execution") {
     val jobName = varchar("job_name", 100)
     val paramsHash = varchar("params_hash", 64).nullable()
     val status = varchar("status", 20)

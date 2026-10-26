@@ -2,9 +2,11 @@ package io.bluetape4k.batch.r2dbc
 
 import io.bluetape4k.batch.BatchSourceTable
 import io.bluetape4k.batch.BatchTargetTable
+import io.bluetape4k.collections.intRangeOf
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.batchInsert
 
@@ -13,15 +15,18 @@ import org.jetbrains.exposed.v1.r2dbc.batchInsert
  *
  * [AbstractExposedR2dbcTest]를 상속하여 H2/PostgreSQL/MySQL 다중 DB 파라미터 테스트를 지원한다.
  */
-abstract class AbstractBatchR2dbcTest : AbstractExposedR2dbcTest() {
+abstract class AbstractBatchR2dbcTest: AbstractExposedR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     /** [BatchSourceTable], [BatchTargetTable]을 생성하고 suspend 테스트 블록을 실행한다. */
     suspend fun withBatchTables(testDB: TestDB, statement: suspend R2dbcTransaction.(TestDB) -> Unit) {
         withTables(testDB, BatchSourceTable, BatchTargetTable, statement = statement)
     }
 
+    @Suppress("UnusedReceiverParameter")
     protected suspend fun R2dbcTransaction.insertSources(count: Int) =
-        BatchSourceTable.batchInsert((1..count).toList()) { i ->
+        BatchSourceTable.batchInsert(intRangeOf(1, count)) { i ->
             this[BatchSourceTable.name] = "item-$i"
             this[BatchSourceTable.value] = i
         }

@@ -4,7 +4,7 @@ import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
 import io.bluetape4k.exposed.core.ddd.DomainEvent
 import java.io.Serializable
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 enum class OrderStatus {
     PENDING,
@@ -15,7 +15,7 @@ class DemoOrder private constructor(
     override val id: UUID,
     status: OrderStatus,
     updatedAt: Instant,
-) : AbstractAggregateRoot<UUID>(), Serializable {
+): AbstractAggregateRoot<UUID>(), Serializable {
 
     var status: OrderStatus = status
         private set
@@ -48,7 +48,7 @@ class DemoOrder private constructor(
 data class OrderConfirmed(
     override val aggregateId: UUID,
     override val occurredAt: Instant,
-) : DomainEvent<UUID>, Serializable {
+): DomainEvent<UUID>, Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -59,7 +59,7 @@ data class OrderRecord(
     val id: UUID,
     val status: OrderStatus,
     val updatedAt: Instant,
-) : Serializable {
+): Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L

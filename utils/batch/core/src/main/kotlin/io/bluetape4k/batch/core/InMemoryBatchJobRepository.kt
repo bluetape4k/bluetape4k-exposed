@@ -7,12 +7,15 @@ import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
-import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireTerminalCompletionStatus
+import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
+import io.bluetape4k.logging.info
 import io.bluetape4k.logging.warn
+import io.bluetape4k.support.checkNotBlank
+import io.bluetape4k.support.checkNotNull
 import kotlinx.coroutines.runInterruptible
 import java.time.Clock
 import java.time.DateTimeException
@@ -51,9 +54,9 @@ import java.util.concurrent.locks.ReentrantLock
 @Suppress("TooManyFunctions")
 class InMemoryBatchJobRepository(
     private val clock: Clock = Clock.systemUTC(),
-) : BatchJobRepository {
+): BatchJobRepository {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private val idCounter = AtomicLong(0L)
     private val jobExecutions = ConcurrentHashMap<Long, JobExecution>()
@@ -84,8 +87,8 @@ class InMemoryBatchJobRepository(
         return withLock {
             val existing = jobExecutions.values.firstOrNull { je ->
                 je.jobName == jobName &&
-                    jobParameterHashes[je.id] == paramsHash &&
-                    je.status in setOf(BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED)
+                        jobParameterHashes[je.id] == paramsHash &&
+                        je.status in setOf(BatchStatus.RUNNING, BatchStatus.FAILED, BatchStatus.STOPPED)
             }
 
             if (existing != null) {
@@ -136,13 +139,11 @@ class InMemoryBatchJobRepository(
             }
             val now = clock.instant()
             val claimable = current.version == execution.version &&
-                (
-                    current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
-                        (
-                            current.status == BatchStatus.RUNNING &&
-                                (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                    (current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
+                            (current.status == BatchStatus.RUNNING &&
+                                    (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                                    )
                             )
-                    )
             if (!claimable) return@withLock null
 
             val updated = current.copy(
@@ -192,11 +193,12 @@ class InMemoryBatchJobRepository(
             val claimable = current.version == execution.version && when (current.status) {
                 BatchStatus.STARTING -> current.ownerId == null && current.leaseUntil == null
                 BatchStatus.FAILED,
-                BatchStatus.STOPPED -> true
+                BatchStatus.STOPPED,
+                                    -> true
                 BatchStatus.RUNNING -> current.ownerId == null ||
-                    current.leaseUntil == null ||
-                    !current.leaseUntil.isAfter(now)
-                else -> false
+                        current.leaseUntil == null ||
+                        !current.leaseUntil.isAfter(now)
+                else                -> false
             }
             if (!claimable) return@withLock null
 
@@ -285,18 +287,18 @@ class InMemoryBatchJobRepository(
             } else {
                 current?.ownerId == execution.ownerId
             }
-            val ownerfulLeaseActive = execution.ownerId == null || (
-                execution.status == BatchStatus.RUNNING &&
-                    execution.leaseUntil?.isAfter(now) == true &&
-                    current?.status == BatchStatus.RUNNING &&
-                    current.leaseUntil?.isAfter(now) == true
-                )
+            val ownerfulLeaseActive = execution.ownerId == null ||
+                    (execution.status == BatchStatus.RUNNING &&
+                            execution.leaseUntil?.isAfter(now) == true &&
+                            current?.status == BatchStatus.RUNNING &&
+                            current.leaseUntil?.isAfter(now) == true
+                            )
             check(current != null && ownerMatches && current.version == execution.version && ownerfulLeaseActive) {
                 "JobExecution completion rejected: id=${execution.id}"
             }
             jobExecutions[execution.id] = updated
         }
-        log.debug { "JobExecution 완료: status=$status" }
+        log.info { "JobExecution 완료: status=$status" }
     }
 
     /**
@@ -324,7 +326,8 @@ class InMemoryBatchJobRepository(
                 when (existing.status) {
                     // 완료 상태 — 변경 없이 반환. BatchStepRunner가 즉시 skip 처리
                     BatchStatus.COMPLETED,
-                    BatchStatus.COMPLETED_WITH_SKIPS -> {
+                    BatchStatus.COMPLETED_WITH_SKIPS,
+                        -> {
                         log.debug { "StepExecution skip (이미 완료): status=${existing.status}" }
                         existing
                     }
@@ -332,7 +335,8 @@ class InMemoryBatchJobRepository(
                     // 재시작 대상 — claim 단계에서 RUNNING으로 복원
                     BatchStatus.FAILED,
                     BatchStatus.STOPPED,
-                    BatchStatus.RUNNING -> {
+                    BatchStatus.RUNNING,
+                        -> {
                         log.debug { "StepExecution 재시작 대상: 이전 status=${existing.status}" }
                         existing
                     }
@@ -373,13 +377,11 @@ class InMemoryBatchJobRepository(
             val current = stepExecutions[execution.id] ?: return@withLock null
             val now = clock.instant()
             val claimable = current.version == execution.version &&
-                (
-                    current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
-                        (
-                            current.status == BatchStatus.RUNNING &&
-                                (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                    (current.status in setOf(BatchStatus.FAILED, BatchStatus.STOPPED) ||
+                            (current.status == BatchStatus.RUNNING &&
+                                    (current.ownerId == null || current.leaseUntil == null || current.leaseUntil < now)
+                                    )
                             )
-                    )
             if (!claimable) return@withLock null
 
             val updated = current.copy(
@@ -407,11 +409,12 @@ class InMemoryBatchJobRepository(
             val claimable = current.version == execution.version && when (current.status) {
                 BatchStatus.STARTING -> current.ownerId == null && current.leaseUntil == null
                 BatchStatus.FAILED,
-                BatchStatus.STOPPED -> true
+                BatchStatus.STOPPED,
+                                    -> true
                 BatchStatus.RUNNING -> current.ownerId == null ||
-                    current.leaseUntil == null ||
-                    !current.leaseUntil.isAfter(now)
-                else -> false
+                        current.leaseUntil == null ||
+                        !current.leaseUntil.isAfter(now)
+                else                -> false
             }
             if (!claimable) return@withLock null
 
@@ -444,12 +447,12 @@ class InMemoryBatchJobRepository(
             } else {
                 current?.ownerId == execution.ownerId
             }
-            val ownerfulLeaseActive = execution.ownerId == null || (
-                execution.status == BatchStatus.RUNNING &&
-                    execution.leaseUntil?.isAfter(now) == true &&
-                    current?.status == BatchStatus.RUNNING &&
-                    current.leaseUntil?.isAfter(now) == true
-                )
+            val ownerfulLeaseActive = execution.ownerId == null ||
+                    (execution.status == BatchStatus.RUNNING &&
+                            execution.leaseUntil?.isAfter(now) == true &&
+                            current?.status == BatchStatus.RUNNING &&
+                            current.leaseUntil?.isAfter(now) == true
+                            )
             check(current != null && ownerMatches && current.version == execution.version && ownerfulLeaseActive) {
                 "StepExecution completion rejected: id=${execution.id}"
             }
@@ -470,8 +473,7 @@ class InMemoryBatchJobRepository(
             checkpoint?.let { checkpoints[execution.id] = it }
         }
         log.debug {
-            "StepExecution 완료: status=${report.status}, " +
-                "read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
+            "StepExecution 완료: status=${report.status}, read=${report.readCount}, write=${report.writeCount}, skip=${report.skipCount}"
         }
     }
 
@@ -496,24 +498,24 @@ class InMemoryBatchJobRepository(
         execution: StepExecution,
         checkpoint: Any,
     ): StepExecution {
-        val ownerId = checkNotNull(execution.ownerId) {
+        val ownerId = execution.ownerId.checkNotNull {
             "Owner-aware checkpoint update requires ownerId"
         }.also {
-            check(it.isNotBlank()) { "Owner-aware checkpoint update requires ownerId" }
+            it.checkNotBlank { "Owner-aware checkpoint update requires ownerId" }
         }.requireValidBatchName("ownerId")
 
         val updated = withLock {
-            val current = checkNotNull(stepExecutions[execution.id]) {
+            val current = stepExecutions[execution.id].checkNotNull {
                 "StepExecution not found: id=${execution.id}"
             }
             val now = clock.instant()
             check(
                 execution.status == BatchStatus.RUNNING &&
-                    execution.leaseUntil?.isAfter(now) == true &&
-                    current.status == BatchStatus.RUNNING &&
-                    current.leaseUntil?.isAfter(now) == true &&
-                    current.ownerId == ownerId &&
-                    current.version == execution.version,
+                        execution.leaseUntil?.isAfter(now) == true &&
+                        current.status == BatchStatus.RUNNING &&
+                        current.leaseUntil?.isAfter(now) == true &&
+                        current.ownerId == ownerId &&
+                        current.version == execution.version,
             ) {
                 "Owner-aware checkpoint update rejected: id=${execution.id}"
             }
@@ -555,10 +557,10 @@ class InMemoryBatchJobRepository(
         ownerId: String,
         now: Instant,
     ): Boolean = current.id == requested.id &&
-        current.status == BatchStatus.RUNNING &&
-        current.ownerId == ownerId &&
-        current.version == requested.version &&
-        current.leaseUntil?.isAfter(now) == true
+            current.status == BatchStatus.RUNNING &&
+            current.ownerId == ownerId &&
+            current.version == requested.version &&
+            current.leaseUntil?.isAfter(now) == true
 
     private fun isRenewable(
         current: StepExecution,
@@ -566,22 +568,16 @@ class InMemoryBatchJobRepository(
         ownerId: String,
         now: Instant,
     ): Boolean = current.id == requested.id &&
-        current.status == BatchStatus.RUNNING &&
-        current.ownerId == ownerId &&
-        current.version == requested.version &&
-        current.leaseUntil?.isAfter(now) == true
+            current.status == BatchStatus.RUNNING &&
+            current.ownerId == ownerId &&
+            current.version == requested.version &&
+            current.leaseUntil?.isAfter(now) == true
 
     private fun leaseUntil(now: Instant, duration: Duration): Instant = try {
         now.plus(duration)
     } catch (cause: ArithmeticException) {
-        throw IllegalArgumentException(
-            "Invalid batch execution lease duration: overflow",
-            cause,
-        )
+        throw IllegalArgumentException("Invalid batch execution lease duration: overflow", cause)
     } catch (cause: DateTimeException) {
-        throw IllegalArgumentException(
-            "Invalid batch execution lease duration: overflow",
-            cause,
-        )
+        throw IllegalArgumentException("Invalid batch execution lease duration: overflow", cause)
     }
 }

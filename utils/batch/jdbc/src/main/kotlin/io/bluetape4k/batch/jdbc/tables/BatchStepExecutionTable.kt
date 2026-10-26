@@ -26,10 +26,13 @@ import org.jetbrains.exposed.v1.javatime.timestamp
  * );
  * ```
  */
-object BatchStepExecutionTable : LongIdTable("batch_step_execution") {
+object BatchStepExecutionTable: LongIdTable("batch_step_execution") {
     /** 소속 Job 실행 ID — [BatchJobExecutionTable] FK */
-    val jobExecutionId = reference("job_execution_id", BatchJobExecutionTable, onDelete = ReferenceOption.CASCADE)
-        .index()
+    val jobExecutionId = reference(
+        "job_execution_id",
+        BatchJobExecutionTable,
+        onDelete = ReferenceOption.CASCADE
+    ).index()
 
     /** Step 이름 */
     val stepName = varchar("step_name", 100)

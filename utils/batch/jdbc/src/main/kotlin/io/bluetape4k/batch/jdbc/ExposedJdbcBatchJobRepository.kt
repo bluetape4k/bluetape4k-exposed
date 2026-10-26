@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.jdbc
 
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchRepositoryRecoveryExhaustedException
@@ -7,9 +8,8 @@ import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
-import io.bluetape4k.batch.CheckpointJson
-import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireTerminalCompletionStatus
+import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.batch.jdbc.tables.BATCH_ACTIVE_KEY
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
@@ -35,6 +35,7 @@ import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -107,7 +108,7 @@ class ExposedJdbcBatchJobRepository(
     constructor(
         database: Database,
         checkpointJson: io.bluetape4k.batch.internal.CheckpointJson,
-    ) : this(database, checkpointJson as CheckpointJson)
+    ): this(database, checkpointJson as CheckpointJson)
 
     companion object: KLoggingChannel()
 
@@ -148,8 +149,8 @@ class ExposedJdbcBatchJobRepository(
                 BatchJobExecutionTable.selectAll()
                     .where {
                         (BatchJobExecutionTable.jobName eq jobName) and
-                            (BatchJobExecutionTable.paramsHash eq hash) and
-                            (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
+                                (BatchJobExecutionTable.paramsHash eq hash) and
+                                (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
                     }
                     .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
                     .limit(1)
@@ -173,6 +174,7 @@ class ExposedJdbcBatchJobRepository(
                 row[BatchJobExecutionTable.params] = if (params.isEmpty()) null else checkpointJson.write(params)
                 row[BatchJobExecutionTable.startTime] = now
             }
+
             JobExecution(
                 id = newId.value,
                 jobName = jobName,
@@ -190,6 +192,7 @@ class ExposedJdbcBatchJobRepository(
     ): JobExecution {
         beforeRecoveryRequeryHook?.invoke()
         findReusableJobExecution(jobName, hash)?.let { return it }
+
         return try {
             insertJobExecution(jobName, params, hash)
         } catch (e: CancellationException) {
@@ -217,21 +220,18 @@ class ExposedJdbcBatchJobRepository(
                 withLeaseDatabaseTimeout(DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS) {
                     BatchJobExecutionTable.update({
                         (BatchJobExecutionTable.id eq execution.id) and
-                            (BatchJobExecutionTable.version eq execution.version) and
-                            (
-                                (BatchJobExecutionTable.status inList listOf(
+                                (BatchJobExecutionTable.version eq execution.version) and
+                                ((BatchJobExecutionTable.status inList listOf(
                                     BatchStatus.FAILED,
-                                    BatchStatus.STOPPED,
+                                    BatchStatus.STOPPED
                                 )) or
-                                    (
-                                        (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
-                                            (
-                                                BatchJobExecutionTable.ownerId.isNull() or
-                                                    BatchJobExecutionTable.leaseUntil.isNull() or
-                                                    (BatchJobExecutionTable.leaseUntil less now)
+                                        ((BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                                (BatchJobExecutionTable.ownerId.isNull() or
+                                                        BatchJobExecutionTable.leaseUntil.isNull() or
+                                                        (BatchJobExecutionTable.leaseUntil less now)
+                                                        )
                                                 )
                                         )
-                                )
                     }) { row ->
                         row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
                         row[BatchJobExecutionTable.ownerId] = ownerId
@@ -267,26 +267,20 @@ class ExposedJdbcBatchJobRepository(
                     val leaseUntil = now.plus(leaseDuration)
                     val updatedRows = BatchJobExecutionTable.update({
                         (BatchJobExecutionTable.id eq execution.id) and
-                            (BatchJobExecutionTable.version eq execution.version) and
-                            (
-                                (
-                                    (BatchJobExecutionTable.status eq BatchStatus.STARTING) and
+                                (BatchJobExecutionTable.version eq execution.version) and
+                                (((BatchJobExecutionTable.status eq BatchStatus.STARTING) and
                                         BatchJobExecutionTable.ownerId.isNull() and
-                                        BatchJobExecutionTable.leaseUntil.isNull()
-                                ) or
-                                    (BatchJobExecutionTable.status inList listOf(
-                                        BatchStatus.FAILED,
-                                        BatchStatus.STOPPED,
-                                    )) or
-                                    (
-                                        (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
-                                            (
-                                                BatchJobExecutionTable.ownerId.isNull() or
-                                                    BatchJobExecutionTable.leaseUntil.isNull() or
-                                                    (BatchJobExecutionTable.leaseUntil less now)
+                                        BatchJobExecutionTable.leaseUntil.isNull()) or
+                                        (BatchJobExecutionTable.status inList listOf(
+                                            BatchStatus.FAILED,
+                                            BatchStatus.STOPPED
+                                        )) or
+                                        ((BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                                (BatchJobExecutionTable.ownerId.isNull() or
+                                                        BatchJobExecutionTable.leaseUntil.isNull() or
+                                                        (BatchJobExecutionTable.leaseUntil less now))
                                                 )
                                         )
-                                )
                     }) { row ->
                         row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
                         row[BatchJobExecutionTable.ownerId] = ownerId
@@ -342,7 +336,7 @@ class ExposedJdbcBatchJobRepository(
                     if (!currentJob.isRenewable(jobExecution, ownerId, now)) return@transaction null
                     if (stepExecution != null &&
                         (currentStep == null ||
-                            !currentStep.isRenewable(stepExecution, ownerId, jobExecution.id, now))
+                                !currentStep.isRenewable(stepExecution, ownerId, jobExecution.id, now))
                     ) {
                         return@transaction null
                     }
@@ -355,9 +349,9 @@ class ExposedJdbcBatchJobRepository(
 
                     val updatedJobRows = BatchJobExecutionTable.update({
                         (BatchJobExecutionTable.id eq currentJob.id) and
-                            (BatchJobExecutionTable.version eq currentJob.version) and
-                            (BatchJobExecutionTable.ownerId eq ownerId) and
-                            (BatchJobExecutionTable.status eq BatchStatus.RUNNING)
+                                (BatchJobExecutionTable.version eq currentJob.version) and
+                                (BatchJobExecutionTable.ownerId eq ownerId) and
+                                (BatchJobExecutionTable.status eq BatchStatus.RUNNING)
                     }) { row ->
                         row[BatchJobExecutionTable.leaseUntil] = newLeaseUntil
                         row[BatchJobExecutionTable.version] = currentJob.version + 1
@@ -369,10 +363,10 @@ class ExposedJdbcBatchJobRepository(
                     } else {
                         val updatedStepRows = BatchStepExecutionTable.update({
                             (BatchStepExecutionTable.id eq currentStep.id) and
-                                (BatchStepExecutionTable.version eq currentStep.version) and
-                                (BatchStepExecutionTable.jobExecutionId eq jobExecution.id) and
-                                (BatchStepExecutionTable.ownerId eq ownerId) and
-                                (BatchStepExecutionTable.status eq BatchStatus.RUNNING)
+                                    (BatchStepExecutionTable.version eq currentStep.version) and
+                                    (BatchStepExecutionTable.jobExecutionId eq jobExecution.id) and
+                                    (BatchStepExecutionTable.ownerId eq ownerId) and
+                                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING)
                         }) { row ->
                             row[BatchStepExecutionTable.leaseUntil] = newLeaseUntil
                             row[BatchStepExecutionTable.version] = currentStep.version + 1
@@ -428,14 +422,14 @@ class ExposedJdbcBatchJobRepository(
                 val now = currentDatabaseTime()
                 val condition = if (execution.ownerId == null) {
                     (BatchJobExecutionTable.id eq execution.id) and
-                        BatchJobExecutionTable.ownerId.isNull() and
-                        (BatchJobExecutionTable.version eq execution.version)
+                            BatchJobExecutionTable.ownerId.isNull() and
+                            (BatchJobExecutionTable.version eq execution.version)
                 } else {
                     (BatchJobExecutionTable.id eq execution.id) and
-                        (BatchJobExecutionTable.ownerId eq execution.ownerId) and
-                        (BatchJobExecutionTable.version eq execution.version) and
-                        (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
-                        (BatchJobExecutionTable.leaseUntil greater now)
+                            (BatchJobExecutionTable.ownerId eq execution.ownerId) and
+                            (BatchJobExecutionTable.version eq execution.version) and
+                            (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                            (BatchJobExecutionTable.leaseUntil greater now)
                 }
                 val updatedRows = BatchJobExecutionTable.update({ condition }) { row ->
                     row[BatchJobExecutionTable.status] = status
@@ -564,7 +558,7 @@ class ExposedJdbcBatchJobRepository(
                 BatchStepExecutionTable.selectAll()
                     .where {
                         (BatchStepExecutionTable.jobExecutionId eq jobExecutionId) and
-                            (BatchStepExecutionTable.stepName eq stepName)
+                                (BatchStepExecutionTable.stepName eq stepName)
                     }
                     .limit(1)
                     .firstOrNull()
@@ -588,24 +582,17 @@ class ExposedJdbcBatchJobRepository(
         val updatedRows = withContext(Dispatchers.VT) {
             transaction(database) {
                 withLeaseDatabaseTimeout(DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS) {
-                    BatchStepExecutionTable.update({
-                        (BatchStepExecutionTable.id eq execution.id) and
+                    val condition = (BatchStepExecutionTable.id eq execution.id) and
                             (BatchStepExecutionTable.version eq execution.version) and
-                            (
-                                (BatchStepExecutionTable.status inList listOf(
-                                    BatchStatus.FAILED,
-                                    BatchStatus.STOPPED,
-                                )) or
-                                    (
-                                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                                            (
-                                                BatchStepExecutionTable.ownerId.isNull() or
+                            ((BatchStepExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
+                                    ((BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                            (BatchStepExecutionTable.ownerId.isNull() or
                                                     BatchStepExecutionTable.leaseUntil.isNull() or
-                                                    (BatchStepExecutionTable.leaseUntil less now)
-                                                )
-                                        )
-                                )
-                    }) { row ->
+                                                    (BatchStepExecutionTable.leaseUntil less now))
+                                            )
+                                    )
+
+                    BatchStepExecutionTable.update(where = { condition }) { row ->
                         row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
                         row[BatchStepExecutionTable.ownerId] = ownerId
                         row[BatchStepExecutionTable.leaseUntil] = leaseUntil
@@ -640,26 +627,26 @@ class ExposedJdbcBatchJobRepository(
                     val leaseUntil = now.plus(leaseDuration)
                     val updatedRows = BatchStepExecutionTable.update({
                         (BatchStepExecutionTable.id eq execution.id) and
-                            (BatchStepExecutionTable.version eq execution.version) and
-                            (
+                                (BatchStepExecutionTable.version eq execution.version) and
                                 (
-                                    (BatchStepExecutionTable.status eq BatchStatus.STARTING) and
-                                        BatchStepExecutionTable.ownerId.isNull() and
-                                        BatchStepExecutionTable.leaseUntil.isNull()
-                                ) or
-                                    (BatchStepExecutionTable.status inList listOf(
-                                        BatchStatus.FAILED,
-                                        BatchStatus.STOPPED,
-                                    )) or
-                                    (
-                                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                                            (
-                                                BatchStepExecutionTable.ownerId.isNull() or
-                                                    BatchStepExecutionTable.leaseUntil.isNull() or
-                                                    (BatchStepExecutionTable.leaseUntil less now)
-                                                )
+                                        (
+                                                (BatchStepExecutionTable.status eq BatchStatus.STARTING) and
+                                                        BatchStepExecutionTable.ownerId.isNull() and
+                                                        BatchStepExecutionTable.leaseUntil.isNull()
+                                                ) or
+                                                (BatchStepExecutionTable.status inList listOf(
+                                                    BatchStatus.FAILED,
+                                                    BatchStatus.STOPPED,
+                                                )) or
+                                                (
+                                                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                                                (
+                                                                        BatchStepExecutionTable.ownerId.isNull() or
+                                                                                BatchStepExecutionTable.leaseUntil.isNull() or
+                                                                                (BatchStepExecutionTable.leaseUntil less now)
+                                                                        )
+                                                        )
                                         )
-                                )
                     }) { row ->
                         row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
                         row[BatchStepExecutionTable.ownerId] = ownerId
@@ -688,14 +675,14 @@ class ExposedJdbcBatchJobRepository(
                 val now = currentDatabaseTime()
                 val condition = if (execution.ownerId == null) {
                     (BatchStepExecutionTable.id eq execution.id) and
-                        BatchStepExecutionTable.ownerId.isNull() and
-                        (BatchStepExecutionTable.version eq execution.version)
+                            BatchStepExecutionTable.ownerId.isNull() and
+                            (BatchStepExecutionTable.version eq execution.version)
                 } else {
                     (BatchStepExecutionTable.id eq execution.id) and
-                        (BatchStepExecutionTable.ownerId eq execution.ownerId) and
-                        (BatchStepExecutionTable.version eq execution.version) and
-                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                        (BatchStepExecutionTable.leaseUntil greater now)
+                            (BatchStepExecutionTable.ownerId eq execution.ownerId) and
+                            (BatchStepExecutionTable.version eq execution.version) and
+                            (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                            (BatchStepExecutionTable.leaseUntil greater now)
                 }
                 val updatedRows = BatchStepExecutionTable.update({ condition }) { row ->
                     row[BatchStepExecutionTable.status] = report.status
@@ -725,7 +712,7 @@ class ExposedJdbcBatchJobRepository(
         val correlationId = Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH)
         log.error {
             "Job repository recovery budget exhausted — " +
-                "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
+                    "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
         }
         throw BatchRepositoryRecoveryExhaustedException(correlationId)
     }
@@ -768,10 +755,10 @@ class ExposedJdbcBatchJobRepository(
                 val now = currentDatabaseTime()
                 val updatedRows = BatchStepExecutionTable.update({
                     (BatchStepExecutionTable.id eq execution.id) and
-                        (BatchStepExecutionTable.ownerId eq ownerId) and
-                        (BatchStepExecutionTable.version eq execution.version) and
-                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                        (BatchStepExecutionTable.leaseUntil greater now)
+                            (BatchStepExecutionTable.ownerId eq ownerId) and
+                            (BatchStepExecutionTable.version eq execution.version) and
+                            (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                            (BatchStepExecutionTable.leaseUntil greater now)
                 }) { row ->
                     row[BatchStepExecutionTable.checkpoint] = json
                     row[BatchStepExecutionTable.version] = execution.version + 1
@@ -832,7 +819,8 @@ class ExposedJdbcBatchJobRepository(
         }
 
     /** Renewal 시각은 애플리케이션 JVM 시계가 아닌 현재 DB 연결의 시각을 사용한다. */
-    private fun org.jetbrains.exposed.v1.jdbc.JdbcTransaction.currentDatabaseTime(): Instant =
+    @Suppress("UnusedReceiverParameter")
+    private fun JdbcTransaction.currentDatabaseTime(): Instant =
         BatchJobExecutionTable
             .select(CurrentTimestamp)
             .limit(1)
@@ -845,10 +833,10 @@ class ExposedJdbcBatchJobRepository(
         ownerId: String,
         now: Instant,
     ): Boolean = id == requested.id &&
-        status == BatchStatus.RUNNING &&
-        this.ownerId == ownerId &&
-        version == requested.version &&
-        leaseUntil?.isAfter(now) == true
+            status == BatchStatus.RUNNING &&
+            this.ownerId == ownerId &&
+            version == requested.version &&
+            leaseUntil?.isAfter(now) == true
 
     private fun StepExecution.isRenewable(
         requested: StepExecution,
@@ -856,11 +844,11 @@ class ExposedJdbcBatchJobRepository(
         jobExecutionId: Long,
         now: Instant,
     ): Boolean = id == requested.id &&
-        this.jobExecutionId == jobExecutionId &&
-        status == BatchStatus.RUNNING &&
-        this.ownerId == ownerId &&
-        version == requested.version &&
-        leaseUntil?.isAfter(now) == true
+            this.jobExecutionId == jobExecutionId &&
+            status == BatchStatus.RUNNING &&
+            this.ownerId == ownerId &&
+            version == requested.version &&
+            leaseUntil?.isAfter(now) == true
 
     /**
      * 예외 체인을 따라 최초 [SQLException]을 찾는다.

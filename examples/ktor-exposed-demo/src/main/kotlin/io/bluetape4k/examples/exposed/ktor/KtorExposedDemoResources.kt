@@ -20,8 +20,6 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
-import org.jetbrains.exposed.v1.r2dbc.SchemaUtils as R2dbcSchemaUtils
-import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager as R2dbcTransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.io.Serializable
 import java.time.Clock
@@ -30,8 +28,10 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import org.jetbrains.exposed.v1.r2dbc.SchemaUtils as R2dbcSchemaUtils
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager as R2dbcTransactionManager
 
-object DemoItems : LongIdTable("ktor_demo_items") {
+object DemoItems: LongIdTable("ktor_demo_items") {
     val name = varchar("name", 80)
 }
 
@@ -40,14 +40,14 @@ data class KtorExposedDemoConfig(
         ?: "r2dbc:postgresql://localhost:5432/ktor_exposed_demo",
     val user: String = System.getenv("DEMO_POSTGRES_USER") ?: "demo",
     val password: String = System.getenv("DEMO_POSTGRES_PASSWORD") ?: "demo",
-) : Serializable {
+): Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
     }
 }
 
-data class DemoCleanupReport(val failures: List<Throwable>) : Serializable {
+data class DemoCleanupReport(val failures: List<Throwable>): Serializable {
     val isClean: Boolean get() = failures.isEmpty()
 
     companion object {
@@ -101,7 +101,7 @@ internal class DemoLifecycleLease(
         check(active.compareAndSet(false, true)) {
             "Only one Ktor Exposed demo resource lifecycle may be active."
         }
-        return object : AutoCloseable {
+        return object: AutoCloseable {
             private val released = AtomicBoolean()
 
             override fun close() {
@@ -121,7 +121,7 @@ class KtorExposedDemoResources internal constructor(
     val eventPublisher: InMemoryOrderEventPublisher,
     val orderService: OrderCommandService,
     private val closeActions: List<NamedCloseAction>,
-) : AutoCloseable {
+): AutoCloseable {
 
     private val closeLock = ReentrantLock()
 

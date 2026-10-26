@@ -8,7 +8,7 @@ package io.bluetape4k.batch.api
 class BatchInfrastructureFailureException(
     val category: String,
     val correlationId: String,
-) : RuntimeException("$category; correlationId=$correlationId") {
+): RuntimeException("$category; correlationId=$correlationId") {
 
     init {
         require(category in ALLOWED_CATEGORIES) { "Unsupported batch infrastructure failure category" }

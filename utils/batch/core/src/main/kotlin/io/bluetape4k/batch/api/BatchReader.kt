@@ -16,7 +16,7 @@ package io.bluetape4k.batch.api
  *
  * @param T 읽어들이는 아이템 타입
  */
-interface BatchReader<out T : Any> {
+interface BatchReader<out T: Any> {
     /**
      * 리더를 초기화한다. 첫 [read] 전에 반드시 호출된다.
      */

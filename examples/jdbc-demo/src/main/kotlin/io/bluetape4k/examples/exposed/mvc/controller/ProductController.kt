@@ -36,8 +36,8 @@ class ProductController(
     fun findById(@PathVariable id: Long): ResponseEntity<ProductRecord> {
         val entity = transaction {
             productJdbcRepository.findById(id).orElse(null)?.toRecord()
-        }
-            ?: return ResponseEntity.notFound().build()
+        } ?: return ResponseEntity.notFound().build()
+
         return ResponseEntity.ok(entity)
     }
 
@@ -61,8 +61,8 @@ class ProductController(
                 price = dto.price
                 stock = dto.stock
             }?.toRecord()
-        }
-            ?: return ResponseEntity.notFound().build()
+        } ?: return ResponseEntity.notFound().build()
+
         return ResponseEntity.ok(entity)
     }
 

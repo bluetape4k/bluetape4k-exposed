@@ -9,8 +9,8 @@ import io.bluetape4k.exposed.ktor.cache.exposedKtorCacheReadinessProbes
 import io.bluetape4k.exposed.ktor.core.bluetape4kExposedCoreErrors
 import io.bluetape4k.exposed.ktor.core.bluetape4kExposedHealthRoutes
 import io.bluetape4k.exposed.ktor.jdbc.bluetape4kExposedJdbcErrors
-import io.bluetape4k.exposed.ktor.jdbc.exposedKtorJdbcReadinessProbe
 import io.bluetape4k.exposed.ktor.jdbc.exposedJdbcTransaction
+import io.bluetape4k.exposed.ktor.jdbc.exposedKtorJdbcReadinessProbe
 import io.bluetape4k.exposed.ktor.r2dbc.bluetape4kExposedR2dbcErrors
 import io.bluetape4k.exposed.ktor.r2dbc.exposedKtorR2dbcReadinessProbe
 import io.bluetape4k.exposed.ktor.r2dbc.exposedR2dbcTransaction
@@ -22,7 +22,6 @@ import io.bluetape4k.logging.KotlinLogging
 import io.bluetape4k.logging.error
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.embeddedServer
@@ -32,10 +31,10 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.r2dbc.selectAll as r2dbcSelectAll
 import java.io.Serializable
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
+import org.jetbrains.exposed.v1.r2dbc.selectAll as r2dbcSelectAll
 
 fun Application.installKtorExposedDemo(
     resources: KtorExposedDemoResources,
@@ -109,7 +108,7 @@ internal data class DemoRunResult(
     val status: Int,
     val primaryFailure: Throwable? = null,
     val cleanupReport: DemoCleanupReport,
-) : Serializable {
+): Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -166,7 +165,7 @@ private val defaultDiagnosticLogger = DemoDiagnosticLogger { message ->
 
 internal class StderrDemoDiagnosticSink(
     private val logger: DemoDiagnosticLogger = defaultDiagnosticLogger,
-) : DemoDiagnosticSink {
+): DemoDiagnosticSink {
     override fun emit(diagnostic: DemoDiagnostic) {
         val fields = buildList {
             add("code=${diagnostic.code}")
@@ -198,7 +197,7 @@ fun main() {
             ) {
                 installKtorExposedDemo(resources, diagnostics)
             }
-            object : DemoServer {
+            object: DemoServer {
                 override fun start(wait: Boolean) {
                     server.start(wait)
                 }

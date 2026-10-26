@@ -20,7 +20,7 @@ const val INVALID_BATCH_LEASE_DURATION_PREFIX: String =
  */
 fun Duration.requireValidBatchLeaseDuration(parameterName: String = "leaseDuration"): Duration {
     try {
-        require(this >= MIN_BATCH_LEASE_DURATION && this <= MAX_BATCH_LEASE_DURATION) {
+        require(this in MIN_BATCH_LEASE_DURATION..MAX_BATCH_LEASE_DURATION) {
             "$INVALID_BATCH_LEASE_DURATION_PREFIX: $parameterName must be between 30 seconds and 24 hours"
         }
         toMillis()

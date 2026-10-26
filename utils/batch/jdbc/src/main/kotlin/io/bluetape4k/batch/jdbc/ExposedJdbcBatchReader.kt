@@ -3,7 +3,6 @@ package io.bluetape4k.batch.jdbc
 import io.bluetape4k.batch.BatchDefaults
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.concurrent.virtualthread.VT
-import kotlin.reflect.KClass
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requirePositiveNumber
@@ -19,6 +18,7 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import kotlin.reflect.KClass
 
 /**
  * Exposed JDBC와 keyset pagination을 사용해 데이터를 읽는 [BatchReader] 구현체입니다.
@@ -114,7 +114,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
         keyClass?.let { expectedKeyClass ->
             require(expectedKeyClass.isInstance(checkpoint)) {
                 "restoreFrom: checkpoint type mismatch — expected ${expectedKeyClass.simpleName}, " +
-                    "got ${checkpoint::class.qualifiedName} for keyColumn '${keyColumn.name}'"
+                        "got ${checkpoint::class.qualifiedName} for keyColumn '${keyColumn.name}'"
             }
         }
         val key = try {
@@ -122,7 +122,7 @@ class ExposedJdbcBatchReader<K: Comparable<K>, T: Any>(
         } catch (e: ClassCastException) {
             throw IllegalArgumentException(
                 "restoreFrom: checkpoint type mismatch — expected type compatible with " +
-                    "keyColumn '${keyColumn.name}', got ${checkpoint::class.qualifiedName}",
+                        "keyColumn '${keyColumn.name}', got ${checkpoint::class.qualifiedName}",
                 e
             )
         }

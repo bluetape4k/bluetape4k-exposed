@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.r2dbc
 
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchRepositoryRecoveryExhaustedException
@@ -7,9 +8,8 @@ import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
-import io.bluetape4k.batch.CheckpointJson
-import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireTerminalCompletionStatus
+import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.batch.r2dbc.tables.BATCH_ACTIVE_KEY
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
@@ -21,6 +21,7 @@ import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
+import io.bluetape4k.support.checkNotNull
 import io.r2dbc.spi.R2dbcException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.firstOrNull
@@ -34,11 +35,11 @@ import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
-import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -72,7 +73,7 @@ private const val RECOVERY_CORRELATION_ID_LENGTH = 16
 class ExposedR2dbcBatchJobRepository(
     private val database: R2dbcDatabase,
     private val checkpointJson: CheckpointJson,
-) : BatchJobRepository {
+): BatchJobRepository {
 
     /** R2DBC row lock와 DB 시각을 사용한 lease claim/renewal을 제공한다. */
     override val supportsLeaseRenewal: Boolean = true
@@ -99,9 +100,9 @@ class ExposedR2dbcBatchJobRepository(
     constructor(
         database: R2dbcDatabase,
         checkpointJson: io.bluetape4k.batch.internal.CheckpointJson,
-    ) : this(database, checkpointJson as CheckpointJson)
+    ): this(database, checkpointJson as CheckpointJson)
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun findOrCreateJobExecution(
@@ -129,8 +130,8 @@ class ExposedR2dbcBatchJobRepository(
             BatchJobExecutionTable.selectAll()
                 .where {
                     (BatchJobExecutionTable.jobName eq jobName) and
-                        (BatchJobExecutionTable.paramsHash eq hash) and
-                        (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
+                            (BatchJobExecutionTable.paramsHash eq hash) and
+                            (BatchJobExecutionTable.activeKey eq BATCH_ACTIVE_KEY)
                 }
                 .orderBy(BatchJobExecutionTable.id, SortOrder.DESC)
                 .limit(1)
@@ -169,6 +170,7 @@ class ExposedR2dbcBatchJobRepository(
     ): JobExecution {
         beforeRecoveryRequeryHook?.invoke()
         findReusableJobExecution(jobName, hash)?.let { return it }
+
         return try {
             insertJobExecution(jobName, params, hash)
         } catch (e: CancellationException) {
@@ -194,18 +196,21 @@ class ExposedR2dbcBatchJobRepository(
             withLeaseDatabaseTimeout(DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS) {
                 BatchJobExecutionTable.update({
                     (BatchJobExecutionTable.id eq execution.id) and
-                        (BatchJobExecutionTable.version eq execution.version) and
-                        (
-                            (BatchJobExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
-                                (
-                                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
-                                        (
-                                            BatchJobExecutionTable.ownerId.isNull() or
-                                                BatchJobExecutionTable.leaseUntil.isNull() or
-                                                (BatchJobExecutionTable.leaseUntil less now)
-                                            )
+                            (BatchJobExecutionTable.version eq execution.version) and
+                            (
+                                    (BatchJobExecutionTable.status inList listOf(
+                                        BatchStatus.FAILED,
+                                        BatchStatus.STOPPED
+                                    )) or
+                                            (
+                                                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                                            (
+                                                                    BatchJobExecutionTable.ownerId.isNull() or
+                                                                            BatchJobExecutionTable.leaseUntil.isNull() or
+                                                                            (BatchJobExecutionTable.leaseUntil less now)
+                                                                    )
+                                                    )
                                     )
-                            )
                 }) { row ->
                     row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
                     row[BatchJobExecutionTable.ownerId] = ownerId
@@ -238,27 +243,27 @@ class ExposedR2dbcBatchJobRepository(
                 val now = currentDatabaseTime()
                 val leaseUntil = now.plus(leaseDuration)
                 val updatedRows = BatchJobExecutionTable.update({
-                (BatchJobExecutionTable.id eq execution.id) and
-                    (BatchJobExecutionTable.version eq execution.version) and
-                    (
-                        (
-                            (BatchJobExecutionTable.status eq BatchStatus.STARTING) and
-                                BatchJobExecutionTable.ownerId.isNull() and
-                                BatchJobExecutionTable.leaseUntil.isNull()
-                        ) or
-                            (BatchJobExecutionTable.status inList listOf(
-                                BatchStatus.FAILED,
-                                BatchStatus.STOPPED,
-                            )) or
+                    (BatchJobExecutionTable.id eq execution.id) and
+                            (BatchJobExecutionTable.version eq execution.version) and
                             (
-                                (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
                                     (
-                                        BatchJobExecutionTable.ownerId.isNull() or
-                                            BatchJobExecutionTable.leaseUntil.isNull() or
-                                            (BatchJobExecutionTable.leaseUntil less now)
-                                        )
-                                )
-                        )
+                                            (BatchJobExecutionTable.status eq BatchStatus.STARTING) and
+                                                    BatchJobExecutionTable.ownerId.isNull() and
+                                                    BatchJobExecutionTable.leaseUntil.isNull()
+                                            ) or
+                                            (BatchJobExecutionTable.status inList listOf(
+                                                BatchStatus.FAILED,
+                                                BatchStatus.STOPPED,
+                                            )) or
+                                            (
+                                                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                                                            (
+                                                                    BatchJobExecutionTable.ownerId.isNull() or
+                                                                            BatchJobExecutionTable.leaseUntil.isNull() or
+                                                                            (BatchJobExecutionTable.leaseUntil less now)
+                                                                    )
+                                                    )
+                                    )
                 }) { row ->
                     row[BatchJobExecutionTable.status] = BatchStatus.RUNNING
                     row[BatchJobExecutionTable.ownerId] = ownerId
@@ -294,83 +299,85 @@ class ExposedR2dbcBatchJobRepository(
             withLeaseDatabaseTimeout(leaseDuration.toRenewalTimeoutSeconds()) {
                 // 항상 Job → Step 순서로 잠가 deadlock 가능성을 줄인다.
                 val currentJob = BatchJobExecutionTable.selectAll()
-                .where { BatchJobExecutionTable.id eq jobExecution.id }
-                .forUpdate()
-                .limit(1)
-                .map { it.toJobExecution(checkpointJson) }
-                .firstOrNull()
-                ?: return@suspendTransaction null
-            val currentStep = stepExecution?.let { requestedStep ->
-                BatchStepExecutionTable.selectAll()
-                    .where { BatchStepExecutionTable.id eq requestedStep.id }
+                    .where { BatchJobExecutionTable.id eq jobExecution.id }
                     .forUpdate()
                     .limit(1)
-                    .map { it.toStepExecution(checkpointJson) }
+                    .map { it.toJobExecution(checkpointJson) }
                     .firstOrNull()
-            }
-            val now = currentDatabaseTime()
-            if (!currentJob.isRenewable(jobExecution, ownerId, now)) return@suspendTransaction null
-            if (stepExecution != null &&
-                (currentStep == null ||
-                    !currentStep.isRenewable(stepExecution, ownerId, jobExecution.id, now))
-            ) {
-                return@suspendTransaction null
-            }
+                    ?: return@suspendTransaction null
 
-            val newLeaseUntil = now.plus(leaseDuration)
-            if (!newLeaseUntil.isAfter(currentJob.leaseUntil)) return@suspendTransaction null
-            if (currentStep != null && !newLeaseUntil.isAfter(currentStep.leaseUntil)) {
-                return@suspendTransaction null
-            }
-
-            val updatedJobRows = BatchJobExecutionTable.update({
-                (BatchJobExecutionTable.id eq currentJob.id) and
-                    (BatchJobExecutionTable.version eq currentJob.version) and
-                    (BatchJobExecutionTable.ownerId eq ownerId) and
-                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING)
-            }) { row ->
-                row[BatchJobExecutionTable.leaseUntil] = newLeaseUntil
-                row[BatchJobExecutionTable.version] = currentJob.version + 1
-            }
-            if (updatedJobRows != 1) return@suspendTransaction null
-
-            val renewedStep = if (currentStep == null) {
-                null
-            } else {
-                val updatedStepRows = BatchStepExecutionTable.update({
-                    (BatchStepExecutionTable.id eq currentStep.id) and
-                        (BatchStepExecutionTable.version eq currentStep.version) and
-                        (BatchStepExecutionTable.jobExecutionId eq jobExecution.id) and
-                        (BatchStepExecutionTable.ownerId eq ownerId) and
-                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING)
-                }) { row ->
-                    row[BatchStepExecutionTable.leaseUntil] = newLeaseUntil
-                    row[BatchStepExecutionTable.version] = currentStep.version + 1
+                val currentStep = stepExecution?.let { requestedStep ->
+                    BatchStepExecutionTable.selectAll()
+                        .where { BatchStepExecutionTable.id eq requestedStep.id }
+                        .forUpdate()
+                        .limit(1)
+                        .map { it.toStepExecution(checkpointJson) }
+                        .firstOrNull()
                 }
-                if (updatedStepRows != 1) {
-                    rollback()
+
+                val now = currentDatabaseTime()
+                if (!currentJob.isRenewable(jobExecution, ownerId, now)) return@suspendTransaction null
+                if (stepExecution != null &&
+                    (currentStep == null ||
+                            !currentStep.isRenewable(stepExecution, ownerId, jobExecution.id, now))
+                ) {
                     return@suspendTransaction null
                 }
-                BatchStepExecutionTable.selectAll()
-                    .where { BatchStepExecutionTable.id eq currentStep.id }
+
+                val newLeaseUntil = now.plus(leaseDuration)
+                if (!newLeaseUntil.isAfter(currentJob.leaseUntil)) return@suspendTransaction null
+                if (currentStep != null && !newLeaseUntil.isAfter(currentStep.leaseUntil)) {
+                    return@suspendTransaction null
+                }
+
+                val updatedJobRows = BatchJobExecutionTable.update({
+                    (BatchJobExecutionTable.id eq currentJob.id) and
+                            (BatchJobExecutionTable.version eq currentJob.version) and
+                            (BatchJobExecutionTable.ownerId eq ownerId) and
+                            (BatchJobExecutionTable.status eq BatchStatus.RUNNING)
+                }) { row ->
+                    row[BatchJobExecutionTable.leaseUntil] = newLeaseUntil
+                    row[BatchJobExecutionTable.version] = currentJob.version + 1
+                }
+                if (updatedJobRows != 1) return@suspendTransaction null
+
+                val renewedStep = if (currentStep == null) {
+                    null
+                } else {
+                    val updatedStepRows = BatchStepExecutionTable.update({
+                        (BatchStepExecutionTable.id eq currentStep.id) and
+                                (BatchStepExecutionTable.version eq currentStep.version) and
+                                (BatchStepExecutionTable.jobExecutionId eq jobExecution.id) and
+                                (BatchStepExecutionTable.ownerId eq ownerId) and
+                                (BatchStepExecutionTable.status eq BatchStatus.RUNNING)
+                    }) { row ->
+                        row[BatchStepExecutionTable.leaseUntil] = newLeaseUntil
+                        row[BatchStepExecutionTable.version] = currentStep.version + 1
+                    }
+                    if (updatedStepRows != 1) {
+                        rollback()
+                        return@suspendTransaction null
+                    }
+                    BatchStepExecutionTable.selectAll()
+                        .where { BatchStepExecutionTable.id eq currentStep.id }
+                        .limit(1)
+                        .map { it.toStepExecution(checkpointJson) }
+                        .firstOrNull()
+                        ?: run {
+                            rollback()
+                            return@suspendTransaction null
+                        }
+                }
+
+                val renewedJob = BatchJobExecutionTable.selectAll()
+                    .where { BatchJobExecutionTable.id eq currentJob.id }
                     .limit(1)
-                    .map { it.toStepExecution(checkpointJson) }
+                    .map { it.toJobExecution(checkpointJson) }
                     .firstOrNull()
                     ?: run {
                         rollback()
                         return@suspendTransaction null
                     }
-            }
-
-            val renewedJob = BatchJobExecutionTable.selectAll()
-                .where { BatchJobExecutionTable.id eq currentJob.id }
-                .limit(1)
-                .map { it.toJobExecution(checkpointJson) }
-                .firstOrNull()
-                ?: run {
-                    rollback()
-                    return@suspendTransaction null
-                }
 
                 BatchExecutionLeaseSnapshot(
                     jobExecution = renewedJob,
@@ -399,14 +406,14 @@ class ExposedR2dbcBatchJobRepository(
             val now = currentDatabaseTime()
             val condition = if (execution.ownerId == null) {
                 (BatchJobExecutionTable.id eq execution.id) and
-                    BatchJobExecutionTable.ownerId.isNull() and
-                    (BatchJobExecutionTable.version eq execution.version)
+                        BatchJobExecutionTable.ownerId.isNull() and
+                        (BatchJobExecutionTable.version eq execution.version)
             } else {
                 (BatchJobExecutionTable.id eq execution.id) and
-                    (BatchJobExecutionTable.ownerId eq execution.ownerId) and
-                    (BatchJobExecutionTable.version eq execution.version) and
-                    (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
-                    (BatchJobExecutionTable.leaseUntil greater now)
+                        (BatchJobExecutionTable.ownerId eq execution.ownerId) and
+                        (BatchJobExecutionTable.version eq execution.version) and
+                        (BatchJobExecutionTable.status eq BatchStatus.RUNNING) and
+                        (BatchJobExecutionTable.leaseUntil greater now)
             }
             val updatedRows = BatchJobExecutionTable.update({ condition }) { row ->
                 row[BatchJobExecutionTable.status] = status
@@ -437,7 +444,7 @@ class ExposedR2dbcBatchJobRepository(
             BatchStepExecutionTable.selectAll()
                 .where {
                     (BatchStepExecutionTable.jobExecutionId eq jobExecution.id) and
-                        (BatchStepExecutionTable.stepName eq stepName)
+                            (BatchStepExecutionTable.stepName eq stepName)
                 }
                 .limit(1)
                 .map { it.toStepExecution(checkpointJson) }
@@ -493,7 +500,7 @@ class ExposedR2dbcBatchJobRepository(
             BatchStepExecutionTable.selectAll()
                 .where {
                     (BatchStepExecutionTable.jobExecutionId eq jobExecutionId) and
-                        (BatchStepExecutionTable.stepName eq stepName)
+                            (BatchStepExecutionTable.stepName eq stepName)
                 }
                 .limit(1)
                 .map { it.toStepExecution(checkpointJson) }
@@ -517,18 +524,21 @@ class ExposedR2dbcBatchJobRepository(
             withLeaseDatabaseTimeout(DEFAULT_REPOSITORY_QUERY_TIMEOUT_SECONDS) {
                 BatchStepExecutionTable.update({
                     (BatchStepExecutionTable.id eq execution.id) and
-                        (BatchStepExecutionTable.version eq execution.version) and
-                        (
-                            (BatchStepExecutionTable.status inList listOf(BatchStatus.FAILED, BatchStatus.STOPPED)) or
-                                (
-                                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                                        (
-                                            BatchStepExecutionTable.ownerId.isNull() or
-                                                BatchStepExecutionTable.leaseUntil.isNull() or
-                                                (BatchStepExecutionTable.leaseUntil less now)
-                                            )
+                            (BatchStepExecutionTable.version eq execution.version) and
+                            (
+                                    (BatchStepExecutionTable.status inList listOf(
+                                        BatchStatus.FAILED,
+                                        BatchStatus.STOPPED
+                                    )) or
+                                            (
+                                                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                                            (
+                                                                    BatchStepExecutionTable.ownerId.isNull() or
+                                                                            BatchStepExecutionTable.leaseUntil.isNull() or
+                                                                            (BatchStepExecutionTable.leaseUntil less now)
+                                                                    )
+                                                    )
                                     )
-                            )
                 }) { row ->
                     row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
                     row[BatchStepExecutionTable.ownerId] = ownerId
@@ -540,7 +550,7 @@ class ExposedR2dbcBatchJobRepository(
         }
 
         return if (updatedRows == 1) {
-            checkNotNull(findStepExecutionById(execution.id)) {
+            findStepExecutionById(execution.id).checkNotNull {
                 "StepExecution disappeared after a successful claim: id=${execution.id}"
             }
         } else {
@@ -561,27 +571,27 @@ class ExposedR2dbcBatchJobRepository(
                 val now = currentDatabaseTime()
                 val leaseUntil = now.plus(leaseDuration)
                 val updatedRows = BatchStepExecutionTable.update({
-                (BatchStepExecutionTable.id eq execution.id) and
-                    (BatchStepExecutionTable.version eq execution.version) and
-                    (
-                        (
-                            (BatchStepExecutionTable.status eq BatchStatus.STARTING) and
-                                BatchStepExecutionTable.ownerId.isNull() and
-                                BatchStepExecutionTable.leaseUntil.isNull()
-                        ) or
-                            (BatchStepExecutionTable.status inList listOf(
-                                BatchStatus.FAILED,
-                                BatchStatus.STOPPED,
-                            )) or
+                    (BatchStepExecutionTable.id eq execution.id) and
+                            (BatchStepExecutionTable.version eq execution.version) and
                             (
-                                (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
                                     (
-                                        BatchStepExecutionTable.ownerId.isNull() or
-                                            BatchStepExecutionTable.leaseUntil.isNull() or
-                                            (BatchStepExecutionTable.leaseUntil less now)
-                                        )
-                                )
-                        )
+                                            (BatchStepExecutionTable.status eq BatchStatus.STARTING) and
+                                                    BatchStepExecutionTable.ownerId.isNull() and
+                                                    BatchStepExecutionTable.leaseUntil.isNull()
+                                            ) or
+                                            (BatchStepExecutionTable.status inList listOf(
+                                                BatchStatus.FAILED,
+                                                BatchStatus.STOPPED,
+                                            )) or
+                                            (
+                                                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                                                            (
+                                                                    BatchStepExecutionTable.ownerId.isNull() or
+                                                                            BatchStepExecutionTable.leaseUntil.isNull() or
+                                                                            (BatchStepExecutionTable.leaseUntil less now)
+                                                                    )
+                                                    )
+                                    )
                 }) { row ->
                     row[BatchStepExecutionTable.status] = BatchStatus.RUNNING
                     row[BatchStepExecutionTable.ownerId] = ownerId
@@ -608,14 +618,14 @@ class ExposedR2dbcBatchJobRepository(
             val now = currentDatabaseTime()
             val condition = if (execution.ownerId == null) {
                 (BatchStepExecutionTable.id eq execution.id) and
-                    BatchStepExecutionTable.ownerId.isNull() and
-                    (BatchStepExecutionTable.version eq execution.version)
+                        BatchStepExecutionTable.ownerId.isNull() and
+                        (BatchStepExecutionTable.version eq execution.version)
             } else {
                 (BatchStepExecutionTable.id eq execution.id) and
-                    (BatchStepExecutionTable.ownerId eq execution.ownerId) and
-                    (BatchStepExecutionTable.version eq execution.version) and
-                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                    (BatchStepExecutionTable.leaseUntil greater now)
+                        (BatchStepExecutionTable.ownerId eq execution.ownerId) and
+                        (BatchStepExecutionTable.version eq execution.version) and
+                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                        (BatchStepExecutionTable.leaseUntil greater now)
             }
             val updatedRows = BatchStepExecutionTable.update({ condition }) { row ->
                 row[BatchStepExecutionTable.status] = report.status
@@ -640,7 +650,7 @@ class ExposedR2dbcBatchJobRepository(
         val correlationId = Base58.randomString(RECOVERY_CORRELATION_ID_LENGTH)
         log.error {
             "Job repository recovery budget exhausted — " +
-                "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
+                    "category=RECOVERY_EXHAUSTED, correlationId=$correlationId"
         }
         throw BatchRepositoryRecoveryExhaustedException(correlationId)
     }
@@ -678,10 +688,10 @@ class ExposedR2dbcBatchJobRepository(
             val json = checkpointJson.write(checkpoint)
             val updatedRows = BatchStepExecutionTable.update({
                 (BatchStepExecutionTable.id eq execution.id) and
-                    (BatchStepExecutionTable.ownerId eq ownerId) and
-                    (BatchStepExecutionTable.version eq execution.version) and
-                    (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
-                    (BatchStepExecutionTable.leaseUntil greater now)
+                        (BatchStepExecutionTable.ownerId eq ownerId) and
+                        (BatchStepExecutionTable.version eq execution.version) and
+                        (BatchStepExecutionTable.status eq BatchStatus.RUNNING) and
+                        (BatchStepExecutionTable.leaseUntil greater now)
             }) { row ->
                 row[BatchStepExecutionTable.checkpoint] = json
                 row[BatchStepExecutionTable.version] = execution.version + 1
@@ -734,12 +744,12 @@ class ExposedR2dbcBatchJobRepository(
     private suspend fun R2dbcTransaction.currentDatabaseTime(): Instant =
         exec("SELECT CURRENT_TIMESTAMP(6)") { row ->
             when (val value = row.get(0)) {
-                is Instant -> value
+                is Instant        -> value
                 is OffsetDateTime -> value.toInstant()
-                is LocalDateTime -> value.toInstant(ZoneOffset.UTC)
+                is LocalDateTime  -> value.toInstant(ZoneOffset.UTC)
                 is java.sql.Timestamp -> value.toInstant()
-                is String -> value.toDatabaseInstant()
-                else -> error("Unsupported database current timestamp type")
+                is String         -> value.toDatabaseInstant()
+                else              -> error("Unsupported database current timestamp type")
             }
         }?.firstOrNull() ?: error("Database current timestamp was not available")
 
@@ -756,10 +766,10 @@ class ExposedR2dbcBatchJobRepository(
         ownerId: String,
         now: Instant,
     ): Boolean = id == requested.id &&
-        status == BatchStatus.RUNNING &&
-        this.ownerId == ownerId &&
-        version == requested.version &&
-        leaseUntil?.isAfter(now) == true
+            status == BatchStatus.RUNNING &&
+            this.ownerId == ownerId &&
+            version == requested.version &&
+            leaseUntil?.isAfter(now) == true
 
     private fun StepExecution.isRenewable(
         requested: StepExecution,
@@ -767,11 +777,11 @@ class ExposedR2dbcBatchJobRepository(
         jobExecutionId: Long,
         now: Instant,
     ): Boolean = id == requested.id &&
-        this.jobExecutionId == jobExecutionId &&
-        status == BatchStatus.RUNNING &&
-        this.ownerId == ownerId &&
-        version == requested.version &&
-        leaseUntil?.isAfter(now) == true
+            this.jobExecutionId == jobExecutionId &&
+            status == BatchStatus.RUNNING &&
+            this.ownerId == ownerId &&
+            version == requested.version &&
+            leaseUntil?.isAfter(now) == true
 }
 
 /**

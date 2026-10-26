@@ -46,8 +46,8 @@ data class StepExecution(
     val version: Long = 0L,
     val startTime: Instant = Instant.now(),
     val endTime: Instant? = null,
-) : Serializable {
-    companion object : KLogging() {
+): Serializable {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
     }
 }

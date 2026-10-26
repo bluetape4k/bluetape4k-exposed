@@ -11,7 +11,7 @@ import java.io.Serializable
 data class BatchExecutionLeaseSnapshot(
     val jobExecution: JobExecution,
     val stepExecution: StepExecution?,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID = 1L
     }

@@ -1,5 +1,6 @@
 package io.bluetape4k.batch.jdbc
 
+import io.bluetape4k.apache.startsWithIgnoreCase
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
@@ -7,6 +8,8 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -18,15 +21,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 /** [ExposedJdbcBatchWriter]의 Exposed 1.5.0 multi-row VALUES 선택 동작을 검증한다. */
-class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
+class JdbcBatchWriterMultiRowValuesTest: AbstractBatchJdbcTest() {
 
-    companion object {
+    companion object: KLogging() {
         /** 승인된 H2/PostgreSQL 계약만 검증한다. 다른 방언의 생성 키 계약은 미검증이다. */
         @JvmStatic
         fun multiRowDialects() = TestDB.enabledDialects().filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
     }
 
-    private object WriterTable : LongIdTable("batch_writer_multi_rows") {
+    private object WriterTable: LongIdTable("batch_writer_multi_rows") {
         val sourceName = varchar("source_name", 80).uniqueIndex()
         val transformedValue = integer("transformed_value")
         val note = varchar("note", 80).nullable()
@@ -56,12 +59,14 @@ class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
             runSuspendIO { writer.write(items) }
 
             val inserts = observer.entries.filter { it.sql.isInsert() }
+
             inserts shouldHaveSize 1
             inserts.single().argumentCount shouldBeEqualTo 6
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(inserts.single().sql).shouldBeTrue()
             countTarget(testDB) shouldBeEqualTo 2L
-            WriterTable.selectAll().map { it[WriterTable.note] }
-                .shouldBeEqualTo(listOf(null, "note"))
+
+            WriterTable.selectAll()
+                .map { it[WriterTable.note] } shouldBeEqualTo listOf(null, "note")
         }
     }
 
@@ -78,6 +83,7 @@ class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
             inserts shouldHaveSize 1
             inserts.single().argumentCount shouldBeEqualTo 3
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(inserts.single().sql).not().shouldBeTrue()
+
             WriterTable.selectAll().single()[WriterTable.note] shouldBeEqualTo "note"
         }
     }
@@ -188,7 +194,8 @@ class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
                 .filterIsInstance<java.sql.SQLException>()
                 .any { it.sqlState == "23505" }.shouldBeTrue()
             countTarget(testDB) shouldBeEqualTo 1L
-            val names = WriterTable.selectAll().map { it[WriterTable.sourceName] }
+
+            val names = WriterTable.selectAll().map { it[WriterTable.sourceName] }.onEach { log.debug { "name=$it" } }
             names shouldBeEqualTo listOf("prior")
         }
     }
@@ -217,8 +224,9 @@ class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
             }
 
             countTarget(testDB) shouldBeEqualTo 3L
-            WriterTable.selectAll().map { it[WriterTable.sourceName] }.toSet()
-                .shouldBeEqualTo(setOf("prior", "new-1", "new-2"))
+            WriterTable.selectAll()
+                .map { it[WriterTable.sourceName] }
+                .toSet() shouldBeEqualTo setOf("prior", "new-1", "new-2")
         }
     }
 
@@ -273,18 +281,18 @@ class JdbcBatchWriterMultiRowValuesTest : AbstractBatchJdbcTest() {
         )
     }
 
-    private class InsertLog : SqlLogger {
+    private class InsertLog: SqlLogger {
         val entries = mutableListOf<Entry>()
 
         class Entry(val sql: String, val argumentCount: Int)
 
         override fun log(context: StatementContext, transaction: Transaction) {
             val sql = context.sql(transaction)
-            if (sql.trimStart().startsWith("INSERT", ignoreCase = true)) {
+            if (sql.trimStart().startsWithIgnoreCase("INSERT")) {
                 entries += Entry(sql, context.args.count())
             }
         }
     }
 
-    private fun String.isInsert(): Boolean = trimStart().startsWith("INSERT", ignoreCase = true)
+    private fun String.isInsert(): Boolean = trimStart().startsWithIgnoreCase("INSERT")
 }

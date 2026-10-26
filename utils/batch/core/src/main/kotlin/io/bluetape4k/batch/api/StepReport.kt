@@ -39,8 +39,8 @@ data class StepReport(
     val duration: Duration = Duration.ZERO,
     val checkpoint: Any? = null,
     val error: Throwable? = null,
-) : Serializable {
-    companion object : KLogging() {
+): Serializable {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
     }
 }

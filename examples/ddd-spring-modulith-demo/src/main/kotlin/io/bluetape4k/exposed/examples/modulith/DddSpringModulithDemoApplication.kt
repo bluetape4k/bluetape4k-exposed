@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.examples.modulith
 
-import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
 import io.bluetape4k.exposed.examples.modulith.orders.OrderId
+import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
     runApplication<DddSpringModulithDemoApplication>(*args)
 }
 
-class OrderAcceptedEventSerializer : EventSerializer {
+class OrderAcceptedEventSerializer: EventSerializer {
 
     override fun serialize(event: Any): Any =
         when (event) {
@@ -44,7 +44,7 @@ class OrderAcceptedEventSerializer : EventSerializer {
         }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> deserialize(serialized: Any, type: Class<T>): T {
+    override fun <T: Any> deserialize(serialized: Any, type: Class<T>): T {
         require(type == OrderAcceptedEvent::class.java) {
             "Unsupported event type: ${type.name}"
         }
@@ -57,14 +57,13 @@ class OrderAcceptedEventSerializer : EventSerializer {
         ) as T
     }
 
-    private fun OrderAcceptedEvent.toDeterministicJson(): String =
-        buildString {
-            append('{')
-            append("\"aggregateId\":\"").append(aggregateId.value.escapeJson()).append("\",")
-            append("\"eventId\":\"").append(eventId.escapeJson()).append("\",")
-            append("\"occurredAt\":\"").append(occurredAt.toString().escapeJson()).append("\"")
-            append('}')
-        }
+    private fun OrderAcceptedEvent.toDeterministicJson(): String = buildString {
+        append('{')
+        append("\"aggregateId\":\"").append(aggregateId.value.escapeJson()).append("\",")
+        append("\"eventId\":\"").append(eventId.escapeJson()).append("\",")
+        append("\"occurredAt\":\"").append(occurredAt.toString().escapeJson()).append("\"")
+        append('}')
+    }
 
     private fun parseJsonObject(value: String): Map<String, String> {
         val pattern = """"([^"]+)":"((?:\\.|[^"\\])*)"""".toRegex()
@@ -79,16 +78,15 @@ class OrderAcceptedEventSerializer : EventSerializer {
             }
     }
 
-    private fun String.escapeJson(): String =
-        buildString(length) {
-            this@escapeJson.forEach { char ->
-                when (char) {
-                    '\\' -> append("\\\\")
-                    '"' -> append("\\\"")
-                    else -> append(char)
-                }
+    private fun String.escapeJson(): String = buildString(length) {
+        this@escapeJson.forEach { char ->
+            when (char) {
+                '\\' -> append("\\\\")
+                '"'  -> append("\\\"")
+                else -> append(char)
             }
         }
+    }
 
     private fun String.unescapeJson(): String =
         replace("\\\"", "\"").replace("\\\\", "\\")

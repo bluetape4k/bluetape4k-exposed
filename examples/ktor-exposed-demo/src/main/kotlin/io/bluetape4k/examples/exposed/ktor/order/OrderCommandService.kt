@@ -10,13 +10,13 @@ import kotlinx.coroutines.withContext
 import java.io.Serializable
 import java.time.Clock
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 fun interface OrderEventPublisher {
     fun publish(events: List<DomainEvent<UUID>>)
 }
 
-class InMemoryOrderEventPublisher : OrderEventPublisher {
+class InMemoryOrderEventPublisher: OrderEventPublisher {
 
     @Volatile
     var latestEvents: List<DomainEvent<UUID>> = emptyList()
@@ -30,7 +30,7 @@ class InMemoryOrderEventPublisher : OrderEventPublisher {
 data class OrderConfirmationResult(
     val record: OrderRecord,
     val eventPublished: Boolean,
-) : Serializable {
+): Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -40,12 +40,12 @@ data class OrderConfirmationResult(
 sealed class OrderCommandException(
     message: String,
     cause: Throwable,
-) : RuntimeException(message, cause)
+): RuntimeException(message, cause)
 
-class OrderPersistenceException(cause: Throwable) :
+class OrderPersistenceException(cause: Throwable):
     OrderCommandException("Order persistence failed", cause)
 
-class OrderEventHandoffException(cause: Throwable) :
+class OrderEventHandoffException(cause: Throwable):
     OrderCommandException("Order event handoff failed", cause)
 
 class OrderCommandService(

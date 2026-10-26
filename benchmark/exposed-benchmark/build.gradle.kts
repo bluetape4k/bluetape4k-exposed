@@ -184,7 +184,8 @@ configurations {
 }
 
 dependencies {
-    add("testImplementation", bt4k.bluetape4k.assertions)
+    implementation(bt4k.bluetape4k.core)
+    add("testImplementation", bt4k.bluetape4k.junit5)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime)
     add("benchmarkImplementation", bt4k.kotlinx.benchmark.runtime.jvm)
     add("benchmarkImplementation", bt4k.jmh.core)

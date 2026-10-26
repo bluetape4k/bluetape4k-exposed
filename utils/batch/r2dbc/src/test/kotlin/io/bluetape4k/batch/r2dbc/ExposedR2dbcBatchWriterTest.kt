@@ -1,15 +1,16 @@
 package io.bluetape4k.batch.r2dbc
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.batch.BatchTargetTable
 import io.bluetape4k.batch.TargetRecord
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [ExposedR2dbcBatchWriter] R2DBC 통합 테스트.
@@ -19,7 +20,9 @@ import io.bluetape4k.assertions.assertFailsWith
  * 2. 빈 리스트 → no-op
  * 3. 다회 write 누적
  */
-class ExposedR2dbcBatchWriterTest : AbstractBatchR2dbcTest() {
+class ExposedR2dbcBatchWriterTest: AbstractBatchR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private fun makeWriter(database: R2dbcDatabase): ExposedR2dbcBatchWriter<TargetRecord> =
         ExposedR2dbcBatchWriter(
@@ -38,7 +41,7 @@ class ExposedR2dbcBatchWriterTest : AbstractBatchR2dbcTest() {
         runSuspendIO {
             withBatchTables(testDB) { db ->
                 val writer = makeWriter(db.db!!)
-                val items = (1..10).map { TargetRecord("item-$it", it * 2) }
+                val items = List(10) { TargetRecord("item-$it", it * 2) }
 
                 writer.write(items)
 

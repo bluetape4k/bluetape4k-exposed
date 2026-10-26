@@ -1,9 +1,11 @@
 package io.bluetape4k.examples.exposed.mvc
 
-import io.bluetape4k.examples.exposed.mvc.domain.ProductRecord
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.examples.exposed.mvc.domain.ProductRecord
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
@@ -21,6 +23,8 @@ import java.math.BigDecimal
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class ProductControllerTest {
+
+    companion object: KLogging()
 
     @Value("\${local.server.port}")
     private var port: Int = 0
@@ -41,8 +45,9 @@ class ProductControllerTest {
             .uri("/products")
             .retrieve()
             .toEntity<List<ProductRecord>>()
+
         response.statusCode shouldBeEqualTo HttpStatus.OK
-        response.body.shouldNotBeNull()
+        response.body.shouldNotBeNull().forEach { log.debug { "record=$it" } }
     }
 
     @Test
@@ -54,6 +59,7 @@ class ProductControllerTest {
             .body(dto)
             .retrieve()
             .toEntity<ProductRecord>()
+
         response.statusCode shouldBeEqualTo HttpStatus.CREATED
         response.body?.id.shouldNotBeNull()
         response.body?.name shouldBeEqualTo "Test Product"
@@ -70,6 +76,7 @@ class ProductControllerTest {
             .uri("/products/${created.id}")
             .retrieve()
             .toEntity<ProductRecord>()
+
         response.statusCode shouldBeEqualTo HttpStatus.OK
         response.body?.name shouldBeEqualTo "Find Me"
     }
@@ -88,6 +95,7 @@ class ProductControllerTest {
             .body(updated)
             .retrieve()
             .toEntity<ProductRecord>()
+
         response.statusCode shouldBeEqualTo HttpStatus.OK
         response.body?.name shouldBeEqualTo "Updated"
     }
@@ -130,6 +138,7 @@ class ProductControllerTest {
             .uri("/products/search?name=SearchableProduct")
             .retrieve()
             .toEntity<List<ProductRecord>>()
+
         response.statusCode shouldBeEqualTo HttpStatus.OK
         response.body!!.any { it.name == "SearchableProduct" }.shouldBeTrue()
     }

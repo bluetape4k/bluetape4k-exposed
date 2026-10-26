@@ -1,11 +1,10 @@
 package io.bluetape4k.batch.api
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
@@ -15,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 class BatchReportTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private val baseJobExecution = JobExecution(
         id = 1L,
@@ -104,7 +103,7 @@ class BatchReportTest {
         )
 
         report.shouldNotBeNull()
-        report shouldBeInstanceOf BatchReport.PartiallyCompleted::class
+        report.shouldBeInstanceOf<BatchReport.PartiallyCompleted>()
         report.stepReports[0].skipCount shouldBeEqualTo 10L
     }
 
@@ -128,7 +127,7 @@ class BatchReportTest {
         )
 
         report.shouldNotBeNull()
-        report shouldBeInstanceOf BatchReport.Failure::class
+        report.shouldBeInstanceOf<BatchReport.Failure>()
         report.error shouldBeEqualTo cause
         report.stepReports[0].status shouldBeEqualTo BatchStatus.FAILED
     }
@@ -192,12 +191,12 @@ class BatchReportTest {
     @Test
     fun `Success는 BatchReport 타입이다`() {
         val report: BatchReport = BatchReport.Success(baseJobExecution, emptyList())
-        report shouldBeInstanceOf BatchReport::class
+        report.shouldBeInstanceOf<BatchReport>()
     }
 
     @Test
     fun `Failure는 BatchReport 타입이다`() {
         val report: BatchReport = BatchReport.Failure(baseJobExecution, emptyList(), RuntimeException())
-        report shouldBeInstanceOf BatchReport::class
+        report.shouldBeInstanceOf<BatchReport>()
     }
 }

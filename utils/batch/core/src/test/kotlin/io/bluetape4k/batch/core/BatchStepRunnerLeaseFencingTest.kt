@@ -12,6 +12,7 @@ import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Duration
@@ -20,6 +21,8 @@ import java.time.ZoneId
 
 /** lease가 사라진 뒤 writer를 시작하지 않는 runner fencing 회귀 테스트. */
 class BatchStepRunnerLeaseFencingTest {
+
+    companion object: KLogging()
 
     @Test
     fun `write 직전 renewal null이면 writer를 호출하지 않는다`() = runSuspendIO {
@@ -49,8 +52,8 @@ class BatchStepRunnerLeaseFencingTest {
         ).run()
 
         report.status shouldBeEqualTo BatchStatus.FAILED
-        report.error shouldBeInstanceOf BatchInfrastructureFailureException::class
-        val diagnostic = report.error as BatchInfrastructureFailureException
+        report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
+        val diagnostic = report.error
         diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.LEASE_LOST
         diagnostic.cause.shouldBeNull()
         writer.calls shouldBeEqualTo 0
@@ -58,7 +61,7 @@ class BatchStepRunnerLeaseFencingTest {
 
     private class RenewalRejectingRepository(
         private val delegate: BatchJobRepository,
-    ) : BatchJobRepository by delegate {
+    ): BatchJobRepository by delegate {
         override val supportsLeaseRenewal: Boolean = true
 
         override suspend fun renewExecutionLeases(
@@ -70,7 +73,7 @@ class BatchStepRunnerLeaseFencingTest {
 
     private class AdvancingReader(
         private val monotonic: MutableBatchMonotonicClock,
-    ) : BatchReader<String> {
+    ): BatchReader<String> {
         private var first = true
 
         override suspend fun read(): String? = if (first) {
@@ -82,7 +85,7 @@ class BatchStepRunnerLeaseFencingTest {
         }
     }
 
-    private class RecordingWriter : BatchWriter<String> {
+    private class RecordingWriter: BatchWriter<String> {
         var calls = 0
 
         override suspend fun write(items: List<String>) {
@@ -92,7 +95,7 @@ class BatchStepRunnerLeaseFencingTest {
 
     private class MutableBatchClock(
         private var current: Instant,
-    ) : Clock() {
+    ): Clock() {
         override fun instant(): Instant = current
 
         override fun getZone(): ZoneId = ZoneId.of("UTC")
@@ -102,7 +105,7 @@ class BatchStepRunnerLeaseFencingTest {
 
     private class MutableBatchMonotonicClock(
         var nowNanos: Long = 0L,
-    ) : BatchMonotonicClock {
+    ): BatchMonotonicClock {
         override fun nowNanos(): Long = nowNanos
     }
 }

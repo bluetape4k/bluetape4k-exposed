@@ -1,17 +1,17 @@
 package io.bluetape4k.batch.core.dsl
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [BatchStepBuilder] 단위 테스트.
@@ -20,15 +20,15 @@ import io.bluetape4k.assertions.shouldHaveSize
  */
 class BatchStepBuilderTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── 기본 reader/writer stubs ────────────────────────────────────────────
 
-    private val noopReader = object : BatchReader<String> {
+    private val noopReader = object: BatchReader<String> {
         override suspend fun read(): String? = null
     }
 
-    private val noopWriter = object : BatchWriter<String> {
+    private val noopWriter = object: BatchWriter<String> {
         override suspend fun write(items: List<String>) {}
     }
 
@@ -66,13 +66,15 @@ class BatchStepBuilderTest {
 
         val job = batchJob("processorLambdaJob") {
             step<Int, String>("step1") {
-                reader(object : BatchReader<Int> {
+                reader(object: BatchReader<Int> {
                     private val queue = ArrayDeque(items)
                     override suspend fun read(): Int? = queue.removeFirstOrNull()
                 })
                 processor { item: Int -> item.toString() }
                 writer(object: BatchWriter<String> {
-                    override suspend fun write(items: List<String>) { collected.addAll(items) }
+                    override suspend fun write(items: List<String>) {
+                        collected.addAll(items)
+                    }
                 })
                 chunkSize(2)
             }

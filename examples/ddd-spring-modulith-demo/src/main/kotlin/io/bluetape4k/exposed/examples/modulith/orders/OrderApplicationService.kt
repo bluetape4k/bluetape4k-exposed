@@ -18,12 +18,13 @@ class OrderApplicationService(
         failAfterPublish: Boolean = false,
     ): Order {
         val order = Order.accept(command)
+
         return try {
             transactionTemplate.execute {
                 orderRepository.save(order)
                 aggregateEventPublisher.publishAfterSave(order)
                 if (failAfterPublish) {
-                    throw IllegalStateException("Failing after event publication for rollback verification")
+                    error("Failing after event publication for rollback verification")
                 }
                 order
             }

@@ -1,21 +1,21 @@
 package io.bluetape4k.batch.core.dsl
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.core.InMemoryBatchJobRepository
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [batchJob] DSL 단위 테스트.
@@ -24,13 +24,15 @@ import io.bluetape4k.assertions.shouldHaveSize
  */
 class BatchDslTest {
 
+    companion object: KLogging()
+
     // ─── 기본 reader/writer stubs ────────────────────────────────────────────
 
-    private val noopReader = object : BatchReader<String> {
+    private val noopReader = object: BatchReader<String> {
         override suspend fun read(): String? = null
     }
 
-    private val noopWriter = object : BatchWriter<String> {
+    private val noopWriter = object: BatchWriter<String> {
         override suspend fun write(items: List<String>) {}
     }
 
@@ -130,7 +132,7 @@ class BatchDslTest {
             }
         }
 
-        job.steps[0].skipPolicy.shouldSkip(RuntimeException("x"), 0L) shouldBe true
+        job.steps[0].skipPolicy.shouldSkip(RuntimeException("x"), 0L).shouldBeTrue()
     }
 
     // ─── 7. processor 람다 ───────────────────────────────────────────────────
@@ -139,11 +141,11 @@ class BatchDslTest {
     fun `processor 람다 - I에서 O로 변환`() {
         val job = batchJob("processorJob") {
             step<Int, String>("step1") {
-                reader(object : BatchReader<Int> {
+                reader(object: BatchReader<Int> {
                     override suspend fun read(): Int? = null
                 })
                 processor { n -> n.toString() }
-                writer(object : BatchWriter<String> {
+                writer(object: BatchWriter<String> {
                     override suspend fun write(items: List<String>) {}
                 })
             }
@@ -226,12 +228,14 @@ class BatchDslTest {
 
         val job = batchJob("runJob") {
             step<String, String>("step1") {
-                reader(object : BatchReader<String> {
+                reader(object: BatchReader<String> {
                     private val queue = ArrayDeque(items)
                     override suspend fun read(): String? = queue.removeFirstOrNull()
                 })
                 writer(object: BatchWriter<String> {
-                    override suspend fun write(items: List<String>) { collected.addAll(items) }
+                    override suspend fun write(items: List<String>) {
+                        collected.addAll(items)
+                    }
                 })
                 chunkSize(2)
             }

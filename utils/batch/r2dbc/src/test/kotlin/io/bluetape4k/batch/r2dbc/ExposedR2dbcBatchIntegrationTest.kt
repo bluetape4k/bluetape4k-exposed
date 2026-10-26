@@ -1,7 +1,12 @@
 package io.bluetape4k.batch.r2dbc
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.batch.BatchSourceTable
 import io.bluetape4k.batch.BatchTargetTable
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.SourceRecord
 import io.bluetape4k.batch.TargetRecord
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
@@ -14,19 +19,17 @@ import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.core.dsl.batchJob
-import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable
+import io.bluetape4k.collections.intRangeOf
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
@@ -36,13 +39,15 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.batchInsert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
-import org.jetbrains.exposed.v1.r2dbc.update
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.update
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * R2DBC 배치 엔드투엔드 통합 테스트.
@@ -56,34 +61,40 @@ import java.util.concurrent.atomic.AtomicInteger
  * 3. FAILED 재시작 → 기존 Job 재사용
  * 4. Processor skip 처리 → COMPLETED_WITH_SKIPS
  */
-class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
+class ExposedR2dbcBatchIntegrationTest: AbstractBatchR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private val allTables: Array<Table> = arrayOf(
         BatchJobExecutionTable, BatchStepExecutionTable,
         BatchSourceTable, BatchTargetTable,
     )
 
-    private suspend fun withAllTables(testDB: TestDB, block: suspend () -> Unit) {
-        withTables(testDB, *allTables) { block() }
+    private suspend inline fun withAllTables(testDB: TestDB, crossinline block: suspend () -> Unit) {
+        withTables(testDB, *allTables) {
+            block()
+        }
     }
 
     private fun makeJob(database: R2dbcDatabase, chunkSize: Int = 10) = batchJob("integrationJob") {
         repository(ExposedR2dbcBatchJobRepository(database, CheckpointJson.jackson3()))
         step<SourceRecord, TargetRecord>("readAndWrite") {
-            reader(ExposedR2dbcBatchReader(
-                database = database,
-                table = BatchSourceTable,
-                keyColumn = BatchSourceTable.id,
-                pageSize = chunkSize,
-                rowMapper = { row ->
-                    SourceRecord(
-                        id = row[BatchSourceTable.id],
-                        name = row[BatchSourceTable.name],
-                        value = row[BatchSourceTable.value],
-                    )
-                },
-                keyExtractor = { it.id },
-            ))
+            reader(
+                ExposedR2dbcBatchReader(
+                    database = database,
+                    table = BatchSourceTable,
+                    keyColumn = BatchSourceTable.id,
+                    pageSize = chunkSize,
+                    rowMapper = { row ->
+                        SourceRecord(
+                            id = row[BatchSourceTable.id],
+                            name = row[BatchSourceTable.name],
+                            value = row[BatchSourceTable.value],
+                        )
+                    },
+                    keyExtractor = { it.id },
+                )
+            )
             processor { src -> TargetRecord(src.name.uppercase(), src.value * 2) }
             writer(ExposedR2dbcBatchWriter(database, BatchTargetTable) { record ->
                 this[BatchTargetTable.sourceName] = record.sourceName
@@ -131,7 +142,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
                 // 소스 데이터 삽입
                 suspendTransaction(db = database) {
-                    BatchSourceTable.batchInsert((1..100).toList()) { i ->
+                    BatchSourceTable.batchInsert(intRangeOf(1, 100)) { i ->
                         this[BatchSourceTable.name] = "item-$i"
                         this[BatchSourceTable.value] = i
                     }
@@ -139,7 +150,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
                 val report = makeJob(database, chunkSize = 20).run()
 
-                report shouldBeInstanceOf BatchReport.Success::class
+                report.shouldBeInstanceOf<BatchReport.Success>()
                 report.stepReports[0].readCount shouldBeEqualTo 100L
                 report.stepReports[0].writeCount shouldBeEqualTo 100L
                 report.stepReports[0].skipCount shouldBeEqualTo 0L
@@ -162,7 +173,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 val database = testDB.db!!
                 val report = makeJob(database).run()
 
-                report shouldBeInstanceOf BatchReport.Success::class
+                report.shouldBeInstanceOf<BatchReport.Success>()
                 report.stepReports[0].writeCount shouldBeEqualTo 0L
             }
         }
@@ -233,7 +244,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 val restartWriter = RecordingWriter()
                 val restartReport = makeCheckpointJob(database, restartReader, restartWriter).run()
 
-                restartReport shouldBeInstanceOf BatchReport.Success::class
+                restartReport.shouldBeInstanceOf<BatchReport.Success>()
                 restartReader.restoredFromValue shouldBeEqualTo "checkpoint-1"
                 restartWriter.items shouldBeEqualTo listOf("second")
             }
@@ -256,8 +267,8 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 ).run()
 
                 report shouldBeInstanceOf BatchReport.Failure::class
-                report.stepReports.single().status shouldBe BatchStatus.FAILED
-                report.stepReports.single().checkpoint shouldBe null
+                report.stepReports.single().status shouldBeEqualTo BatchStatus.FAILED
+                report.stepReports.single().checkpoint.shouldBeNull()
                 report.stepReports.single().writeCount shouldBeEqualTo 1L
                 firstWriter.items shouldBeEqualTo listOf("first")
 
@@ -266,8 +277,8 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                     mapOf("partition" to "test"),
                 )
                 val storedStep = delegate.findOrCreateStepExecution(execution, "checkpointStep")
-                storedStep.status shouldBe BatchStatus.RUNNING
-                storedStep.checkpoint shouldBe null
+                storedStep.status shouldBeEqualTo BatchStatus.RUNNING
+                storedStep.checkpoint.shouldBeNull()
                 storedStep.writeCount shouldBeEqualTo 0L
             }
         }
@@ -293,10 +304,10 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 reports.count { it is BatchReport.Success } shouldBeEqualTo 1
                 reports.count { it is BatchReport.Failure } shouldBeEqualTo 1
                 val failure = reports.filterIsInstance<BatchReport.Failure>().single()
-                failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+                failure.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
                 val diagnostic = failure.error as BatchInfrastructureFailureException
-                diagnostic.category shouldBe BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED
-                diagnostic.cause shouldBe null
+                diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED
+                diagnostic.cause.shouldBeNull()
                 writer.openCount.get() shouldBeEqualTo 1
                 writer.writeCount.get() shouldBeEqualTo 3
             }
@@ -410,7 +421,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                         }
                     }
 
-                    val currentReport = withTimeout(10_000L) {
+                    val currentReport = withTimeout(10.seconds) {
                         makeTakeoverJob(repository, SlowListReader(listOf(1, 2)), currentWriter).run()
                     }
                     val stateAfterCurrentCompletion = suspendTransaction(db = database) {
@@ -433,7 +444,8 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                         jobState to stepState
                     }
                     staleWriter.releaseFirstWrite.complete(Unit)
-                    val staleReport = withTimeout(10_000L) { staleRun.await() }
+
+                    val staleReport = staleRun.awaitUntil(10.seconds)
                     val stateAfterStaleCompletion = suspendTransaction(db = database) {
                         val jobState = BatchJobExecutionTable.selectAll().map { row ->
                             listOf(
@@ -454,8 +466,8 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                         jobState to stepState
                     }
 
-                    currentReport shouldBeInstanceOf BatchReport.Success::class
-                    staleReport shouldBeInstanceOf BatchReport.Failure::class
+                    currentReport.shouldBeInstanceOf<BatchReport.Success>()
+                    staleReport.shouldBeInstanceOf<BatchReport.Failure>()
                     currentWriter.writeCount.get() shouldBeEqualTo 2
                     staleWriter.writeCount.get() shouldBeEqualTo 1
                     stateAfterStaleCompletion shouldBeEqualTo stateAfterCurrentCompletion
@@ -485,20 +497,22 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
                 val job = batchJob("skipJob") {
                     repository(repo)
                     step<SourceRecord, TargetRecord>("readAndWrite") {
-                        reader(ExposedR2dbcBatchReader(
-                            database = database,
-                            table = BatchSourceTable,
-                            keyColumn = BatchSourceTable.id,
-                            pageSize = 10,
-                            rowMapper = { row ->
-                                SourceRecord(
-                                    id = row[BatchSourceTable.id],
-                                    name = row[BatchSourceTable.name],
-                                    value = row[BatchSourceTable.value],
-                                )
-                            },
-                            keyExtractor = { it.id },
-                        ))
+                        reader(
+                            ExposedR2dbcBatchReader(
+                                database = database,
+                                table = BatchSourceTable,
+                                keyColumn = BatchSourceTable.id,
+                                pageSize = 10,
+                                rowMapper = { row ->
+                                    SourceRecord(
+                                        id = row[BatchSourceTable.id],
+                                        name = row[BatchSourceTable.name],
+                                        value = row[BatchSourceTable.value],
+                                    )
+                                },
+                                keyExtractor = { it.id },
+                            )
+                        )
                         // value가 짝수인 아이템 processor에서 예외 → skip
                         processor { src ->
                             if (src.value % 2 == 0) throw IllegalArgumentException("even skip")
@@ -515,9 +529,10 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
                 val report = job.run()
 
-                report shouldBeInstanceOf BatchReport.PartiallyCompleted::class
+                report.shouldBeInstanceOf<BatchReport.PartiallyCompleted>()
+
                 val stepReport = report.stepReports[0]
-                stepReport.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+                stepReport.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
                 stepReport.skipCount shouldBeEqualTo 5L   // 짝수 5개 skip
                 stepReport.writeCount shouldBeEqualTo 5L  // 홀수 5개 저장
             }
@@ -543,7 +558,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
 
         override suspend fun write(items: List<Int>) {
-            delay(200)
+            delay(200.milliseconds)
             writeCount.addAndGet(items.size)
         }
     }
@@ -564,7 +579,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
     private class BarrierCheckpointReader(
         items: List<Int>,
-    ) : BatchReader<Int> {
+    ): BatchReader<Int> {
         private val queue = ArrayDeque(items)
         private var committedCount = 0
 
@@ -577,7 +592,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         override suspend fun checkpoint(): Any? = committedCount.takeIf { it > 0 }
     }
 
-    private class BarrierCountingWriter : BatchWriter<Int> {
+    private class BarrierCountingWriter: BatchWriter<Int> {
         val firstWriteStarted = CompletableDeferred<Unit>()
         val releaseFirstWrite = CompletableDeferred<Unit>()
         val writeCount = AtomicInteger()
@@ -591,7 +606,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
     }
 
-    private class CountingWriter : BatchWriter<Int> {
+    private class CountingWriter: BatchWriter<Int> {
         val writeCount = AtomicInteger()
 
         override suspend fun write(items: List<Int>) {
@@ -599,7 +614,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
     }
 
-    private class RecordingWriter : BatchWriter<String> {
+    private class RecordingWriter: BatchWriter<String> {
         val items = mutableListOf<String>()
 
         override suspend fun write(items: List<String>) {
@@ -607,7 +622,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
     }
 
-    private class FailingAfterCheckpointReader : BatchReader<String> {
+    private class FailingAfterCheckpointReader: BatchReader<String> {
         private var readIndex = 0
         private var chunkCommitted = false
 
@@ -624,7 +639,7 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
         }
     }
 
-    private class CheckpointingReader : BatchReader<String> {
+    private class CheckpointingReader: BatchReader<String> {
         private var read = false
         private var chunkCommitted = false
 
@@ -639,14 +654,14 @@ class ExposedR2dbcBatchIntegrationTest : AbstractBatchR2dbcTest() {
 
     private class FailingCheckpointRepository(
         private val delegate: BatchJobRepository,
-    ) : BatchJobRepository by delegate {
+    ): BatchJobRepository by delegate {
         override suspend fun saveCheckpointAndReturn(
             execution: StepExecution,
             checkpoint: Any,
         ): StepExecution = throw IllegalStateException("checkpoint save failed")
     }
 
-    private class ResumingReader : BatchReader<String> {
+    private class ResumingReader: BatchReader<String> {
         private var read = false
         private var chunkCommitted = false
         var restoredFromValue: Any? = null

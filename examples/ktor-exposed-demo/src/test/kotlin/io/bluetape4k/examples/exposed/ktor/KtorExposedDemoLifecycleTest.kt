@@ -3,6 +3,10 @@ package io.bluetape4k.examples.exposed.ktor
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.examples.exposed.ktor.order.InMemoryOrderEventPublisher
 import io.bluetape4k.examples.exposed.ktor.order.OrderCommandService
 import io.bluetape4k.examples.exposed.ktor.order.OrderR2dbcCaffeineRepository
@@ -11,12 +15,12 @@ import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class KtorExposedDemoLifecycleTest {
 
@@ -50,7 +54,11 @@ class KtorExposedDemoLifecycleTest {
         val lease = DemoLifecycleLease(AtomicBoolean())
 
         val first = lease.acquire()
-        assertFailsWith<IllegalStateException> { lease.acquire() }
+
+        assertFailsWith<IllegalStateException> {
+            lease.acquire()
+        }
+
         first.close()
         lease.acquire().close()
     }
@@ -64,7 +72,7 @@ class KtorExposedDemoLifecycleTest {
         val second = resources.closeReport()
 
         second shouldBeSameInstanceAs first
-        first.isClean shouldBeEqualTo true
+        first.isClean.shouldBeTrue()
         count.get() shouldBeEqualTo 1
     }
 
@@ -73,24 +81,29 @@ class KtorExposedDemoLifecycleTest {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
         val count = AtomicInteger()
+
         val resources = resources(
             NamedCloseAction("held") {
                 count.incrementAndGet()
                 entered.countDown()
-                release.await(5, TimeUnit.SECONDS)
+                release.await(5.seconds)
             },
             NamedCloseAction("later") { count.incrementAndGet() },
         )
         val executor = Executors.newFixedThreadPool(2)
 
         try {
-            val first = executor.submit<DemoCleanupReport> { resources.closeReport() }
-            entered.await(5, TimeUnit.SECONDS) shouldBeEqualTo true
-            val second = executor.submit<DemoCleanupReport> { resources.closeReport() }
+            val first = executor.submit<DemoCleanupReport> {
+                resources.closeReport()
+            }
+            entered.await(5.seconds).shouldBeTrue()
+            val second = executor.submit<DemoCleanupReport> {
+                resources.closeReport()
+            }
             release.countDown()
 
-            val firstReport = first.get(5, TimeUnit.SECONDS)
-            val secondReport = second.get(5, TimeUnit.SECONDS)
+            val firstReport = first.get(5.seconds)
+            val secondReport = second.get(5.seconds)
             secondReport shouldBeSameInstanceAs firstReport
             count.get() shouldBeEqualTo 2
         } finally {
@@ -107,9 +120,9 @@ class KtorExposedDemoLifecycleTest {
         val stopArguments = mutableListOf<Pair<Long, Long>>()
 
         val result = runKtorExposedDemo(
-            resourcesFactory = DemoResourcesFactory { resources },
+            resourcesFactory = { resources },
             serverFactory = {
-                object : DemoServer {
+                object: DemoServer {
                     override fun start(wait: Boolean) = throw primary
 
                     override fun stop(gracePeriodMillis: Long, timeoutMillis: Long) {
@@ -125,7 +138,7 @@ class KtorExposedDemoLifecycleTest {
         closeCount.get() shouldBeEqualTo 1
         stopArguments shouldBeEqualTo listOf(1_000L to 5_000L)
         diagnostics.items.map { it.code } shouldBeEqualTo listOf("DEMO_STARTUP_FAILED")
-        diagnostics.items.single().toString().contains("secret") shouldBeEqualTo false
+        diagnostics.items.single().toString() shouldNotContain "secret"
     }
 
     @Test
@@ -145,9 +158,9 @@ class KtorExposedDemoLifecycleTest {
         val diagnostics = RecordingDiagnosticSink()
 
         val result = runKtorExposedDemo(
-            resourcesFactory = DemoResourcesFactory { resources },
+            resourcesFactory = { resources },
             serverFactory = {
-                object : DemoServer {
+                object: DemoServer {
                     override fun start(wait: Boolean) = Unit
                     override fun stop(gracePeriodMillis: Long, timeoutMillis: Long) = Unit
                 }
@@ -156,8 +169,8 @@ class KtorExposedDemoLifecycleTest {
         )
 
         result.status shouldBeEqualTo 2
-        result.cleanupReport.failures.map { it.message } shouldBeEqualTo
-            listOf("repository failed", "pool failed")
+        result.cleanupReport.failures
+            .map { it.message } shouldBeEqualTo listOf("repository failed", "pool failed")
         order shouldBeEqualTo listOf("repository", "pool", "lease")
         diagnostics.items.map { it.code } shouldBeEqualTo listOf("DEMO_SHUTDOWN_FAILED")
     }
@@ -165,7 +178,7 @@ class KtorExposedDemoLifecycleTest {
     @Test
     fun `logger diagnostic sink renders only the allowlisted key value record`() {
         val messages = mutableListOf<String>()
-        val sink = StderrDemoDiagnosticSink(DemoDiagnosticLogger { messages += it() })
+        val sink = StderrDemoDiagnosticSink { messages += it() }
         val correlationId = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36").toString()
 
         val diagnostic = io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic(
@@ -179,7 +192,7 @@ class KtorExposedDemoLifecycleTest {
         sink.emit(diagnostic)
 
         messages.single() shouldBeEqualTo
-            "code=ORDER_READ_FAILED correlationId=$correlationId component=order-command operation=read outcome=failed"
+                "code=ORDER_READ_FAILED correlationId=$correlationId component=order-command operation=read outcome=failed"
     }
 
     private fun resources(vararg closeActions: NamedCloseAction): KtorExposedDemoResources =
@@ -193,7 +206,7 @@ class KtorExposedDemoLifecycleTest {
             closeActions = closeActions.toList(),
         )
 
-    private class RecordingDiagnosticSink : io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink {
+    private class RecordingDiagnosticSink: io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink {
         val items = mutableListOf<io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic>()
 
         override fun emit(diagnostic: io.bluetape4k.examples.exposed.ktor.order.DemoDiagnostic) {

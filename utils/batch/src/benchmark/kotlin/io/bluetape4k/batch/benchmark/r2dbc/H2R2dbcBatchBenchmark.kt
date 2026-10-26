@@ -20,9 +20,10 @@ import java.util.concurrent.TimeUnit
 class H2R2dbcBatchBenchmark {
 
     @State(Scope.Benchmark)
-    class SeedState : AbstractR2dbcSeedState() {
+    class SeedState: AbstractR2dbcSeedState() {
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.H2
-        override fun connectionUrl(): String = "r2dbc:h2:mem:///benchmark_h2_seed;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;"
+        override fun connectionUrl(): String =
+            "r2dbc:h2:mem:///benchmark_h2_seed;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;"
 
         @Param("1000", "10000", "100000")
         override var dataSize: Int = 1000
@@ -41,9 +42,10 @@ class H2R2dbcBatchBenchmark {
     }
 
     @State(Scope.Benchmark)
-    class JobState : AbstractR2dbcJobState() {
+    class JobState: AbstractR2dbcJobState() {
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.H2
-        override fun connectionUrl(): String = "r2dbc:h2:mem:///benchmark_h2_job;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;"
+        override fun connectionUrl(): String =
+            "r2dbc:h2:mem:///benchmark_h2_job;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;"
 
         @Param("1000", "10000", "100000")
         override var dataSize: Int = 1000

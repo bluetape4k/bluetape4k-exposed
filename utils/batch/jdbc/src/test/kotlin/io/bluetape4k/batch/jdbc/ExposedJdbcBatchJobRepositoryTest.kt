@@ -1,21 +1,23 @@
 package io.bluetape4k.batch.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.batch.api.BatchStatus
-import io.bluetape4k.batch.api.BatchCompletionStatusException
-import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.CheckpointJson
+import io.bluetape4k.batch.api.BatchCompletionStatusException
+import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable
 import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable
 import io.bluetape4k.batch.jdbc.tables.toParamsHash
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
@@ -26,7 +28,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
@@ -39,10 +40,11 @@ import org.junit.jupiter.api.condition.EnabledForJreRange
 import org.junit.jupiter.api.condition.JRE
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Instant
 import java.sql.SQLException
-import java.util.concurrent.atomic.AtomicInteger
+import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * [ExposedJdbcBatchJobRepository] 통합 테스트.
@@ -54,7 +56,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * 4. StepExecution 4-case 계약 검증
  * 5. Checkpoint 저장 / 로드 round-trip
  */
-class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
+class ExposedJdbcBatchJobRepositoryTest: AbstractBatchJdbcTest() {
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
 
@@ -101,12 +103,12 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             BatchJobExecutionTable.selectAll()
                 .where {
                     (BatchJobExecutionTable.jobName eq jobName) and
-                        (BatchJobExecutionTable.paramsHash eq hash) and
-                        (BatchJobExecutionTable.status inList listOf(
-                            BatchStatus.RUNNING,
-                            BatchStatus.FAILED,
-                            BatchStatus.STOPPED,
-                        ))
+                            (BatchJobExecutionTable.paramsHash eq hash) and
+                            (BatchJobExecutionTable.status inList listOf(
+                                BatchStatus.RUNNING,
+                                BatchStatus.FAILED,
+                                BatchStatus.STOPPED,
+                            ))
                 }
                 .count()
         }
@@ -136,7 +138,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
         params.toParamsHash() shouldBeEqualTo expectedHash
         emptyMap<String, Any>().toParamsHash() shouldBeEqualTo ""
         utf8Params.toParamsHash() shouldBeEqualTo
-            "0a045260ff22be1e00ea0e2b82eaa39e95f6396d7d39e37f28cbff396c75b18c"
+                "0a045260ff22be1e00ea0e2b82eaa39e95f6396d7d39e37f28cbff396c75b18c"
     }
 
     @Test
@@ -158,8 +160,8 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
         withRepoTables(testDB) {
             val je = findOrCreateJobExecution("myJob", emptyMap())
             je.jobName shouldBeEqualTo "myJob"
-            je.status shouldBe BatchStatus.RUNNING
-            (je.id > 0L).shouldBeTrue()
+            je.status shouldBeEqualTo BatchStatus.RUNNING
+            je.id shouldBeGreaterThan 0L
         }
     }
 
@@ -174,11 +176,11 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             val je2 = findOrCreateJobExecution("failedJob", emptyMap())
             je2.id shouldBeEqualTo je1.id
-            je2.status shouldBe BatchStatus.FAILED
+            je2.status shouldBeEqualTo BatchStatus.FAILED
 
             val claimed = claimJobExecution(je2, "owner-1", Instant.now().plusSeconds(60))
             claimed.shouldNotBeNull()
-            claimed.status shouldBe BatchStatus.RUNNING
+            claimed.status shouldBeEqualTo BatchStatus.RUNNING
             claimed.ownerId shouldBeEqualTo "owner-1"
         }
     }
@@ -193,7 +195,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             completeJobExecution(je1, BatchStatus.COMPLETED)
 
             val je2 = findOrCreateJobExecution("completedJob", emptyMap())
-            (je2.id > je1.id).shouldBeTrue()
+            je2.id shouldBeGreaterThan je1.id
         }
     }
 
@@ -208,7 +210,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             completeStepExecution(se, StepReport("step1", BatchStatus.COMPLETED, readCount = 100L, writeCount = 100L))
 
             val se2 = findOrCreateStepExecution(je, "step1")
-            se2.status shouldBe BatchStatus.COMPLETED
+            se2.status shouldBeEqualTo BatchStatus.COMPLETED
             se2.readCount shouldBeEqualTo 100L
         }
     }
@@ -222,11 +224,11 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             completeStepExecution(se, StepReport("step1", BatchStatus.FAILED))
 
             val se2 = findOrCreateStepExecution(je, "step1")
-            se2.status shouldBe BatchStatus.FAILED
+            se2.status shouldBeEqualTo BatchStatus.FAILED
 
             val claimed = claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
             claimed.shouldNotBeNull()
-            claimed.status shouldBe BatchStatus.RUNNING
+            claimed.status shouldBeEqualTo BatchStatus.RUNNING
             claimed.ownerId shouldBeEqualTo "owner-1"
         }
     }
@@ -244,7 +246,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val restored = loadCheckpoint(se.id)
 
             restored.shouldNotBeNull()
-            (restored as Long) shouldBeEqualTo 42L
+            restored shouldBeEqualTo 42L
         }
     }
 
@@ -255,7 +257,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val je = findOrCreateJobExecution("noCpJob", emptyMap())
             val se = findOrCreateStepExecution(je, "step1")
 
-            loadCheckpoint(se.id) shouldBe null
+            loadCheckpoint(se.id).shouldBeNull()
         }
     }
 
@@ -339,7 +341,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
                     loadCheckpoint(se.id)
                 }
 
-                error.message.shouldNotBeNull() shouldContain case.className
+                error.message shouldContain case.className
             }
         }
     }
@@ -354,7 +356,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val je2 = findOrCreateJobExecution("paramJob", mapOf("date" to "2026-04-11"))
 
             je2.id shouldNotBeEqualTo je1.id
-            (je2.id > je1.id).shouldBeTrue()
+            je2.id shouldBeGreaterThan je1.id
         }
     }
 
@@ -373,7 +375,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
 
             completeJobExecution(delimiterExecution, BatchStatus.FAILED)
             findOrCreateJobExecution("delimiterCollisionJob", delimiterParams).id shouldBeEqualTo
-                delimiterExecution.id
+                    delimiterExecution.id
 
             val integerExecution = findOrCreateJobExecution("typeCollisionJob", integerParams)
             val stringExecution = findOrCreateJobExecution("typeCollisionJob", stringParams)
@@ -424,9 +426,9 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             completeJobExecution(splitExecution, BatchStatus.FAILED)
 
             findOrCreateJobExecution("collisionRaceJob", mapOf("a" to "1&b=2")).id shouldBeEqualTo
-                executionByLabel.getValue("delimiter")
+                    executionByLabel.getValue("delimiter")
             findOrCreateJobExecution("collisionRaceJob", mapOf("a" to "1", "b" to "2")).id shouldBeEqualTo
-                executionByLabel.getValue("split")
+                    executionByLabel.getValue("split")
         }
     }
 
@@ -502,13 +504,15 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
                 if (selected.incrementAndGet() == 2) {
                     bothSelected.complete(Unit)
                 }
-                withTimeout(5_000) { bothSelected.await() }
+                bothSelected.awaitUntil(5.seconds)
             }
 
             val executions = try {
                 coroutineScope {
-                    (1..2).map {
-                        async { repository.findOrCreateStepExecution(job, "raceStep") }
+                    List(2) {
+                        async {
+                            repository.findOrCreateStepExecution(job, "raceStep")
+                        }
                     }.awaitAll()
                 }
             } finally {
@@ -531,7 +535,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             )
 
             retried.id shouldBeEqualTo created.id
-            retried.status shouldBe BatchStatus.RUNNING
+            retried.status shouldBeEqualTo BatchStatus.RUNNING
         }
     }
 
@@ -546,7 +550,7 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val recovered = requeryJobExecutionAfterUniqueViolation("terminalRetryJob", params)
 
             recovered.id shouldNotBeEqualTo winner.id
-            recovered.status shouldBe BatchStatus.RUNNING
+            recovered.status shouldBeEqualTo BatchStatus.RUNNING
         }
     }
 
@@ -562,12 +566,14 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val selected = AtomicInteger()
 
             repository.beforeJobInsertHook = {
-                if (selected.incrementAndGet() == 2) bothSelected.complete(Unit)
-                withTimeout(5_000) { bothSelected.await() }
+                if (selected.incrementAndGet() == 2) {
+                    bothSelected.complete(Unit)
+                }
+                bothSelected.awaitUntil(5.seconds)
             }
             repository.beforeRecoveryRequeryHook = {
                 recoveryReady.complete(Unit)
-                withTimeout(5_000) { releaseRecovery.await() }
+                releaseRecovery.awaitUntil(5.seconds)
             }
 
             val executions = try {
@@ -578,8 +584,8 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
                             repository.findOrCreateJobExecution("terminalRaceJob", params).also(firstResult::complete)
                         }
                     }
-                    val winner = withTimeout(5_000) { firstResult.await() }
-                    withTimeout(5_000) { recoveryReady.await() }
+                    val winner = firstResult.awaitUntil(5.seconds)
+                    recoveryReady.awaitUntil(5.seconds)
                     repository.completeJobExecution(winner, BatchStatus.COMPLETED)
                     releaseRecovery.complete(Unit)
                     tasks.awaitAll()
@@ -602,13 +608,13 @@ class ExposedJdbcBatchJobRepositoryTest : AbstractBatchJdbcTest() {
             val jobError = assertFailsWith<BatchCompletionStatusException> {
                 completeJobExecution(job, BatchStatus.RUNNING)
             }
-            jobError.status shouldBe BatchStatus.RUNNING
+            jobError.status shouldBeEqualTo BatchStatus.RUNNING
 
             val step = findOrCreateStepExecution(job, "terminalContractStep")
             val stepError = assertFailsWith<BatchCompletionStatusException> {
                 completeStepExecution(step, StepReport(step.stepName, BatchStatus.STARTING))
             }
-            stepError.status shouldBe BatchStatus.STARTING
+            stepError.status shouldBeEqualTo BatchStatus.STARTING
         }
     }
 

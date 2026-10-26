@@ -1,12 +1,12 @@
 package io.bluetape4k.batch.benchmark.r2dbc
 
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.benchmark.support.BenchmarkDatabase
 import io.bluetape4k.batch.benchmark.support.BenchmarkSourceRecord
 import io.bluetape4k.batch.benchmark.support.BenchmarkSourceTable
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetRecord
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetTable
 import io.bluetape4k.batch.benchmark.support.KeyRange
-import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.batch.r2dbc.ExposedR2dbcBatchJobRepository
 import io.bluetape4k.batch.r2dbc.ExposedR2dbcBatchReader
@@ -26,8 +26,8 @@ import io.r2dbc.spi.ConnectionFactoryOptions
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.max
 import org.jetbrains.exposed.v1.core.min
@@ -216,7 +216,7 @@ private fun buildWriter(database: R2dbcDatabase): ExposedR2dbcBatchWriter<Benchm
 
 abstract class AbstractR2dbcSeedState {
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
     abstract val database: BenchmarkDatabase
     abstract val dataSize: Int
@@ -279,7 +279,7 @@ abstract class AbstractR2dbcSeedState {
 
 abstract class AbstractR2dbcJobState {
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
     abstract val database: BenchmarkDatabase
     abstract val dataSize: Int
@@ -362,11 +362,11 @@ internal fun mySqlR2dbcUrl(): String {
         AbstractR2dbcJobState.log.error { "MYSQL_LOCAL_PASSWORD 환경변수와 mysql.local.password 시스템 프로퍼티가 모두 비어 있습니다." }
     }
     val options = "?useSSL=false" +
-        "&characterEncoding=UTF-8" +
-        "&zeroDateTimeBehavior=convertToNull" +
-        "&useLegacyDatetimeCode=false" +
-        "&serverTimezone=UTC" +
-        "&allowPublicKeyRetrieval=true"
+            "&characterEncoding=UTF-8" +
+            "&zeroDateTimeBehavior=convertToNull" +
+            "&useLegacyDatetimeCode=false" +
+            "&serverTimezone=UTC" +
+            "&allowPublicKeyRetrieval=true"
     return if (TestDBConfig.useTestcontainers) {
         "r2dbc:mysql://test:test@127.0.0.1:${Containers.MySQL8.port}/${Containers.MySQL8.databaseName}$options"
     } else {

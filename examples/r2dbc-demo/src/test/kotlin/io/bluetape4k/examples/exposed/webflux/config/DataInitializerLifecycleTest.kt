@@ -4,19 +4,22 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.springframework.context.ApplicationEvent
-import org.springframework.context.ApplicationEventPublisher
+import org.junit.jupiter.api.Test
 import org.springframework.boot.availability.AvailabilityChangeEvent
 import org.springframework.boot.availability.ReadinessState
-import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEvent
+import org.springframework.context.ApplicationEventPublisher
 
 class DataInitializerLifecycleTest {
+
+    companion object: KLoggingChannel()
 
     @Test
     fun `repeated start is idempotent and publishes accepting traffic after initialization`() = runTest {
@@ -156,7 +159,7 @@ class DataInitializerLifecycleTest {
         lifecycle.closeAndJoin()
     }
 
-    private class RecordingApplicationEventPublisher : ApplicationEventPublisher {
+    private class RecordingApplicationEventPublisher: ApplicationEventPublisher {
 
         var throwOnState: ReadinessState? = null
 

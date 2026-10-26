@@ -1,13 +1,15 @@
 package io.bluetape4k.batch.jdbc
 
-import io.bluetape4k.batch.BatchSourceTable
-import io.bluetape4k.batch.SourceRecord
-import io.bluetape4k.exposed.tests.TestDB
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.batch.BatchSourceTable
+import io.bluetape4k.batch.SourceRecord
+import io.bluetape4k.collections.longRangeOf
+import io.bluetape4k.exposed.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -25,7 +27,9 @@ import org.junit.jupiter.params.provider.MethodSource
  * 참고: reader 의 open/read/close 는 suspend 함수이므로 runSuspendIO 내부에서 호출하며,
  * 데이터 삽입도 동일 runSuspendIO 블록 안에서 transaction을 통해 commit 후 읽는다.
  */
-class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
+class ExposedJdbcBatchReaderTest: AbstractBatchJdbcTest() {
+
+    companion object: KLogging()
 
     private fun makeReader(
         testDB: TestDB,
@@ -67,7 +71,7 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
                 reader.close()
             }
             results shouldHaveSize 25
-            results.map { it.id } shouldBeEqualTo (1L..25L).toList()
+            results.map { it.id } shouldBeEqualTo longRangeOf(1L, 25)
         }
     }
 
@@ -96,7 +100,10 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
         withBatchTables(testDB) {
             var count = 0
             runSuspendIO {
-                transaction(testDB.db!!) { insertSources(20) }
+                transaction(testDB.db!!) {
+                    insertSources(20)
+                }
+
                 val reader = makeReader(testDB, pageSize = 10)
                 reader.open()
                 while (reader.read() != null) count++
@@ -116,7 +123,9 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
             val results2 = mutableListOf<SourceRecord>()
 
             runSuspendIO {
-                transaction(testDB.db!!) { insertSources(30) }
+                transaction(testDB.db!!) {
+                    insertSources(30)
+                }
                 // 첫 10개 읽기 후 checkpoint 저장
                 val reader = makeReader(testDB, pageSize = 10)
                 reader.open()
@@ -153,7 +162,9 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
         withBatchTables(testDB) {
             var cp: Any? = null
             runSuspendIO {
-                transaction(testDB.db!!) { insertSources(5) }
+                transaction(testDB.db!!) {
+                    insertSources(5)
+                }
                 val reader = makeReader(testDB, pageSize = 5)
                 reader.open()
                 // 커밋 전 checkpoint는 null
@@ -166,7 +177,7 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
                 reader.close()
             }
             cp.shouldNotBeNull()
-            (cp as Long) shouldBeEqualTo 5L
+            cp shouldBeEqualTo 5L
         }
     }
 
@@ -224,7 +235,9 @@ class ExposedJdbcBatchReaderTest : AbstractBatchJdbcTest() {
             val secondRunIds = mutableListOf<Long>()
 
             runSuspendIO {
-                transaction(testDB.db!!) { insertSources(10) }
+                transaction(testDB.db!!) {
+                    insertSources(10)
+                }
 
                 val reader = makeReader(testDB, pageSize = 3, minKey = 5L)
                 reader.open()

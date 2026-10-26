@@ -3,10 +3,13 @@ package io.bluetape4k.exposed.examples.modulith.orders
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
-import java.util.UUID
+import java.util.*
 
 class OrderDomainTest {
+
+    companion object: KLogging()
 
     @Test
     fun `aggregate and event IDs use canonical UUID v7 values`() {
@@ -26,7 +29,7 @@ class OrderDomainTest {
 
     @Test
     fun `aggregate and event UUID v7 values are unique and timestamp monotonic`() {
-        val orders = (1..64).map { index ->
+        val orders = List(64) { index ->
             Order.accept(
                 AcceptOrderCommand(
                     orderKey = "order-key-$index",
@@ -42,12 +45,12 @@ class OrderDomainTest {
 
         aggregateIds.toSet().size shouldBeEqualTo aggregateIds.size
         eventIds.toSet().size shouldBeEqualTo eventIds.size
-        aggregateIds.map { it.uuidV7Timestamp() }.zipWithNext().all { (previous, next) ->
-            previous <= next
-        }.shouldBeTrue()
-        eventIds.map { it.uuidV7Timestamp() }.zipWithNext().all { (previous, next) ->
-            previous <= next
-        }.shouldBeTrue()
+
+        aggregateIds.map { it.uuidV7Timestamp() }.zipWithNext()
+            .all { (previous, next) -> previous <= next }.shouldBeTrue()
+
+        eventIds.map { it.uuidV7Timestamp() }.zipWithNext()
+            .all { (previous, next) -> previous <= next }.shouldBeTrue()
     }
 
     private fun String.parsePrefixedUuid(prefix: String): UUID {

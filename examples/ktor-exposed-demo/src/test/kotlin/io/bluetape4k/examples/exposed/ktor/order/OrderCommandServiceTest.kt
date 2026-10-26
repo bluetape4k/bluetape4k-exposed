@@ -5,9 +5,12 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.exposed.core.ddd.DomainEvent
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -16,24 +19,33 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
 class OrderCommandServiceTest {
+
+    companion object: KLoggingChannel()
 
     private val id = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36")
     private val createdAt = Instant.parse("2026-07-17T00:00:00Z")
     private val confirmedAt = Instant.parse("2026-07-17T00:01:00Z")
     private val clock = Clock.fixed(confirmedAt, ZoneOffset.UTC)
 
+    private val repository: R2dbcCaffeineRepository<UUID, OrderRecord> = mockk(relaxed = true)
+
+    @BeforeEach
+    fun beforeEach() {
+        clearMocks(repository)
+    }
+
     @Test
-    fun `successful confirmation persists before publishing and clears events`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
+    fun `successful confirmation persists before publishing and clears events`() = runTest {
         val order = DemoOrder.pending(id, createdAt)
         val actions = mutableListOf<String>()
         var published: List<DomainEvent<UUID>> = emptyList()
@@ -53,7 +65,6 @@ class OrderCommandServiceTest {
 
     @Test
     fun `already confirmed order is an idempotent no-op`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val confirmed = OrderRecord(id, OrderStatus.CONFIRMED, confirmedAt)
         coEvery { repository.get(id) } returns confirmed
         val publisher = mockk<OrderEventPublisher>(relaxed = true)
@@ -69,32 +80,30 @@ class OrderCommandServiceTest {
     @Test
     fun `write failure invalidates cache retains event and exposes the original cause`() =
         runTest(timeout = 30.seconds) {
-        val repository = repository()
-        val order = DemoOrder.pending(id, createdAt)
-        val writeFailure = IllegalStateException("write failed")
-        coEvery { repository.put(any(), any()) } throws writeFailure
-        val publisher = mockk<OrderEventPublisher>(relaxed = true)
+            val order = DemoOrder.pending(id, createdAt)
+            val writeFailure = IllegalStateException("write failed")
+            coEvery { repository.put(any(), any()) } throws writeFailure
+            val publisher = mockk<OrderEventPublisher>(relaxed = true)
 
-        val failure = assertFailsWith<OrderPersistenceException> {
-            service(repository, publisher).confirm(order)
+            val failure = assertFailsWith<OrderPersistenceException> {
+                service(repository, publisher).confirm(order)
+            }
+
+            failure.cause shouldBeSameInstanceAs writeFailure
+            order.domainEvents() shouldBeEqualTo listOf(OrderConfirmed(id, confirmedAt))
+            coVerify(exactly = 1) { repository.invalidate(id) }
+            io.mockk.verify(exactly = 0) { publisher.publish(any()) }
         }
-
-        failure.cause shouldBeSameInstanceAs writeFailure
-        order.domainEvents() shouldBeEqualTo listOf(OrderConfirmed(id, confirmedAt))
-        coVerify(exactly = 1) { repository.invalidate(id) }
-        io.mockk.verify(exactly = 0) { publisher.publish(any()) }
-    }
 
     @Test
     fun `invalidation failure is suppressed on the write failure`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val writeFailure = IllegalStateException("write failed")
         val cleanupFailure = IllegalArgumentException("invalidate failed")
         coEvery { repository.put(any(), any()) } throws writeFailure
         coEvery { repository.invalidate(id) } throws cleanupFailure
 
         val failure = assertFailsWith<OrderPersistenceException> {
-            service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
+            service(repository) {}.confirm(DemoOrder.pending(id, createdAt))
         }
 
         failure.cause shouldBeSameInstanceAs writeFailure
@@ -104,7 +113,6 @@ class OrderCommandServiceTest {
 
     @Test
     fun `publisher failure keeps persisted data and retains the event`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val order = DemoOrder.pending(id, createdAt)
         val publishFailure = IllegalStateException("publish failed")
         val publisher = OrderEventPublisher { throw publishFailure }
@@ -121,12 +129,11 @@ class OrderCommandServiceTest {
     @Test
     fun `repository cancellation invalidates in non-cancellable context and rethrows the same instance`() =
         runTest(timeout = 30.seconds) {
-            val repository = repository()
             val cancellation = CancellationException("write cancelled")
             coEvery { repository.put(any(), any()) } throws cancellation
 
             val failure = assertFailsWith<CancellationException> {
-                service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
+                service(repository) {}.confirm(DemoOrder.pending(id, createdAt))
             }
 
             failure shouldBeSameInstanceAs cancellation
@@ -135,14 +142,13 @@ class OrderCommandServiceTest {
 
     @Test
     fun `invalidation failure is suppressed on the same cancellation instance`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val cancellation = CancellationException("write cancelled")
         val cleanupFailure = IllegalStateException("invalidate failed")
         coEvery { repository.put(any(), any()) } throws cancellation
         coEvery { repository.invalidate(id) } throws cleanupFailure
 
         val failure = assertFailsWith<CancellationException> {
-            service(repository, OrderEventPublisher {}).confirm(DemoOrder.pending(id, createdAt))
+            service(repository) {}.confirm(DemoOrder.pending(id, createdAt))
         }
 
         failure shouldBeSameInstanceAs cancellation
@@ -152,7 +158,6 @@ class OrderCommandServiceTest {
 
     @Test
     fun `cancellation before write invalidates without persisting or publishing`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val cancellation = CancellationException("cancel before write")
         coEvery { repository.get(id) } coAnswers {
             currentCoroutineContext().cancel(cancellation)
@@ -173,7 +178,6 @@ class OrderCommandServiceTest {
 
     @Test
     fun `cancellation immediately after write invalidates and skips publishing`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val cancellation = CancellationException("cancel after write")
         coEvery { repository.get(id) } returns null
         coEvery { repository.put(any(), any()) } coAnswers {
@@ -189,12 +193,11 @@ class OrderCommandServiceTest {
 
         coVerify(exactly = 1) { repository.put(any(), any()) }
         coVerify(exactly = 1) { repository.invalidate(id) }
-        io.mockk.verify(exactly = 0) { publisher.publish(any()) }
+        verify(exactly = 0) { publisher.publish(any()) }
     }
 
     @Test
     fun `lookup failure is reported as persistence failure without compensation`() = runTest(timeout = 30.seconds) {
-        val repository = repository()
         val lookupFailure = IllegalStateException("lookup failed")
         coEvery { repository.get(id) } throws lookupFailure
 
@@ -210,7 +213,6 @@ class OrderCommandServiceTest {
     @Test
     fun `two concurrent confirmations characterize the demo's last-write-wins limitation`() =
         runTest(timeout = 30.seconds) {
-            val repository = repository()
             val readCount = AtomicInteger()
             val writes = AtomicInteger()
             val publishes = AtomicInteger()
@@ -234,9 +236,6 @@ class OrderCommandServiceTest {
             writes.get() shouldBeEqualTo 2
             publishes.get() shouldBeEqualTo 2
         }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun repository(): R2dbcCaffeineRepository<UUID, OrderRecord> = mockk(relaxed = true)
 
     private fun service(
         repository: R2dbcCaffeineRepository<UUID, OrderRecord>,

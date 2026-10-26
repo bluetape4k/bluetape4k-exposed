@@ -1,24 +1,23 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
+import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepExecution
-import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
 import kotlinx.coroutines.test.runTest
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldHaveSize
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
@@ -224,7 +223,7 @@ class BatchStepRunnerCheckpointTest {
         val firstJe = sharedDelegate.findOrCreateJobExecution("checkpointTestJob")
         val firstReport = BatchStepRunner(firstStep, firstJe, sharedDelegate).run()
 
-        firstReport.status shouldBe BatchStatus.COMPLETED
+        firstReport.status shouldBeEqualTo BatchStatus.COMPLETED
         firstReport.readCount shouldBeEqualTo 5L
         firstReport.checkpoint.shouldNotBeNull()
         // 마지막 커밋 인덱스는 4 (0-based, "e")
@@ -248,7 +247,7 @@ class BatchStepRunnerCheckpointTest {
 
         val secondReport = BatchStepRunner(secondStep, secondJe, sharedDelegate).run()
 
-        secondReport.status shouldBe BatchStatus.COMPLETED
+        secondReport.status shouldBeEqualTo BatchStatus.COMPLETED
         // restoreFrom(3) 호출되어 인덱스 4 ("e") 만 처리됨
         secondReader.restoredFromValue shouldBeEqualTo 3
         secondReport.readCount shouldBeEqualTo 1L
@@ -275,7 +274,7 @@ class BatchStepRunnerCheckpointTest {
 
         val report = BatchStepRunner(step, je, countingRepo).run()
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 6L
         report.writeCount shouldBeEqualTo 6L
 
@@ -310,9 +309,9 @@ class BatchStepRunnerCheckpointTest {
 
         val report = BatchStepRunner(step, je, failingRepo).run()
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         val failure = report.error.shouldNotBeNull()
-        failure shouldBeInstanceOf BatchInfrastructureFailureException::class
+        failure.shouldBeInstanceOf<BatchInfrastructureFailureException>()
         failure.cause.shouldBeNull()
         // checkpoint persistence는 writer retry 범위 밖이므로 외부 side effect를 중복하지 않는다.
         writer.callCount.get() shouldBeEqualTo 1
@@ -341,6 +340,6 @@ class BatchStepRunnerCheckpointTest {
         report.checkpoint.shouldBeNull()
         writer.callCount.get() shouldBeEqualTo 3
         repository.saveCheckpointCount.get() shouldBeEqualTo 0
-        repository.savedValues shouldHaveSize 0
+        repository.savedValues.shouldBeEmpty()
     }
 }

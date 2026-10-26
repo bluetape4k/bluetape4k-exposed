@@ -1,5 +1,9 @@
 package io.bluetape4k.exposed.benchmark.jdbc
 
+import io.bluetape4k.support.requireEquals
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requirePositiveNumber
+
 /** Benchmark 전용 JDBC backend이며 published API에 포함되지 않습니다. */
 internal enum class JdbcBenchmarkDriver {
     POSTGRESQL,
@@ -14,12 +18,9 @@ internal data class JdbcDriverBenchmarkCase(
     val maxConcurrency: Int = DRIVER_BENCHMARK_MAX_CONCURRENCY,
 ) {
     init {
-        require(rowCount > 0) { "rowCount must be positive: $rowCount" }
-        require(poolSize > 0) { "poolSize must be positive: $poolSize" }
-        require(maxConcurrency == DRIVER_BENCHMARK_MAX_CONCURRENCY) {
-            "maxConcurrency must equal the approved benchmark concurrency " +
-                "$DRIVER_BENCHMARK_MAX_CONCURRENCY: $maxConcurrency"
-        }
+        rowCount.requirePositiveNumber("rowCount")
+        poolSize.requirePositiveNumber("poolSize")
+        maxConcurrency.requireEquals(DRIVER_BENCHMARK_MAX_CONCURRENCY, "maxConcurrency")
     }
 }
 
@@ -46,13 +47,10 @@ internal fun buildDriverBenchmarkRanges(
     rowCount: Int,
     rangeCount: Int,
 ): List<JdbcDriverBenchmarkRange> {
-    require(rowCount > 0) { "rowCount must be positive: $rowCount" }
-    require(rangeCount in 1..rowCount) {
-        "rangeCount must be between 1 and rowCount: rangeCount=$rangeCount rowCount=$rowCount"
-    }
+    rowCount.requirePositiveNumber("rowCount")
+    rangeCount.requireInRange(1, rowCount, "rowCount")
 
-    val boundaries = (1 until rangeCount)
-        .map { index -> index.toLong() * rowCount / rangeCount + 1L }
+    val boundaries = List(rangeCount) { (it + 1).toLong() * rowCount / rangeCount + 1L }
 
     return List(rangeCount) { index ->
         JdbcDriverBenchmarkRange(

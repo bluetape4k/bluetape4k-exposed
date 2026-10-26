@@ -1,7 +1,10 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchJobRepository
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
+import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
@@ -15,12 +18,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import io.bluetape4k.assertions.assertFailsWith
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -220,7 +219,7 @@ class BatchStepRunnerTimeoutTest {
 
         val report = BatchStepRunner(step, je, repo).run()
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.skipCount shouldBeEqualTo 0L
         report.writeCount shouldBeEqualTo 0L
         report.error.shouldNotBeNull()
@@ -261,7 +260,7 @@ class BatchStepRunnerTimeoutTest {
 
             val report = BatchStepRunner(step, je, repo).run()
 
-            report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+            report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
             report.skipCount shouldBeEqualTo CHUNK_SIZE.toLong()
             report.writeCount shouldBeEqualTo 0L
             report.readCount shouldBeEqualTo CHUNK_SIZE.toLong()
@@ -341,7 +340,7 @@ class BatchStepRunnerTimeoutTest {
 
         val lastReport = repo.lastReport
         lastReport.shouldNotBeNull()
-        lastReport.status shouldBe BatchStatus.STOPPED
+        lastReport.status shouldBeEqualTo BatchStatus.STOPPED
         lastReport.stepName shouldBeEqualTo STEP_NAME
     }
 }

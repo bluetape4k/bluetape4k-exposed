@@ -2,9 +2,10 @@ package io.bluetape4k.batch.core
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -25,15 +26,15 @@ class BatchLeaseRenewalTest {
 
         repository.supportsLeaseRenewal.shouldBeTrue()
 
-        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30))
-        val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30))
+        val claimedJob = repository.claimJobExecution(job, "owner-1", 30.seconds())
+        val claimedStep = repository.claimStepExecution(step, "owner-1", 30.seconds())
         claimedJob.shouldNotBeNull()
         claimedStep.shouldNotBeNull()
 
         val renewed = repository.renewExecutionLeases(
             claimedJob,
             claimedStep,
-            Duration.ofSeconds(30),
+            30.seconds(),
         )
 
         renewed.shouldNotBeNull()
@@ -55,15 +56,15 @@ class BatchLeaseRenewalTest {
         val repository = InMemoryBatchJobRepository()
         val job = repository.findOrCreateJobExecution("leaseJob")
         val step = repository.findOrCreateStepExecution(job, "leaseStep")
-        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30))
-        val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30))
+        val claimedJob = repository.claimJobExecution(job, "owner-1", 30.seconds())
+        val claimedStep = repository.claimStepExecution(step, "owner-1", 30.seconds())
         claimedJob.shouldNotBeNull()
         claimedStep.shouldNotBeNull()
 
         repository.renewExecutionLeases(
             claimedJob.copy(ownerId = "owner-2"),
             claimedStep,
-            Duration.ofSeconds(30),
+            30.seconds(),
         ).shouldBeNull()
 
         val currentJob = repository.findOrCreateJobExecution("leaseJob")

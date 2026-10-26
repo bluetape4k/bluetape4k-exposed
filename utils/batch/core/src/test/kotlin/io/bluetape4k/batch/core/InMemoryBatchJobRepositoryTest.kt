@@ -1,18 +1,19 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.batch.api.BatchCompletionStatusException
+import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
 import io.bluetape4k.batch.api.StepReport
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldNotContain
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -26,6 +27,8 @@ import java.time.Instant
  * - checkpoint: save → load round-trip
  */
 class InMemoryBatchJobRepositoryTest {
+
+    companion object: KLogging()
 
     private lateinit var repo: InMemoryBatchJobRepository
 
@@ -71,19 +74,19 @@ class InMemoryBatchJobRepositoryTest {
 
         je.jobName shouldBeEqualTo "job1"
         je.params shouldBeEqualTo mapOf("date" to "2026-04-10")
-        je.status shouldBe BatchStatus.RUNNING
+        je.status shouldBeEqualTo BatchStatus.RUNNING
         je.id shouldBeEqualTo 1L
     }
 
     @Test
     fun `findOrCreateJobExecution - RUNNING 상태 재사용`() = runSuspendIO {
         val first = repo.findOrCreateJobExecution("job1", emptyMap())
-        first.status shouldBe BatchStatus.RUNNING
+        first.status shouldBeEqualTo BatchStatus.RUNNING
 
         // 동일 jobName + params → 재사용
         val second = repo.findOrCreateJobExecution("job1", emptyMap())
         second.id shouldBeEqualTo first.id
-        second.status shouldBe BatchStatus.RUNNING
+        second.status shouldBeEqualTo BatchStatus.RUNNING
     }
 
     @Test
@@ -93,11 +96,11 @@ class InMemoryBatchJobRepositoryTest {
 
         val second = repo.findOrCreateJobExecution("job1", emptyMap())
         second.id shouldBeEqualTo first.id
-        second.status shouldBe BatchStatus.FAILED
+        second.status shouldBeEqualTo BatchStatus.FAILED
 
-        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now().plusSeconds(60))
+        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now() + 60.seconds())
         claimed.shouldNotBeNull()
-        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.status shouldBeEqualTo BatchStatus.RUNNING
         claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
@@ -108,11 +111,11 @@ class InMemoryBatchJobRepositoryTest {
 
         val second = repo.findOrCreateJobExecution("job1", emptyMap())
         second.id shouldBeEqualTo first.id
-        second.status shouldBe BatchStatus.STOPPED
+        second.status shouldBeEqualTo BatchStatus.STOPPED
 
-        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now().plusSeconds(60))
+        val claimed = repo.claimJobExecution(second, "owner-1", Instant.now() + 60.seconds())
         claimed.shouldNotBeNull()
-        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.status shouldBeEqualTo BatchStatus.RUNNING
         claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
@@ -173,7 +176,7 @@ class InMemoryBatchJobRepositoryTest {
 
         se.stepName shouldBeEqualTo "step1"
         se.jobExecutionId shouldBeEqualTo je.id
-        se.status shouldBe BatchStatus.RUNNING
+        se.status shouldBeEqualTo BatchStatus.RUNNING
     }
 
     @Test
@@ -183,7 +186,7 @@ class InMemoryBatchJobRepositoryTest {
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
         se2.id shouldBeEqualTo se1.id
-        se2.status shouldBe BatchStatus.COMPLETED  // 변경 없이 반환
+        se2.status shouldBeEqualTo BatchStatus.COMPLETED  // 변경 없이 반환
         se2.readCount shouldBeEqualTo 100L
     }
 
@@ -193,7 +196,7 @@ class InMemoryBatchJobRepositoryTest {
         completeStep(je, status = BatchStatus.COMPLETED_WITH_SKIPS, readCount = 50, writeCount = 48, skipCount = 2)
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
-        se2.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        se2.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         se2.skipCount shouldBeEqualTo 2L
     }
 
@@ -204,11 +207,11 @@ class InMemoryBatchJobRepositoryTest {
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
         se2.id shouldBeEqualTo se1.id
-        se2.status shouldBe BatchStatus.FAILED
+        se2.status shouldBeEqualTo BatchStatus.FAILED
 
-        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
+        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now() + 60.seconds())
         claimed.shouldNotBeNull()
-        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.status shouldBeEqualTo BatchStatus.RUNNING
         claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
@@ -218,11 +221,11 @@ class InMemoryBatchJobRepositoryTest {
         completeStep(je, status = BatchStatus.STOPPED)
 
         val se2 = repo.findOrCreateStepExecution(je, "step1")
-        se2.status shouldBe BatchStatus.STOPPED
+        se2.status shouldBeEqualTo BatchStatus.STOPPED
 
-        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now().plusSeconds(60))
+        val claimed = repo.claimStepExecution(se2, "owner-1", Instant.now() + 60.seconds())
         claimed.shouldNotBeNull()
-        claimed.status shouldBe BatchStatus.RUNNING
+        claimed.status shouldBeEqualTo BatchStatus.RUNNING
         claimed.ownerId shouldBeEqualTo "owner-1"
     }
 
@@ -265,7 +268,7 @@ class InMemoryBatchJobRepositoryTest {
             repo.saveCheckpointAndReturn(se.copy(ownerId = "   "), 1L)
         }
 
-        val claimed = repo.claimStepExecution(se, "owner-1", Instant.now().plusSeconds(60))
+        val claimed = repo.claimStepExecution(se, "owner-1", Instant.now() + 60.seconds())
         claimed.shouldNotBeNull()
 
         assertFailsWith<IllegalStateException> {
@@ -284,7 +287,7 @@ class InMemoryBatchJobRepositoryTest {
     @Test
     fun `owner-aware completion - wrong-owner와 stale version을 fail-closed 처리`() = runSuspendIO {
         val job = repo.findOrCreateJobExecution("completionJob", emptyMap())
-        val claimedJob = repo.claimJobExecution(job, "owner-1", Instant.now().plusSeconds(60)).shouldNotBeNull()
+        val claimedJob = repo.claimJobExecution(job, "owner-1", Instant.now() + 60.seconds()).shouldNotBeNull()
 
         assertFailsWith<IllegalStateException> {
             repo.completeJobExecution(claimedJob.copy(ownerId = "owner-2"), BatchStatus.COMPLETED)
@@ -294,7 +297,7 @@ class InMemoryBatchJobRepositoryTest {
         }
 
         val step = repo.findOrCreateStepExecution(job, "completionStep")
-        val claimedStep = repo.claimStepExecution(step, "owner-1", Instant.now().plusSeconds(60)).shouldNotBeNull()
+        val claimedStep = repo.claimStepExecution(step, "owner-1", Instant.now() + 60.seconds()).shouldNotBeNull()
 
         assertFailsWith<IllegalStateException> {
             repo.completeStepExecution(
@@ -335,12 +338,12 @@ class InMemoryBatchJobRepositoryTest {
         val activeJob = repo.claimJobExecution(
             claimedJob,
             "owner-2",
-            Instant.now().plusSeconds(60),
+            Instant.now() + 60.seconds(),
         ).shouldNotBeNull()
         val activeStep = repo.claimStepExecution(
             claimedStep,
             "owner-2",
-            Instant.now().plusSeconds(60),
+            Instant.now() + 60.seconds(),
         ).shouldNotBeNull()
         assertFailsWith<IllegalStateException> {
             repo.completeJobExecution(activeJob.copy(status = BatchStatus.COMPLETED), BatchStatus.COMPLETED)
@@ -364,9 +367,9 @@ class InMemoryBatchJobRepositoryTest {
             repo.completeJobExecution(execution, BatchStatus.RUNNING)
         }
 
-        error.status shouldBe BatchStatus.RUNNING
+        error.status shouldBeEqualTo BatchStatus.RUNNING
         error.message.shouldNotBeNull() shouldContain "Batch completion requires a terminal status:"
-        repo.findOrCreateJobExecution("terminalJob", emptyMap()).status shouldBe BatchStatus.RUNNING
+        repo.findOrCreateJobExecution("terminalJob", emptyMap()).status shouldBeEqualTo BatchStatus.RUNNING
     }
 
     @Test
@@ -381,9 +384,9 @@ class InMemoryBatchJobRepositoryTest {
             )
         }
 
-        error.status shouldBe BatchStatus.STARTING
+        error.status shouldBeEqualTo BatchStatus.STARTING
         error.message.shouldNotBeNull() shouldContain "Batch completion requires a terminal status:"
-        repo.findOrCreateStepExecution(job, step.stepName).status shouldBe BatchStatus.RUNNING
+        repo.findOrCreateStepExecution(job, step.stepName).status shouldBeEqualTo BatchStatus.RUNNING
     }
 
     @Test
@@ -409,7 +412,7 @@ class InMemoryBatchJobRepositoryTest {
 
         // findOrCreate 재조회로 저장된 값 확인
         val se2 = repo.findOrCreateStepExecution(je, "step1")
-        se2.status shouldBe BatchStatus.COMPLETED  // 완료 상태
+        se2.status shouldBeEqualTo BatchStatus.COMPLETED  // 완료 상태
         se2.readCount shouldBeEqualTo 1000L
         se2.writeCount shouldBeEqualTo 999L
         se2.skipCount shouldBeEqualTo 1L

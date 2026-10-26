@@ -15,9 +15,7 @@ import java.io.Serializable
  * MergeTree 엔진으로 region 파티셔닝, (order_id, customer_id) 정렬을 사용합니다.
  * OLTP에서 forwarding된 주문 이벤트를 누적 저장하여 집계 분석에 활용합니다.
  */
-object OrderEvents: ClickHouseTable(
-    name = "order_events",
-) {
+object OrderEvents: ClickHouseTable(name = "order_events") {
     val orderId = long("order_id")
     val customerId = chString("customer_id")
     val productId = chString("product_id")
@@ -87,6 +85,7 @@ class AnalyticsRepository {
      */
     fun analyzeByRegion(tx: JdbcTransaction, region: String): OrderAnalyticsResult {
         val sanitizedRegion = region.replace("'", "''")
+
         val sql = """
             SELECT
                 count(*) AS total_orders,

@@ -8,6 +8,7 @@ import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.batch.core.BatchStep
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotNull
 import io.bluetape4k.support.requirePositiveNumber
 import io.bluetape4k.workflow.api.RetryPolicy
 import kotlin.time.Duration
@@ -34,13 +35,13 @@ import kotlin.time.Duration
  * @property name Step 이름 (blank 불가)
  */
 @BatchDsl
-class BatchStepBuilder<I : Any, O : Any>(val name: String) {
+class BatchStepBuilder<I: Any, O: Any>(val name: String) {
 
     init {
         name.requireValidBatchName("name")
     }
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private var _reader: BatchReader<I>? = null
     private var _processor: BatchProcessor<I, O>? = null
@@ -135,8 +136,9 @@ class BatchStepBuilder<I : Any, O : Any>(val name: String) {
      */
     fun build(): BatchStep<I, O> {
         name.requireValidBatchName("name")
-        val reader = requireNotNull(_reader) { "reader must be set for step '$name'" }
-        val writer = requireNotNull(_writer) { "writer must be set for step '$name'" }
+        val reader = _reader.requireNotNull { "reader must be set for step '$name'" }
+        val writer = _writer.requireNotNull { "writer must be set for step '$name'" }
+
         return BatchStep(
             name = name,
             chunkSize = _chunkSize,

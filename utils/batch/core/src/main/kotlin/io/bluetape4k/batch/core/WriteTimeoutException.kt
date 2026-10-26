@@ -16,7 +16,7 @@ import kotlin.time.Duration
 internal class WriteTimeoutException(
     message: String,
     cause: Throwable,
-) : RuntimeException(message, cause)
+): RuntimeException(message, cause)
 
 /**
  * [writer.write]를 [timeout] 시간 내에 실행한다.
@@ -38,10 +38,7 @@ internal suspend fun writeWithTimeout(
         } catch (e: TimeoutCancellationException) {
             // 외부 취소(outer withTimeout/cancellation)가 발생했으면 CancellationException으로 전파
             currentCoroutineContext().ensureActive()
-            throw WriteTimeoutException(
-                "Writer timed out after $timeout",
-                e,
-            )
+            throw WriteTimeoutException("Writer timed out after $timeout", e)
         }
     } else {
         w.write(items)

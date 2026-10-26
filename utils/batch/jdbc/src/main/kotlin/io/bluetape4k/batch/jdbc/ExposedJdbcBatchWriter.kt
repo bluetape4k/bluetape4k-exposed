@@ -1,10 +1,10 @@
 package io.bluetape4k.batch.jdbc
 
 import io.bluetape4k.batch.api.BatchWriter
-import io.bluetape4k.support.requireLe
 import io.bluetape4k.concurrent.virtualthread.VT
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requireLe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Table
@@ -57,7 +57,7 @@ class ExposedJdbcBatchWriter<T: Any>(
         table: Table,
         ignore: Boolean = false,
         bind: BatchInsertStatement.(T) -> Unit,
-    ) : this(database, table, ignore, false, bind)
+    ): this(database, table, ignore, false, bind)
 
     companion object: KLoggingChannel()
 

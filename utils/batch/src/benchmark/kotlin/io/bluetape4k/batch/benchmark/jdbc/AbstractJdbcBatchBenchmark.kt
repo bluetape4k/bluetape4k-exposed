@@ -2,14 +2,14 @@ package io.bluetape4k.batch.benchmark.jdbc
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.benchmark.support.BenchmarkDatabase
-import io.bluetape4k.batch.benchmark.support.BenchmarkSourceTable
-import io.bluetape4k.batch.benchmark.support.BenchmarkTargetTable
 import io.bluetape4k.batch.benchmark.support.BenchmarkSourceRecord
+import io.bluetape4k.batch.benchmark.support.BenchmarkSourceTable
 import io.bluetape4k.batch.benchmark.support.BenchmarkTargetRecord
+import io.bluetape4k.batch.benchmark.support.BenchmarkTargetTable
 import io.bluetape4k.batch.benchmark.support.KeyRange
 import io.bluetape4k.batch.core.dsl.batchJob
-import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchJobRepository
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchReader
 import io.bluetape4k.batch.jdbc.ExposedJdbcBatchWriter
@@ -280,7 +280,7 @@ private fun buildWriter(db: Database): ExposedJdbcBatchWriter<BenchmarkTargetRec
  */
 abstract class AbstractJdbcSeedState {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /** 대상 데이터베이스 식별자. */
     abstract val database: BenchmarkDatabase
@@ -385,7 +385,7 @@ abstract class AbstractJdbcSeedState {
  */
 abstract class AbstractJdbcJobState {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /** 대상 데이터베이스 식별자. */
     abstract val database: BenchmarkDatabase

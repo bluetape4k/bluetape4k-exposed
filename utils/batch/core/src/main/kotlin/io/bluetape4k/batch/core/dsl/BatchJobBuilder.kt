@@ -2,11 +2,13 @@ package io.bluetape4k.batch.core.dsl
 
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
+import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.batch.core.BatchJob
 import io.bluetape4k.batch.core.BatchStep
 import io.bluetape4k.batch.core.InMemoryBatchJobRepository
-import io.bluetape4k.batch.api.requireValidBatchName
+import io.bluetape4k.javatimes.minutes
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotEmpty
 import java.time.Duration
 
 /**
@@ -36,11 +38,11 @@ class BatchJobBuilder(private val name: String) {
         name.requireValidBatchName("name")
     }
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private var _repository: BatchJobRepository = InMemoryBatchJobRepository()
     private var _params: Map<String, Any> = emptyMap()
-    private var _executionLease: Duration = Duration.ofMinutes(15)
+    private var _executionLease: Duration = 15.minutes()
     private val _steps = mutableListOf<BatchStep<*, *>>()
 
     /**
@@ -103,7 +105,7 @@ class BatchJobBuilder(private val name: String) {
      * @param stepName Step 이름 (blank 불가)
      * @param block [BatchStepBuilder] DSL 블록
      */
-    inline fun <reified I : Any, reified O : Any> step(
+    inline fun <reified I: Any, reified O: Any> step(
         stepName: String,
         block: BatchStepBuilder<I, O>.() -> Unit,
     ) {
@@ -119,7 +121,8 @@ class BatchJobBuilder(private val name: String) {
      */
     fun build(): BatchJob {
         name.requireValidBatchName("name")
-        require(_steps.isNotEmpty()) { "최소 1개의 step이 필요합니다 — job='$name'" }
+        _steps.requireNotEmpty { "최소 1개의 step이 필요합니다 — job='$name'" }
+        
         return BatchJob(
             name = name,
             params = _params,

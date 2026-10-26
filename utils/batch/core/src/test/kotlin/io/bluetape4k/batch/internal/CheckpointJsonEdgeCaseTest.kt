@@ -1,7 +1,5 @@
 package io.bluetape4k.batch.internal
 
-import io.bluetape4k.batch.CheckpointJson as StableCheckpointJson
-
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
@@ -9,6 +7,7 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
+import io.bluetape4k.batch.CheckpointJson as StableCheckpointJson
 
 /**
  * [CheckpointJson] JSON 직렬화/역직렬화 엣지 케이스 검증.
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.Test
  */
 class CheckpointJsonEdgeCaseTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private val sut: StableCheckpointJson = StableCheckpointJson.jackson3()
 
@@ -54,7 +53,7 @@ class CheckpointJsonEdgeCaseTest {
             sut.read(jsonWithUnknownClass)
         }
 
-        error.message.shouldNotBeNull() shouldContain "not registered"
+        error.message shouldContain "not registered"
     }
 
     @Test
@@ -71,6 +70,7 @@ class CheckpointJsonEdgeCaseTest {
     @Test
     fun `예상 밖 checkpoint data class 는 명시 등록 없으면 거부`() {
         data class UnexpectedCheckpoint(val value: Long)
+
         val jsonWithUnexpectedClass =
             """{"className":"${UnexpectedCheckpoint::class.java.name}","payload":"{\"value\":1}"}"""
 
@@ -78,7 +78,7 @@ class CheckpointJsonEdgeCaseTest {
             sut.read(jsonWithUnexpectedClass)
         }
 
-        error.message.shouldNotBeNull() shouldContain "not registered"
+        error.message shouldContain "not registered"
     }
 
     /**
@@ -96,7 +96,7 @@ class CheckpointJsonEdgeCaseTest {
         val restored = sut.read(jsonWithExtra)
 
         restored.shouldNotBeNull()
-        restored shouldBeInstanceOf Long::class
+        restored.shouldBeInstanceOf<Long>()
         restored shouldBeEqualTo 99L
     }
 }

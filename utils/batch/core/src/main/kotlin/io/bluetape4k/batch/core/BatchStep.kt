@@ -51,7 +51,7 @@ import kotlin.time.Duration
  * @property commitTimeout 청크 커밋 타임아웃. 0 이하면 타임아웃 미적용.
  */
 @Suppress("LongParameterList")
-class BatchStep<I : Any, O : Any>(
+class BatchStep<I: Any, O: Any>(
     val name: String,
     val chunkSize: Int = BatchDefaults.CHUNK_SIZE,
     val reader: BatchReader<I>,
@@ -66,5 +66,5 @@ class BatchStep<I : Any, O : Any>(
         chunkSize.requirePositiveNumber("chunkSize")
     }
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 }

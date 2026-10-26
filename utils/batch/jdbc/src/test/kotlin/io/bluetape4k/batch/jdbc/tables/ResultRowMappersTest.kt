@@ -1,15 +1,17 @@
 package io.bluetape4k.batch.jdbc.tables
 
-import io.bluetape4k.batch.api.BatchStatus
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.CheckpointJson
+import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldBeTrue
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -24,9 +26,9 @@ import java.time.temporal.ChronoUnit
  *
  * 실제 테이블에 INSERT 후 [ResultRow]를 조회하여 매퍼를 호출하고, 변환 결과가 올바른지 확인한다.
  */
-class ResultRowMappersTest : AbstractExposedTest() {
+class ResultRowMappersTest: AbstractExposedTest() {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
     private val checkpointJson = CheckpointJson.jackson3()
@@ -67,7 +69,7 @@ class ResultRowMappersTest : AbstractExposedTest() {
             jobExecution.startTime shouldBeEqualTo now
             jobExecution.endTime.shouldBeNull()
             // params null → emptyMap() 반환
-            jobExecution.params shouldBeEqualTo emptyMap()
+            jobExecution.params.shouldBeEmpty()
         }
     }
 
@@ -126,9 +128,10 @@ class ResultRowMappersTest : AbstractExposedTest() {
             stepExecution.skipCount shouldBeEqualTo 10L
             stepExecution.startTime shouldBeEqualTo now
             stepExecution.endTime shouldBeEqualTo stepEndTime
+
             // checkpoint round-trip 검증
-            stepExecution.checkpoint.shouldNotBeNull()
-            (stepExecution.checkpoint as Long) shouldBeEqualTo checkpointValue
+            stepExecution.checkpoint.shouldBeInstanceOf<Long>()
+            stepExecution.checkpoint shouldBeEqualTo checkpointValue
         }
     }
 
@@ -195,6 +198,7 @@ class ResultRowMappersTest : AbstractExposedTest() {
             stepExecution.jobExecutionId shouldBeEqualTo jobId.value
             stepExecution.stepName shouldBeEqualTo "chainStep"
             stepExecution.status shouldBeEqualTo BatchStatus.RUNNING
+
             // checkpoint=null → null 반환
             stepExecution.checkpoint.shouldBeNull()
             stepExecution.endTime.shouldBeNull()
