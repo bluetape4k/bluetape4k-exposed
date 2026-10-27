@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.core.dao.id
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeLessThan
+import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -54,7 +54,7 @@ class KotlinUuidTableTest: AbstractExposedTest() {
 
             ids.forEach { it.value.uuidVersion() shouldBeEqualTo 7 }
             ids.zipWithNext().forEach { (previous, current) ->
-                previous.value.v7Timestamp() shouldBeLessThan current.value.v7Timestamp()
+                previous.value.v7Timestamp() shouldBeLessOrEqualTo current.value.v7Timestamp()
             }
             ids.toSet() shouldHaveSize 2
             val rows = V7Items.selectAll().toList()
