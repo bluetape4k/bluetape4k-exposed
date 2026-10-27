@@ -4,7 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
-import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -58,20 +58,18 @@ class CockroachDatabaseTest: AbstractCockroachDbTest() {
             }
             SchemaUtils.create(CockroachSmokeEvents)
 
-            CockroachSmokeEvents.insert {
-                it[eventName] = "started"
+            try {
+                CockroachSmokeEvents.insert {
+                    it[eventName] = "started"
+                }
+                CockroachSmokeEvents.selectAll().count() shouldBeEqualTo 1L
+            } finally {
+                SchemaUtils.drop(CockroachSmokeEvents)
             }
-
-            CockroachSmokeEvents.selectAll().count() shouldBeEqualTo 1L
-
-            SchemaUtils.drop(CockroachSmokeEvents)
         }
     }
 
-    object CockroachSmokeEvents: Table("bt4k_cockroach_smoke_events") {
-        val id = long("id").autoIncrement()
+    object CockroachSmokeEvents: LongIdTable("bt4k_cockroach_smoke_events") {
         val eventName = varchar("event_name", 64)
-
-        override val primaryKey: PrimaryKey = PrimaryKey(id)
     }
 }

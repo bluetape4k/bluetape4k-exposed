@@ -91,10 +91,9 @@ private fun List<CacheHealthReport>.selectFlushError(): Throwable? =
 private fun CacheWorkerState.isUnavailable(): Boolean =
     this == CacheWorkerState.DRAINING || this == CacheWorkerState.STOPPED
 
-private fun CacheHealthReport.toDetails(): Map<String, Any?> =
-    buildMap {
-        put("mode", mode.name)
-        put("queueDepth", queueDepth)
-        put("workerState", workerState.name)
-        lastFlushError?.message?.let { put("lastFlushError", it) }
-    }
+private fun CacheHealthReport.toDetails(): Map<String, Any?> = buildMap {
+    put("mode", mode.name)
+    put("queueDepth", queueDepth)
+    put("workerState", workerState.name)
+    lastFlushError?.message?.let { put("lastFlushError", it) }
+}

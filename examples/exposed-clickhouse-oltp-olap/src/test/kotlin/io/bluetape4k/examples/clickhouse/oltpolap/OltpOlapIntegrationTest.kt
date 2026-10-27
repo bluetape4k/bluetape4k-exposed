@@ -1,5 +1,7 @@
 package io.bluetape4k.examples.clickhouse.oltpolap
 
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.examples.clickhouse.oltpolap.domain.AnalyticsRepository
 import io.bluetape4k.examples.clickhouse.oltpolap.domain.Order
 import io.bluetape4k.examples.clickhouse.oltpolap.domain.OrderEvents
@@ -9,8 +11,6 @@ import io.bluetape4k.exposed.clickhouse.ClickHouseDatabase
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.testcontainers.database.ClickHouseServer
-import io.bluetape4k.assertions.shouldBeGreaterThan
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -88,7 +88,7 @@ class OltpOlapIntegrationTest {
     @Test
     fun `OLTP에 주문을 삽입하고 OLAP으로 전달하여 집계 분석한다`() {
         val regions = listOf("ASIA", "EUROPE", "AMERICAS")
-        val orders = (1..100).map { i ->
+        val orders = List(100) { i ->
             Order(
                 customerId = "customer-${i % 10}",
                 productId = "product-${i % 5}",

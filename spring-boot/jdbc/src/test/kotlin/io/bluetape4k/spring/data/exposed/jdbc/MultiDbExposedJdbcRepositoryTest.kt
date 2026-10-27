@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.jdbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -9,6 +10,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
@@ -27,6 +29,7 @@ import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.data.repository.findByIdOrNull
 
 class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
 
@@ -48,9 +51,9 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
                 email = "alice@example.com"
                 age = 30
             }
-            val found = repo.findById(user.id.value)
-            found.isPresent.shouldBeTrue()
-            found.get().name shouldBeEqualTo "Alice"
+            val found = repo.findByIdOrNull(user.id.value)
+            found.shouldNotBeNull()
+            found.name shouldBeEqualTo "Alice"
         }
     }
 
@@ -100,7 +103,7 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
                 age = 30
             }
             repo.deleteById(user.id.value)
-            repo.findById(user.id.value).isPresent.shouldBeFalse()
+            repo.findByIdOrNull(user.id.value).shouldBeNull()
         }
     }
 
@@ -206,6 +209,7 @@ class MultiDbExposedJdbcRepositoryTest: AbstractExposedTest() {
             }
 
             val page = repo.findAll(PageRequest.of(0, 3))
+            log.debug { "page=$page" }
             page.content shouldHaveSize 3
             page.totalElements shouldBeEqualTo 5L
         }

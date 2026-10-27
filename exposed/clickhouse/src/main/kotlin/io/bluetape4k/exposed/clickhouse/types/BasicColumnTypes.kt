@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.clickhouse.types
 
+import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ColumnType
 import org.jetbrains.exposed.v1.core.Table
@@ -29,7 +30,7 @@ class ClickHouseStringColumnType: ColumnType<String>() {
  */
 class ClickHouseFixedStringColumnType(val length: Int): ColumnType<String>() {
     init {
-        require(length > 0) { "FixedString length must be > 0: $length" }
+        length.requirePositiveNumber { "FixedString length must be > 0: $length" }
     }
 
     override fun sqlType(): String = "FixedString($length)"
@@ -228,4 +229,4 @@ fun Table.chInt64(name: String): Column<Long> =
  * @param innerType nullable로 감쌀 inner 컬럼 타입
  */
 fun <T: Any> Table.chNullable(name: String, innerType: ColumnType<T>): Column<T?> =
-    registerColumn<T?>(name, ClickHouseNullableColumnType(innerType))
+    registerColumn(name, ClickHouseNullableColumnType(innerType))

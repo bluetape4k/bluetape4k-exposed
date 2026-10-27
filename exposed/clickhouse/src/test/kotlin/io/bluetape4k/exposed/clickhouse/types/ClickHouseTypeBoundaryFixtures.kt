@@ -7,7 +7,7 @@ import java.net.Inet4Address
 import java.net.Inet6Address
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.UUID
+import java.util.*
 
 /**
  * #866 ClickHouse wire 테스트가 공유하는 고유 schema와 seed.
@@ -51,6 +51,7 @@ internal object ClickHouseTypeBoundaryFixture {
     val labelsValue: Map<String, Int> = linkedMapOf("one" to 1, "two" to 2)
     val tupleValue: List<Any?> = listOf("kr", 7)
     val nestedValue: List<List<Any?>> = listOf(listOf("kr", 7), listOf("us", 8))
+
     // JDBC V2 returns JSON objects as maps and ClickHouse emits its canonical spacing.
     const val jsonValue: String = "{\"id\":866, \"ok\":true}"
     val uuidValue: UUID = UUID.fromString("00000000-0000-0000-0000-000000000866")

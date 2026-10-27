@@ -1,5 +1,12 @@
 package io.bluetape4k.batch.core.dsl
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.BatchDefaults
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchReport
@@ -10,30 +17,23 @@ import io.bluetape4k.batch.core.InMemoryBatchJobRepository
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
-import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
 
 /**
  * [BatchJobBuilder] 및 [BatchStepBuilder] DSL 빌더 검증 테스트.
  */
 class BatchBuilderTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── 공통 stub ────────────────────────────────────────────────────────────
 
-    private val noopReader = object : BatchReader<String> {
+    private val noopReader = object: BatchReader<String> {
         override suspend fun read(): String? = null
     }
 
-    private val noopWriter = object : BatchWriter<String> {
+    private val noopWriter = object: BatchWriter<String> {
         override suspend fun write(items: List<String>) {}
     }
 
@@ -68,11 +68,11 @@ class BatchBuilderTest {
     @Test
     fun `BatchStepBuilder - processor 람다 설정`() {
         val step = BatchStepBuilder<Int, String>("step1").apply {
-            reader(object : BatchReader<Int> {
+            reader(object: BatchReader<Int> {
                 override suspend fun read(): Int? = null
             })
             processor { n -> n.toString() }
-            writer(object : BatchWriter<String> {
+            writer(object: BatchWriter<String> {
                 override suspend fun write(items: List<String>) {}
             })
         }.build()
@@ -88,7 +88,7 @@ class BatchBuilderTest {
             skipPolicy(SkipPolicy.ALL)
         }.build()
 
-        step.skipPolicy.shouldSkip(RuntimeException(), 0L) shouldBe true
+        step.skipPolicy.shouldSkip(RuntimeException(), 0L).shouldBeTrue()
     }
 
     @Test
@@ -331,12 +331,14 @@ class BatchBuilderTest {
 
         val job = batchJob("runJob") {
             step<String, String>("step1") {
-                reader(object : BatchReader<String> {
+                reader(object: BatchReader<String> {
                     private val queue = ArrayDeque(items)
                     override suspend fun read(): String? = queue.removeFirstOrNull()
                 })
                 writer(object: BatchWriter<String> {
-                    override suspend fun write(items: List<String>) { collected.addAll(items) }
+                    override suspend fun write(items: List<String>) {
+                        collected.addAll(items)
+                    }
                 })
                 chunkSize(2)
             }
@@ -364,8 +366,4 @@ class BatchBuilderTest {
         report shouldBeInstanceOf BatchReport.Success::class
         report.stepReports[0].readCount shouldBeEqualTo 0L
     }
-}
-
-private fun Any?.shouldBeNull() {
-    if (this != null) throw AssertionError("Expected null but was $this")
 }

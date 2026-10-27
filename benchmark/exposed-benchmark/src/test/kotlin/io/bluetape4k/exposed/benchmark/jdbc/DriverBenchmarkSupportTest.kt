@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.benchmark.jdbc
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.collections.longRangeOf
 import org.junit.jupiter.api.Test
 
 class DriverBenchmarkSupportTest {
@@ -12,8 +13,10 @@ class DriverBenchmarkSupportTest {
         val cases = jdbcDriverBenchmarkCases()
 
         cases.size shouldBeEqualTo 12
-        cases.map { it.driver }.toSet() shouldBeEqualTo
-            setOf(JdbcBenchmarkDriver.POSTGRESQL, JdbcBenchmarkDriver.MYSQL_V8)
+        cases.map { it.driver }.toSet() shouldBeEqualTo setOf(
+            JdbcBenchmarkDriver.POSTGRESQL,
+            JdbcBenchmarkDriver.MYSQL_V8
+        )
         cases.map { it.rowCount }.toSet() shouldBeEqualTo setOf(1_000, 10_000)
         cases.map { it.poolSize }.toSet() shouldBeEqualTo setOf(1, 2, 4)
         cases.all { it.maxConcurrency == DRIVER_BENCHMARK_MAX_CONCURRENCY }.shouldBeTrue()
@@ -28,7 +31,7 @@ class DriverBenchmarkSupportTest {
             (start until end).toList()
         }
 
-        covered shouldBeEqualTo (1L..10L).toList()
+        covered shouldBeEqualTo longRangeOf(1L, 10)
     }
 
     @Test

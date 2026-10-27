@@ -26,7 +26,7 @@ class R2dbcUserCredentialLettuceRepository(
 ): AbstractR2dbcLettuceRepository<UUID, UserCredentialsRecord>(
     client,
     config,
-    ExposedR2dbcLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
+    valueCodec = ExposedR2dbcLettuceCodecs.fastFory() //jackson3(UserCredentialsRecord::class.java)
 ) {
     companion object: KLoggingChannel()
 

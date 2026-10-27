@@ -1,15 +1,19 @@
 package io.bluetape4k.exposed.bigquery.query
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest
 import io.bluetape4k.exposed.bigquery.BigQueryContext
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.asBigDecimal
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.count
@@ -55,6 +59,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
             insertFixtures()
 
             val rows = Events.selectAll().withBigQuery().toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows.shouldNotBeEmpty()
             rows shouldHaveSize 5
@@ -70,6 +75,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .where { Events.region eq "kr" }
                 .withBigQuery()
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows shouldHaveSize 2
             rows.all { it[Events.region] == "kr" }.shouldBeTrue()
@@ -85,6 +91,7 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .orderBy(Events.userId, SortOrder.DESC)
                 .withBigQuery()
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows.first()[Events.userId] shouldBeEqualTo 300L
         }
@@ -101,8 +108,10 @@ class SelectQueryTest: AbstractBigQueryTest() {
                     .groupBy(Events.region)
                     .orderBy(Events.region)
             )
+            log.debug { "response=$response" }
             response.rows.shouldNotBeEmpty()
-            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }!!
+
+            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }.shouldNotBeNull()
             krRow.f[1].v.toString().toLong() shouldBeEqualTo 2L
         }
     }
@@ -117,9 +126,11 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 Events.select(Events.region, sumExpr)
                     .groupBy(Events.region)
             )
+            log.debug { "response=$response" }
             response.rows.shouldNotBeEmpty()
+
             val krRow = response.rows.find { it.f[0].v.toString() == "kr" }!!
-            BigDecimal(krRow.f[1].v.toString()).compareTo(BigDecimal("20.00")) shouldBeEqualTo 0
+            krRow.f[1].v.asBigDecimal() shouldBeEqualTo 20.00.toBigDecimal()
         }
     }
 
@@ -132,6 +143,8 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .where { Events.eventId eq 1L }
                 .withBigQuery()
                 .singleOrNull()
+
+            log.debug { "singleRow=$singleRow" }
             singleRow.shouldNotBeNull()
             singleRow[Events.region] shouldBeEqualTo "kr"
 
@@ -139,6 +152,8 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .orderBy(Events.userId, SortOrder.DESC)
                 .withBigQuery()
                 .firstOrNull()
+
+            log.debug { "firstRow=$firstRow" }
             firstRow.shouldNotBeNull()
             firstRow[Events.userId] shouldBeEqualTo 300L
         }
@@ -164,16 +179,18 @@ class SelectQueryTest: AbstractBigQueryTest() {
                 .orderBy(Events.eventId)
                 .withBigQuery()
                 .toListSuspending()
+                .onEach { log.debug { "row=$it" } }
 
             rows shouldHaveSize 2
-            rows[0][Events.amount] shouldBeEqualTo BigDecimal("12.34")
+            rows[0][Events.amount] shouldBeEqualTo 12.34.toBigDecimal()
             rows[0][Events.occurredAt] shouldBeEqualTo Instant.parse("2024-01-01T00:00:00Z")
-            rows[1][Events.amount] shouldBeEqualTo null
+            rows[1][Events.amount].shouldBeNull()
 
             val streamed = Events.selectAll()
                 .orderBy(Events.eventId)
                 .withBigQuery()
                 .toFlow()
+                .log("STREAM")
                 .toList()
 
             streamed shouldHaveSize 2
@@ -208,15 +225,18 @@ class SelectQueryTest: AbstractBigQueryTest() {
                     .where { Events.eventId eq 21L }
                     .withBigQuery()
                     .toListSuspending()
+                    .onEach { log.debug { "updated=$it" } }
                     .single()
 
                 updated[Events.eventType] shouldBeEqualTo "UPDATED"
 
+                // 삭제
                 Events.execDeleteSuspending(Events.eventId eq 21L)
+
                 Events.selectAll()
                     .where { Events.eventId eq 21L }
                     .withBigQuery()
-                    .singleOrNull() shouldBeEqualTo null
+                    .singleOrNull().shouldBeNull()
             }
         }
     }

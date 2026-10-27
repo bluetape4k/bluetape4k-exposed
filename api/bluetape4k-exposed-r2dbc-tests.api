@@ -45,11 +45,9 @@ public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData {
 	public final fun withSomeAmounts (Lio/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest;Lio/bluetape4k/exposed/r2dbc/tests/TestDB;Lkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Cities : org/jetbrains/exposed/v1/core/Table {
+public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Cities : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
 	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$Cities;
-	public final fun getId ()Lorg/jetbrains/exposed/v1/core/Column;
 	public final fun getName ()Lorg/jetbrains/exposed/v1/core/Column;
-	public fun getPrimaryKey ()Lorg/jetbrains/exposed/v1/core/Table$PrimaryKey;
 }
 
 public final class io/bluetape4k/exposed/r2dbc/shared/dml/DMLTestData$OrgMemberships : org/jetbrains/exposed/v1/core/dao/id/IntIdTable {
@@ -426,7 +424,7 @@ public abstract class io/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest
 	protected final fun prepareSchemaForTest (Ljava/lang/String;)Lorg/jetbrains/exposed/v1/core/Schema;
 }
 
-public final class io/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest$Companion : io/bluetape4k/logging/KLogging {
+public final class io/bluetape4k/exposed/r2dbc/tests/AbstractExposedR2dbcTest$Companion : io/bluetape4k/logging/coroutines/KLoggingChannel {
 	public final fun enableDialects ()Ljava/util/Set;
 	public final fun getFaker ()Lnet/datafaker/Faker;
 }

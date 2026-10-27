@@ -16,6 +16,8 @@ import java.sql.ResultSet
 object DruidJdbc: KLogging() {
 
     /** Apache Calcite Avatica remote JDBC driver class name입니다. */
+    // 기존 JVM getter ABI와 object 초기화 순서를 보존하므로 const로 바꾸지 않습니다.
+    @Suppress("MayBeConstant")
     val DRIVER = "org.apache.calcite.avatica.remote.Driver"
 
     init {
@@ -40,7 +42,7 @@ object DruidJdbc: KLogging() {
     ): List<T> {
         requireQueryOnlySql(sql)
         log.debug { "Executing query: $sql" }
-        
+
         return connection(options).use { conn ->
             conn.createStatement().use { statement ->
                 statement.executeQuery(sql).use { rs ->

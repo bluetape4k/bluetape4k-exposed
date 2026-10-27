@@ -1,3 +1,5 @@
+@file:JvmName("TablesKt")
+
 package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.support.requireNotBlank
@@ -6,6 +8,8 @@ import io.bluetape4k.tink.aead.TinkAead
 import io.bluetape4k.tink.daead.TinkDeterministicAead
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
+
+private const val DEFAULT_CIPHER_TEXT_LENGTH: Int = 255
 
 /**
  * Google Tink AEAD(비결정적 암호화)로 암호화된 문자열을 저장하기 위해 [name]의 `VARCHAR` 컬럼을 생성합니다.
@@ -38,7 +42,7 @@ fun Table.tinkAeadVarChar(
     encryptor: TinkAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<String> =
-    tinkAeadVarChar(name, 255, encryptor, associatedDataProvider)
+    tinkAeadVarChar(name, DEFAULT_CIPHER_TEXT_LENGTH, encryptor, associatedDataProvider)
 
 fun Table.tinkAeadVarChar(
     name: String,
@@ -168,7 +172,7 @@ fun Table.tinkDaeadVarChar(
     encryptor: TinkDeterministicAead,
     associatedDataProvider: TinkColumnAssociatedDataProvider = TinkColumnAssociatedDataProvider.TableAndColumn,
 ): Column<String> =
-    tinkDaeadVarChar(name, 255, encryptor, associatedDataProvider)
+    tinkDaeadVarChar(name, DEFAULT_CIPHER_TEXT_LENGTH, encryptor, associatedDataProvider)
 
 fun Table.tinkDaeadVarChar(
     name: String,

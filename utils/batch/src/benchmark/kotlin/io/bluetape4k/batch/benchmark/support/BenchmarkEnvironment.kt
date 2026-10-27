@@ -16,7 +16,7 @@ internal data class KeyRange(
 /**
  * 벤치마크 실행 환경의 공통 계약입니다.
  */
-internal interface BenchmarkEnvironment : AutoCloseable {
+internal interface BenchmarkEnvironment: AutoCloseable {
     val database: BenchmarkDatabase
 
     /**
@@ -73,7 +73,7 @@ internal interface BenchmarkEnvironment : AutoCloseable {
 /**
  * JDBC 기반 벤치마크 실행 환경 계약입니다.
  */
-internal interface JdbcBenchmarkEnvironment : BenchmarkEnvironment {
+internal interface JdbcBenchmarkEnvironment: BenchmarkEnvironment {
     fun resetSchema()
     fun truncateWorkingTables()
     fun seedSourceRows(dataSize: Int)
@@ -83,7 +83,7 @@ internal interface JdbcBenchmarkEnvironment : BenchmarkEnvironment {
 /**
  * R2DBC 기반 벤치마크 실행 환경 계약입니다.
  */
-internal interface R2dbcBenchmarkEnvironment : BenchmarkEnvironment {
+internal interface R2dbcBenchmarkEnvironment: BenchmarkEnvironment {
     suspend fun resetSchema()
     suspend fun truncateWorkingTables()
     suspend fun seedSourceRows(dataSize: Int)

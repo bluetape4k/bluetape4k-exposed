@@ -80,11 +80,12 @@ interface AuditableR2dbcRepository<ID: Any, E: Any, T: AuditableIdTable<ID>>: R2
         updatedBy: String = UserContext.getCurrentUser(),
         limit: Int? = null,
         updateStatement: T.(UpdateStatement) -> Unit,
-    ): Int = table.update(where = { table.id eq id }, limit = limit) {
-        it[table.updatedAt] = CurrentTimestamp
-        it[table.updatedBy] = updatedBy
-        updateStatement(table, it)
-    }
+    ): Int =
+        table.update(where = { table.id eq id }, limit = limit) {
+            it[table.updatedAt] = CurrentTimestamp
+            it[table.updatedBy] = updatedBy
+            updateStatement(table, it)
+        }
 
     /**
      * 조건에 맞는 엔티티들을 업데이트하고 감사 필드를 자동 설정합니다.
@@ -103,11 +104,12 @@ interface AuditableR2dbcRepository<ID: Any, E: Any, T: AuditableIdTable<ID>>: R2
         predicate: () -> Op<Boolean> = { Op.TRUE },
         limit: Int? = null,
         updateStatement: T.(UpdateStatement) -> Unit,
-    ): Int = table.update(where = predicate, limit = limit) {
-        it[table.updatedAt] = CurrentTimestamp
-        it[table.updatedBy] = updatedBy
-        updateStatement(table, it)
-    }
+    ): Int =
+        table.update(where = predicate, limit = limit) {
+            it[table.updatedAt] = CurrentTimestamp
+            it[table.updatedBy] = updatedBy
+            updateStatement(table, it)
+        }
 }
 
 /**

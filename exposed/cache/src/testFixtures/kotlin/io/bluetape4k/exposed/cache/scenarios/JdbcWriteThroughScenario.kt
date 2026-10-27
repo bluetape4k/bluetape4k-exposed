@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Assumptions
@@ -71,11 +72,13 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
 
             // 캐시에서 조회한 값
             val entityFromCache = repository.get(id)
+            log.debug { "entity from Cache=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
             assertSameEntityWithoutUpdatedAt(entityFromCache, updatedEntity)
 
             // DB에서 조회한 값
             val entityFromDB = repository.findByIdFromDb(id)
+            log.debug { "entity from DB: $entityFromDB" }
             entityFromDB.shouldNotBeNull()
             assertSameEntityWithoutUpdatedAt(entityFromDB, entityFromCache)
         }
@@ -90,7 +93,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
             val ids = getExistingIds()
 
             // 캐시에서 조회한 값
-            val entities = repository.getAll(ids)
+            val entities = repository.getAll(ids).onEach { log.debug { it } }
             entities.shouldNotBeEmpty()
             entities.shouldHaveSize(ids.size)
 
@@ -112,7 +115,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
             }
 
             // DB에서 조회한 값
-            val entitiesFromDB = repository.findAllFromDb(ids)
+            val entitiesFromDB = repository.findAllFromDb(ids).onEach { log.debug { it } }
             entitiesFromDB.shouldNotBeEmpty()
             entitiesFromDB shouldHaveSize ids.size
 
@@ -159,6 +162,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
 
             // 먼저 캐시에 로드
             val entityFromCache = repository.get(id)
+            log.debug { "entity from cache=$entityFromCache" }
             entityFromCache.shouldNotBeNull()
 
             // 캐시에서 삭제
@@ -166,6 +170,7 @@ interface JdbcWriteThroughScenario<ID: Any, E: Serializable>: JdbcCacheTestScena
 
             // 캐시에서 삭제했지만, DB에는 여전히 존재한다.
             val entityFromDB = repository.findByIdFromDb(id)
+            log.debug { "entity from DB=$entityFromDB" }
             entityFromDB shouldBeEqualTo entityFromCache
         }
     }

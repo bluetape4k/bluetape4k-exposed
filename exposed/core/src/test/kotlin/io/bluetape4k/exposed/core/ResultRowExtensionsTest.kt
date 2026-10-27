@@ -4,13 +4,15 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
-import org.jetbrains.exposed.v1.core.Table
+import io.bluetape4k.logging.debug
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
@@ -21,7 +23,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    object ResultRowExtTable: Table("result_row_ext_test") {
+    object ResultRowExtTable: IntIdTable("result_row_ext_test") {
         val text = varchar("text", 64)
         val numberText = varchar("number_text", 32)
         val boolText = varchar("bool_text", 16)
@@ -44,6 +46,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             }
 
             val row = ResultRowExtTable.selectAll().single()
+            log.debug { "row=$row" }
 
             row.getString(ResultRowExtTable.text) shouldBeEqualTo "hello"
             row.getInt(ResultRowExtTable.numberText) shouldBeEqualTo 123
@@ -51,7 +54,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             row.getBigDecimal(ResultRowExtTable.numberText) shouldBeEqualTo BigDecimal("123")
             row.getBoolean(ResultRowExtTable.boolText).shouldBeTrue()
             row.getUuid(ResultRowExtTable.uuidText) shouldBeEqualTo uuid
-            row.getByteArray(ResultRowExtTable.text).shouldNotBeNull()
+            row.getByteArray(ResultRowExtTable.text).shouldNotBeEmpty()
         }
     }
 
@@ -68,6 +71,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             }
 
             val row = ResultRowExtTable.selectAll().single()
+            log.debug { "row=$row" }
 
             row.getStringOrNull(ResultRowExtTable.nullableText).shouldBeNull()
             row.getIntOrNull(ResultRowExtTable.nullableText).shouldBeNull()
@@ -75,8 +79,9 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
             val ex = assertFailsWith<IllegalStateException> {
                 row.getInt(ResultRowExtTable.nullableText)
             }
-            ex.message?.contains("nullable_text").shouldBeTrue()
-            ex.message?.contains("not convertible to Int").shouldBeTrue()
+            log.debug { "ex=$ex" }
+            ex.message shouldContain "nullable_text"
+            ex.message shouldContain "not convertible to Int"
         }
     }
 }

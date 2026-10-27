@@ -1,7 +1,5 @@
 package io.bluetape4k.batch.api
 
-import io.bluetape4k.logging.KLogging
-
 /**
  * Job 실행 전체 결과 보고서.
  *
@@ -17,7 +15,7 @@ import io.bluetape4k.logging.KLogging
  * when (report) {
  *     is BatchReport.Success           -> ExampleLog.log.info { "Job 완료: ${report.stepReports.size}개 Step" }
  *     is BatchReport.PartiallyCompleted -> ExampleLog.log.info { "부분 완료: skip 발생" }
- *     is BatchReport.Failure           -> ExampleLog.log.error(report.error) { "Job 실패" }
+ *     is BatchReport.Failure   -> ExampleLog.log.error(report.error) { "Job 실패" }
  * }
  * ```
  */
@@ -37,7 +35,7 @@ sealed interface BatchReport {
     data class Success(
         override val jobExecution: JobExecution,
         override val stepReports: List<StepReport>,
-    ) : BatchReport
+    ): BatchReport
 
     /**
      * 모든 Step이 완료됐으나 일부 아이템이 skip된 경우의 결과.
@@ -49,7 +47,7 @@ sealed interface BatchReport {
     data class PartiallyCompleted(
         override val jobExecution: JobExecution,
         override val stepReports: List<StepReport>,
-    ) : BatchReport
+    ): BatchReport
 
     /**
      * 하나 이상의 Step이 FAILED 상태로 종료된 경우의 결과.
@@ -62,5 +60,5 @@ sealed interface BatchReport {
         override val jobExecution: JobExecution,
         override val stepReports: List<StepReport>,
         val error: Throwable,
-    ) : BatchReport
+    ): BatchReport
 }

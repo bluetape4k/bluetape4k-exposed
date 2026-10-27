@@ -2,14 +2,17 @@ package io.bluetape4k.examples.exposed.ktor.order
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
-import org.junit.jupiter.api.Test
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.junit.jupiter.api.Test
 import java.io.ObjectStreamClass
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 class OrderDomainTest {
+
+    companion object: KLogging()
 
     private val id = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36")
     private val createdAt = Instant.parse("2026-07-17T00:00:00Z")

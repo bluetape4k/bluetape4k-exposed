@@ -9,12 +9,16 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContainIgnoringCase
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContainIgnoringCase
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.spring.data.exposed.common.repository.support.cast
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.UserJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.SimpleExposedJdbcRepository
+import io.bluetape4k.support.uninitialized
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
@@ -45,7 +49,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
     companion object: KLogging()
 
     @Autowired
-    private lateinit var factoryRepository: UserJdbcRepository
+    private val factoryRepository: UserJdbcRepository = uninitialized()
 
     private val repository = SimpleExposedJdbcRepository(
         ExposedEntityInformationImpl(UserEntity::class.java),
@@ -60,23 +64,25 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             addLogger(recordSql(statements))
 
             val interfaces = repository.findBy(example) { query ->
-                query.`as`(UserNameView::class.java).sortBy(Sort.by("name")).all()
+                query.cast<UserNameView>().sortBy(Sort.by("name")).all()
             }
             val dataClasses = repository.findBy(example) { query ->
-                query.`as`(UserNameDto::class.java).sortBy(Sort.by("name")).all()
+                query.cast<UserNameDto>().sortBy(Sort.by("name")).all()
             }
             val records = repository.findBy(example) { query ->
-                query.`as`(JdbcUserNameRecord::class.java).sortBy(Sort.by("name")).all()
+                query.cast<JdbcUserNameRecord>().sortBy(Sort.by("name")).all()
             }
 
             interfaces.map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Charlie")
             dataClasses.map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Charlie")
             records.map { it.name() } shouldBeEqualTo listOf("Alice", "Bob", "Charlie")
+
             statements shouldHaveSize 3
             statements.forEach { sql ->
+                log.debug { "sql=$sql" }
                 sql shouldContainIgnoringCase "name"
-                sql.contains("email", ignoreCase = true).shouldBeFalse()
-                sql.contains("age", ignoreCase = true).shouldBeFalse()
+                sql shouldNotContainIgnoringCase "email"
+                sql shouldNotContainIgnoringCase "age"
             }
         }
     }
@@ -101,6 +107,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                     .sortBy(Sort.by("name"))
                     .page(PageRequest.of(1, 2, Sort.by(Sort.Direction.DESC, "age")))
             }
+            log.debug { "page=$page" }
             page.content.map { it.age } shouldBeEqualTo listOf(20)
             page.totalElements shouldBeEqualTo 3L
         }
@@ -148,7 +155,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             )
 
             val result = repository.findBy(example) { it.oneValue() }
-
+            log.debug { "result=$result" }
             result shouldBe probe
         }
     }
@@ -167,7 +174,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
             assertFailsWith<InvalidDataAccessApiUsageException> { escaped.all() }
             assertFailsWith<InvalidDataAccessApiUsageException> { escaped.sortBy(Sort.by("name")) }
             assertFailsWith<InvalidDataAccessApiUsageException> { escaped.limit(1) }
-            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.`as`(UserNameView::class.java) }
+            assertFailsWith<InvalidDataAccessApiUsageException> { escaped.cast<UserNameView>() }
             assertFailsWith<InvalidDataAccessApiUsageException> { escaped.project(mutableListOf("name")) }
         }
 
@@ -217,22 +224,26 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                 it.`as`(UserNameView::class.java).project(mutableListOf("name")).limit(1).count()
             } shouldBeEqualTo 3L
             selectStatements(statements) shouldHaveSize 1
+            log.debug { "statements=${statements.joinToString("\n")}" }
 
             statements.clear()
             repository.findBy(example) { it.limit(1).exists() }.shouldBeTrue()
             selectStatements(statements) shouldHaveSize 1
+            log.debug { "statements=${statements.joinToString("\n")}" }
 
             statements.clear()
             val firstPage = repository.findBy(example) { it.limit(1).page(PageRequest.of(0, 2)) }
             firstPage.content shouldHaveSize 2
             firstPage.totalElements shouldBeEqualTo 3L
             selectStatements(statements) shouldHaveSize 2
+            log.debug { "statements=${statements.joinToString("\n")}" }
 
             statements.clear()
             val lastPage = repository.findBy(example) { it.limit(1).page(PageRequest.of(1, 2)) }
             lastPage.content shouldHaveSize 1
             lastPage.totalElements shouldBeEqualTo 3L
             selectStatements(statements) shouldHaveSize 1
+            log.debug { "statements=${statements.joinToString("\n")}" }
 
             val unpaged = repository.findBy(example) {
                 it.limit(2).page(Pageable.unpaged(Sort.by(Sort.Direction.DESC, "age")))
@@ -244,6 +255,7 @@ class JdbcFluentQueryIntegrationTest: AbstractExposedJdbcRepositoryTest() {
                 it.sortBy(Sort.by("name")).page(PageRequest.of(0, 2))
             }
             selectStatements(statements).first().contains("order by", ignoreCase = true).shouldBeFalse()
+            log.debug { "statements=${statements.joinToString("\n")}" }
         }
     }
 

@@ -89,5 +89,4 @@ suspend fun <T: Comparable<T>> Flow<T>.sorted(): List<T> = toList().sorted()
  * // values == listOf(1, 2)
  * ```
  */
-suspend fun <T> Flow<T>.distinct(): List<T> =
-    toList().distinct()
+suspend fun <T> Flow<T>.distinct(): List<T> = toList().distinct()

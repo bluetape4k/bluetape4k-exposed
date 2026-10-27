@@ -2,6 +2,7 @@
 
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.support.requireBeTrue
 import io.bluetape4k.support.requirePositiveNumber
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -63,7 +64,8 @@ class SnapshotLocalFenceRegistry<ID: Any>(
 
     init {
         stripeCount.requirePositiveNumber("stripeCount")
-        require(stripeCount.isPowerOfTwo()) { "stripeCount[$stripeCount] must be a power of two." }
+        stripeCount.isPowerOfTwo().requireBeTrue { "stripeCount[$stripeCount] must be a power of two." }
+
         stripeMask = stripeCount - 1
         stripes = Array(stripeCount) { Stripe() }
     }

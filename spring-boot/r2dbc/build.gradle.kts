@@ -1,5 +1,6 @@
 plugins {
     kotlin("plugin.spring")
+    kotlin("kapt")
 }
 
 configurations {

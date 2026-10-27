@@ -1,12 +1,15 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 /**
  * Validation tests for [StarRocksDatabase].
  */
 class StarRocksDatabaseValidationTest {
+
+    companion object: KLogging()
 
     @Test
     fun `connect fails when host is blank`() {

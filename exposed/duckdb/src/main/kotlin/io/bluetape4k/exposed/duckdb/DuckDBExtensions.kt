@@ -7,10 +7,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 
 /**
  * DuckDB에서 suspend 트랜잭션을 실행합니다.
@@ -36,16 +35,17 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
  * @param dispatcher 블로킹 JDBC 호출을 실행할 디스패처 (기본값: [Dispatchers.IO])
  * @param block 트랜잭션 블록
  */
+@Suppress("DEPRECATION")
 suspend fun <T> suspendTransaction(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
     block: Transaction.() -> T,
-): T = withContext(dispatcher) {
+): T {
     // DuckDB JDBC는 블로킹 드라이버이므로 Dispatchers.IO(또는 커스텀 VirtualThread 디스패처)에서 실행한다.
     // withContext는 코루틴 취소를 자동으로 전파하므로 별도 취소 처리 없이 CancellationException이 상위로 전달된다.
-    transaction(db) {
+    return suspendedTransactionAsync(dispatcher, db) {
         block()
-    }
+    }.await()
 }
 
 /**
@@ -75,6 +75,7 @@ suspend fun <T> suspendTransaction(
  * @param block 조회 결과를 반환하는 트랜잭션 블록. 반환된 [Iterable]은 트랜잭션 안에서 즉시 materialize 됩니다.
  *   매우 큰 결과셋은 `Flow` API라도 전체를 메모리에 적재하므로 별도 페이지 전략을 고려해야 합니다.
  */
+@Suppress("DEPRECATION")
 fun <T> queryFlow(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -82,11 +83,10 @@ fun <T> queryFlow(
 ): Flow<T> = flow {
     // DuckDB JDBC ResultSet은 트랜잭션 경계 밖에서 접근하면 예외가 발생하므로,
     // 트랜잭션 내부에서 toList()로 즉시 materialization 한다.
-    val items = withContext(dispatcher) {
-        transaction(db) {
-            block().toList()
-        }
-    }
+    val items = suspendedTransactionAsync(dispatcher, db) {
+        block().toList()
+    }.await()
+
     for (item in items) {
         // forEach 대신 for+ensureActive()를 사용하는 이유:
         // forEach는 suspend 람다가 아니므로 코루틴 취소 신호를 emit 사이에서 확인하지 못한다.

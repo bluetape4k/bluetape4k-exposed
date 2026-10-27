@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit
 @State(Scope.Benchmark)
 class H2JdbcBatchBenchmark {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * H2 시드 시나리오 전용 JMH State.
@@ -46,7 +46,7 @@ class H2JdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class SeedState : AbstractJdbcSeedState() {
+    class SeedState: AbstractJdbcSeedState() {
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.H2
 
@@ -84,7 +84,7 @@ class H2JdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class JobState : AbstractJdbcJobState() {
+    class JobState: AbstractJdbcJobState() {
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.H2
 

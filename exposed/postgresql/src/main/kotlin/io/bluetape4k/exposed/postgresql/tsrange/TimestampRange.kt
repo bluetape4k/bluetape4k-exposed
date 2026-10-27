@@ -61,10 +61,14 @@ data class TimestampRange(
      * @return 두 범위가 겹치면 `true`
      */
     fun overlaps(other: TimestampRange): Boolean {
-        val thisEndBeforeOtherStart = if (!upperInclusive || !other.lowerInclusive)
-            !end.isAfter(other.start) else end.isBefore(other.start)
-        val otherEndBeforeThisStart = if (!other.upperInclusive || !lowerInclusive)
-            !other.end.isAfter(start) else other.end.isBefore(start)
+        val thisEndBeforeOtherStart =
+            if (!upperInclusive || !other.lowerInclusive) !end.isAfter(other.start)
+            else end.isBefore(other.start)
+
+        val otherEndBeforeThisStart =
+            if (!other.upperInclusive || !lowerInclusive) !other.end.isAfter(start)
+            else other.end.isBefore(start)
+
         return !(thisEndBeforeOtherStart || otherEndBeforeThisStart)
     }
 }

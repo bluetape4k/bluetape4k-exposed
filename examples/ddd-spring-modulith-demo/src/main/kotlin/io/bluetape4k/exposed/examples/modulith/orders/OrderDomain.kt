@@ -1,8 +1,8 @@
 package io.bluetape4k.exposed.examples.modulith.orders
 
-import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
 import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
+import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.support.requireNotBlank
 import java.io.Serializable
 import java.time.Instant
@@ -10,7 +10,7 @@ import java.time.Instant
 @JvmInline
 value class OrderId(
     val value: String,
-) : Serializable {
+): Serializable {
 
     init {
         value.requireNotBlank("value")
@@ -28,7 +28,7 @@ data class AcceptOrderCommand(
     val orderKey: String,
     val customerId: String,
     val note: String? = null,
-) : Serializable {
+): Serializable {
 
     init {
         orderKey.requireNotBlank("orderKey")
@@ -51,7 +51,7 @@ class Order(
     val note: String?,
     val status: OrderStatus,
     val acceptedAt: Instant,
-) : AbstractAggregateRoot<OrderId>(), Serializable {
+): AbstractAggregateRoot<OrderId>(), Serializable {
 
     companion object {
         private const val serialVersionUID: Long = -2138607313011936949L
@@ -81,4 +81,4 @@ class Order(
 class OrderHandoffFailedException(
     val aggregate: Order,
     cause: Throwable,
-) : IllegalStateException("order-event-handoff-failed", cause)
+): IllegalStateException("order-event-handoff-failed", cause)

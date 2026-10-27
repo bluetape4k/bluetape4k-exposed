@@ -7,8 +7,10 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.codec.Base58
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.toUtf8Bytes
 import org.jetbrains.exposed.v1.core.statements.api.RowApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -40,9 +42,9 @@ class Jackson3ColumnTypeUnitTest {
     }
 
     private val serializer = DefaultJacksonSerializer
-    private val columnType = JacksonColumnType<SamplePayload>(
+    private val columnType = JacksonColumnType(
         serilaize = { serializer.serializeAsString(it) },
-        deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+        deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
     )
 
     @Test
@@ -71,6 +73,7 @@ class Jackson3ColumnTypeUnitTest {
         val source = SamplePayload("gamma", 30)
         val result = columnType.notNullValueToDB(source)
 
+        log.debug { "result=$result" }
         result.shouldBeInstanceOf<String>()
         result shouldContain "\"name\":\"gamma\""
         result shouldContain "\"count\":30"
@@ -82,15 +85,16 @@ class Jackson3ColumnTypeUnitTest {
         val json = columnType.notNullValueToDB(source) as String
         val restored = columnType.valueFromDB(json)
 
+        log.debug { "restored=$restored" }
         restored shouldBeEqualTo source
     }
 
     @Test
     fun `nonNullValueToString 은 JSON SQL 리터럴 특수문자를 escape 한다`() {
         val json = "{\"name\":\"O'Reilly\",\r\n\"count\":1}"
-        val literalColumnType = JacksonColumnType<SamplePayload>(
+        val literalColumnType = JacksonColumnType(
             serilaize = { json },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
         )
         val database = Database.connect(
             url = "jdbc:h2:mem:jackson3-literal-${Base58.randomString(8)};DB_CLOSE_DELAY=-1",
@@ -100,6 +104,7 @@ class Jackson3ColumnTypeUnitTest {
         transaction(database) {
             val rendered = literalColumnType.nonNullValueToString(SamplePayload("ignored", 1))
 
+            log.debug { "rendered=$rendered" }
             rendered shouldContain "O''Reilly"
             rendered shouldContain "\\r"
             rendered shouldContain "\\n"
@@ -114,22 +119,23 @@ class Jackson3ColumnTypeUnitTest {
 
     @Test
     fun `JacksonBColumnType 은 usesBinaryFormat 이 true 이다`() {
-        val bColumnType = JacksonBColumnType<SamplePayload>(
+        val bColumnType = JacksonBColumnType(
             serialize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
         )
         bColumnType.usesBinaryFormat.shouldBeTrue()
     }
 
     @Test
     fun `JacksonBColumnType 은 valueFromDB 에서 문자열을 역직렬화한다`() {
-        val bColumnType = JacksonBColumnType<SamplePayload>(
+        val bColumnType = JacksonBColumnType(
             serialize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
         )
         val source = SamplePayload("jsonb", 42)
         val json = serializer.serializeAsString(source)
 
+        log.debug { "json=$json" }
         bColumnType.valueFromDB(json) shouldBeEqualTo source
     }
 
@@ -171,10 +177,13 @@ class Jackson3ColumnTypeUnitTest {
 
         val ct = JacksonColumnType<WithNullable>(
             serilaize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<WithNullable>(it)!! }
+            deserialize = { serializer.deserializeFromString<WithNullable>(it).shouldNotBeNull() }
         )
+
         val value = WithNullable("test")
         val json = ct.notNullValueToDB(value) as String
+
+        log.debug { "json=$json" }
         json shouldContain "\"name\":\"test\""
     }
 
@@ -185,9 +194,9 @@ class Jackson3ColumnTypeUnitTest {
     @Test
     fun `JacksonBColumnType castToJsonFormat=false 이면 needsBinaryFormatCast 는 false 이다`() {
         val bColumnType =
-            JacksonBColumnType<SamplePayload>(
+            JacksonBColumnType(
                 serialize = { serializer.serializeAsString(it) },
-                deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! },
+                deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() },
                 castToJsonFormat = false,
             )
         bColumnType.needsBinaryFormatCast.shouldBeFalse()
@@ -198,13 +207,15 @@ class Jackson3ColumnTypeUnitTest {
      */
     @Test
     fun `JacksonBColumnType 왕복 변환이 일관된다`() {
-        val bColumnType = JacksonBColumnType<SamplePayload>(
+        val bColumnType = JacksonBColumnType(
             serialize = { serializer.serializeAsString(it) },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
         )
         val source = SamplePayload("roundtrip-b", 77)
         val json = bColumnType.notNullValueToDB(source) as String
         val restored = bColumnType.valueFromDB(json)
+
+        log.debug { "restored=$restored" }
         restored shouldBeEqualTo source
     }
 
@@ -215,9 +226,9 @@ class Jackson3ColumnTypeUnitTest {
     @Test
     fun `notNullValueToDB 는 커스텀 직렬화 함수에 위임한다`() {
         val customOutput = "CUSTOM_JSON"
-        val customColumnType = JacksonColumnType<SamplePayload>(
+        val customColumnType = JacksonColumnType(
             serilaize = { customOutput },
-            deserialize = { serializer.deserializeFromString<SamplePayload>(it)!! }
+            deserialize = { serializer.deserializeFromString<SamplePayload>(it).shouldNotBeNull() }
         )
         val source = SamplePayload("any", 0)
         customColumnType.notNullValueToDB(source) shouldBeEqualTo customOutput
@@ -237,8 +248,9 @@ class Jackson3ColumnTypeUnitTest {
         transaction(database) {
             val raw = columnType.readObject(row, 1)
 
+            log.debug { "raw=$raw" }
             raw shouldBeEqualTo json
-            columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+            columnType.valueFromDB(raw.shouldNotBeNull()) shouldBeEqualTo source
         }
         reader.closed.get().shouldBeTrue()
     }
@@ -276,8 +288,9 @@ class Jackson3ColumnTypeUnitTest {
                 resultSet.next().shouldBeTrue()
                 val raw = columnType.readObject(JdbcResult(resultSet), 1)
 
+                log.debug { "raw=$raw" }
                 raw shouldBeEqualTo json
-                columnType.valueFromDB(requireNotNull(raw)) shouldBeEqualTo source
+                columnType.valueFromDB(raw.shouldNotBeNull()) shouldBeEqualTo source
             }
         }
     }

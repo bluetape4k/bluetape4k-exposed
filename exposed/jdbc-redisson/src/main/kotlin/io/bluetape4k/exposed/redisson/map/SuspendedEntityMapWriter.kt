@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.map
 
+import io.bluetape4k.exposed.jdbc.suspendTransactionWithIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -7,11 +8,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.redisson.api.map.MapWriterAsync
 import java.util.concurrent.CompletionStage
 
@@ -43,7 +43,8 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
 ): MapWriterAsync<ID, E> {
 
     companion object: KLoggingChannel() {
-        protected val defaultMapWriterCoroutineScope = CoroutineScope(Dispatchers.IO) + CoroutineName("DB-Writer")
+        protected val defaultMapWriterCoroutineScope =
+            CoroutineScope(SupervisorJob() + Dispatchers.IO) + CoroutineName("DB-Writer")
     }
 
     /**
@@ -57,17 +58,15 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
      * @return DB 반영 완료를 알리는 [CompletionStage]
      */
     override fun write(map: Map<ID, E>): CompletionStage<Void> = scope.async {
-        withContext(scope.coroutineContext) {
-            suspendTransaction {
-                try {
-                    writeToDb(map)
-                } catch (e: CancellationException) {
-                    // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
-                    throw e
-                } catch (e: Throwable) {
-                    log.error(e) { "DB에 Write 중 오류 발생." }
-                    throw e
-                }
+        suspendTransactionWithIO {
+            try {
+                writeToDb(map)
+            } catch (e: CancellationException) {
+                // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
+                throw e
+            } catch (e: Throwable) {
+                log.error(e) { "DB에 Write 중 오류 발생." }
+                throw e
             }
         }
         null
@@ -84,18 +83,16 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
      * @return DB 반영 완료를 알리는 [CompletionStage]
      */
     override fun delete(ids: Collection<ID>): CompletionStage<Void> = scope.async {
-        withContext(scope.coroutineContext) {
-            suspendTransaction {
-                try {
-                    log.debug { "캐시 변경 사항을 DB에 반영합니다... count=${ids.size}" }
-                    deleteFromDb(ids)
-                } catch (e: CancellationException) {
-                    // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
-                    throw e
-                } catch (e: Throwable) {
-                    log.error(e) { "DB에서 삭제 중 오류 발생." }
-                    throw e
-                }
+        suspendTransactionWithIO {
+            try {
+                log.debug { "캐시 변경 사항을 DB에 반영합니다... count=${ids.size}" }
+                deleteFromDb(ids)
+            } catch (e: CancellationException) {
+                // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
+                throw e
+            } catch (e: Throwable) {
+                log.error(e) { "DB에서 삭제 중 오류 발생." }
+                throw e
             }
         }
         null

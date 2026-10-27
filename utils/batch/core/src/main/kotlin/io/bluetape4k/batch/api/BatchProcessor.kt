@@ -18,7 +18,7 @@ package io.bluetape4k.batch.api
  * @param I 입력 아이템 타입
  * @param O 출력 아이템 타입
  */
-fun interface BatchProcessor<in I : Any, out O : Any> {
+fun interface BatchProcessor<in I: Any, out O: Any> {
     /**
      * 아이템을 처리하여 변환된 결과를 반환한다.
      *

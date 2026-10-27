@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -18,7 +19,7 @@ class BatchInsertOnConflictDoNothingTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    private object CompositeKeyTester: Table("batch_insert_composite_tester") {
+    object CompositeKeyTester: Table("batch_insert_composite_tester") {
         val tenantId = varchar("tenant_id", 20)
         val naturalKey = varchar("natural_key", 20)
         val payload = varchar("payload", 50)
@@ -39,15 +40,14 @@ class BatchInsertOnConflictDoNothingTest: AbstractExposedTest() {
 
             // 중복된 id 를 가진 row 를 추가하면, 무시합니다.
             val executable = BatchInsertBlockingExecutable(statement = BatchInsertOnConflictDoNothing(tester))
-            executable.run {
-                statement.addBatch()
-                statement[tester.id] = "foo"        // 중복되므로 insert 되지 않음
+            executable.statement.addBatch()
+            executable.statement[tester.id] = "foo"        // 중복되므로 insert 되지 않음
 
-                statement.addBatch()
-                statement[tester.id] = "bar"        // 중복되지 않으므로 추가됨
+            executable.statement.addBatch()
+            executable.statement[tester.id] = "bar"        // 중복되지 않으므로 추가됨
 
-                execute(this@withTables)
-            }
+            executable.execute(this)
+
             tester.selectAll().count() shouldBeEqualTo 2
         }
     }
@@ -66,6 +66,7 @@ class BatchInsertOnConflictDoNothingTest: AbstractExposedTest() {
 
             val sql = statement.prepareSQL(this, prepared = true)
 
+            log.debug { "sql=$sql" }
             sql shouldContain "ON CONFLICT"
             sql shouldContain "${identity(CompositeKeyTester.tenantId)}, ${identity(CompositeKeyTester.naturalKey)}"
             sql shouldContain "DO NOTHING"
@@ -86,6 +87,7 @@ class BatchInsertOnConflictDoNothingTest: AbstractExposedTest() {
 
             val sql = statement.prepareSQL(this, prepared = true)
 
+            log.debug { "sql=$sql" }
             sql shouldContain "INSERT IGNORE"
         }
     }

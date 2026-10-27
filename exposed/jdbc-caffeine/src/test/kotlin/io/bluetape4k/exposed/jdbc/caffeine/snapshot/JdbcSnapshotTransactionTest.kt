@@ -5,9 +5,10 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
@@ -36,10 +37,10 @@ import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 
 class JdbcSnapshotTransactionTest {
 
@@ -116,12 +117,12 @@ class JdbcSnapshotTransactionTest {
         transaction(database) {
             maxAttempts = 1
             val receiver = this
-            stageSnapshot(cache, miss, "source", CacheSnapshotMapper { source ->
+            stageSnapshot(cache, miss, "source") { source ->
                 (transactionManager.currentOrNull() === receiver) shouldBeEqualTo true
                 outerTransaction shouldBeEqualTo null
                 mappings.incrementAndGet()
                 CacheSnapshot(Payload(source))
-            })
+            }
         }
 
         mappings.get() shouldBeEqualTo 1
@@ -138,16 +139,16 @@ class JdbcSnapshotTransactionTest {
         transaction(database) {
             maxAttempts = 1
             assertFailsWith<MapperMarker> {
-                stageSnapshot(cache, miss, "bad", CacheSnapshotMapper {
+                stageSnapshot(cache, miss, "bad") {
                     mappings.incrementAndGet()
                     throw MapperMarker()
-                })
+                }
             }
             assertFailsWith<IllegalStateException> {
-                stageSnapshot(cache, miss, "again", CacheSnapshotMapper {
+                stageSnapshot(cache, miss, "again") {
                     mappings.incrementAndGet()
                     CacheSnapshot(Payload(it))
-                })
+                }
             }
         }
 
@@ -184,10 +185,10 @@ class JdbcSnapshotTransactionTest {
         transaction(database) { captured.set(this) }
         val staleMiss = cache.lookup(1L).miss.shouldNotBeNull()
         assertFailsWith<IllegalStateException> {
-            captured.get().stageSnapshot(cache, staleMiss, "stale", CacheSnapshotMapper {
+            captured.get().stageSnapshot(cache, staleMiss, "stale") {
                 mappings.incrementAndGet()
                 CacheSnapshot(Payload(it))
-            })
+            }
         }
         transaction(database) {
             maxAttempts = 1
@@ -198,10 +199,10 @@ class JdbcSnapshotTransactionTest {
             transaction(database) {
                 val nestedMiss = cache.lookup(2L).miss.shouldNotBeNull()
                 assertFailsWith<IllegalStateException> {
-                    stageSnapshot(cache, nestedMiss, "nested", CacheSnapshotMapper {
+                    stageSnapshot(cache, nestedMiss, "nested") {
                         mappings.incrementAndGet()
                         CacheSnapshot(Payload(it))
-                    })
+                    }
                 }
                 assertFailsWith<IllegalStateException> { stageInvalidation(cache, 3L) }
             }
@@ -219,7 +220,7 @@ class JdbcSnapshotTransactionTest {
                 snapshot = SnapshotCacheConfig("validator:v1", "payload-v1"),
                 fenceStripes = 64,
             ),
-            validator = CacheSnapshotValueValidator { throw ValidatorMarker() },
+            validator = { throw ValidatorMarker() },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
@@ -249,7 +250,9 @@ class JdbcSnapshotTransactionTest {
 
         transaction(database) {
             stageInvalidation(first, 1L)
-            assertFailsWith<IllegalStateException> { stageInvalidation(second, 2L) }
+            assertFailsWith<IllegalStateException> {
+                stageInvalidation(second, 2L)
+            }
         }
 
         first.lookup(1L).snapshot.shouldBeNull()
@@ -273,25 +276,25 @@ class JdbcSnapshotTransactionTest {
 
                 val newerInvalidation = executor.submit {
                     ready.countDown()
-                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    start.await(5.seconds).shouldBeTrue()
                     transaction(database) { stageInvalidation(cache, id) }
                     invalidated.countDown()
                 }
 
                 val olderFill = executor.submit {
                     ready.countDown()
-                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                    invalidated.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    start.await(5.seconds).shouldBeTrue()
+                    invalidated.await(5.seconds).shouldBeTrue()
                     transaction(database) {
                         maxAttempts = 1
                         stageSnapshot(cache, oldMiss, CacheSnapshot(Payload("stale-$id")))
                     }
                 }
 
-                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                ready.await(5.seconds).shouldBeTrue()
                 start.countDown()
-                newerInvalidation.get(5, TimeUnit.SECONDS)
-                olderFill.get(5, TimeUnit.SECONDS)
+                newerInvalidation.get(5.seconds)
+                olderFill.get(5.seconds)
 
                 cache.lookup(id).snapshot.shouldBeNull()
                 failures.poll()?.outcome shouldBeEqualTo SnapshotCacheOutcome.REJECTED
@@ -685,7 +688,7 @@ class JdbcSnapshotTransactionTest {
         override fun close() {
             futures.forEach { it.cancel(true) }
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
         }
     }
 }

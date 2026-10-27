@@ -6,13 +6,14 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Suppress("DEPRECATION")
 interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>: SuspendedCacheTestScenario<ID, E> {
@@ -34,10 +35,9 @@ interface SuspendedWriteBehindScenario<ID: Any, E: java.io.Serializable>: Suspen
             val entities = createNewEntities(1000)
             repository.putAll(entities.associateBy { repository.extractId(it) })
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofSeconds(5))
-                .untilSuspending { getAllCountFromDB() > entities.size.toLong() }
+            await atMost 30.seconds withPollInterval 5.seconds untilSuspending {
+                getAllCountFromDB() > entities.size.toLong()
+            }
 
             // DB에서 조회한 값
             val dbCount = getAllCountFromDB()

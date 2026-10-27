@@ -4,7 +4,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.batch.exposed.partition.ExposedRangePartitioner
 import io.bluetape4k.spring.batch.exposed.support.castToLong
-import kotlinx.atomicfu.locks.reentrantLock
+import io.bluetape4k.support.requireInOpenRange
 import kotlinx.atomicfu.locks.withLock
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
@@ -25,6 +25,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.springframework.batch.infrastructure.item.ExecutionContext
 import org.springframework.batch.infrastructure.item.ItemStreamReader
 import org.springframework.beans.factory.InitializingBean
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * Keyset 기반 페이지 읽기 [ItemStreamReader].
@@ -139,8 +140,8 @@ open class ExposedKeysetItemReader<T: Any>(
     ) {
         fun isBefore(other: CursorPosition): Boolean =
             key < other.key ||
-                    (key == other.key && tieBreaker != null && other.tieBreaker != null
-                            && tieBreaker < other.tieBreaker)
+                    (key == other.key && tieBreaker != null && other.tieBreaker != null &&
+                            tieBreaker < other.tieBreaker)
     }
 
     private var minId: Long = 0L
@@ -153,15 +154,14 @@ open class ExposedKeysetItemReader<T: Any>(
     private val buffer: MutableList<BufferedItem<T>> = mutableListOf()
     private var bufferIndex: Int = 0
     private var exhausted: Boolean = false
-    private val lock = reentrantLock()
+    private val lock = ReentrantLock()
 
     override fun afterPropertiesSet() {
         validatePageSize()
     }
 
     private fun validatePageSize() {
-        require(pageSize > 0) { "pageSize must be positive" }
-        require(pageSize < Int.MAX_VALUE) { "pageSize must be less than Int.MAX_VALUE" }
+        pageSize.requireInOpenRange(1, Int.MAX_VALUE, "pageSize")
     }
 
     override fun open(executionContext: ExecutionContext) {

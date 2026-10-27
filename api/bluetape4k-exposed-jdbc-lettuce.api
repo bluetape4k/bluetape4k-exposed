@@ -195,7 +195,9 @@ public final class io/bluetape4k/exposed/lettuce/repository/AbstractSuspendedJdb
 
 public final class io/bluetape4k/exposed/lettuce/repository/ExposedLettuceCodecs {
 	public static final field INSTANCE Lio/bluetape4k/exposed/lettuce/repository/ExposedLettuceCodecs;
+	public final fun fastFory ()Lio/lettuce/core/codec/RedisCodec;
 	public final fun jackson3 (Ljava/lang/Class;)Lio/lettuce/core/codec/RedisCodec;
+	public final fun lz4FastFory ()Lio/lettuce/core/codec/RedisCodec;
 	public final fun requireExplicit ()Lio/lettuce/core/codec/RedisCodec;
 }
 

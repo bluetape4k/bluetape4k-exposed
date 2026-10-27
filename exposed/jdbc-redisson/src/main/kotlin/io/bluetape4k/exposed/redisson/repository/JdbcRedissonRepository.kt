@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.collections.toVarargArray
 import io.bluetape4k.exposed.cache.redis.JdbcRedisRepository
 import io.bluetape4k.support.requirePositiveNumber
 import org.jetbrains.exposed.v1.core.Expression
@@ -151,7 +152,7 @@ interface JdbcRedissonRepository<ID: Any, E: Serializable>: JdbcRedisRepository<
      */
     override fun invalidateAll(ids: Collection<ID>) {
         if (ids.isEmpty()) return
-        ids.forEach { cache.fastRemove(it) }
+        cache.fastRemove(*ids.toVarargArray())
     }
 
     /**
@@ -174,8 +175,8 @@ interface JdbcRedissonRepository<ID: Any, E: Serializable>: JdbcRedisRepository<
 
         val keys = cache.keySet(patterns, count)
         if (keys.isEmpty()) {
-            return 0
+            return 0L
         }
-        return keys.sumOf { cache.fastRemove(it) }
+        return cache.fastRemove(*keys.toVarargArray())
     }
 }

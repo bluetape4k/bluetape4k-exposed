@@ -35,7 +35,7 @@ class R2dbcUserCredentialRedissonRepository(
     }
 
     override fun BatchInsertStatement.insertEntity(entity: UserSchema.UserCredentialsRecord) {
-        // NOTE: MapWriter 가 AutoIncremented ID 를 가진 테이블에 대해 INSERT 를 수행하지 않습니다.
+        // HINT: MapWriter 가 AutoIncremented ID 를 가진 테이블에 대해 INSERT 를 수행하지 않습니다.
         this[UserSchema.UserCredentialsTable.id] = entity.id
         this[UserSchema.UserCredentialsTable.loginId] = entity.loginId
         this[UserSchema.UserCredentialsTable.email] = entity.email

@@ -4,10 +4,12 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeIn
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.clickhouse.engine.Memory
 import io.bluetape4k.exposed.clickhouse.types.Date32ColumnType
 import io.bluetape4k.exposed.clickhouse.types.chString
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -33,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
 
+    companion object: KLoggingChannel()
+
     private object Numbers: Table("system.numbers") {
         val number = long("number")
     }
@@ -52,7 +56,7 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         val nullable = CustomFunction<String?>(
             "nullIf", TextColumnType(), stringLiteral("same"), stringLiteral("same"),
         )
-        val date = CustomFunction<LocalDate>("toDate", Date32ColumnType(), stringLiteral("2026-09-08"))
+        val date = CustomFunction("toDate", Date32ColumnType(), stringLiteral("2026-09-08"))
         val count = one.dummy.count()
         val values = queryFlow(
             db,
@@ -60,7 +64,9 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
                 one.select(nullable, date, count)
             },
             mapper = { listOf(it[nullable], it[date], it[count]) }
-        ).toList()
+        )
+            .log("QueryFlow")
+            .toList()
 
         values shouldBeEqualTo listOf(listOf(null, LocalDate.of(2026, 9, 8), 1L))
     }
@@ -78,8 +84,10 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
             mapper = {
                 listOf(it[Numbers.number], it[numberAlias], it[label], it[amount])
             }
-        ).toList()
-        
+        )
+            .log("QueryFlow")
+            .toList()
+
         values shouldBeEqualTo (0L..2L).map { listOf(it, it, "행 값", "123.45".toBigDecimal()) }
     }
 
@@ -94,12 +102,19 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         }
         try {
             for (input in listOf("tenant-a", "tenant-a' OR 1=1 --")) {
-                val values = queryFlow(db, query = {
-                    TenantRows
-                        .select(TenantRows.tenant)
-                        .where { TenantRows.tenant eq input }
-                        .orderBy(TenantRows.id)
-                }, mapper = { it[TenantRows.tenant] }).toList()
+                val values = queryFlow(
+                    db,
+                    query = {
+                        TenantRows
+                            .select(TenantRows.tenant)
+                            .where { TenantRows.tenant eq input }
+                            .orderBy(TenantRows.id)
+                    },
+                    mapper = { it[TenantRows.tenant] }
+                )
+                    .log("QueryFlow")
+                    .toList()
+
                 values shouldBeEqualTo if (input == "tenant-a") listOf("tenant-a") else emptyList()
             }
         } finally {
@@ -111,28 +126,39 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
 
     @Test
     fun `수집 전에는 조회하지 않고 수집마다 다시 조회한다`() = runSuspendIO {
-        val queries = AtomicInteger()
-        val rows = queryFlow(db, query = {
-            queries.incrementAndGet()
-            Numbers.selectAll().limit(3)
-        }, mapper = { it[Numbers.number] })
+        val queryCount = AtomicInteger()
+        val rows = queryFlow(
+            db,
+            query = {
+                queryCount.incrementAndGet()
+                Numbers.selectAll().limit(3)
+            },
+            mapper = { it[Numbers.number] }
+        )
 
-        queries.get() shouldBeEqualTo 0
-        rows.toList() shouldBeEqualTo listOf(0L, 1L, 2L)
-        rows.toList() shouldBeEqualTo listOf(0L, 1L, 2L)
-        queries.get() shouldBeEqualTo 2
+        queryCount.get() shouldBeEqualTo 0
+        rows.log("First").toList() shouldBeEqualTo listOf(0L, 1L, 2L)
+        rows.log("Second").toList() shouldBeEqualTo listOf(0L, 1L, 2L)
+        queryCount.get() shouldBeEqualTo 2
     }
 
     @Test
     fun `take는 전체 결과를 매핑하지 않는다`() = runSuspendIO {
         val mapped = AtomicInteger()
-        val values = queryFlow(db, query = { Numbers.selectAll().limit(100_000) }, mapper = {
-            mapped.incrementAndGet()
-            it[Numbers.number]
-        }).take(1).toList()
+        val values = queryFlow(
+            db,
+            query = { Numbers.selectAll().limit(100_000) },
+            mapper = {
+                mapped.incrementAndGet()
+                it[Numbers.number]
+            }
+        )
+            .log("Take")
+            .take(1)
+            .toList()
 
         values shouldBeEqualTo listOf(0L)
-        mapped.get().shouldBeIn(1..2)
+        mapped.get() shouldBeIn 1..2
     }
 
     @Test
@@ -140,17 +166,16 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
         queryFlow(
             db,
             query = { Numbers.selectAll().limit(0) },
-            mapper = {
-                it[Numbers.number]
-            }
-        ).toList().shouldBeEmpty()
+            mapper = { it[Numbers.number] }
+        ).log("Empty").toList().shouldBeEmpty()
     }
 
     @Test
     fun `조회와 매핑은 지정한 JDBC 디스패처에서 실행한다`() = runSuspendIO {
-        Executors.newSingleThreadExecutor { runnable ->
+        val executor = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "clickhouse-stream-test")
-        }.asCoroutineDispatcher().use { dispatcher ->
+        }
+        executor.asCoroutineDispatcher().use { dispatcher ->
             queryFlow(
                 db,
                 dispatcher,
@@ -162,7 +187,9 @@ class ClickHouseQueryFlowTest: AbstractClickHouseTest() {
                     Thread.currentThread().name.startsWith("clickhouse-stream-test").shouldBeTrue()
                     it[Numbers.number]
                 }
-            ).toList() shouldBeEqualTo listOf(0L, 1L, 2L)
+            )
+                .log("Flow")
+                .toList() shouldBeEqualTo listOf(0L, 1L, 2L)
         }
     }
 }

@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
@@ -23,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
+
+    companion object: KLoggingChannel()
 
     @Test
     fun `get and getAll load cache misses and pattern invalidation removes cached values`() = runSuspendIO {

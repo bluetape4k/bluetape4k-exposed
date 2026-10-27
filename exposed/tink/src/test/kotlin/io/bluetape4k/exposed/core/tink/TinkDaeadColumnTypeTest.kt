@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -194,7 +195,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
 
             val row = table.selectAll().where { table.id eq id }.single()
 
-            row[table.data] shouldBeEqualTo null
+            row[table.data].shouldBeNull()
         }
     }
 
@@ -292,7 +293,7 @@ class TinkDaeadColumnTypeTest: AbstractExposedTest() {
 
             val row = table.selectAll().where { table.id eq id }.single()
 
-            row[table.email] shouldBeEqualTo null
+            row[table.email].shouldBeNull()
         }
     }
 

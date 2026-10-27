@@ -1,8 +1,8 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
+import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReport
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
@@ -10,6 +10,7 @@ import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.batch.api.requireValidBatchLeaseDuration
 import io.bluetape4k.batch.api.requireValidBatchName
 import io.bluetape4k.codec.Base58
+import io.bluetape4k.javatimes.minutes
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.error
 import io.bluetape4k.support.requireNotEmpty
@@ -25,6 +26,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 배치 Job 실행기. 여러 [BatchStep]을 순차적으로 실행하며 재시작을 지원합니다.
@@ -56,13 +58,13 @@ class BatchJob(
     val params: Map<String, Any> = emptyMap(),
     val steps: List<BatchStep<*, *>>,
     val repository: BatchJobRepository,
-    val executionLease: Duration = Duration.ofMinutes(15),
-) : SuspendWork {
+    val executionLease: Duration = 15.minutes(),
+): SuspendWork {
 
     /** heartbeat cleanup lifecycle을 실제 runner 경계에서 검증하기 위한 내부 clock seam. */
-    internal var heartbeatPause: suspend (Long) -> Unit = { delay(it) }
+    internal var heartbeatPause: suspend (Long) -> Unit = { delay(it.milliseconds) }
 
-    companion object : KLoggingChannel() {
+    companion object: KLoggingChannel() {
         private const val CORRELATION_ID_LENGTH = 16
     }
 
@@ -106,6 +108,7 @@ class BatchJob(
         }
         val ownerId = "${name}-${Base58.randomString(8)}"
         val claimStartedNanos = SYSTEM_BATCH_MONOTONIC_CLOCK.nowNanos()
+
         val claimedJobExecution = try {
             repositoryCall {
                 repository.claimJobExecution(
@@ -146,17 +149,18 @@ class BatchJob(
                 stepReports += report
 
                 if (report.status == BatchStatus.FAILED) {
-                    throw report.error
-                        ?: error("Step '${step.name}' FAILED without error")
+                    throw report.error ?: error("Step '${step.name}' FAILED without error")
                 }
             }
 
             val hasSkips = stepReports.any { it.skipCount > 0 }
             val finalStatus = if (hasSkips) BatchStatus.COMPLETED_WITH_SKIPS else BatchStatus.COMPLETED
             val completionExecution = stopHeartbeatAndGetLatest(leaseGuard)
+
             repositoryCall {
                 repository.completeJobExecution(completionExecution, finalStatus)
             }
+
             val reportExecution = completionExecution.copy(
                 status = finalStatus,
                 ownerId = null,
@@ -220,6 +224,7 @@ class BatchJob(
             return leaseLossFailure(leaseGuard, stepReports)
         }
         persistCompletionSafely(latest, BatchStatus.FAILED, failure)
+
         return BatchReport.Failure(
             latest.copy(
                 params = if (sanitize) emptyMap() else latest.params,
@@ -246,8 +251,8 @@ class BatchJob(
         val correlationId = Base58.randomString(CORRELATION_ID_LENGTH)
         log.error {
             "lease loss 감지 — job=$name, " +
-                "category=${BatchInfrastructureFailureException.LEASE_LOST}, " +
-                "correlationId=$correlationId"
+                    "category=${BatchInfrastructureFailureException.LEASE_LOST}, " +
+                    "correlationId=$correlationId"
         }
         return BatchReport.Failure(
             latest.sanitizeForInfrastructureFailure(),
@@ -282,7 +287,7 @@ class BatchJob(
     ): BatchReport.Failure {
         log.error {
             "Job repository 진단 실패 — job=$name, " +
-                "category=${failure.category}, correlationId=${failure.correlationId}"
+                    "category=${failure.category}, correlationId=${failure.correlationId}"
         }
         return BatchReport.Failure(
             execution.sanitizeForInfrastructureFailure().copy(status = BatchStatus.FAILED),
@@ -319,7 +324,7 @@ class BatchJob(
     ).also { diagnostic ->
         log.error {
             "$message — job=$name, category=${diagnostic.category}, " +
-                "correlationId=${diagnostic.correlationId}"
+                    "correlationId=${diagnostic.correlationId}"
         }
     }
 
@@ -346,7 +351,7 @@ class BatchJob(
     ) {
         try {
             withContext(NonCancellable) {
-                withTimeout(leaseGuard.repositoryTimeoutMillis) {
+                withTimeout(timeMillis = leaseGuard.repositoryTimeoutMillis) {
                     leaseGuard.stopHeartbeatInCurrentContext()
                     val latest = leaseGuard.latestSnapshotForDiagnostics().jobExecution
                     repository.completeJobExecution(latest, BatchStatus.STOPPED)
@@ -356,7 +361,7 @@ class BatchJob(
             if (cancellation !== primary) {
                 log.error {
                     "STOPPED 상태 bounded compensation 취소됨 — " +
-                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                            "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -366,10 +371,10 @@ class BatchJob(
                 )
             }
         } catch (failure: Exception) {
-            if (failure !== primary) {
+            if (failure != primary) {
                 log.error {
                     "STOPPED 상태 bounded compensation 실패 — job=$name, " +
-                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                            "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -411,7 +416,7 @@ class BatchJob(
         } catch (persistenceCancellation: CancellationException) {
             log.error {
                 "$status 상태 저장 취소됨 — job=$name, executionId=${execution.id}, " +
-                    "실행 원인 예외와 함께 전파합니다"
+                        "실행 원인 예외와 함께 전파합니다"
             }
             propagateCompletionCancellation(primary, persistenceCancellation)
         } catch (persistenceFailure: Exception) {
@@ -432,7 +437,7 @@ class BatchJob(
         if (persistenceFailure !== primary) primary.addSuppressed(diagnostic)
         log.error {
             "$status 상태 저장 실패 — job=$name, executionId=$executionId, " +
-                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
         }
     }
 

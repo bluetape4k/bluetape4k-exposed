@@ -1,13 +1,15 @@
 package io.bluetape4k.batch.r2dbc
 
-import io.bluetape4k.batch.BatchSourceTable
-import io.bluetape4k.batch.SourceRecord
-import io.bluetape4k.exposed.r2dbc.tests.TestDB
-import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.batch.BatchSourceTable
+import io.bluetape4k.batch.SourceRecord
+import io.bluetape4k.collections.longRangeOf
+import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -22,7 +24,9 @@ import org.junit.jupiter.params.provider.MethodSource
  * 4. 체크포인트 재시작 (restoreFrom)
  * 5. onChunkCommitted 후 checkpoint() 값 검증
  */
-class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
+class ExposedR2dbcBatchReaderTest: AbstractBatchR2dbcTest() {
+
+    companion object: KLoggingChannel()
 
     private fun makeReader(
         database: R2dbcDatabase,
@@ -65,7 +69,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
                 reader.close()
 
                 results shouldHaveSize 25
-                results.map { it.id } shouldBeEqualTo (1L..25L).toList()
+                results.map { it.id } shouldBeEqualTo longRangeOf(1, 25)
             }
         }
     }
@@ -170,7 +174,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
                 reader.close()
 
                 cp.shouldNotBeNull()
-                (cp as Long) shouldBeEqualTo 5L
+                cp shouldBeEqualTo 5L
             }
         }
     }
@@ -237,6 +241,7 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
 
                 val firstRunIds = mutableListOf<Long>()
                 var item = reader.read()
+
                 while (item != null) {
                     firstRunIds.add(item.id)
                     item = reader.read()
@@ -255,8 +260,8 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
 
                 reader.close()
 
-                firstRunIds shouldBeEqualTo (6L..10L).toList()
-                secondRunIds shouldBeEqualTo (6L..10L).toList()
+                firstRunIds shouldBeEqualTo longRangeOf(6, 5)
+                secondRunIds shouldBeEqualTo longRangeOf(6, 5)
             }
         }
     }
@@ -290,8 +295,8 @@ class ExposedR2dbcBatchReaderTest : AbstractBatchR2dbcTest() {
 
                 reader.close()
 
-                firstRunIds shouldBeEqualTo (6L..10L).toList()
-                secondRunIds shouldBeEqualTo (6L..10L).toList()
+                firstRunIds shouldBeEqualTo longRangeOf(6, 5)
+                secondRunIds shouldBeEqualTo longRangeOf(6, 5)
             }
         }
     }

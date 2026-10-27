@@ -179,6 +179,7 @@ public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/Exp
 	public fun getTable ()Lorg/jetbrains/exposed/v1/core/dao/id/IdTable;
 	public synthetic fun isNew (Ljava/lang/Object;)Z
 	public fun isNew (Lorg/jetbrains/exposed/v1/dao/Entity;)Z
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/bluetape4k/spring/data/exposed/jdbc/repository/support/ExposedEntityInformationImpl$Companion : io/bluetape4k/logging/KLogging {

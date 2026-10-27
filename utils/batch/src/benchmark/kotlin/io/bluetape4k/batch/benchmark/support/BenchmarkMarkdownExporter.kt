@@ -1,7 +1,7 @@
 package io.bluetape4k.batch.benchmark.support
 
 import java.nio.file.Path
-import java.util.Locale
+import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
@@ -255,8 +255,10 @@ internal object BenchmarkMarkdownExporter {
         }
 
         return DatabaseReportSet(
-            seedRows = rows.filter { it.scenario == "seed" }.sortedWith(compareBy({ it.driver }, { it.dataSize }, { it.poolSize })),
-            endToEndRows = rows.filter { it.scenario == "endToEnd" }.sortedWith(compareBy({ it.driver }, { it.dataSize }, { it.poolSize }, { it.parallelism })),
+            seedRows = rows.filter { it.scenario == "seed" }
+                .sortedWith(compareBy({ it.driver }, { it.dataSize }, { it.poolSize })),
+            endToEndRows = rows.filter { it.scenario == "endToEnd" }
+                .sortedWith(compareBy({ it.driver }, { it.dataSize }, { it.poolSize }, { it.parallelism })),
         )
     }
 
@@ -293,11 +295,14 @@ internal object BenchmarkMarkdownExporter {
             }
         }
         return objects.mapNotNull { chunk ->
-            val benchmark = Regex("\"benchmark\"\\s*:\\s*\"([^\"]+)\"").find(chunk)?.groupValues?.get(1) ?: return@mapNotNull null
-            val score = Regex("\"score\"\\s*:\\s*([0-9.Ee+-]+)").find(chunk)?.groupValues?.get(1)?.toDoubleOrNull() ?: return@mapNotNull null
+            val benchmark =
+                Regex("\"benchmark\"\\s*:\\s*\"([^\"]+)\"").find(chunk)?.groupValues?.get(1) ?: return@mapNotNull null
+            val score = Regex("\"score\"\\s*:\\s*([0-9.Ee+-]+)").find(chunk)?.groupValues?.get(1)?.toDoubleOrNull()
+                ?: return@mapNotNull null
             val scoreUnit = Regex("\"scoreUnit\"\\s*:\\s*\"([^\"]+)\"").find(chunk)?.groupValues?.get(1) ?: "ops/s"
             val paramsBlock = Regex("\"params\"\\s*:\\s*\\{([\\s\\S]*?)\\}").find(chunk)?.groupValues?.get(1).orEmpty()
-            val params = Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"").findAll(paramsBlock).associate { it.groupValues[1] to it.groupValues[2] }
+            val params = Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"").findAll(paramsBlock)
+                .associate { it.groupValues[1] to it.groupValues[2] }
             JsonBenchmarkEntry(benchmark = benchmark, params = params, score = score, scoreUnit = scoreUnit)
         }
     }
@@ -311,7 +316,11 @@ internal object BenchmarkMarkdownExporter {
             return
         }
         targetRows.forEach { row ->
-            appendLine("| ${row.driver} | ${row.dataSize} | ${row.poolSize} | ${row.opsPerSecond.formatScore()} | ${row.avgMs().formatMs()} |")
+            appendLine(
+                "| ${row.driver} | ${row.dataSize} | ${row.poolSize} | ${row.opsPerSecond.formatScore()} | ${
+                    row.avgMs().formatMs()
+                } |"
+            )
         }
     }
 
@@ -324,7 +333,11 @@ internal object BenchmarkMarkdownExporter {
             return
         }
         targetRows.forEach { row ->
-            appendLine("| ${row.driver} | ${row.dataSize} | ${row.poolSize} | ${row.parallelism} | ${row.opsPerSecond.formatScore()} | ${row.avgMs().formatMs()} |")
+            appendLine(
+                "| ${row.driver} | ${row.dataSize} | ${row.poolSize} | ${row.parallelism} | ${row.opsPerSecond.formatScore()} | ${
+                    row.avgMs().formatMs()
+                } |"
+            )
         }
     }
 

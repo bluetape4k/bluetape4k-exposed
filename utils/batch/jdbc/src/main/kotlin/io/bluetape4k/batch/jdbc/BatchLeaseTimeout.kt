@@ -1,17 +1,17 @@
 package io.bluetape4k.batch.jdbc
 
-import java.io.Serializable
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
 import org.jetbrains.exposed.v1.core.vendors.MysqlDialect
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
+import java.io.Serializable
 
 private const val MILLIS_PER_SECOND = 1_000L
 
 internal data class H2Timeouts(
     val lockTimeoutMillis: Long,
     val queryTimeoutMillis: Long,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -20,7 +20,7 @@ internal data class H2Timeouts(
 internal data class MysqlTimeouts(
     val lockTimeoutSeconds: Long,
     val maxExecutionTimeMillis: Long,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -72,12 +72,12 @@ internal inline fun <T> JdbcTransaction.withLeaseDatabaseTimeout(
             block()
         }
 
-        is H2Dialect -> {
+        is H2Dialect    -> {
             val previous = H2Timeouts(
                 lockTimeoutMillis = readLong("SELECT LOCK_TIMEOUT()"),
                 queryTimeoutMillis = readLong(
                     "SELECT SETTING_VALUE FROM INFORMATION_SCHEMA.SETTINGS " +
-                        "WHERE SETTING_NAME = 'QUERY_TIMEOUT'",
+                            "WHERE SETTING_NAME = 'QUERY_TIMEOUT'",
                 ),
             )
             withRestoredTimeouts(
@@ -106,7 +106,7 @@ internal inline fun <T> JdbcTransaction.withLeaseDatabaseTimeout(
             }
         }
 
-        else -> error("Unsupported database dialect for batch lease timeout: ${db.dialect.name}")
+        else            -> error("Unsupported database dialect for batch lease timeout: ${db.dialect.name}")
     }
 }
 

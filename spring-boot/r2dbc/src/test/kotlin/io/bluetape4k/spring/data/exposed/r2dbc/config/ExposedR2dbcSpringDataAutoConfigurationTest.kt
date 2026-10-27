@@ -2,6 +2,8 @@ package io.bluetape4k.spring.data.exposed.r2dbc.config
 
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.getBean
@@ -13,13 +15,15 @@ import org.springframework.context.annotation.Bean
 
 class ExposedR2dbcSpringDataAutoConfigurationTest {
 
+    companion object: KLogging()
+
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(ExposedR2dbcSpringDataAutoConfiguration::class.java))
 
     @Test
     fun `registers the common mapping context in an R2DBC-only context`() {
         contextRunner.run { context ->
-            context.getBeansOfType<ExposedMappingContext>().size shouldBeEqualTo 1
+            context.getBeansOfType<ExposedMappingContext>() shouldHaveSize 1
             context.getBean("exposedMappingContext") shouldBeEqualTo context.getBean<ExposedMappingContext>()
         }
     }
@@ -29,7 +33,7 @@ class ExposedR2dbcSpringDataAutoConfigurationTest {
         contextRunner
             .withUserConfiguration(ExistingMappingContextConfiguration::class.java)
             .run { context ->
-                context.getBeansOfType<ExposedMappingContext>().size shouldBeEqualTo 1
+                context.getBeansOfType<ExposedMappingContext>() shouldHaveSize 1
                 context.getBean("exposedMappingContext") shouldBe ExistingMappingContextConfiguration.context
             }
     }

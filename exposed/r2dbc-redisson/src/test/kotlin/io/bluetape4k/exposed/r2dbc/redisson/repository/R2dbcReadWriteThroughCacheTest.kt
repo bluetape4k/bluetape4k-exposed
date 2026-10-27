@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc.redisson.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.codec.Base58
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserRedissonRepository
@@ -18,17 +19,19 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.inTopLevelSuspendTransaction
 import org.junit.jupiter.api.Nested
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 class R2dbcReadWriteThroughCacheTest {
+
     companion object: KLoggingChannel()
 
     abstract class R2dbcAutoIncIdReadWriteThrough:
@@ -43,18 +46,20 @@ class R2dbcReadWriteThroughCacheTest {
             withUserTable(testDB, context, statement)
         }
 
-        override suspend fun getExistingId() = suspendTransaction {
+        override suspend fun getExistingId() = inTopLevelSuspendTransaction {
             UserTable
                 .select(UserTable.id)
                 .limit(1)
+                .log("ID")
                 .first()[UserTable.id]
                 .value
         }
 
-        override suspend fun getExistingIds() = suspendTransaction {
+        override suspend fun getExistingIds() = inTopLevelSuspendTransaction {
             UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
+                .log("ID")
                 .toList()
         }
 
@@ -76,49 +81,54 @@ class R2dbcReadWriteThroughCacheTest {
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughRemoteCache: R2dbcAutoIncIdReadWriteThrough() {
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH
+            .copy(
+                name = "r2dbc:read-write-through:remote:users",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-write-through:remote:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughRemoteCacheWithDeleteDB: R2dbcAutoIncIdReadWriteThrough() {
-        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(deleteFromDBOnInvalidate = true)
+        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH
+            .copy(
+                name = "r2dbc:read-write-through:remote:delete-db:users",
+                deleteFromDBOnInvalidate = true,
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository: R2dbcRedissonRepository<Long, UserRecord> by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-write-through:remote:delete-db:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughNearCache: R2dbcAutoIncIdReadWriteThrough() {
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:read-write-through:near:users",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository: R2dbcRedissonRepository<Long, UserRecord> by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-write-through:near:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughNearCacheWithDeleteDB: R2dbcAutoIncIdReadWriteThrough() {
-        override val cacheConfig =
-            RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(deleteFromDBOnInvalidate = true)
+        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:read-write-through:near:delete-db:users",
+                deleteFromDBOnInvalidate = true,
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository: R2dbcRedissonRepository<Long, UserRecord> by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-write-through:near:delete-db:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
@@ -132,22 +142,22 @@ class R2dbcReadWriteThroughCacheTest {
             statement: suspend R2dbcTransaction.() -> Unit,
         ) = withUserCredentialsTable(testDB, context, statement)
 
-        override suspend fun getExistingId() =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .limit(1)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId() = inTopLevelSuspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .limit(1)
+                .log("ID")
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds() =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-                    .toList()
-            }
+        override suspend fun getExistingIds() = inTopLevelSuspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+                .log("ID")
+                .toList()
+        }
 
         override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -167,51 +177,56 @@ class R2dbcReadWriteThroughCacheTest {
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughRemoteCache: R2dbcClientGeneratedIdReadWriteThrough() {
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH
+            .copy(
+                name = "r2dbc:read-through:remote:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-through:remote:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughRemoteCacheWithDeleteDB:
         R2dbcClientGeneratedIdReadWriteThrough() {
-        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(deleteFromDBOnInvalidate = true)
+        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH
+            .copy(
+                name = "r2dbc:read-through:remote:delete-db:user-credentials",
+                deleteFromDBOnInvalidate = true,
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-through:remote:delete-db:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughNearCache: R2dbcClientGeneratedIdReadWriteThrough() {
         override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:read-through:near:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-through:near:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcClientGeneratedIdReadThroughNearCacheWithDeleteDB:
         R2dbcClientGeneratedIdReadWriteThrough() {
-        override val cacheConfig =
-            RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(deleteFromDBOnInvalidate = true)
+        override val cacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:read-through:near:delete-db:user-credentials",
+                deleteFromDBOnInvalidate = true,
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:read-through:near:delete-db:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 }

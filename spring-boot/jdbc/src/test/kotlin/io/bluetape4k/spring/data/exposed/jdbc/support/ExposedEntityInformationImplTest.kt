@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
@@ -16,6 +17,8 @@ class ExposedEntityInformationImplTest {
     @Test
     fun `invoke factory creates info from UserEntity companion`() {
         val info = ExposedEntityInformationImpl(UserEntity::class.java)
+
+        log.debug { "entity info=$info" }
         info.shouldNotBeNull()
         info.javaType shouldBeEqualTo UserEntity::class.java
     }
@@ -23,6 +26,8 @@ class ExposedEntityInformationImplTest {
     @Test
     fun `entityClass is UserEntity companion object`() {
         val info = ExposedEntityInformationImpl(UserEntity::class.java)
+
+        log.debug { "entity info=$info" }
         info.entityClass.shouldNotBeNull()
         info.entityClass shouldBeEqualTo UserEntity.Companion
     }
@@ -30,6 +35,8 @@ class ExposedEntityInformationImplTest {
     @Test
     fun `table is Users table`() {
         val info = ExposedEntityInformationImpl(UserEntity::class.java)
+
+        log.debug { "entity info=$info" }
         info.table shouldBeEqualTo Users
     }
 
@@ -37,6 +44,8 @@ class ExposedEntityInformationImplTest {
     fun `getIdType returns non-null type`() {
         val info = ExposedEntityInformationImpl(UserEntity::class.java)
         val idType = info.getIdType()
+
+        log.debug { "idType=$idType" }
         idType.shouldNotBeNull()
     }
 

@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.starrocks
 
+import io.bluetape4k.support.requireNullOrEmpty
 import org.jetbrains.exposed.v1.core.Table
 
 /**
@@ -17,8 +18,8 @@ import org.jetbrains.exposed.v1.core.Table
  */
 open class StarRocksTable(name: String = ""): Table(name) {
     override fun createStatement(): List<String> {
-        require(options.isEmpty()) { "StarRocksTable.options is unsupported; use the fixed OLAP table contract." }
-        require(storageParameters.isEmpty()) {
+        options.requireNullOrEmpty { "StarRocksTable.options is unsupported; use the fixed OLAP table contract." }
+        storageParameters.requireNullOrEmpty {
             "StarRocksTable.storageParameters is unsupported; WITH parameters are not OLAP PROPERTIES."
         }
         return super.createStatement().map { sql -> sql.sanitizeForStarRocks() }
@@ -83,6 +84,7 @@ private fun isStarRocksDefaultExpression(sql: String, depths: IntArray, index: I
 
     val columnStart = (index - 1 downTo 0).firstOrNull { depths[it] == 1 && sql[it] == ',' }
         ?.plus(1) ?: 0
+
     val prefix = sql.substring(columnStart, index)
     val next = sql.substring(index + "NULL".length).trimStart().firstOrNull()
     val nullabilitySuffix = next == ',' || next == ')'
@@ -100,18 +102,19 @@ private fun isStarRocksNotNullClause(sql: String, index: Int, pattern: Regex): B
 private fun maskDdlQuotedRegions(sql: String): String {
     val masked = sql.toCharArray()
     var index = 0
+
     while (index < sql.length) {
         val start = index
         val quote = sql[index]
-        when {
+        index = when {
             quote == '\'' || quote == '"' || quote == '`' ->
-                index = quotedRegionEnd(sql, index)
+                quotedRegionEnd(sql, index)
 
             sql.startsWith("--", index)                   ->
-                index = sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
+                sql.indexOf('\n', index).takeIf { it >= 0 } ?: sql.length
 
             sql.startsWith("/*", index)                   ->
-                index = sql.indexOf("*/", index + 2).takeIf { it >= 0 }?.plus(2) ?: sql.length
+                sql.indexOf("*/", index + 2).takeIf { it >= 0 }?.plus(2) ?: sql.length
 
             else                                          -> {
                 index++
@@ -128,6 +131,7 @@ private fun maskDdlQuotedRegions(sql: String): String {
 private fun quotedRegionEnd(sql: String, start: Int): Int {
     val quote = sql[start]
     var index = start + 1
+
     while (index < sql.length) {
         val char = sql[index++]
         if (char == '\\' && index < sql.length) {

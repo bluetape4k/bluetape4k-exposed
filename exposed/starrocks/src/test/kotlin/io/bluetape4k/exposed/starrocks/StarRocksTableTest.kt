@@ -1,9 +1,9 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotContainIgnoringCase
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -29,7 +29,7 @@ class StarRocksTableTest: AbstractStarRocksTest() {
 
             log.debug { "DDL: $ddl" }
 
-            ddl.contains("PRIMARY KEY", ignoreCase = true).shouldBeFalse()
+            ddl shouldNotContainIgnoringCase "PRIMARY KEY"
             ddl shouldContain "ENGINE=OLAP"
             ddl shouldContain "\"replication_num\" = \"1\""
             ddl shouldBeEqualTo SimpleTable.createStatement().single()

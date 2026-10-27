@@ -2,8 +2,8 @@ package io.bluetape4k.batch.core
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -11,8 +11,11 @@ import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.coroutines.support.awaitUntil
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
+import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
@@ -27,9 +30,13 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /** combined guard의 monotonic margin, atomic renewal, write fencing 계약을 검증한다. */
 class BatchLeaseGuardTest {
+
+    companion object: KLogging()
 
     @Test
     fun `safe margin에 진입하면 최신 Job과 Step을 함께 갱신한다`() = runSuspendIO {
@@ -38,21 +45,21 @@ class BatchLeaseGuardTest {
         val repository = InMemoryBatchJobRepository(wallClock)
         val job = repository.findOrCreateJobExecution("guardJob")
         val step = repository.findOrCreateStepExecution(job, "guardStep")
-        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30))
-        val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30))
+        val claimedJob = repository.claimJobExecution(job, "owner-1", 30.seconds())
+        val claimedStep = repository.claimStepExecution(step, "owner-1", 30.seconds())
         claimedJob.shouldNotBeNull()
         claimedStep.shouldNotBeNull()
 
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
             monotonicClock = monotonic,
         )
         monotonic.nowNanos = 20_000_000_000L
-        wallClock.advance(Duration.ofSeconds(1))
+        wallClock.advance(1.seconds())
 
         val snapshot = guard.checkBothAndMaybeRenew()
 
@@ -68,18 +75,18 @@ class BatchLeaseGuardTest {
         val repository = InMemoryBatchJobRepository(wallClock)
         val job = repository.findOrCreateJobExecution("checkpointRaceJob")
         val step = repository.findOrCreateStepExecution(job, "checkpointRaceStep")
-        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
-        val claimedStep = repository.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedJob = repository.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
+        val claimedStep = repository.claimStepExecution(step, "owner-1", 30.seconds()).shouldNotBeNull()
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
             monotonicClock = monotonic,
         )
         monotonic.nowNanos = 20_000_000_000L
-        wallClock.advance(Duration.ofSeconds(1))
+        wallClock.advance(1.seconds())
         guard.checkBothAndMaybeRenew()
 
         val checkpointed = guard.saveCheckpoint("checkpoint-1")
@@ -96,15 +103,15 @@ class BatchLeaseGuardTest {
         val delegate = InMemoryBatchJobRepository(wallClock)
         val job = delegate.findOrCreateJobExecution("guardJob")
         val step = delegate.findOrCreateStepExecution(job, "guardStep")
-        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30))
-        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30))
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", 30.seconds())
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", 30.seconds())
         claimedJob.shouldNotBeNull()
         claimedStep.shouldNotBeNull()
         val repository = RenewalRejectingRepository(delegate)
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
             monotonicClock = monotonic,
@@ -130,8 +137,8 @@ class BatchLeaseGuardTest {
         val delegate = InMemoryBatchJobRepository(wallClock)
         val job = delegate.findOrCreateJobExecution("longWriteJob")
         val step = delegate.findOrCreateStepExecution(job, "longWriteStep")
-        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
-        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", 30.seconds()).shouldNotBeNull()
         val renewalObserved = CompletableDeferred<Unit>()
         val repository = RenewalObservingRepository(delegate, renewalObserved)
         val heartbeatPaused = CompletableDeferred<Unit>()
@@ -141,7 +148,7 @@ class BatchLeaseGuardTest {
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
             pause = {
@@ -160,10 +167,10 @@ class BatchLeaseGuardTest {
                 }
             }
             writeStarted.await()
-            wallClock.advance(Duration.ofSeconds(1))
+            wallClock.advance(1.seconds())
             continueHeartbeat.complete(Unit)
 
-            withTimeout(1_000L) { renewalObserved.await() }
+            renewalObserved.awaitUntil(1.seconds)
 
             finishWrite.complete(Unit)
             write.await()
@@ -177,12 +184,12 @@ class BatchLeaseGuardTest {
         val delegate = InMemoryBatchJobRepository(wallClock)
         val job = delegate.findOrCreateJobExecution("heartbeatLeaseLossJob")
         val step = delegate.findOrCreateStepExecution(job, "heartbeatLeaseLossStep")
-        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
-        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", 30.seconds()).shouldNotBeNull()
         val guard = BatchLeaseGuard(
             repository = RenewalRejectingRepository(delegate),
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
             pause = {},
@@ -205,13 +212,13 @@ class BatchLeaseGuardTest {
         val guard = BatchLeaseGuard(
             repository = InMemoryBatchJobRepository(),
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = JobExecution(
                 id = 1L,
                 jobName = "concurrentLeaseLossJob",
                 status = io.bluetape4k.batch.api.BatchStatus.RUNNING,
                 ownerId = "owner-1",
-                leaseUntil = Instant.now().plusSeconds(30),
+                leaseUntil = Instant.now() + 30.seconds(),
             ),
             initialStepExecution = null,
         )
@@ -238,13 +245,13 @@ class BatchLeaseGuardTest {
     fun `heartbeat cleanup 자체 timeout은 lease loss로 기록한다`() = runTest {
         val repository = InMemoryBatchJobRepository()
         val job = repository.findOrCreateJobExecution("cleanupTimeoutJob")
-        val claimedJob = repository.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedJob = repository.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
         val pauseStarted = CompletableDeferred<Unit>()
         val releasePause = CompletableDeferred<Unit>()
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = null,
             pause = {
@@ -273,10 +280,11 @@ class BatchLeaseGuardTest {
     fun `renewal이 mutex를 점유한 cleanup timeout 뒤 diagnostic snapshot은 대기하지 않는다`() = runTest {
         val delegate = InMemoryBatchJobRepository()
         val job = delegate.findOrCreateJobExecution("stalledRenewalJob")
-        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
         val renewalStarted = CompletableDeferred<Unit>()
         val releaseRenewal = CompletableDeferred<Unit>()
-        val repository = object : BatchJobRepository by delegate {
+
+        val repository = object: BatchJobRepository by delegate {
             override suspend fun renewExecutionLeases(
                 jobExecution: JobExecution,
                 stepExecution: StepExecution?,
@@ -295,7 +303,7 @@ class BatchLeaseGuardTest {
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = null,
             pause = {},
@@ -308,7 +316,7 @@ class BatchLeaseGuardTest {
                 guard.stopHeartbeat()
             }
 
-            val diagnostic = withTimeout(100L) {
+            val diagnostic = withTimeout(100.milliseconds) {
                 guard.latestSnapshotForDiagnostics()
             }
             diagnostic.jobExecution shouldBeEqualTo claimedJob
@@ -323,9 +331,9 @@ class BatchLeaseGuardTest {
         val delegate = InMemoryBatchJobRepository()
         val job = delegate.findOrCreateJobExecution("outerTimeoutJob")
         val step = delegate.findOrCreateStepExecution(job, "outerTimeoutStep")
-        val claimedJob = delegate.claimJobExecution(job, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
-        val claimedStep = delegate.claimStepExecution(step, "owner-1", Duration.ofSeconds(30)).shouldNotBeNull()
-        val repository = object : BatchJobRepository by delegate {
+        val claimedJob = delegate.claimJobExecution(job, "owner-1", 30.seconds()).shouldNotBeNull()
+        val claimedStep = delegate.claimStepExecution(step, "owner-1", 30.seconds()).shouldNotBeNull()
+        val repository = object: BatchJobRepository by delegate {
             override suspend fun saveCheckpointAndReturn(
                 execution: StepExecution,
                 checkpoint: Any,
@@ -334,13 +342,13 @@ class BatchLeaseGuardTest {
         val guard = BatchLeaseGuard(
             repository = repository,
             ownerId = "owner-1",
-            executionLease = Duration.ofSeconds(30),
+            executionLease = 30.seconds(),
             initialJobExecution = claimedJob,
             initialStepExecution = claimedStep,
         )
 
         assertFailsWith<kotlinx.coroutines.TimeoutCancellationException> {
-            withTimeout(100L) {
+            withTimeout(100.milliseconds) {
                 guard.saveCheckpoint("checkpoint")
             }
         }
@@ -351,7 +359,7 @@ class BatchLeaseGuardTest {
 
     private class RenewalRejectingRepository(
         private val delegate: BatchJobRepository,
-    ) : BatchJobRepository by delegate {
+    ): BatchJobRepository by delegate {
         override val supportsLeaseRenewal: Boolean = true
 
         override suspend fun renewExecutionLeases(
@@ -364,7 +372,7 @@ class BatchLeaseGuardTest {
     private class RenewalObservingRepository(
         private val delegate: BatchJobRepository,
         private val renewalObserved: CompletableDeferred<Unit>,
-    ) : BatchJobRepository by delegate {
+    ): BatchJobRepository by delegate {
         override val supportsLeaseRenewal: Boolean = true
 
         override suspend fun renewExecutionLeases(
@@ -389,7 +397,7 @@ class BatchLeaseGuardTest {
     private class MutableBatchClock(
         @Volatile
         private var current: Instant,
-    ) : Clock() {
+    ): Clock() {
         override fun instant(): Instant = current
 
         override fun getZone(): ZoneId = ZoneId.of("UTC")
@@ -403,7 +411,7 @@ class BatchLeaseGuardTest {
 
     private class MutableBatchMonotonicClock(
         var nowNanos: Long = 0L,
-    ) : BatchMonotonicClock {
+    ): BatchMonotonicClock {
         override fun nowNanos(): Long = nowNanos
     }
 }

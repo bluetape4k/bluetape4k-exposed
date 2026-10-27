@@ -9,7 +9,7 @@ data class OrderAcceptedEvent(
     override val aggregateId: OrderId,
     val eventId: String,
     override val occurredAt: Instant,
-) : DomainEvent<OrderId>, Serializable {
+): DomainEvent<OrderId>, Serializable {
 
     companion object {
         private const val serialVersionUID: Long = -1468532318012213445L

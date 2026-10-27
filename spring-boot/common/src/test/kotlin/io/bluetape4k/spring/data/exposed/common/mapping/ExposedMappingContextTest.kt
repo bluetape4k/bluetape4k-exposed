@@ -8,6 +8,7 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -25,7 +26,7 @@ class ExposedMappingContextTest {
 
     @Test
     fun `createPersistentEntity returns an Exposed entity for UserEntity`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
 
         entity.shouldNotBeNull()
         entity.type shouldBeEqualTo UserEntity::class.java
@@ -33,8 +34,9 @@ class ExposedMappingContextTest {
 
     @Test
     fun `persistent entity exposes its companion entityClass and table`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
 
+        log.debug { "entity class=${entity.getEntityClass()}, table=${entity.getTable()}" }
         entity.getEntityClass().shouldNotBeNull()
         entity.getTable().shouldNotBeNull()
         entity.getTable()?.tableName shouldBeEqualTo "users"
@@ -42,7 +44,7 @@ class ExposedMappingContextTest {
 
     @Test
     fun `persistent properties resolve Exposed columns and ignore unsupported properties`() {
-        val entity = context.getRequiredPersistentEntity(UserEntity::class.java)
+        val entity = context.getRequiredPersistentEntity<UserEntity>()
 
         entity.getPersistentProperty("name")?.getColumn()?.name shouldBeEqualTo "name"
         entity.getPersistentProperty("email")?.getColumn()?.name shouldBeEqualTo "email"
@@ -53,7 +55,7 @@ class ExposedMappingContextTest {
     fun `plain class has no Exposed entityClass or table`() {
         data class PlainClass(val id: Long, val name: String)
 
-        val entity = context.getRequiredPersistentEntity(PlainClass::class.java)
+        val entity = context.getRequiredPersistentEntity<PlainClass>()
 
         entity.getEntityClass().shouldBeNull()
         entity.getTable().shouldBeNull()
@@ -62,10 +64,10 @@ class ExposedMappingContextTest {
     @Test
     fun `hasPersistentEntityFor reflects only accessed classes`() {
         data class NotRegistered(val value: Int)
+        context.hasPersistentEntityFor<NotRegistered>().shouldBeFalse()
 
-        context.hasPersistentEntityFor(NotRegistered::class.java).shouldBeFalse()
-        context.getRequiredPersistentEntity(UserEntity::class.java)
-        context.hasPersistentEntityFor(UserEntity::class.java).shouldBeTrue()
+        context.getRequiredPersistentEntity<UserEntity>().shouldNotBeNull()
+        context.hasPersistentEntityFor<UserEntity>().shouldBeTrue()
     }
 
     @Test
@@ -76,15 +78,14 @@ class ExposedMappingContextTest {
             .workers(8)
             .rounds(4)
             .add {
-                entities += context.getRequiredPersistentEntity(UserEntity::class.java)
+                entities += context.getRequiredPersistentEntity<UserEntity>()
             }
             .run()
 
         entities shouldHaveSize 32
         val first = entities.first()
         entities.all { it === first }.shouldBeTrue()
-        entities.forEach { entity ->
-            entity.getTable()?.tableName shouldBeEqualTo "users"
-        }
+
+        entities.all { it.getTable()?.tableName == "users" }.shouldBeTrue()
     }
 }

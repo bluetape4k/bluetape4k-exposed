@@ -14,6 +14,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -54,7 +55,10 @@ class ReadThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:remote:users")
+                config = cacheConfig.copy(
+                    name = "read-through:remote:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -65,7 +69,10 @@ class ReadThroughCacheTest {
         override val repository by lazy {
             UserCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:near:users")
+                config = cacheConfig.copy(
+                    name = "read-through:near:users",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -102,7 +109,10 @@ class ReadThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:remote:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:remote:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }
@@ -113,7 +123,10 @@ class ReadThroughCacheTest {
         override val repository by lazy {
             UserCredentialCacheRepository(
                 redissonClient,
-                config = cacheConfig.copy(name = "read-through:near:user-credentials")
+                config = cacheConfig.copy(
+                    name = "read-through:near:user-credentials",
+                    codec = RedissonCodecs.FastForyComposite
+                )
             )
         }
     }

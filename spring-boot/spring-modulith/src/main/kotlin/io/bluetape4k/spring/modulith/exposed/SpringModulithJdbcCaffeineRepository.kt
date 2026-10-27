@@ -132,10 +132,10 @@ abstract class SpringModulithJdbcCaffeineRepository<ID: Any, E: Serializable>(
         if (transactionOperations == null) {
             eventPublisher.publishEvent(event)
             return
-        }
-
-        transactionOperations.executeWithoutResult {
-            eventPublisher.publishEvent(event)
+        } else {
+            transactionOperations.executeWithoutResult {
+                eventPublisher.publishEvent(event)
+            }
         }
     }
 }

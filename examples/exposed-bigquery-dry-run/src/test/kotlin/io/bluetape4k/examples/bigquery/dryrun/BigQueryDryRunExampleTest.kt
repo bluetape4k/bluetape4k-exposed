@@ -6,11 +6,11 @@ import com.google.api.services.bigquery.model.QueryRequest
 import com.google.api.services.bigquery.model.QueryResponse
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.exposed.bigquery.BigQueryContext
 import io.bluetape4k.exposed.bigquery.BigQueryQueryOptions
 import io.bluetape4k.exposed.bigquery.BigQueryQueryPriority
-import io.bluetape4k.exposed.bigquery.BigQueryContext
-import io.mockk.every
 import io.mockk.clearMocks
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -34,18 +34,21 @@ class BigQueryDryRunExampleTest {
         every { queryCall.execute() } returns QueryResponse().setJobComplete(true)
         every { jobs.query(any(), capture(request)) } returns queryCall
         every { bigquery.jobs() } returns jobs
+
         val sqlGenDb = Database.connect(
             url = "jdbc:h2:mem:bq_example;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
         val context = BigQueryContext(bigquery, "analytics-project", "events", sqlGenDb)
 
-        context.validateRawQuery(
-            """
+        val sql = """
             SELECT region, COUNT(*) AS event_count
             FROM events
             GROUP BY region
-            """,
+            """.trimIndent()
+
+        context.validateRawQuery(
+            sql,
             BigQueryQueryOptions(
                 maximumBytesBilled = 1_000_000L,
                 labels = mapOf("example" to "dry-run"),

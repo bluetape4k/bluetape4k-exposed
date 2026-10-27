@@ -1,14 +1,15 @@
 package io.bluetape4k.examples.exposed.mvc
 
-import io.bluetape4k.examples.exposed.mvc.domain.ProductEntity
-import io.bluetape4k.examples.exposed.mvc.domain.Products
-import io.bluetape4k.examples.exposed.mvc.repository.ProductJdbcRepository
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.examples.exposed.mvc.domain.ProductEntity
+import io.bluetape4k.examples.exposed.mvc.domain.Products
+import io.bluetape4k.examples.exposed.mvc.repository.ProductJdbcRepository
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.jdbc.deleteAll
@@ -55,9 +56,10 @@ class ProductJdbcRepositoryTest {
     fun `save and findById`() {
         val product = createProduct("Kotlin Book", "39.99", 100)
         val found = productJdbcRepository.findById(product.id.value)
+
         found.isPresent.shouldBeTrue()
         found.get().name shouldBeEqualTo "Kotlin Book"
-        found.get().price shouldBeEqualTo BigDecimal("39.99")
+        found.get().price shouldBeEqualTo 39.99.toBigDecimal()
     }
 
     @Test
@@ -71,7 +73,9 @@ class ProductJdbcRepositoryTest {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
         createProduct("Book C", "30.00", 30)
+
         val all = productJdbcRepository.findAll()
+            .onEach { log.debug { "product=$it" } }
         all shouldHaveSize 3
     }
 
@@ -104,6 +108,7 @@ class ProductJdbcRepositoryTest {
     fun `deleteAll removes all entities`() {
         createProduct("Book A", "10.00", 10)
         createProduct("Book B", "20.00", 20)
+
         productJdbcRepository.deleteAll()
         productJdbcRepository.count() shouldBeEqualTo 0L
     }
@@ -136,6 +141,8 @@ class ProductJdbcRepositoryTest {
         createProduct("Book C", "30.00", 30)
 
         val found = productJdbcRepository.findAllById(listOf(a.id.value, b.id.value))
+            .onEach { log.debug { "entity=$it" } }
+
         found shouldHaveSize 2
         found.map { it.name }.toSet() shouldBeEqualTo setOf("Book A", "Book B")
     }
@@ -152,9 +159,13 @@ class ProductJdbcRepositoryTest {
 
     @Test
     fun `findAll with Pageable returns page`() {
-        repeat(5) { i -> createProduct("Book $i", "${10 + i}.00", 10 + i) }
+        repeat(5) { i ->
+            createProduct("Book $i", "${10 + i}.00", 10 + i)
+        }
 
         val page = productJdbcRepository.findAll(PageRequest.of(0, 3))
+            .onEach { log.debug { "entity=$it" } }
+
         page.content shouldHaveSize 3
         page.totalElements shouldBeEqualTo 5L
     }
@@ -165,8 +176,10 @@ class ProductJdbcRepositoryTest {
         createProduct("Expensive", "100.00", 5)
 
         val cheap = productJdbcRepository.findAll { Products.price less BigDecimal("50.00") }
+            .onEach { log.debug { "entity=$it" } }
+
         cheap shouldHaveSize 1
-        cheap[0].name shouldBeEqualTo "Cheap"
+        cheap.single().name shouldBeEqualTo "Cheap"
     }
 
     @Test
@@ -191,8 +204,10 @@ class ProductJdbcRepositoryTest {
         createProduct("Kotlin Book", "39.99", 100)
 
         val found = productJdbcRepository.findByName("Spring Boot Guide")
+            .onEach { log.debug { "entity=$it" } }
+
         found shouldHaveSize 1
-        found[0].name shouldBeEqualTo "Spring Boot Guide"
+        found.single().name shouldBeEqualTo "Spring Boot Guide"
     }
 
     @Test
@@ -202,6 +217,8 @@ class ProductJdbcRepositoryTest {
         createProduct("Expensive Book", "99.99", 5)
 
         val affordable = productJdbcRepository.findByPriceLessThan(BigDecimal("30.00"))
+            .onEach { log.debug { "entity=$it" } }
+
         affordable shouldHaveSize 2
         affordable.all { it.price < BigDecimal("30.00") }.shouldBeTrue()
     }

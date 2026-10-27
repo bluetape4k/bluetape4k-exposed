@@ -7,16 +7,18 @@ import io.bluetape4k.examples.exposed.webflux.config.DataInitializer
 import io.bluetape4k.examples.exposed.webflux.domain.ProductRecord
 import io.bluetape4k.examples.exposed.webflux.domain.Products
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Order
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestMethodOrder
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.deleteAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,6 +31,8 @@ import java.math.BigDecimal
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class ProductControllerTest {
+
+    companion object: KLoggingChannel()
 
     @Autowired
     private lateinit var dataInitializer: DataInitializer
@@ -58,6 +62,8 @@ class ProductControllerTest {
             .returnResult()
             .responseBody
             .orEmpty()
+            .onEach { log.debug { "product=$it" } }
+
         products shouldHaveSize 3
     }
 
@@ -74,6 +80,8 @@ class ProductControllerTest {
             .returnResult()
             .responseBody
             .orEmpty()
+            .onEach { log.debug { "product=$it" } }
+        
         products shouldHaveSize 3
     }
 
@@ -97,6 +105,8 @@ class ProductControllerTest {
             .returnResult()
             .responseBody
             .orEmpty()
+            .onEach { log.debug { "product=$it" } }
+        
         products shouldHaveSize 3
     }
 
@@ -119,6 +129,7 @@ class ProductControllerTest {
             .expectStatus().isCreated
             .expectBody<ProductRecord>()
             .consumeWith { result ->
+                log.debug { "product=${result.responseBody}" }
                 result.responseBody?.id.shouldNotBeNull()
                 result.responseBody?.name shouldBeEqualTo "New Product"
             }
@@ -137,6 +148,7 @@ class ProductControllerTest {
             .expectStatus().isOk
             .expectBody<ProductRecord>()
             .consumeWith { result ->
+                log.debug { "product=${result.responseBody}" }
                 result.responseBody?.name shouldBeEqualTo "Findable"
             }
     }
@@ -155,6 +167,7 @@ class ProductControllerTest {
             .expectStatus().isOk
             .expectBody<ProductRecord>()
             .consumeWith { result ->
+                log.debug { "product=${result.responseBody}" }
                 result.responseBody?.name shouldBeEqualTo "After Update"
             }
     }
@@ -162,6 +175,7 @@ class ProductControllerTest {
     @Test
     fun `DELETE product removes entity`() {
         val dto = ProductRecord(name = "To Be Deleted", price = BigDecimal("1.00"), stock = 1)
+
         val created = webTestClient.post().uri("/products")
             .contentType(MediaType.APPLICATION_JSON).bodyValue(dto)
             .exchange().expectBody<ProductRecord>().returnResult().responseBody!!

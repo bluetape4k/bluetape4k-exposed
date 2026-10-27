@@ -1,8 +1,8 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchExecutionAlreadyClaimedException
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
+import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
@@ -20,7 +20,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
-import java.time.Instant
 
 /**
  * [BatchStep]의 chunk 루프 실행 엔진.
@@ -56,7 +55,7 @@ import java.time.Instant
  * @property repository 실행 이력을 저장할 [BatchJobRepository]
  */
 @Suppress("TooManyFunctions")
-internal class BatchStepRunner<I : Any, O : Any>(
+internal class BatchStepRunner<I: Any, O: Any>(
     private val step: BatchStep<I, O>,
     private val jobExecution: JobExecution,
     private val repository: BatchJobRepository,
@@ -64,7 +63,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
     private val leaseGuard: BatchLeaseGuard? = null,
     private val monotonicClock: BatchMonotonicClock = SYSTEM_BATCH_MONOTONIC_CLOCK,
 ) {
-    companion object : KLoggingChannel() {
+    companion object: KLoggingChannel() {
         private const val DEFAULT_LEASE_MINUTES = 15L
         private const val CORRELATION_ID_LENGTH = 16
     }
@@ -92,6 +91,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 "Batch step runner requires a repository with lease renewal support"
             }
             val claimStartedNanos = monotonicClock.nowNanos()
+
             val claimed = if (jobExecution.ownerId != null && jobExecution.leaseUntil != null) {
                 jobExecution
             } else {
@@ -110,6 +110,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                     BatchInfrastructureFailureException.EXECUTION_ALREADY_CLAIMED,
                 )
             }
+
             BatchLeaseGuard(
                 repository = repository,
                 ownerId = checkNotNull(claimed.ownerId),
@@ -207,8 +208,8 @@ internal class BatchStepRunner<I : Any, O : Any>(
                             if (step.skipPolicy.shouldSkip(e, skipCount)) {
                                 skipCount++
                                 log.warn {
-                                    "processor.process() 실패 — skip: skipCount=$skipCount, " +
-                                        "errorType=${e::class.simpleName}"
+                                    "processor.process() 실패 — skip: " +
+                                            "skipCount=$skipCount, errorType=${e::class.simpleName}"
                                 }
                                 null
                             } else {
@@ -231,6 +232,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 var attempts = 0
                 var currentDelay = step.retryPolicy.delay
                 var writerSucceeded = false
+
                 writerLoop@ while (true) {
                     attempts++
                     try {
@@ -246,8 +248,8 @@ internal class BatchStepRunner<I : Any, O : Any>(
                         if (attempts < step.retryPolicy.maxAttempts) {
                             log.warn {
                                 "writer.write() 실패 — 재시도 예정: " +
-                                    "attempt=$attempts/${step.retryPolicy.maxAttempts}, delay=$currentDelay, " +
-                                    "errorType=${e::class.simpleName}"
+                                        "attempt=$attempts/${step.retryPolicy.maxAttempts}, delay=$currentDelay, " +
+                                        "errorType=${e::class.simpleName}"
                             }
                             if (currentDelay.isPositive()) {
                                 delay(currentDelay)
@@ -264,8 +266,8 @@ internal class BatchStepRunner<I : Any, O : Any>(
                             skipCount += chunk.size
                             log.warn {
                                 "writer.write() retry 소진 — chunk skip: " +
-                                    "chunkSize=${chunk.size}, skipCount=$skipCount, " +
-                                    "errorType=${e::class.simpleName}"
+                                        "chunkSize=${chunk.size}, skipCount=$skipCount, " +
+                                        "errorType=${e::class.simpleName}"
                             }
                             break@writerLoop
                         }
@@ -421,7 +423,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
     ).also { diagnostic ->
         log.error {
             "$message — step=${step.name}, category=${diagnostic.category}, " +
-                "correlationId=${diagnostic.correlationId}"
+                    "correlationId=${diagnostic.correlationId}"
         }
     }
 
@@ -452,7 +454,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         }
         log.warn {
             "실패 상태 checkpoint 조회 실패 — " +
-                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
         }
         null
     }
@@ -465,7 +467,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
     ) {
         try {
             withContext(NonCancellable) {
-                withTimeout(guard.repositoryTimeoutMillis) {
+                withTimeout(timeMillis = guard.repositoryTimeoutMillis) {
                     guard.completeStepExecution { completionExecution ->
                         repository.completeStepExecution(completionExecution, report)
                     }
@@ -475,7 +477,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             if (cancellation !== primary) {
                 log.error {
                     "STOPPED 상태 bounded compensation 취소됨 — " +
-                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                            "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -485,10 +487,10 @@ internal class BatchStepRunner<I : Any, O : Any>(
                 )
             }
         } catch (failure: Exception) {
-            if (failure !== primary) {
+            if (failure != primary) {
                 log.error {
                     "STOPPED 상태 bounded compensation 실패 — step=${step.name}, " +
-                        "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
+                            "category=${BatchInfrastructureFailureException.REPOSITORY_FAILURE}"
                 }
                 primary.addSuppressed(
                     BatchInfrastructureFailureException(
@@ -519,7 +521,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
             }
             log.warn {
                 "$resource close 실패 — " +
-                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+                        "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
             }
             return diagnostic
         }
@@ -569,10 +571,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         if (primary != null && cancellation !== primary) {
             primary.addSuppressed(diagnostic)
         }
-        log.warn {
-            "$resource close 취소됨 — " +
-                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
-        }
+        log.warn { "$resource close 취소됨 — category=${diagnostic.category}, correlationId=${diagnostic.correlationId}" }
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -585,8 +584,8 @@ internal class BatchStepRunner<I : Any, O : Any>(
             repository.completeStepExecution(execution, report)
         } catch (persistenceCancellation: CancellationException) {
             log.error {
-                "${report.status} 상태 저장 취소됨 — step=${step.name}, executionId=${execution.id}, " +
-                    "실행 원인 예외와 함께 전파합니다"
+                "${report.status} 상태 저장 취소됨 — " +
+                        "step=${step.name}, executionId=${execution.id}, 실행 원인 예외와 함께 전파합니다"
             }
             propagateCompletionCancellation(primary, persistenceCancellation)
         } catch (persistenceFailure: Exception) {
@@ -607,7 +606,7 @@ internal class BatchStepRunner<I : Any, O : Any>(
         if (persistenceFailure !== primary) primary.addSuppressed(diagnostic)
         log.error {
             "$status 상태 저장 실패 — step=${step.name}, executionId=$executionId, " +
-                "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
+                    "category=${diagnostic.category}, correlationId=${diagnostic.correlationId}"
         }
     }
 

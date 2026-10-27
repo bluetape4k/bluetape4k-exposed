@@ -1,11 +1,19 @@
 package io.bluetape4k.examples.exposed.ktor.order
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeInRange
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.assertions.shouldNotContainIgnoringCase
 import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
 import io.bluetape4k.ktor.core.installBluetape4kKtorCore
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
 import io.bluetape4k.ktor.testing.shouldHaveStatus
+import io.bluetape4k.logging.KLogging
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.options
@@ -24,9 +32,14 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 class OrderRoutesTest {
+
+    companion object: KLogging() {
+        private const val DEMO_COMMAND_HEADER = "X-Demo-Command"
+        private const val DEMO_COMMAND_VALUE = "confirm-order"
+    }
 
     private val id = UUID.fromString("018f6f95-7f4a-7a20-8b52-70ad30c30f36")
     private val confirmedAt = Instant.parse("2026-07-17T00:01:00Z")
@@ -50,7 +63,7 @@ class OrderRoutesTest {
         }
         coVerify(exactly = 0) { fixture.service.confirm(any<UUID>()) }
         coVerify(exactly = 0) { fixture.repository.get(any()) }
-        fixture.diagnostics.items shouldBeEqualTo emptyList()
+        fixture.diagnostics.items.shouldBeEmpty()
     }
 
     @Test
@@ -63,12 +76,13 @@ class OrderRoutesTest {
             header(HttpHeaders.AccessControlRequestHeaders, DEMO_COMMAND_HEADER)
         }
 
-        response.headers[HttpHeaders.AccessControlAllowOrigin] shouldBeEqualTo null
-        response.headers[HttpHeaders.AccessControlAllowCredentials] shouldBeEqualTo null
-        (response.status.value in 200..299) shouldBeEqualTo false
+        response.headers[HttpHeaders.AccessControlAllowOrigin].shouldBeNull()
+        response.headers[HttpHeaders.AccessControlAllowCredentials].shouldBeNull()
+        response.status.value shouldNotBeInRange 200..299
+
         coVerify(exactly = 0) { fixture.service.confirm(any<UUID>()) }
         coVerify(exactly = 0) { fixture.repository.get(any()) }
-        fixture.diagnostics.items shouldBeEqualTo emptyList()
+        fixture.diagnostics.items.shouldBeEmpty()
     }
 
     @Test
@@ -86,14 +100,15 @@ class OrderRoutesTest {
             val response = client.post("/orders/$invalidId/confirm") {
                 header(DEMO_COMMAND_HEADER, DEMO_COMMAND_VALUE)
             }.shouldHaveStatus(HttpStatusCode.BadRequest)
+
             response.decodeJsonBody<DemoErrorResponse>() shouldBeEqualTo DemoErrorResponse(
                 code = "INVALID_ORDER_ID",
                 message = "Order id must be a canonical non-nil UUID.",
             )
-            response.bodyAsText().contains(invalidId) shouldBeEqualTo false
+            response.bodyAsText() shouldNotContain invalidId
         }
         coVerify(exactly = 0) { fixture.service.confirm(any<UUID>()) }
-        fixture.diagnostics.items shouldBeEqualTo emptyList()
+        fixture.diagnostics.items.shouldBeEmpty()
     }
 
     @Test
@@ -105,9 +120,11 @@ class OrderRoutesTest {
             .shouldHaveStatus(HttpStatusCode.OK)
         val body = response.bodyAsText()
 
-        response.headers[HttpHeaders.ContentType]?.startsWith("application/json") shouldBeEqualTo true
+        response.headers[HttpHeaders.ContentType]?.startsWith("application/json").shouldBeTrue()
+        
         Json.parseToJsonElement(body).jsonObject.keys shouldBeEqualTo
-            setOf("orderId", "status", "updatedAt", "eventPublished")
+                setOf("orderId", "status", "updatedAt", "eventPublished")
+
         Json.decodeFromString<OrderConfirmationResponse>(body) shouldBeEqualTo OrderConfirmationResponse(
             orderId = id.toString(),
             status = "CONFIRMED",
@@ -119,7 +136,9 @@ class OrderRoutesTest {
     @Test
     fun `sequential confirmation returns eventPublished false`() = testApplication {
         val fixture = installOrderRoutes()
-        coEvery { fixture.service.confirm(id) } returns OrderConfirmationResult(confirmedRecord(), false)
+        coEvery {
+            fixture.service.confirm(id)
+        } returns OrderConfirmationResult(confirmedRecord(), false)
 
         confirm(id).shouldHaveStatus(HttpStatusCode.OK)
             .decodeJsonBody<OrderConfirmationResponse>() shouldBeEqualTo OrderConfirmationResponse(
@@ -142,6 +161,7 @@ class OrderRoutesTest {
             code = "ORDER_NOT_FOUND",
             message = "Order was not found.",
         )
+
         client.get("/orders/$id")
             .shouldHaveStatus(HttpStatusCode.OK)
             .decodeJsonBody<OrderResponse>() shouldBeEqualTo OrderResponse(
@@ -156,11 +176,11 @@ class OrderRoutesTest {
         val fixture = installOrderRoutes()
         val cases = listOf(
             OrderPersistenceException(IllegalStateException("db")) to
-                ("ORDER_PERSISTENCE_FAILED" to "Order could not be stored."),
+                    ("ORDER_PERSISTENCE_FAILED" to "Order could not be stored."),
             OrderEventHandoffException(IllegalStateException("event")) to
-                ("ORDER_EVENT_HANDOFF_FAILED" to "Order was stored but its event was not handed off."),
+                    ("ORDER_EVENT_HANDOFF_FAILED" to "Order was stored but its event was not handed off."),
             IllegalStateException("unknown") to
-                ("ORDER_CONFIRMATION_FAILED" to "Order confirmation failed."),
+                    ("ORDER_CONFIRMATION_FAILED" to "Order confirmation failed."),
         )
 
         cases.forEach { (failure, expected) ->
@@ -170,7 +190,8 @@ class OrderRoutesTest {
                 .decodeJsonBody<DemoErrorResponse>()
             error.code shouldBeEqualTo expected.first
             error.message shouldBeEqualTo expected.second
-            val correlationId = UUID.fromString(requireNotNull(error.correlationId))
+
+            val correlationId = UUID.fromString(error.correlationId.shouldNotBeNull())
             correlationId.toString() shouldBeEqualTo error.correlationId
             correlationId.version() shouldBeEqualTo 7
         }
@@ -189,7 +210,8 @@ class OrderRoutesTest {
 
         error.code shouldBeEqualTo "ORDER_READ_FAILED"
         error.message shouldBeEqualTo "Order could not be loaded."
-        val correlationId = UUID.fromString(requireNotNull(error.correlationId))
+
+        val correlationId = UUID.fromString(error.correlationId.shouldNotBeNull())
         correlationId.toString() shouldBeEqualTo error.correlationId
         correlationId.version() shouldBeEqualTo 7
         fixture.diagnostics.items.single().operation shouldBeEqualTo "read"
@@ -208,13 +230,14 @@ class OrderRoutesTest {
         val body = confirm(id)
             .shouldHaveStatus(HttpStatusCode.ServiceUnavailable)
             .bodyAsText()
+
         val diagnostic = fixture.diagnostics.items.single().let {
             listOfNotNull(it.code, it.correlationId, it.component, it.operation, it.phase, it.outcome).joinToString(" ")
         }
 
         listOf("r2dbc", "postgresql", "demo", "password", "SELECT", "secret", "top-secret").forEach { token ->
-            body.contains(token, ignoreCase = true) shouldBeEqualTo false
-            diagnostic.contains(token, ignoreCase = true) shouldBeEqualTo false
+            body shouldNotContainIgnoringCase token
+            diagnostic shouldNotContainIgnoringCase token
         }
     }
 
@@ -242,16 +265,11 @@ class OrderRoutesTest {
         val diagnostics = RecordingDiagnosticSink()
     }
 
-    private class RecordingDiagnosticSink : DemoDiagnosticSink {
+    private class RecordingDiagnosticSink: DemoDiagnosticSink {
         val items = mutableListOf<DemoDiagnostic>()
 
         override fun emit(diagnostic: DemoDiagnostic) {
             items += diagnostic
         }
-    }
-
-    companion object {
-        private const val DEMO_COMMAND_HEADER = "X-Demo-Command"
-        private const val DEMO_COMMAND_VALUE = "confirm-order"
     }
 }

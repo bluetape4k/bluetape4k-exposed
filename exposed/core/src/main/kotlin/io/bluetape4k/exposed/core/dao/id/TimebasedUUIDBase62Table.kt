@@ -23,8 +23,7 @@ open class TimebasedUUIDBase62Table(
     /**
      * UUID v7 을 Base62로 인코딩한 문자열을 Client 에서 생성합니다.
      */
-    final override val id =
-        varchar(columnName, 24).timebasedGenerated().entityId()
+    final override val id = varchar(columnName, 24).timebasedGenerated().entityId()
 
     /** 테이블 기본키 정의입니다. */
     final override val primaryKey = PrimaryKey(id)
@@ -50,8 +49,7 @@ open class TimebasedUUIDBase62TableMySql(
     /**
      * UUID v7 을 Base62로 인코딩한 문자열을 Client 에서 생성합니다.
      */
-    final override val id =
-        varchar(columnName, 24, "utf8mb4_bin").timebasedGenerated().entityId()
+    final override val id = varchar(columnName, 24, "utf8mb4_bin").timebasedGenerated().entityId()
 
     /** 테이블 기본키 정의입니다. */
     final override val primaryKey = PrimaryKey(id)

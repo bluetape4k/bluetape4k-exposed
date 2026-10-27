@@ -10,8 +10,10 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -48,6 +50,7 @@ class BigQueryQueryContinuationHttpUnitTest {
             Events.selectAll()
                 .withBigQuery(BigQueryQueryOptions(location = "us-central1"))
                 .toList()
+                .onEach { log.debug { "row=$it" } }
         }
 
         rows shouldHaveSize 3
@@ -57,6 +60,8 @@ class BigQueryQueryContinuationHttpUnitTest {
         rows[1][Events.region] shouldBeEqualTo "middle"
         rows[2][Events.eventId] shouldBeEqualTo 3L
         rows[2][Events.region] shouldBeEqualTo "final"
+
+        transport.requestUrls.forEach { log.debug { "requestUrl=$it" } }
         transport.requestUrls shouldHaveSize 3
         transport.requestUrls[1] shouldContain "pageToken=page-1"
         transport.requestUrls[2] shouldContain "pageToken=page-2"
@@ -95,6 +100,7 @@ class BigQueryQueryContinuationHttpUnitTest {
             Events.selectAll()
                 .withBigQuery(BigQueryQueryOptions(location = "asia-northeast3"))
                 .toFlow()
+                .log("ROW")
                 .toList()
         }
 
@@ -105,6 +111,8 @@ class BigQueryQueryContinuationHttpUnitTest {
         rows[1][Events.region] shouldBeEqualTo "middle"
         rows[2][Events.eventId] shouldBeEqualTo 12L
         rows[2][Events.region] shouldBeEqualTo "final"
+
+        transport.requestUrls.forEach { log.debug { "requestUrl=$it" } }
         transport.requestUrls shouldHaveSize 5
         transport.requestUrls[1] shouldNotContain "pageToken="
         transport.requestUrls[2] shouldNotContain "pageToken="
@@ -153,7 +161,7 @@ class BigQueryQueryContinuationHttpUnitTest {
     }
 
     private companion object: KLogging() {
-        
+
         private const val PROJECT_ID = "proj"
         private const val DATASET_ID = "ds"
 

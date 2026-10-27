@@ -1,8 +1,8 @@
 package io.bluetape4k.batch.r2dbc.tables
 
+import io.bluetape4k.batch.CheckpointJson
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
-import io.bluetape4k.batch.CheckpointJson
 import org.jetbrains.exposed.v1.core.ResultRow
 
 /**

@@ -3,12 +3,16 @@ package io.bluetape4k.exposed.clickhouse
 import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialect
 import io.bluetape4k.exposed.clickhouse.dialect.ClickHouseDialectMetadata
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requireStartsWith
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
-import java.util.Properties
+import java.util.*
 
 /**
  * Exposed ORM에서 ClickHouse 데이터베이스 연결을 생성하는 팩토리 객체입니다.
@@ -54,16 +58,17 @@ object ClickHouseDatabase: KLogging() {
      * ClickHouse JDBC 드라이버 클래스 이름입니다.
      *
      * 이 값은 의도적으로 `const val`이 아니라 `val`입니다. 프로퍼티 접근이 객체 초기화(`init {}`)
-     * 를 반드시 트리거해야 JDBC driver/dialect 등록이 실행되기 때문입니다. `const val`은 컴파일 시점에
-     * inline되어 객체 초기화를 건너뛸 수 있습니다.
+     * 를 반드시 트리거해야 JDBC driver/dialect 등록이 실행되기 때문입니다. 이 값은 객체 초기화를
+     * 보존하기 위해 일반 `val`로 유지합니다.
      */
+    @Suppress("MayBeConstant")
     val DRIVER = "com.clickhouse.jdbc.ClickHouseDriver"
 
     init {
         Database.registerJdbcDriver("jdbc:clickhouse", DRIVER, ClickHouseDialect.dialectName)
         DatabaseApi.registerDialect(ClickHouseDialect.dialectName) { ClickHouseDialect() }
         Database.registerDialectMetadata(ClickHouseDialect.dialectName) { ClickHouseDialectMetadata() }
-        log.debug("ClickHouse dialect registered: ${ClickHouseDialect.dialectName}")
+        log.info { "ClickHouse dialect registered: ${ClickHouseDialect.dialectName}" }
     }
 
     /**
@@ -91,11 +96,11 @@ object ClickHouseDatabase: KLogging() {
     ): Database {
         // 빈 값으로 JDBC URL을 구성하면 무효한 URL이 만들어져 DriverManager.getConnection()
         // 호출 시점에 불명확한 예외가 발생합니다. 조기에 명확한 메시지로 실패시킵니다.
-        requireNotNull(host.ifBlank { null }) { "host는 공백일 수 없습니다." }
+        host.requireNotBlank { "host는 공백일 수 없습니다." }
         // 유효하지 않은 포트 번호는 TCP 연결 시도 단계에서야 실패하므로, 미리 차단합니다.
-        require(port in 1..65535) { "port는 1~65535 범위여야 합니다: $port" }
+        port.requireInRange(1, 65535) { "port는 1~65535 범위여야 합니다: $port" }
         // ClickHouse JDBC URL은 `database`를 path 세그먼트로 요구합니다.
-        requireNotNull(database.ifBlank { null }) { "database는 공백일 수 없습니다." }
+        database.requireNotBlank { "database는 공백일 수 없습니다." }
 
         val url = "jdbc:clickhouse://$host:$port/$database"
         return Database.connect(
@@ -110,13 +115,16 @@ object ClickHouseDatabase: KLogging() {
                 }
                 // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
                 val raw = DriverManager.getConnection(url, props)
-                runCatching { ClickHouseConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }.onFailure { closeEx ->
-                            e.addSuppressed(closeEx)
-                        }
-                        throw e
+                runCatching {
+                    ClickHouseConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
     }
@@ -159,13 +167,16 @@ object ClickHouseDatabase: KLogging() {
                 }
                 // 연결 획득 후 래퍼 생성 실패 시 원본 연결을 닫아 leak을 방지합니다.
                 val raw = DriverManager.getConnection(jdbcUrl, props)
-                runCatching { ClickHouseConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }.onFailure { closeEx ->
-                            e.addSuppressed(closeEx)
-                        }
-                        throw e
+                runCatching {
+                    ClickHouseConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
     }
@@ -190,8 +201,7 @@ object ClickHouseDatabase: KLogging() {
 
         val url = "jdbc:clickhouse://$host:$port/$database"
         require(!ClickHouseV2Redaction.containsUserInfo(url)) {
-            "options 연결의 host에는 authority userinfo를 포함할 수 없습니다: " +
-                ClickHouseV2Redaction.redactJdbcUrl(url)
+            "options 연결의 host에는 authority userinfo를 포함할 수 없습니다: " + ClickHouseV2Redaction.redactJdbcUrl(url)
         }
         return connectWithV2Options(url, user, password, options)
     }
@@ -208,13 +218,13 @@ object ClickHouseDatabase: KLogging() {
         password: String = "",
         options: ClickHouseV2Options,
     ): Database {
-        requireNotNull(jdbcUrl.ifBlank { null }) { "jdbcUrl은 공백일 수 없습니다." }
-        require(jdbcUrl.startsWith("jdbc:clickhouse://")) {
+        jdbcUrl.requireNotBlank { "jdbcUrl은 공백일 수 없습니다." }
+        jdbcUrl.requireStartsWith("jdbc:clickhouse://") {
             "jdbcUrl은 'jdbc:clickhouse://'로 시작해야 합니다: ${ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)}"
         }
         require(!ClickHouseV2Redaction.containsUserInfo(jdbcUrl)) {
             "options 연결의 jdbcUrl에는 authority userinfo를 포함할 수 없습니다: " +
-                ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
+                    ClickHouseV2Redaction.redactJdbcUrl(jdbcUrl)
         }
         return connectWithV2Options(jdbcUrl, user, password, options)
     }
@@ -236,22 +246,24 @@ object ClickHouseDatabase: KLogging() {
     // Driver implementations may throw unchecked exceptions containing connection details;
     // this boundary deliberately sanitizes them before exposing an application-facing error.
     @Suppress("TooGenericExceptionCaught")
-    private fun connectRaw(jdbcUrl: String, properties: Properties): Connection = try {
-        DriverManager.getConnection(jdbcUrl, properties)
-    } catch (error: SQLException) {
-        throw error.toClickHouseConnectionException(jdbcUrl)
-    } catch (error: RuntimeException) {
-        throw error.toClickHouseConnectionException(jdbcUrl)
-    }
+    private fun connectRaw(jdbcUrl: String, properties: Properties): Connection =
+        try {
+            DriverManager.getConnection(jdbcUrl, properties)
+        } catch (error: SQLException) {
+            throw error.toClickHouseConnectionException(jdbcUrl)
+        } catch (error: RuntimeException) {
+            throw error.toClickHouseConnectionException(jdbcUrl)
+        }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun wrapConnection(raw: Connection, jdbcUrl: String): Connection = try {
-        ClickHouseConnectionWrapper(raw)
-    } catch (error: SQLException) {
-        closeAfterFailure(raw, error, jdbcUrl)
-    } catch (error: RuntimeException) {
-        closeAfterFailure(raw, error, jdbcUrl)
-    }
+    private fun wrapConnection(raw: Connection, jdbcUrl: String): Connection =
+        try {
+            ClickHouseConnectionWrapper(raw)
+        } catch (error: SQLException) {
+            closeAfterFailure(raw, error, jdbcUrl)
+        } catch (error: RuntimeException) {
+            closeAfterFailure(raw, error, jdbcUrl)
+        }
 
     // The driver may throw unchecked failures while closing; sanitize every Exception at this boundary.
     @Suppress("TooGenericExceptionCaught")

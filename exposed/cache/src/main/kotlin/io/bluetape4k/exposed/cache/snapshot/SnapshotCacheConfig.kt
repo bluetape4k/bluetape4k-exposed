@@ -1,5 +1,12 @@
 package io.bluetape4k.exposed.cache.snapshot
 
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.minutes
+import io.bluetape4k.javatimes.requirePositiveDuration
+import io.bluetape4k.support.requireBeTrue
+import io.bluetape4k.support.requireInRange
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 import java.time.Duration
 
@@ -33,13 +40,9 @@ data class SnapshotCacheConfig(
         require(NAMESPACE_PATTERN.matches(namespace)) {
             "namespace must match ${NAMESPACE_PATTERN.pattern}."
         }
-        require(schemaVersion.isNotBlank()) { "schemaVersion must not be blank." }
-        require(maxStagedMutations > 0) {
-            "maxStagedMutations[$maxStagedMutations] must be positive."
-        }
-        require(maxParticipatingStores > 0) {
-            "maxParticipatingStores[$maxParticipatingStores] must be positive."
-        }
+        schemaVersion.requireNotBlank { "schemaVersion must not be blank." }
+        maxStagedMutations.requirePositiveNumber("maxStagedMutations")
+        maxParticipatingStores.requirePositiveNumber("maxParticipatingStores")
     }
 
     private fun readResolve(): Any = SnapshotCacheConfig(
@@ -79,13 +82,13 @@ data class CaffeineSnapshotCacheConfig(
     /** 로컬 Caffeine cache의 추정 retained weight 상한입니다. */
     val maximumWeight: Long? = null,
     /** write 시점 기준 entry 만료 시간입니다. */
-    val expireAfterWrite: Duration = Duration.ofMinutes(10),
+    val expireAfterWrite: Duration = 10.minutes(),
     /** access 시점 기준 entry 만료 시간입니다. 설정하지 않으면 access 기반 만료를 사용하지 않습니다. */
     val expireAfterAccess: Duration? = null,
     /** transaction staging 단계의 추정 retained weight 상한입니다. */
     val maxStagedWeight: Long? = null,
     /** commit 이후 로컬 drain 단계에 허용되는 시간 예산입니다. */
-    val localDrainBudget: Duration = Duration.ofMillis(250),
+    val localDrainBudget: Duration = 250.millis(),
     /** local fence를 분산할 stripe 수입니다. */
     val fenceStripes: Int = 1_024,
     /** 동시에 유지할 수 있는 opaque miss token 상한입니다. */
@@ -93,28 +96,17 @@ data class CaffeineSnapshotCacheConfig(
 ): Serializable {
 
     init {
-        require(maximumSize > 0L) { "maximumSize[$maximumSize] must be positive." }
-        maximumWeight?.let {
-            require(it > 0L) { "maximumWeight[$it] must be positive when set." }
-        }
-        require(expireAfterWrite > Duration.ZERO) {
-            "expireAfterWrite[$expireAfterWrite] must be positive."
-        }
-        expireAfterAccess?.let {
-            require(it > Duration.ZERO) { "expireAfterAccess[$it] must be positive when set." }
-        }
-        maxStagedWeight?.let {
-            require(it > 0L) { "maxStagedWeight[$it] must be positive when set." }
-        }
-        require(localDrainBudget > Duration.ZERO) {
-            "localDrainBudget[$localDrainBudget] must be positive."
-        }
-        require(fenceStripes in MIN_FENCE_STRIPES..MAX_FENCE_STRIPES && fenceStripes.isPowerOfTwo()) {
+        maximumSize.requirePositiveNumber("maximumSize")
+        maximumWeight?.requirePositiveNumber("maximumWeight")
+        expireAfterWrite.requirePositiveDuration("expireAfterWrite")
+        expireAfterAccess?.requirePositiveDuration("expireAfterAccess")
+        maxStagedWeight?.requirePositiveNumber("maxStagedWeight")
+        localDrainBudget.requirePositiveDuration("localDrainBudget")
+        fenceStripes.requireInRange(MIN_FENCE_STRIPES, MAX_FENCE_STRIPES, "fenceStripes")
+        fenceStripes.isPowerOfTwo().requireBeTrue {
             "fenceStripes[$fenceStripes] must be a power of two in $MIN_FENCE_STRIPES..$MAX_FENCE_STRIPES."
         }
-        require(maxOutstandingMissTokens > 0) {
-            "maxOutstandingMissTokens[$maxOutstandingMissTokens] must be positive."
-        }
+        maxOutstandingMissTokens.requirePositiveNumber("maxOutstandingMissTokens")
     }
 
     private fun readResolve(): Any = CaffeineSnapshotCacheConfig(

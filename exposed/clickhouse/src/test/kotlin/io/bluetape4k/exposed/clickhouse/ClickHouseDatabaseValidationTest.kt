@@ -2,9 +2,11 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
 
@@ -15,6 +17,8 @@ import java.sql.SQLException
  * 명확하게 던지는지 확인합니다.
  */
 class ClickHouseDatabaseValidationTest {
+
+    companion object: KLogging()
 
     @Test
     fun `connect fails when host is blank`() {
@@ -68,8 +72,8 @@ class ClickHouseDatabaseValidationTest {
             )
         }
 
-        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
-        failure.message.orEmpty().contains("password=REDACTED").shouldBeTrue()
+        failure.message shouldNotContain "secret-canary"
+        failure.message shouldContain "password=REDACTED"
     }
 
     @Test
@@ -81,8 +85,8 @@ class ClickHouseDatabaseValidationTest {
             )
         }
 
-        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
-        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+        failure.message shouldNotContain "secret-canary"
+        failure.message shouldContain "REDACTED@localhost"
     }
 
     @Test
@@ -94,8 +98,8 @@ class ClickHouseDatabaseValidationTest {
             )
         }
 
-        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
-        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+        failure.message shouldNotContain "secret-canary"
+        failure.message shouldContain "REDACTED@localhost"
     }
 
     @Test
@@ -105,12 +109,12 @@ class ClickHouseDatabaseValidationTest {
             "jdbc:clickhouse://localhost:8123/default?password=secret-canary",
         )
 
-        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
-        failure.message.orEmpty().contains("token-canary").shouldBeFalse()
+        failure.message shouldNotContain "secret-canary"
+        failure.message shouldNotContain "token-canary"
         failure.sqlState shouldBeEqualTo "08001"
         failure.errorCode shouldBeEqualTo 1001
-        failure.cause shouldBeEqualTo null
-        failure.suppressed.shouldHaveSize(0)
+        failure.cause.shouldBeNull()
+        failure.suppressed shouldHaveSize 0
     }
 
     @Test
@@ -120,7 +124,7 @@ class ClickHouseDatabaseValidationTest {
             "jdbc:clickhouse://user:secret-canary@localhost:8123/default",
         )
 
-        failure.message.orEmpty().contains("secret-canary").shouldBeFalse()
-        failure.message.orEmpty().contains("REDACTED@localhost").shouldBeTrue()
+        failure.message shouldNotContain "secret-canary"
+        failure.message shouldContain "REDACTED@localhost"
     }
 }

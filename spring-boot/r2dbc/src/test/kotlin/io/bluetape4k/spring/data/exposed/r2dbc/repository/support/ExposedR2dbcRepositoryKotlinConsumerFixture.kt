@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.Sort
@@ -18,8 +19,8 @@ object ExposedR2dbcRepositoryKotlinConsumerFixture {
         example: Example<User>,
     ): List<NameProjection> {
         repository.findOne(example)
-        repository.findAll(example)
-        repository.findAll(example, Sort.by("name"))
+        repository.findAll(example).collect()
+        repository.findAll(example, Sort.by("name")).collect()
         repository.count(example)
         repository.exists(example)
 

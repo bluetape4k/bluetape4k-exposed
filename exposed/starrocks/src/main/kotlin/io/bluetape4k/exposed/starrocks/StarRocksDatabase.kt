@@ -93,14 +93,16 @@ object StarRocksDatabase: KLogging() {
             getNewConnection = {
                 val props = options.toProperties(user, password)
                 val raw = DriverManager.getConnection(jdbcUrl, props)
-                runCatching { StarRocksConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }
-                            .onFailure { closeEx ->
-                                e.addSuppressed(closeEx)
-                            }
-                        throw e
+                runCatching {
+                    StarRocksConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
     }
@@ -110,14 +112,16 @@ object StarRocksDatabase: KLogging() {
         Database.connect(
             getNewConnection = {
                 val raw = dataSource.connection
-                runCatching { StarRocksConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        runCatching { raw.close() }
-                            .onFailure { closeEx ->
-                                e.addSuppressed(closeEx)
-                            }
-                        throw e
+                runCatching {
+                    StarRocksConnectionWrapper(raw)
+                }.getOrElse { e ->
+                    runCatching {
+                        raw.close()
+                    }.onFailure { closeEx ->
+                        e.addSuppressed(closeEx)
                     }
+                    throw e
+                }
             }
         )
 

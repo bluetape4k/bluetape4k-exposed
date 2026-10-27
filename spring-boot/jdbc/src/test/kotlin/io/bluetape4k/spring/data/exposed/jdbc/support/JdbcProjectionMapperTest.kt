@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedMappingContext
 import io.bluetape4k.spring.data.exposed.jdbc.domain.UserEntity
 import io.bluetape4k.spring.data.exposed.jdbc.domain.Users
@@ -33,9 +34,11 @@ class JdbcProjectionMapperTest {
     @Test
     fun `closed getter interface maps eagerly copied values`() {
         val shape = mapper.shape<UserView>(listOf("name", "age"))
+        shape.requiredProperties.map { it.logicalName } shouldBeEqualTo listOf("name", "age")
+
         val result = shape.map(0, mapOf("name" to "alice", "age" to 42))
 
-        shape.requiredProperties.map { it.logicalName } shouldBeEqualTo listOf("name", "age")
+        log.debug { "result=$result" }
         result.name shouldBeEqualTo "alice"
         result.age shouldBeEqualTo 42
     }
@@ -43,21 +46,26 @@ class JdbcProjectionMapperTest {
     @Test
     fun `inherited getter remains a closed projection input`() {
         val shape = mapper.shape<InheritedUserView>(listOf("name", "age"))
+
         val result = shape.map(0, mapOf("name" to "alice", "age" to 42))
 
+        log.debug { "result=$result" }
         result.name shouldBeEqualTo "alice"
         result.age shouldBeEqualTo 42
     }
 
     @Test
     fun `Kotlin data class and Java record use named constructor inputs`() {
-        val dto = mapper.shape(UserNameDto::class.java, listOf("name", "age"))
+        val dto = mapper.shape<UserNameDto>(listOf("name", "age"))
             .map(0, mapOf("name" to "alice", "age" to 42))
 
-        val record = mapper.shape(UserNameRecord::class.java, listOf("name", "age"))
-            .map(0, mapOf("name" to "alice", "age" to 42))
-
+        log.debug { "dto=$dto" }
         dto shouldBeEqualTo UserNameDto("alice", 42)
+
+        val record = mapper.shape<UserNameRecord>(listOf("name", "age"))
+            .map(0, mapOf("name" to "alice", "age" to 42))
+
+        log.debug { "record=$record" }
         record shouldBeEqualTo UserNameRecord("alice", 42)
     }
 
@@ -90,6 +98,7 @@ class JdbcProjectionMapperTest {
         val result = mapper.shape<UserIdView>(listOf("id"))
             .map(0, mapOf("id" to EntityID(7L, Users)))
 
+        log.debug { "result=$result" }
         result.id shouldBeEqualTo 7L
     }
 
@@ -119,12 +128,14 @@ class JdbcProjectionMapperTest {
             mapper.shape<UserNameDto>(listOf("name", "age"))
                 .map(3, mapOf("name" to null, "age" to 42))
         }
+        log.debug { "nullFailure=$nullFailure" }
+        nullFailure.message shouldNotContain "alice"
+
         val typeFailure = assertFailsWith<MappingException> {
             mapper.shape<UserNameDto>(listOf("name", "age"))
                 .map(4, mapOf("name" to "sensitive-name", "age" to "not-a-number"))
         }
-
-        nullFailure.message shouldNotContain "alice"
+        log.debug { "typeFailure=$typeFailure" }
         typeFailure.message shouldNotContain "sensitive-name"
         typeFailure.message shouldNotContain "not-a-number"
     }

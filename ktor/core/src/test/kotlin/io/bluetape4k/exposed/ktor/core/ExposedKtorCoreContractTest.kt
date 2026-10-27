@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -53,6 +54,7 @@ class ExposedKtorCoreContractTest {
         val response = client.get("/internal/secret")
         response.status shouldBeEqualTo HttpStatusCode.InternalServerError
         val body = response.bodyAsText()
+        log.debug { "body=$body" }
         body shouldContain "EXPOSED_TRANSACTION_FAILED"
         body shouldContain "Exposed transaction failed"
         body shouldNotContain "/internal/secret"
@@ -114,6 +116,9 @@ class ExposedKtorCoreContractTest {
             readinessProbeTimeout = 100.milliseconds,
             clock = ReadinessClock { now },
         )
+
+        log.debug { "invocations=$invocations" }
+        log.debug { "details: $details" }
 
         invocations shouldBeEqualTo listOf("first", "second")
         details shouldBeEqualTo linkedMapOf(

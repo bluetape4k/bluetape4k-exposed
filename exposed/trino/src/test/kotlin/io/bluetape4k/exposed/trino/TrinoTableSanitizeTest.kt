@@ -1,8 +1,9 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldContainIgnoringCase
+import io.bluetape4k.assertions.shouldNotContainIgnoringCase
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -60,7 +61,7 @@ class TrinoTableSanitizeTest: AbstractTrinoTest() {
     fun `TrinoTable createStatement 는 PRIMARY KEY 구문을 포함하지 않는다`() {
         transaction(db) {
             val ddl = SimpleTable.createStatement().single()
-            ddl.contains("PRIMARY KEY", ignoreCase = true).shouldBeFalse()
+            ddl shouldNotContainIgnoringCase "PRIMARY KEY"
         }
     }
 
@@ -72,7 +73,7 @@ class TrinoTableSanitizeTest: AbstractTrinoTest() {
     fun `일반 Table createStatement 는 PRIMARY KEY 구문을 포함한다`() {
         transaction(db) {
             val ddl = PlainTable.createStatement().single()
-            ddl.contains("PRIMARY KEY", ignoreCase = true).shouldBeTrue()
+            ddl shouldContainIgnoringCase "PRIMARY KEY"
         }
     }
 
@@ -84,7 +85,7 @@ class TrinoTableSanitizeTest: AbstractTrinoTest() {
     fun `TrinoTable createStatement 에는 CONSTRAINT 구문이 없다`() {
         transaction(db) {
             val ddl = SimpleTable.createStatement().single()
-            ddl.contains("CONSTRAINT", ignoreCase = true).shouldBeFalse()
+            ddl shouldNotContainIgnoringCase "CONSTRAINT"
         }
     }
 

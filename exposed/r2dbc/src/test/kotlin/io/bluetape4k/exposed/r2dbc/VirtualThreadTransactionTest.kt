@@ -6,7 +6,9 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.concurrent.awaitTermination
 import io.bluetape4k.concurrent.virtualthread.VirtualThreadExecutor
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
@@ -65,7 +67,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
             } finally {
                 runCatching {
                     executor.shutdown()
-                    executor.awaitTermination(1, TimeUnit.SECONDS)
+                    executor.awaitTermination(3.seconds)
                 }
             }
         }
@@ -101,8 +103,8 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
             }
 
             rows shouldHaveSize 1
-            rows.first()[VirtualThreadTable.id] shouldBeEqualTo insertedId
-            rows.first()[VirtualThreadTable.name] shouldBeEqualTo "test-item"
+            rows.single()[VirtualThreadTable.id] shouldBeEqualTo insertedId
+            rows.single()[VirtualThreadTable.name] shouldBeEqualTo "test-item"
         }
     }
 
@@ -158,7 +160,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
             assertFailsWith<IllegalArgumentException> {
                 virtualThreadTransactionAsync(executor = executor, db = this.db) {
                     VirtualThreadTable.selectAll().count()
-                }
+                }.await()
             }
         }
     }
@@ -200,9 +202,8 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
                 "first"
             }
 
-            withTimeout(2.seconds) {
-                firstStarted.await()
-            }
+
+            firstStarted.awaitUntil(2.seconds)
             first.isCompleted.shouldBeFalse()
 
             val second = virtualThreadTransactionAsync(db = database) {

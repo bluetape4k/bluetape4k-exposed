@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.bigquery.query
 
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
@@ -7,6 +8,7 @@ import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Test
@@ -44,14 +46,18 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
             val updated = Events.selectAll()
                 .where { Events.eventId eq 1L }
                 .withBigQuery()
-                .singleOrNull()
-            updated?.get(Events.eventType) shouldBeEqualTo "UPDATED_KR"
+                .single()
+
+            log.debug { "updated=$updated" }
+            updated[Events.eventType] shouldBeEqualTo "UPDATED_KR"
 
             val unchanged = Events.selectAll()
                 .where { Events.eventId eq 2L }
                 .withBigQuery()
-                .singleOrNull()
-            unchanged?.get(Events.eventType) shouldBeEqualTo "PURCHASE"
+                .single()
+
+            log.debug { "unchanged=$unchanged" }
+            unchanged[Events.eventType] shouldBeEqualTo "PURCHASE"
         }
     }
 
@@ -64,6 +70,8 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
             Events.execDelete(Events.region eq "us")
 
             val rows = Events.selectAll().withBigQuery().toList()
+                .onEach { log.debug { "row=$it" } }
+
             rows shouldHaveSize 1
             rows[0][Events.region] shouldBeEqualTo "kr"
         }
@@ -78,8 +86,7 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
 
             with(bqContext) { Events.execDeleteAll() }
 
-            val rows = Events.selectAll().withBigQuery().toList()
-            rows shouldHaveSize 0
+            Events.selectAll().withBigQuery().toList().shouldBeEmpty()
         }
     }
 
@@ -95,8 +102,10 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
             val row = Events.selectAll()
                 .where { Events.eventId eq 10L }
                 .withBigQuery()
-                .singleOrNull()
-            row?.get(Events.eventType) shouldBeEqualTo "ASYNC_UPDATE"
+                .single()
+
+            log.debug { "row=$row" }
+            row[Events.eventType] shouldBeEqualTo "ASYNC_UPDATE"
         }
     }
 
@@ -109,33 +118,33 @@ class UpdateDeleteTest: AbstractBigQueryTest() {
                 Events.execDeleteSuspending(Events.eventId eq 20L)
             }
 
-            val row = Events.selectAll()
+            Events.selectAll()
                 .where { Events.eventId eq 20L }
                 .withBigQuery()
                 .singleOrNull()
-            row.shouldBeNull()
+                .shouldBeNull()
         }
     }
 
     @Test
     fun `singleOrNull - 결과가 없으면 null을 반환한다`() {
         withEventsData {
-            val row = Events.selectAll()
+            Events.selectAll()
                 .where { Events.eventId eq 9999L }
                 .withBigQuery()
                 .singleOrNull()
-            row.shouldBeNull()
+                .shouldBeNull()
         }
     }
 
     @Test
     fun `firstOrNull - 결과가 없으면 null을 반환한다`() {
         withEventsData {
-            val row = Events.selectAll()
+            Events.selectAll()
                 .where { Events.eventId eq 9999L }
                 .withBigQuery()
                 .firstOrNull()
-            row.shouldBeNull()
+                .shouldBeNull()
         }
     }
 }

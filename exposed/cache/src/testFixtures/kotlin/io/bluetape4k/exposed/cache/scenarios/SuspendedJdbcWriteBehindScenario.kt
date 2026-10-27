@@ -4,16 +4,19 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * [SuspendedJdbcCacheTestScenario] 기반 Write-Behind 캐시 suspend 시나리오입니다.
@@ -23,7 +26,6 @@ import java.time.Duration
  * @param ID 엔티티의 식별자 타입
  * @param E 엔티티 타입
  */
-@Suppress("DEPRECATION")
 interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJdbcCacheTestScenario<ID, E> {
 
     companion object: KLoggingChannel() {
@@ -51,8 +53,10 @@ interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJ
      * @return 전체 레코드 수
      */
     suspend fun getAllCountFromDB(): Long =
-        newSuspendedTransaction {
-            repository.table.selectAll().count()
+        withContext(Dispatchers.IO) {
+            inTopLevelSuspendTransaction {
+                repository.table.selectAll().count()
+            }
         }
 
     @ParameterizedTest
@@ -69,12 +73,9 @@ interface SuspendedJdbcWriteBehindScenario<ID: Any, E: Serializable>: SuspendedJ
             val expectedCount = initialCount + entityMap.size
             repository.putAll(entityMap)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofSeconds(5))
-                .untilSuspending {
-                    getAllCountFromDB() >= expectedCount
-                }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                getAllCountFromDB() >= expectedCount
+            }
         }
     }
 }

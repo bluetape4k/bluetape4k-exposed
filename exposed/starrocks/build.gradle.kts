@@ -6,12 +6,17 @@ dependencies {
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(bt4k.exposed.java.time)
-    api(libs.kotlinx.coroutines.core)
     api(bt4k.starrocks.connector.j)
+
+    // Coroutines
+    api(bt4k.bluetape4k.coroutines)
+    api(libs.kotlinx.coroutines.core)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
+
+    testImplementation(bt4k.hikaricp)
 }

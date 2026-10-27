@@ -9,8 +9,14 @@ dependencies {
     // Trino JDBC 드라이버
     api(bt4k.trino.jdbc)
 
+    // Coroutines
+    testImplementation(bt4k.bluetape4k.coroutines)
+
+    testImplementation(bt4k.bluetape4k.io)
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.testcontainers)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.testcontainers.trino)
+
+    testImplementation(bt4k.hikaricp)
 }

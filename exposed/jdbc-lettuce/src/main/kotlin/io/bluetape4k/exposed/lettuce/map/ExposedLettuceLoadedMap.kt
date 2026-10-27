@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.concurrent.awaitTermination
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -9,6 +10,7 @@ import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.MapLoader
 import io.bluetape4k.redis.lettuce.map.MapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.support.closeSafe
 import io.bluetape4k.support.requirePositiveNumber
 import io.lettuce.core.LettuceFutures
 import io.lettuce.core.RedisClient
@@ -26,6 +28,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedLettuceLoadedMap<K: Any, V: Any>(
     private val client: RedisClient,
@@ -80,11 +83,11 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
 
     operator fun get(key: K): V? {
         val redisKey = redisKey(key)
-        val cached = runCatching { commands.get(redisKey) }
-            .onFailure { e ->
-                log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
-            }
-            .getOrNull()
+        val cached = runCatching {
+            commands.get(redisKey)
+        }.onFailure { e ->
+            log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
+        }.getOrNull()
 
         if (cached != null) return cached
         val loader = loader ?: return null
@@ -100,9 +103,9 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
 
     operator fun set(key: K, value: V) {
         when (config.writeMode) {
-            WriteMode.NONE          -> {
+            WriteMode.NONE ->
                 commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
-            }
+
             WriteMode.WRITE_THROUGH -> {
                 writer?.write(mapOf(key to value))
                 commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
@@ -125,6 +128,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         if (entries.isEmpty()) return
 
         log.debug { "putAll: entries=${entries.size}, batchSize=$batchSize" }
+
         entries.entries
             .chunked(batchSize)
             .forEach { chunkEntries ->
@@ -190,11 +194,11 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val keyList = keys.toList()
         val redisKeys = keyList.map { redisKey(it) }.toTypedArray()
 
-        val mgetResult = runCatching { commands.mget(*redisKeys) }
-            .onFailure { e ->
-                log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
-            }
-            .getOrNull()
+        val mgetResult = runCatching {
+            commands.mget(*redisKeys)
+        }.onFailure { e ->
+            log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
+        }.getOrNull()
 
         val result = mutableMapOf<K, V>()
         val missedKeys = mutableListOf<K>()
@@ -295,25 +299,27 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         if (entries.isEmpty()) return
 
         val batch = entries.associate { it.first to it.second }
-        runCatching { writer?.write(batch) }
-            .onFailure { e ->
-                log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
 
-                val dropped = mutableListOf<Triple<K, V, Int>>()
+        runCatching {
+            writer?.write(batch)
+        }.onFailure { e ->
+            log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
 
-                entries.forEach { (key, value, retryCount) ->
-                    val nextRetryCount = retryCount + 1
-                    if (nextRetryCount < MAX_DEAD_LETTER_RETRY) {
-                        val offered = queue.offerFirst(Triple(key, value, nextRetryCount))
-                        if (!offered) dropped.add(Triple(key, value, nextRetryCount))
-                    } else {
-                        dropped.add(Triple(key, value, nextRetryCount))
-                    }
-                }
-                if (dropped.isNotEmpty()) {
-                    writeDeadLetter(dropped.associate { it.first to it.second })
+            val dropped = mutableListOf<Triple<K, V, Int>>()
+
+            entries.forEach { (key, value, retryCount) ->
+                val nextRetryCount = retryCount + 1
+                if (nextRetryCount < MAX_DEAD_LETTER_RETRY) {
+                    val offered = queue.offerFirst(Triple(key, value, nextRetryCount))
+                    if (!offered) dropped.add(Triple(key, value, nextRetryCount))
+                } else {
+                    dropped.add(Triple(key, value, nextRetryCount))
                 }
             }
+            if (dropped.isNotEmpty()) {
+                writeDeadLetter(dropped.associate { it.first to it.second })
+            }
+        }
     }
 
     private fun writeDeadLetter(batch: Map<K, V>) {
@@ -324,6 +330,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             val deadLetterValuesKey = "${config.keyPrefix}:dead-letter:values"
             val valueMap = batch.entries.associate { (key, value) -> keySerializer(key) to value }
             commands.hset(deadLetterValuesKey, valueMap)
+
             val serializedKeys = batch.keys.map { keySerializer(it) }
             strCommands.lpush(deadLetterKey, *serializedKeys.toTypedArray())
         }.onFailure { e ->
@@ -345,11 +352,11 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             if (writeBehindQueue?.isNotEmpty() == true) {
                 log.warn { "Write-behind shutdown timed out: ${writeBehindQueue.size} entries may be lost" }
             }
-            sched.awaitTermination(1, TimeUnit.SECONDS)
+            sched.awaitTermination(3.seconds)
         }
-        if (lazyStrConnection.isInitialized()) strConnection.close()
-        if (bulkConnection.isInitialized()) bulkConnection.value.close()
-        connection.close()
+        if (lazyStrConnection.isInitialized()) strConnection.closeSafe()
+        if (bulkConnection.isInitialized()) bulkConnection.value.closeSafe()
+        connection.closeSafe()
 
         log.info { "close completed." }
     }

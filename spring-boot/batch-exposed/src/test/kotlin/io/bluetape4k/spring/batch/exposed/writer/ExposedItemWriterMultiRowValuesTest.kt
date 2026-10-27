@@ -7,12 +7,15 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.collections.exists
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.StatementContext
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -29,10 +32,10 @@ import org.springframework.batch.core.step.StepExecution
 import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.infrastructure.item.Chunk
 import org.springframework.batch.infrastructure.item.ExecutionContext
-import org.springframework.batch.infrastructure.item.ItemReader
 import org.springframework.batch.infrastructure.item.ItemWriter
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.transaction.support.TransactionTemplate
+import java.io.Serializable
 import java.sql.SQLException
 
 /** 실제 Spring 청크 트랜잭션과 Exposed SQL 계약을 함께 검증한다. */
@@ -44,14 +47,15 @@ class ExposedItemWriterMultiRowValuesTest {
         fun multiRowDialects() = TestDB.enabledDialects().filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
     }
 
-    private object Rows: Table("spring_batch_multi_rows") {
-        val id = long("id").autoIncrement()
+    private object Rows: LongIdTable("spring_batch_multi_rows") {
         val name = varchar("name", 80).uniqueIndex()
         val note = varchar("note", 80).nullable()
-        override val primaryKey = PrimaryKey(id)
     }
 
-    private data class Row(val name: String, val note: String? = null): java.io.Serializable {
+    private data class Row(
+        val name: String,
+        val note: String? = null,
+    ): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -74,17 +78,18 @@ class ExposedItemWriterMultiRowValuesTest {
     fun `빈 청크는 기존 경로와 opt-in 모두 트랜잭션 없이 no-op이다`() {
         var calls = 0
         val bind: BatchInsertStatement.(Row) -> Unit = { calls++ }
-        ExposedItemWriter(Rows, bind).write(Chunk(emptyList<Row>()))
-        ExposedItemWriter(Rows, false, bind).write(Chunk(emptyList<Row>()))
-        ExposedItemWriter(Rows, true, bind).write(Chunk(emptyList<Row>()))
+        ExposedItemWriter(Rows, bind).write(Chunk(emptyList()))
+        ExposedItemWriter(Rows, false, bind).write(Chunk(emptyList()))
+        ExposedItemWriter(Rows, true, bind).write(Chunk(emptyList()))
         calls shouldBeEqualTo 0
     }
 
     @ParameterizedTest
     @MethodSource("multiRowDialects")
     fun `기본과 false는 행별 SQL을 유지하고 true만 multi-row SQL을 사용한다`(testDB: TestDB) {
-        withSpringTables(testDB) { tx, log ->
+        withSpringTables(testDB) { tx, insertLog ->
             val input = listOf(Row("one"), Row("two", "nullable-note"))
+
             listOf(null, false, true).forEach { mode ->
                 val order = mutableListOf<String>()
                 tx.executeWithoutResult {
@@ -93,7 +98,8 @@ class ExposedItemWriterMultiRowValuesTest {
                         this[Rows.name] = "$mode-${row.name}"
                         this[Rows.note] = row.note
                     }
-                    log.entries.clear()
+                    insertLog.entries.clear()
+
                     val writer = if (mode == null) {
                         ExposedItemWriter(Rows, bind)
                     } else {
@@ -101,9 +107,12 @@ class ExposedItemWriterMultiRowValuesTest {
                     }
                     writer.write(Chunk(input))
 
+                    log.debug { "order=$order" }
                     order shouldBeEqualTo listOf("one", "two")
-                    log.entries shouldHaveSize if (mode == true) 1 else 2
-                    log.entries.forEach { entry ->
+
+                    insertLog.entries shouldHaveSize if (mode == true) 1 else 2
+                    insertLog.entries.forEach { entry ->
+                        log.debug { "entry=$entry" }
                         entry.generatedValues.shouldBeFalse()
                         Regex("\\)\\s*,\\s*\\(").containsMatchIn(entry.sql) shouldBeEqualTo (mode == true)
                         entry.argumentCount shouldBeEqualTo if (mode == true) 4 else 2
@@ -111,8 +120,16 @@ class ExposedItemWriterMultiRowValuesTest {
                 }
             }
             tx.executeWithoutResult {
-                Rows.selectAll().orderBy(Rows.id).map { it[Rows.note] } shouldBeEqualTo
-                        listOf(null, "nullable-note", null, "nullable-note", null, "nullable-note")
+                Rows.selectAll()
+                    .orderBy(Rows.id)
+                    .map { it[Rows.note] } shouldBeEqualTo listOf(
+                    null,
+                    "nullable-note",
+                    null,
+                    "nullable-note",
+                    null,
+                    "nullable-note"
+                )
             }
         }
     }
@@ -120,13 +137,15 @@ class ExposedItemWriterMultiRowValuesTest {
     @ParameterizedTest
     @MethodSource("multiRowDialects")
     fun `단일 행 opt-in은 생성 키를 요청하지 않는다`(testDB: TestDB) {
-        withSpringTables(testDB) { tx, log ->
+        withSpringTables(testDB) { tx, insertLog ->
             tx.executeWithoutResult {
-                log.entries.clear()
+                insertLog.entries.clear()
+
                 writer().write(Chunk(listOf(Row("single"))))
-                log.entries shouldHaveSize 1
-                log.entries.single().generatedValues.shouldBeFalse()
-                log.entries.single().argumentCount shouldBeEqualTo 2
+
+                insertLog.entries shouldHaveSize 1
+                insertLog.entries.single().generatedValues.shouldBeFalse()
+                insertLog.entries.single().argumentCount shouldBeEqualTo 2
                 Rows.selectAll().count() shouldBeEqualTo 1L
             }
         }
@@ -135,18 +154,19 @@ class ExposedItemWriterMultiRowValuesTest {
     @ParameterizedTest
     @MethodSource("multiRowDialects")
     fun `추정 경계는 성공하고 초과 청크는 바인더와 SQL 전에 거부한다`(testDB: TestDB) {
-        withSpringTables(testDB) { tx, log ->
+        withSpringTables(testDB) { tx, insertLog ->
             val maxRows = 65_535 / Rows.columns.size
             tx.executeWithoutResult { writer().write(Chunk((1..maxRows).map { Row("boundary-$it") })) }
             var bound = 0
             val oversized = ExposedItemWriter<Row>(Rows, true) { bound++ }
             tx.executeWithoutResult {
-                log.entries.clear()
+                insertLog.entries.clear()
                 val failure = assertFailsWith<IllegalArgumentException> {
                     oversized.write(Chunk(List(maxRows + 1) { Row("secret-payload") }))
                 }
+                log.debug { "failure=$failure" }
                 bound shouldBeEqualTo 0
-                log.entries shouldHaveSize 0
+                insertLog.entries shouldHaveSize 0
                 failure.message shouldNotContain "secret-payload"
                 Rows.selectAll().count() shouldBeEqualTo maxRows.toLong()
             }
@@ -161,7 +181,10 @@ class ExposedItemWriterMultiRowValuesTest {
                 writer().write(Chunk(listOf(Row("rollback-only"))))
                 it.setRollbackOnly()
             }
-            tx.executeWithoutResult { Rows.selectAll().count() shouldBeEqualTo 0L }
+
+            tx.executeWithoutResult {
+                Rows.selectAll().exists { true }.shouldBeFalse()
+            }
         }
     }
 
@@ -170,10 +193,15 @@ class ExposedItemWriterMultiRowValuesTest {
     fun `실제 청크 step은 nullable 입력을 순서대로 commit한다`(testDB: TestDB) {
         withSpringTables(testDB) { tx, _ ->
             val execution = executeStep(tx, listOf(Row("one"), Row("two", "note"), Row("three")), writer())
+
+            log.debug { "execution=$execution" }
             execution.status shouldBeEqualTo BatchStatus.COMPLETED
             execution.writeCount shouldBeEqualTo 3L
+
             tx.executeWithoutResult {
-                Rows.selectAll().orderBy(Rows.id).map { it[Rows.name] } shouldBeEqualTo listOf("one", "two", "three")
+                Rows.selectAll()
+                    .orderBy(Rows.id)
+                    .map { it[Rows.name] } shouldBeEqualTo listOf("one", "two", "three")
             }
         }
     }
@@ -183,11 +211,13 @@ class ExposedItemWriterMultiRowValuesTest {
     fun `청크 중복 실패는 해당 청크 전체를 롤백하고 이전 commit을 보존한다`(testDB: TestDB) {
         withSpringTables(testDB) { tx, _ ->
             val execution = executeStep(tx, listOf(Row("one"), Row("two"), Row("three"), Row("one")), writer())
+            log.debug { "execution=$execution" }
             execution.status shouldBeEqualTo BatchStatus.FAILED
             execution.rollbackCount shouldBeEqualTo 1L
             execution.failureExceptions.any { failure ->
                 generateSequence(failure) { it.cause }.filterIsInstance<SQLException>().any { it.sqlState == "23505" }
             }.shouldBeTrue()
+
             tx.executeWithoutResult {
                 Rows.selectAll().orderBy(Rows.id).map { it[Rows.name] } shouldBeEqualTo listOf("one", "two")
             }
@@ -200,14 +230,17 @@ class ExposedItemWriterMultiRowValuesTest {
         withSpringTables(testDB) { tx, _ ->
             val delegate = writer()
             val expectedFailure = IllegalStateException("after-write failure")
-            val execution = executeStep(tx, listOf(Row("one"), Row("two"), Row("three")), ItemWriter { chunk ->
+
+            val execution = executeStep(tx, listOf(Row("one"), Row("two"), Row("three"))) { chunk ->
                 delegate.write(chunk)
                 if (chunk.items.first().name == "three") throw expectedFailure
-            })
+            }
+            log.debug { "execution=$execution" }
             execution.status shouldBeEqualTo BatchStatus.FAILED
             execution.failureExceptions.any { failure ->
                 generateSequence(failure) { it.cause }.any { it === expectedFailure }
             }.shouldBeTrue()
+
             tx.executeWithoutResult {
                 Rows.selectAll().orderBy(Rows.id).map { it[Rows.name] } shouldBeEqualTo listOf("one", "two")
             }
@@ -230,7 +263,7 @@ class ExposedItemWriterMultiRowValuesTest {
         val step = StepBuilder("multi-row-step", repository)
             .chunk<Row, Row>(2)
             .transactionManager(checkNotNull(tx.transactionManager))
-            .reader(ItemReader { if (input.hasNext()) input.next() else null })
+            .reader { if (input.hasNext()) input.next() else null }
             .writer(writer)
             .build()
         step.execute(execution)
@@ -240,11 +273,16 @@ class ExposedItemWriterMultiRowValuesTest {
     /** TestDB가 소유한 DB에 고유 테이블만 생성하며 별도 Spring 애플리케이션 스캔은 하지 않는다. */
     private fun withSpringTables(testDB: TestDB, block: (TransactionTemplate, InsertLog) -> Unit) {
         testDB.beforeConnection()
-        val source = DriverManagerDataSource(testDB.connection(), testDB.user, testDB.pass).apply {
+        val source = DriverManagerDataSource(
+            testDB.connection(),
+            testDB.user,
+            testDB.pass
+        ).apply {
             setDriverClassName(testDB.driver)
         }
         val log = InsertLog()
         val manager = SpringTransactionManager(source, DatabaseConfig { sqlLogger = log }, false)
+
         val tx = TransactionTemplate(manager)
         tx.executeWithoutResult { SchemaUtils.create(Rows) }
         try {
@@ -263,7 +301,11 @@ class ExposedItemWriterMultiRowValuesTest {
         override fun log(context: StatementContext, transaction: Transaction) {
             val statement = context.statement
             if (statement is BatchInsertStatement) {
-                entries += Entry(context.sql(transaction), context.args.count(), statement.shouldReturnGeneratedValues)
+                entries += Entry(
+                    context.sql(transaction),
+                    context.args.count(),
+                    statement.shouldReturnGeneratedValues
+                )
             }
         }
     }

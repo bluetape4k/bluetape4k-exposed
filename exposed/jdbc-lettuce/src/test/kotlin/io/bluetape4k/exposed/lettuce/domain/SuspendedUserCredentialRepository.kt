@@ -7,7 +7,6 @@ import io.bluetape4k.exposed.lettuce.repository.ExposedLettuceCodecs
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.lettuce.core.RedisClient
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -15,7 +14,7 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
+import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
@@ -30,7 +29,7 @@ class SuspendedUserCredentialRepository(
 ): AbstractSuspendedJdbcLettuceRepository<UUID, UserCredentialsRecord>(
     client,
     config,
-    ExposedLettuceCodecs.jackson3(UserCredentialsRecord::class.java)
+    ExposedLettuceCodecs.fastFory()
 ) {
 
     companion object: KLoggingChannel()
@@ -74,7 +73,7 @@ class SuspendedUserCredentialRepository(
 
     /** DB에서 직접 조회한다 (캐시를 거치지 않음, 테스트 검증용). */
     @Suppress("DEPRECATION")
-    suspend fun findFromDb(id: UUID): UserCredentialsRecord? = suspendedTransactionAsync(Dispatchers.IO) {
+    suspend fun findFromDb(id: UUID): UserCredentialsRecord? = inTopLevelSuspendTransaction {
         UserCredentialsTable
             .selectAll()
             .where { UserCredentialsTable.id eq id }
@@ -88,5 +87,5 @@ class SuspendedUserCredentialRepository(
                     createdAt = it[UserCredentialsTable.createdAt]
                 )
             }
-    }.await()
+    }
 }

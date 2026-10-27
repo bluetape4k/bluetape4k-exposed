@@ -5,7 +5,10 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.io.serializer.BinarySerializers
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
@@ -28,11 +31,12 @@ class RedisRepositoryResilienceConfigTest {
     fun `기본값으로 생성 시 명세된 기본값을 가진다`() {
         val config = RedisRepositoryResilienceConfig()
 
+        log.debug { "config=$config" }
         config.retryMaxAttempts shouldBeEqualTo 3
-        config.retryWaitDuration shouldBeEqualTo Duration.ofMillis(500)
+        config.retryWaitDuration shouldBeEqualTo 500.millis()
         config.retryExponentialBackoff.shouldBeTrue()
         config.circuitBreakerEnabled.shouldBeFalse()
-        config.timeoutDuration shouldBeEqualTo Duration.ofSeconds(2)
+        config.timeoutDuration shouldBeEqualTo 2.seconds()
     }
 
     // ----------------------------------------------------------------
@@ -43,17 +47,18 @@ class RedisRepositoryResilienceConfigTest {
     fun `커스텀 값으로 생성하면 해당 값이 그대로 저장된다`() {
         val config = RedisRepositoryResilienceConfig(
             retryMaxAttempts = 5,
-            retryWaitDuration = Duration.ofMillis(200),
+            retryWaitDuration = 200.millis(),
             retryExponentialBackoff = false,
             circuitBreakerEnabled = true,
-            timeoutDuration = Duration.ofSeconds(5),
+            timeoutDuration = 5.seconds(),
         )
 
+        log.debug { "config=$config" }
         config.retryMaxAttempts shouldBeEqualTo 5
-        config.retryWaitDuration shouldBeEqualTo Duration.ofMillis(200)
+        config.retryWaitDuration shouldBeEqualTo 200.millis()
         config.retryExponentialBackoff.shouldBeFalse()
         config.circuitBreakerEnabled.shouldBeTrue()
-        config.timeoutDuration shouldBeEqualTo Duration.ofSeconds(5)
+        config.timeoutDuration shouldBeEqualTo 5.seconds()
     }
 
     // ----------------------------------------------------------------
@@ -136,10 +141,30 @@ class RedisRepositoryResilienceConfigTest {
             retryMaxAttempts = 7,
             circuitBreakerEnabled = true,
         )
+        log.debug { "original=$original" }
+
+
+        val bytes = BinarySerializers.JdkUnfiltered.serialize(original)
+        val restored = BinarySerializers.JdkUnfiltered.deserialize<RedisRepositoryResilienceConfig>(bytes)
+
+        log.debug { "restored=$restored" }
+        restored shouldBeEqualTo original
+    }
+
+    @Test
+    fun `Apache Fory 직렬화 라운드트립을 통해 원본과 동일한 객체가 복원된다`() {
+        // 분산 캐시(Lettuce/Redisson)가 설정 객체를 직렬화할 때 데이터 유실이 없어야 한다.
+        val original = RedisRepositoryResilienceConfig(
+            retryMaxAttempts = 7,
+            circuitBreakerEnabled = true,
+        )
+        log.debug { "original=$original" }
+
 
         val bytes = BinarySerializers.FastFory.serialize(original)
         val restored = BinarySerializers.FastFory.deserialize<RedisRepositoryResilienceConfig>(bytes)
 
+        log.debug { "restored=$restored" }
         restored shouldBeEqualTo original
     }
 }

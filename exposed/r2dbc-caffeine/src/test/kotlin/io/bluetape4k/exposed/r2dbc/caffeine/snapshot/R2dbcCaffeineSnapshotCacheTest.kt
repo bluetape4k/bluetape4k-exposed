@@ -12,24 +12,30 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
-import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.rejectDirectEntitySnapshotValues
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.javatimes.days
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.minutes
+import io.bluetape4k.javatimes.seconds
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.seconds
 
 class R2dbcCaffeineSnapshotCacheTest {
 
@@ -88,7 +94,7 @@ class R2dbcCaffeineSnapshotCacheTest {
 
         r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted:v1", maximumWeight = 100L, maxStagedWeight = 200L),
-            valueSizer = SnapshotValueSizer { it.value.length.toLong() },
+            valueSizer = { it.value.length.toLong() },
         )
     }
 
@@ -96,7 +102,7 @@ class R2dbcCaffeineSnapshotCacheTest {
     fun `factory rejects negative sizes returned by a value sizer when a miss is prepared`() {
         val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("negative-weight:v1", maximumWeight = 100L),
-            valueSizer = SnapshotValueSizer { -1L },
+            valueSizer = { -1L },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
@@ -113,11 +119,11 @@ class R2dbcCaffeineSnapshotCacheTest {
     fun `weighted factory accepts independent capacities but rejects values Caffeine cannot represent`() {
         r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("independent-capacity:v1", maximumWeight = Long.MAX_VALUE, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer { 1L },
+            valueSizer = { 1L },
         )
         val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("unrepresentable-value:v1", maximumWeight = Long.MAX_VALUE, maximumSize = Long.MAX_VALUE),
-            valueSizer = SnapshotValueSizer { Int.MAX_VALUE.toLong() + 1L },
+            valueSizer = { Int.MAX_VALUE.toLong() + 1L },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
@@ -133,7 +139,7 @@ class R2dbcCaffeineSnapshotCacheTest {
         val sizings = AtomicInteger()
         val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted-capacity:v1", maximumWeight = 4L, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer {
+            valueSizer = {
                 sizings.incrementAndGet()
                 1L
             },
@@ -156,7 +162,7 @@ class R2dbcCaffeineSnapshotCacheTest {
     fun `weighted Caffeine receives the exact conservative value estimate`() {
         val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("exact-weight:v1", maximumWeight = 100L, maximumSize = 1L),
-            valueSizer = SnapshotValueSizer { 7L },
+            valueSizer = { 7L },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val put = store
@@ -172,7 +178,7 @@ class R2dbcCaffeineSnapshotCacheTest {
     fun `weighted mode enforces maximum size independently from maximum weight`() {
         val cache = r2dbcCaffeineSnapshotCache<Long, Payload>(
             config("weighted-count:v1", maximumWeight = 1_000L, maximumSize = 2L),
-            valueSizer = SnapshotValueSizer { 1L },
+            valueSizer = { 1L },
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
         val puts = (1L..3L).map { id ->
@@ -200,10 +206,10 @@ class R2dbcCaffeineSnapshotCacheTest {
                         maximumSize = CONCURRENT_MAXIMUM_SIZE,
                         maxOutstandingMissTokens = CONCURRENT_PUTS,
                     ),
-                    valueSizer = SnapshotValueSizer { 1L },
+                    valueSizer = { 1L },
                 )
                 val store = cache as SnapshotCacheStore<Long, Payload>
-                val puts = (0 until CONCURRENT_PUTS).map { id ->
+                val puts = List(CONCURRENT_PUTS) { id ->
                     val longId = id.toLong()
                     store.claimMiss(cache.lookup(longId).miss.shouldNotBeNull())
                         .prepare(CacheSnapshot(Payload("value-$id")))
@@ -213,15 +219,16 @@ class R2dbcCaffeineSnapshotCacheTest {
                 val futures = puts.map { put ->
                     executor.submit {
                         ready.countDown()
-                        start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                        start.await(5.seconds).shouldBeTrue()
                         store.applySnapshots(listOf(put), NeverExpiredDeadline)
                     }
                 }
 
-                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                ready.await(5.seconds).shouldBeTrue()
                 start.countDown()
                 futures.forEach { future ->
-                    future.get(5, TimeUnit.SECONDS).results
+                    future.get(5.seconds)
+                        .results
                         .map { it.outcome to it.affectedCount } shouldBeEqualTo
                             listOf(SnapshotCacheOutcome.SUCCESS to 1)
                 }
@@ -243,7 +250,7 @@ class R2dbcCaffeineSnapshotCacheTest {
             config(
                 "expiry:v1",
                 maximumSize = 1L,
-                expireAfterWrite = Duration.ofMillis(2),
+                expireAfterWrite = 2.millis(),
                 expireAfterAccess = null,
             ),
             ticker,
@@ -263,18 +270,20 @@ class R2dbcCaffeineSnapshotCacheTest {
             config(
                 "write-expiry:v1",
                 maximumSize = 4L,
-                expireAfterWrite = Duration.ofMillis(2),
+                expireAfterWrite = 2.millis(),
                 expireAfterAccess = null,
             ),
             ticker,
         )
         val store = cache as SnapshotCacheStore<Long, Payload>
-        val put = store.claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
+        val put = store
+            .claimMiss(cache.lookup(1L).miss.shouldNotBeNull())
             .prepare(CacheSnapshot(Payload("expires")))
+
         store.applySnapshots(listOf(put), NeverExpiredDeadline)
 
         cache.lookup(1L).snapshot.shouldNotBeNull()
-        ticker.advance(Duration.ofMillis(3))
+        ticker.advance(3.millis())
         caffeineCache(cache).cleanUp()
 
         cache.lookup(1L).snapshot.shouldBeNull()
@@ -287,8 +296,8 @@ class R2dbcCaffeineSnapshotCacheTest {
             config(
                 "access-expiry:v1",
                 maximumSize = 4L,
-                expireAfterWrite = Duration.ofMinutes(1),
-                expireAfterAccess = Duration.ofMillis(2),
+                expireAfterWrite = 1.minutes(),
+                expireAfterAccess = 2.millis(),
             ),
             ticker,
         )
@@ -298,7 +307,7 @@ class R2dbcCaffeineSnapshotCacheTest {
         store.applySnapshots(listOf(put), NeverExpiredDeadline)
 
         cache.lookup(1L).snapshot.shouldNotBeNull()
-        ticker.advance(Duration.ofMillis(3))
+        ticker.advance(3.millis())
         caffeineCache(cache).cleanUp()
 
         cache.lookup(1L).snapshot.shouldBeNull()
@@ -367,8 +376,8 @@ class R2dbcCaffeineSnapshotCacheTest {
         maxStagedWeight: Long? = null,
         maxOutstandingMissTokens: Int = 16,
         maximumSize: Long = 32,
-        expireAfterWrite: Duration = Duration.ofMinutes(1),
-        expireAfterAccess: Duration? = Duration.ofSeconds(30),
+        expireAfterWrite: Duration = 1.minutes(),
+        expireAfterAccess: Duration? = 30.seconds(),
     ) = CaffeineSnapshotCacheConfig(
         snapshot = SnapshotCacheConfig(namespace, "payload-v1"),
         maximumSize = maximumSize,
@@ -395,7 +404,7 @@ class R2dbcCaffeineSnapshotCacheTest {
         ticker,
     )
 
-    private class ManualTicker : Ticker {
+    private class ManualTicker: Ticker {
         private val currentTimeNanos = AtomicLong()
 
         override fun read(): Long = currentTimeNanos.get()
@@ -415,20 +424,20 @@ class R2dbcCaffeineSnapshotCacheTest {
     }
 
     private object NeverExpiredDeadline: SnapshotCacheDeadline {
-        override fun remaining(): Duration = Duration.ofDays(1)
+        override fun remaining(): Duration = 1.days()
         override val isExpired: Boolean = false
     }
 
     private class ExpireAfterFirstPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
-        override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
+        override fun remaining(): Duration = if (isExpired) Duration.ZERO else 1.seconds()
         override val isExpired: Boolean get() = polls.incrementAndGet() > 1
     }
 
     private class ExpireAfterSecondPollDeadline: SnapshotCacheDeadline {
         private val polls = AtomicInteger()
         val pollCount: Int get() = polls.get()
-        override fun remaining(): Duration = if (isExpired) Duration.ZERO else Duration.ofSeconds(1)
+        override fun remaining(): Duration = if (isExpired) Duration.ZERO else 1.seconds()
         override val isExpired: Boolean get() = polls.incrementAndGet() > 2
     }
 
@@ -441,7 +450,7 @@ class R2dbcCaffeineSnapshotCacheTest {
         override fun close() {
             futures.forEach { it.cancel(true) }
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
         }
     }
 

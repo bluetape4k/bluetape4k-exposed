@@ -82,7 +82,10 @@ class ClickHouseTransactionPocTest: AbstractClickHouseTest() {
     @Test
     fun `SELECT 1 works in transaction`() {
         val result = transaction(db) {
-            exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) }
+            exec("SELECT 1") { rs ->
+                rs.next()
+                rs.getInt(1)
+            }
         }
         result shouldBeEqualTo 1
     }

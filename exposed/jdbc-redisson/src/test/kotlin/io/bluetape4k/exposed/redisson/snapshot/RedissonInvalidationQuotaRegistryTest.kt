@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.redisson.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
@@ -81,7 +82,11 @@ class RedissonInvalidationQuotaRegistryTest {
         MultithreadingTester()
             .workers(32)
             .rounds(1)
-            .addAll(List(32) { { quota.tryAdmit(encodedBytes = 1)?.let(leases::add) } })
+            .addAll(
+                List(32) {
+                    { quota.tryAdmit(encodedBytes = 1)?.let(leases::add) }
+                }
+            )
             .run()
 
         leases.size shouldBeEqualTo 4
@@ -171,11 +176,17 @@ class RedissonInvalidationQuotaRegistryTest {
             snapshotCacheFailureBuffer(4),
         )
         val reservations = ConcurrentLinkedQueue<RedissonInvalidationCompositionReservation>()
+
         MultithreadingTester()
             .workers(2)
             .rounds(1)
-            .addAll(List(2) { { reservations += registry.reserveComposition(client, descriptor) } })
+            .addAll(
+                List(2) {
+                    { reservations += registry.reserveComposition(client, descriptor) }
+                }
+            )
             .run()
+
         val (first, second) = reservations.toList()
 
         first.storeInstanceToken shouldBe second.storeInstanceToken
@@ -192,10 +203,12 @@ class RedissonInvalidationQuotaRegistryTest {
         }
 
         second.rollback()
+
         val replacement = registry.reserveComposition(client, mismatch)
         replacement.storeInstanceToken shouldNotBe first.storeInstanceToken
         replacement.rollback()
-        registeredWeakKeys(registry).size shouldBeEqualTo 0
+
+        registeredWeakKeys(registry).shouldBeEmpty()
     }
 
     private fun equalToEveryClientProxy(): RedissonClient = Proxy.newProxyInstance(
@@ -206,7 +219,7 @@ class RedissonInvalidationQuotaRegistryTest {
             "equals" -> true
             "hashCode" -> 1
             "toString" -> "EqualRedissonClientProxy"
-            else     -> error("Unexpected RedissonClient call: ${method.name}(${args?.size ?: 0})")
+            else -> error("Unexpected RedissonClient call: ${method.name}(${args?.size ?: 0})")
         }
     } as RedissonClient
 

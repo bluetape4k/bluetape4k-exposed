@@ -11,6 +11,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
@@ -58,14 +59,14 @@ class SnapshotNamespaceAdminTest {
             invalidNamespaces.forEach { invalid ->
                 val admin = RecordingAdmin()
                 assertFailsWith<IllegalArgumentException> {
-                    operation(admin.client, invalid, FINGERPRINT, Duration.ofSeconds(2))
+                    operation(admin.client, invalid, FINGERPRINT, 2.seconds())
                 }
                 admin.events.shouldBeEmpty()
             }
             invalidFingerprints.forEach { invalid ->
                 val admin = RecordingAdmin()
                 assertFailsWith<IllegalArgumentException> {
-                    operation(admin.client, NAMESPACE, invalid, Duration.ofSeconds(2))
+                    operation(admin.client, NAMESPACE, invalid, 2.seconds())
                 }
                 admin.events.shouldBeEmpty()
             }
@@ -117,7 +118,7 @@ class SnapshotNamespaceAdminTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, 2.seconds())
         }
 
         admin.events.shouldBeEmpty()
@@ -133,7 +134,7 @@ class SnapshotNamespaceAdminTest {
             val admin = RecordingAdmin(mapper)
 
             assertFailsWith<IllegalStateException> {
-                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, 2.seconds())
             }
 
             admin.events.shouldBeEmpty()
@@ -151,7 +152,7 @@ class SnapshotNamespaceAdminTest {
         }
 
         assertFailsWith<IllegalStateException> {
-            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+            verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, 2.seconds())
         }
 
         admin.events.shouldBeEmpty()
@@ -187,9 +188,10 @@ class SnapshotNamespaceAdminTest {
         val claimed = RecordingAdmin().apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
         val matched = RecordingAdmin().apply { scriptReturns(markerState(MARKER_EXACT, mapExists = true)) }
 
-        verifyOrClaimSnapshotNamespace(claimed.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+        verifyOrClaimSnapshotNamespace(claimed.client, NAMESPACE, FINGERPRINT, 2.seconds())
             .shouldBeEqualTo(SnapshotNamespaceMarkerVerification.CLAIMED)
-        verifyOrClaimSnapshotNamespace(matched.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+
+        verifyOrClaimSnapshotNamespace(matched.client, NAMESPACE, FINGERPRINT, 2.seconds())
             .shouldBeEqualTo(SnapshotNamespaceMarkerVerification.MATCHED)
 
         claimed.events shouldBeEqualTo listOf("script", "wait:script-1")
@@ -211,8 +213,8 @@ class SnapshotNamespaceAdminTest {
         val orders = RecordingAdmin(mapper).apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
         val customers = RecordingAdmin(mapper).apply { scriptReturns(markerState(MARKER_ABSENT, mapExists = false)) }
 
-        verifyOrClaimSnapshotNamespace(orders.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
-        verifyOrClaimSnapshotNamespace(customers.client, "customers:v1", FINGERPRINT, Duration.ofSeconds(2))
+        verifyOrClaimSnapshotNamespace(orders.client, NAMESPACE, FINGERPRINT, 2.seconds())
+        verifyOrClaimSnapshotNamespace(customers.client, "customers:v1", FINGERPRINT, 2.seconds())
 
         val ordersKeys = orders.scriptCalls.single().keys.map { mapper.map(it as String) }
         val customerKeys = customers.scriptCalls.single().keys.map { mapper.map(it as String) }
@@ -230,7 +232,7 @@ class SnapshotNamespaceAdminTest {
 
         try {
             val thrown = assertFailsWith<InterruptedException> {
-                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, 2.seconds())
             }
 
             thrown shouldBe interruption
@@ -259,7 +261,7 @@ class SnapshotNamespaceAdminTest {
             val admin = RecordingAdmin().apply { scriptReturns(remoteState) }
 
             assertFailsWith<IllegalStateException> {
-                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+                verifyOrClaimSnapshotNamespace(admin.client, NAMESPACE, FINGERPRINT, 2.seconds())
             }
 
             admin.events shouldBeEqualTo listOf("script", "wait:script-1")
@@ -496,14 +498,14 @@ class SnapshotNamespaceAdminTest {
             codec,
             NAMESPACE,
             FINGERPRINT,
-            Duration.ofSeconds(2),
+            2.seconds(),
         )
         val accepted = clearSnapshotNamespace(
             unlinkTimeout.client,
             codec,
             NAMESPACE,
             FINGERPRINT,
-            Duration.ofSeconds(2),
+            2.seconds(),
         )
 
         verification.outcome shouldBeEqualTo SnapshotNamespaceCleanupOutcome.FAILED
@@ -657,7 +659,7 @@ class SnapshotNamespaceAdminTest {
             scriptReturns(markerState(MARKER_ABSENT, mapExists = false))
         }
 
-        clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT, Duration.ofSeconds(2))
+        clearSnapshotNamespace(admin.client, codec, NAMESPACE, FINGERPRINT, 2.seconds())
 
         admin.waitNanos.size shouldBeEqualTo 6
         admin.waitNanos.zipWithNext().all { (first, second) -> second <= first }.shouldBeTrue()

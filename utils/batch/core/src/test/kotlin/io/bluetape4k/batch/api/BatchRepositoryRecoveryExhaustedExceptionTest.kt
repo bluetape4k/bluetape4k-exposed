@@ -2,9 +2,12 @@ package io.bluetape4k.batch.api
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class BatchRepositoryRecoveryExhaustedExceptionTest {
+
+    companion object: KLogging()
 
     @Test
     fun `correlation id는 16자 Base58만 허용한다`() {

@@ -5,7 +5,10 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.take
@@ -20,12 +23,13 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ClickHouseExtensionsTest: AbstractClickHouseTest() {
+
+    companion object: KLogging()
 
     // 추가 상태로 코루틴 stacktrace recovery의 복사를 배제하고 원래 원인을 관측한다.
     private class QueryFailure(val marker: String): IllegalStateException(marker)
@@ -77,12 +81,13 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
         val calls = AtomicInteger()
         val reached = CompletableDeferred<Unit>()
         val release = CountDownLatch(1)
+
         // 동기 블록의 반환 경계를 고정하므로 유한 latch를 사용한다.
         val job = launch {
             queryList(database(2)) {
                 calls.incrementAndGet()
                 reached.complete(Unit)
-                check(release.await(5, TimeUnit.SECONDS))
+                release.await(5.seconds).shouldBeTrue()
                 listOf(1)
             }
             error("cancelled result must not be delivered")
@@ -128,6 +133,7 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
         queryFlow(db) {
             Iterable { (1..3).asSequence().onEach(visited::add).iterator() }
         }
+            .log("QueryFlow")
             .take(1)
             .collect {
                 visited shouldBeEqualTo listOf(1, 2, 3)
@@ -135,27 +141,32 @@ class ClickHouseExtensionsTest: AbstractClickHouseTest() {
     }
 
     @Test
-    fun `suspendTransaction - 정상 결과 반환`() = runSuspendIO(timeout = 30.seconds) {
-        val result = suspendTransaction(db) {
-            exec("SELECT 1") { rs: ResultSet -> rs.next(); rs.getInt(1) }
+    fun `withSuspendTransaction - 정상 결과 반환`() = runSuspendIO {
+        val result = withSuspendTransaction(db) {
+            exec("SELECT 1") { rs: ResultSet ->
+                rs.next()
+                rs.getInt(1)
+            }
         }
         result shouldBeEqualTo 1
     }
 
     @Test
-    fun `suspendTransaction - 예외 전파`() {
+    fun `withSuspendTransaction - 예외 전파`() {
         assertFailsWith<RuntimeException> {
             runBlocking {
-                suspendTransaction(db) { error("test") }
+                withSuspendTransaction(db) { error("test") }
             }
         }
     }
 
     @Test
-    fun `queryFlow - 빈 결과 collect`() = runSuspendIO(timeout = 30.seconds) {
+    fun `queryFlow - 빈 결과 collect`() = runSuspendIO {
         val results = queryFlow(db) {
             emptyList<Int>()
-        }.toList()
+        }
+            .log("QueryFlow")
+            .toList()
 
         results.shouldBeEmpty()
     }

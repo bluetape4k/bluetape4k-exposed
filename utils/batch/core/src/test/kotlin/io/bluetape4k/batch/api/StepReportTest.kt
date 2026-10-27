@@ -1,11 +1,11 @@
 package io.bluetape4k.batch.api
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 class StepReportTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── StepReport 테스트 ────────────────────────────────────────────────────
 
@@ -172,7 +172,7 @@ class StepReportTest {
         )
 
         // COMPLETED / COMPLETED_WITH_SKIPS → isTerminal = true → runner가 skip 처리
-        exec.status.isTerminal shouldBe true
+        exec.status.isTerminal.shouldBeTrue()
     }
 
     @Test
@@ -185,7 +185,7 @@ class StepReportTest {
             skipCount = 5L,
         )
 
-        exec.status.isTerminal shouldBe true
+        exec.status.isTerminal.shouldBeTrue()
         exec.skipCount shouldBeEqualTo 5L
     }
 
@@ -198,7 +198,7 @@ class StepReportTest {
             status = BatchStatus.FAILED,
         )
 
-        exec.status.isTerminal shouldBe true
+        exec.status.isTerminal.shouldBeTrue()
         exec.status shouldBeEqualTo BatchStatus.FAILED
     }
 
@@ -227,6 +227,6 @@ class StepReportTest {
     @Test
     fun `StepExecution - Serializable 구현`() {
         val exec = StepExecution(1L, 1L, "step1")
-        exec shouldBeInstanceOf java.io.Serializable::class
+        exec.shouldBeInstanceOf<java.io.Serializable>()
     }
 }

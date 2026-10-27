@@ -1,8 +1,10 @@
 package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.core.dao.id.SnowflakeIdTable
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -28,6 +30,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.Serializable
+import kotlin.random.Random
 
 /**
  * 코루틴 환경에서 다양한 쿼리를 수행합니다.
@@ -54,7 +57,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
             val products = List(100) {
                 Product(
                     name = faker.app().name() + " Version:$it",
-                    price = faker.number().randomDigitNotZero()
+                    price = Random.nextInt(10, 100)
                 )
             }
 
@@ -67,6 +70,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
             val batchedIds = ProductTable
                 .select(ProductTable.id)
                 .fetchBatchedResultFlow(10)
+                .log("Fetch ASC")
                 .buffer(capacity = 4)
                 .onEach { log.debug { "fetch rows. rows.size=${it.size}" } }
                 .flatMapConcat { rows ->
@@ -80,6 +84,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
             val reversedIds = ProductTable
                 .select(ProductTable.id)
                 .fetchBatchedResultFlow(10, SortOrder.DESC)
+                .log("Fetch DESC")
                 .buffer(capacity = 4)
                 .onEach { log.debug { "fetch rows. rows.size=${it.size}" } }
                 .flatMapMerge { rows ->
@@ -90,9 +95,9 @@ class SuspendedQueryTest: AbstractExposedTest() {
             reversedIds shouldHaveSize products.size
 
             val query = ProductTable.select(ProductTable.id)
-            query.fetchBatchedResultFlow(10).toList()
-            query.limit shouldBeEqualTo null
-            query.orderByExpressions shouldBeEqualTo emptyList()
+            query.fetchBatchedResultFlow(10).log("Fetch Id").toList()
+            query.limit.shouldBeNull()
+            query.orderByExpressions.shouldBeEmpty()
         }
     }
 
@@ -131,6 +136,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
             val batchedIds = ItemTable
                 .select(ItemTable.id)
                 .fetchBatchedResultFlow(10)
+                .log("Fetch ID ASC")
                 .buffer(capacity = 4)
                 .onEach { log.debug { "fetch rows. rows.size=${it.size}" } }
                 .flatMapConcat { rows ->
@@ -145,6 +151,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
             val reversedIds = ItemTable
                 .select(ItemTable.id)
                 .fetchBatchedResultFlow(10, SortOrder.DESC)
+                .log("Fetch ID DESC")
                 .buffer(capacity = 4)
                 .onEach { log.debug { "fetch rows. rows.size=${it.size}" } }
                 .flatMapConcat { rows ->
@@ -210,13 +217,15 @@ class SuspendedQueryTest: AbstractExposedTest() {
                 }
             }
 
-            val ids =
-                ProductTable
-                    .select(ProductTable.id)
-                    .where { ProductTable.price greater 25 }
-                    .fetchBatchedResultFlow(2)
-                    .flatMapConcat { rows -> rows.asFlow().map { it[ProductTable.id].value } }
-                    .toList()
+            val ids = ProductTable
+                .select(ProductTable.id)
+                .where { ProductTable.price greater 25 }
+                .fetchBatchedResultFlow(2)
+                .log("Fetch ID")
+                .flatMapConcat { rows ->
+                    rows.asFlow().map { it[ProductTable.id].value }
+                }
+                .toList()
 
             ids shouldHaveSize 3
         }
@@ -233,16 +242,18 @@ class SuspendedQueryTest: AbstractExposedTest() {
                 }
             }
 
-            val ids =
-                ProductTable
-                    .select(ProductTable.id)
-                    .where { ProductTable.price greater 15 }
-                    .fetchBatchedResultFlow(
-                        batch = 2,
-                        where = ProductTable.price less 45
-                    )
-                    .flatMapConcat { rows -> rows.asFlow().map { it[ProductTable.id].value } }
-                    .toList()
+            val ids = ProductTable
+                .select(ProductTable.id)
+                .where { ProductTable.price greater 15 }
+                .fetchBatchedResultFlow(
+                    batch = 2,
+                    where = ProductTable.price less 45
+                )
+                .log("Fetch ID")
+                .flatMapConcat { rows ->
+                    rows.asFlow().map { it[ProductTable.id].value }
+                }
+                .toList()
 
             ids shouldHaveSize 3
         }
@@ -274,13 +285,13 @@ class SuspendedQueryTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `빈 테이블에서 배치 조회하면 빈 리스트를 반환한다`(testDB: TestDB) = runSuspendIO {
         withTablesSuspending(testDB, ProductTable) {
-            val batches =
-                ProductTable
-                    .select(ProductTable.id)
-                    .fetchBatchedResultFlow(10)
-                    .toList()
+            val batches = ProductTable
+                .select(ProductTable.id)
+                .fetchBatchedResultFlow(10)
+                .log("Fetch ID")
+                .toList()
 
-            batches shouldBeEqualTo emptyList()
+            batches.shouldBeEmpty()
         }
     }
 
@@ -297,6 +308,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                     .select(ProductTable.id)
                     .limit(5)
                     .fetchBatchedResultFlow(10)
+                    .log("LIMIT")
                     .toList()
             }
         }
@@ -315,6 +327,7 @@ class SuspendedQueryTest: AbstractExposedTest() {
                     .select(ProductTable.id)
                     .orderBy(ProductTable.id, SortOrder.ASC)
                     .fetchBatchedResultFlow(10)
+                    .log("ORDER")
                     .toList()
             }
         }

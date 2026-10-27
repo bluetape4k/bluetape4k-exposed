@@ -19,6 +19,7 @@ JetBrains Exposed DSL로 SQL을 생성하고 Google BigQuery REST API로 실행�
 -
 
 **BigQueryQueryOptions**: dry-run, billed-byte 상한, label, priority, location, timeout, query cache, destination table 설정을 적용합니다.
+
 - **BigQueryDialect**: `PostgreSQLDialect`를 재사용하되 ALTER COLUMN TYPE처럼 BigQuery와 맞지 않는 동작을 비활성화합니다.
 
 ## 모듈 포지셔닝

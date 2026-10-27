@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.core.ddd.AbstractAggregateRoot
 import io.bluetape4k.exposed.core.ddd.DomainEvent
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.annotation.ExposedEntity
 import io.bluetape4k.spring.data.exposed.jdbc.repository.ExposedJdbcRepository
 import io.bluetape4k.spring.data.exposed.jdbc.repository.config.EnableExposedJdbcRepositories
@@ -135,6 +136,8 @@ class MultiManagerTestConfiguration {
 }
 
 class MultiManagerDocumentationExampleTest {
+
+    companion object: KLogging()
 
     @Test
     fun `repository count uses transactionManagerRef store`() {

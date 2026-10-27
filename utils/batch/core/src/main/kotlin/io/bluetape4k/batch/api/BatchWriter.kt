@@ -13,7 +13,7 @@ package io.bluetape4k.batch.api
  *
  * @param T 저장할 아이템 타입
  */
-interface BatchWriter<in T : Any> {
+interface BatchWriter<in T: Any> {
     /**
      * 라이터를 초기화한다.
      */

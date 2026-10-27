@@ -1,8 +1,8 @@
 package io.bluetape4k.batch.r2dbc
 
 import io.bluetape4k.batch.api.BatchWriter
-import io.bluetape4k.support.requireLe
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.support.requireLe
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.vendors.SQLiteDialect
@@ -39,21 +39,21 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
  * @param useMultiRowValues Exposed 1.5.0 multi-row VALUES 사용 여부. 기본 생성자는 기존 batch 경로를 사용한다.
  * @param bind [BatchInsertStatement]에 아이템 필드를 바인딩하는 람다
  */
-class ExposedR2dbcBatchWriter<T : Any>(
+class ExposedR2dbcBatchWriter<T: Any>(
     private val database: R2dbcDatabase,
     private val table: Table,
     private val useMultiRowValues: Boolean,
     private val bind: BatchInsertStatement.(T) -> Unit,
-) : BatchWriter<T> {
+): BatchWriter<T> {
 
     /** 기존 생성자와 호출 호환성을 유지하는 진입점입니다. */
     constructor(
         database: R2dbcDatabase,
         table: Table,
         bind: BatchInsertStatement.(T) -> Unit,
-    ) : this(database, table, false, bind)
+    ): this(database, table, false, bind)
 
-    companion object : KLoggingChannel()
+    companion object: KLoggingChannel()
 
     /**
      * 아이템 목록을 DB에 일괄 삽입한다.

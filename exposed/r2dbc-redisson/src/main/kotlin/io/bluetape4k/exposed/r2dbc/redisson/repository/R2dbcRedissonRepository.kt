@@ -15,7 +15,7 @@ import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.r2dbc.selectAll
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.inTopLevelSuspendTransaction
 import org.redisson.api.RMap
 import java.io.Serializable
 
@@ -82,14 +82,13 @@ interface R2dbcRedissonRepository<ID: Any, E: Serializable>: R2dbcRedisRepositor
      * @param id 엔티티의 식별자
      * @return 조회된 엔티티 또는 null
      */
-    override suspend fun findByIdFromDb(id: ID): E? =
-        suspendTransaction {
-            table
-                .selectAll()
-                .where { table.id eq id }
-                .singleOrNull()
-                ?.toEntity()
-        }
+    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransaction {
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.toEntity()
+    }
 
     /**
      * 여러 ID로 DB에서 최신 엔티티 목록을 조회합니다.
@@ -97,24 +96,22 @@ interface R2dbcRedissonRepository<ID: Any, E: Serializable>: R2dbcRedisRepositor
      * @param ids 엔티티 식별자 컬렉션
      * @return 조회된 엔티티 리스트
      */
-    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> =
-        suspendTransaction {
-            table
-                .selectAll()
-                .where { table.id inList ids }
-                .map { it.toEntity() }
-                .toList()
-        }
+    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> = inTopLevelSuspendTransaction {
+        table
+            .selectAll()
+            .where { table.id inList ids }
+            .map { it.toEntity() }
+            .toList()
+    }
 
     /**
      * DB에서 전체 레코드 수를 조회합니다.
      *
      * @return 전체 레코드 수
      */
-    override suspend fun countFromDb(): Long =
-        suspendTransaction {
-            table.selectAll().count()
-        }
+    override suspend fun countFromDb(): Long = inTopLevelSuspendTransaction {
+        table.selectAll().count()
+    }
 
     /**
      * 조건에 맞는 엔티티 전체를 조회합니다.
@@ -239,7 +236,9 @@ interface R2dbcRedissonRepository<ID: Any, E: Serializable>: R2dbcRedisRepositor
             return 0
         }
         var removed = 0L
-        keys.forEach { key -> removed += cache.fastRemoveAsync(key).await() }
+        keys.forEach { key ->
+            removed += cache.fastRemoveAsync(key).await()
+        }
         return removed
     }
 }

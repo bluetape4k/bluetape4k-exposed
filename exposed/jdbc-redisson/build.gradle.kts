@@ -10,8 +10,8 @@ dependencies {
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(libs.exposed.dao)
-    implementation(bt4k.exposed.java.time)
-    implementation(libs.exposed.kotlin.datetime)
+    compileOnly(bt4k.exposed.java.time)
+    compileOnly(libs.exposed.kotlin.datetime)
 
     api(project(":bluetape4k-exposed-jdbc"))
     api(project(":bluetape4k-exposed-cache"))
@@ -22,8 +22,7 @@ dependencies {
     api(bt4k.bluetape4k.redisson)
     api(bt4k.redisson)
 
-
-    testImplementation(bt4k.bluetape4k.io)
+    api(bt4k.bluetape4k.io)
 
     // Codecs
     compileOnly(bt4k.kryo5)
@@ -35,8 +34,8 @@ dependencies {
     compileOnly(bt4k.zstd.jni)
 
     // Coroutines
-    compileOnly(bt4k.bluetape4k.coroutines)
-    compileOnly(libs.kotlinx.coroutines.core)
+    api(bt4k.bluetape4k.coroutines)
+    api(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
     // Bluetape4k Modules for Testing

@@ -21,6 +21,7 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.SuspendedJobTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.utils.Runtimex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * AbstractR2dbcCaffeineRepository 의 누락된 경로를 보강하는 단위 테스트.
@@ -71,10 +73,10 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
         val results = CopyOnWriteArrayList<ActorRecord>()
 
         SuspendedJobTester()
-            .workers(8)
+            .workers(Runtimex.availableProcessors)
             .rounds(4)
             .addAll(
-                List(8) {
+                List(Runtimex.availableProcessors) {
                     suspend {
                         results += repository.get(1L)
                     }
@@ -94,10 +96,10 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
         val results = ConcurrentHashMap<Long, ActorRecord>()
 
         SuspendedJobTester()
-            .workers(8)
+            .workers(Runtimex.availableProcessors)
             .rounds(4)
             .addAll(
-                List(8) {
+                List(Runtimex.availableProcessors) {
                     suspend {
                         results += repository.getAll(ids)
                     }
@@ -129,15 +131,15 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
 
         override fun extractId(entity: ActorRecord): Long = entity.id
 
-        override suspend fun findByIdFromDb(id: Long): ActorRecord? {
+        override suspend fun findByIdFromDb(id: Long): ActorRecord {
             singleLoadCount.incrementAndGet()
-            delay(100)
+            delay(100.milliseconds)
             return ActorSchema.newActorRecord().withId(id)
         }
 
         override suspend fun findAllFromDb(ids: Collection<Long>): List<ActorRecord> {
             bulkLoadCount.incrementAndGet()
-            delay(100)
+            delay(100.milliseconds)
             return ids.map { ActorSchema.newActorRecord().withId(it) }
         }
     }

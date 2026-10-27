@@ -1,5 +1,6 @@
 plugins {
     kotlin("plugin.spring")
+    kotlin("kapt")
 }
 
 configurations {
@@ -19,9 +20,9 @@ dependencies {
     // Spring Data 공통 SPI만 소유하며 JDBC/R2DBC adapter에는 의존하지 않습니다.
     api("org.springframework.data:spring-data-commons")
     api(libs.kotlin.reflect)
-    api(bt4k.bluetape4k.logging)
     api(bt4k.exposed.core)
     api(libs.exposed.dao)
+    implementation(bt4k.bluetape4k.logging)
     compileOnly("org.springframework:spring-context")
 
     testImplementation(bt4k.bluetape4k.junit5)

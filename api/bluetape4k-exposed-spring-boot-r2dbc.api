@@ -104,6 +104,7 @@ public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/Exp
 }
 
 public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedSuspendRepositoryConfigurationExtension$Companion {
+	public final fun getDefault ()Lio/bluetape4k/spring/data/exposed/r2dbc/repository/config/ExposedSuspendRepositoryConfigurationExtension;
 }
 
 public final class io/bluetape4k/spring/data/exposed/r2dbc/repository/support/ExposedR2dbcRepositoryFactory : org/springframework/data/repository/core/support/RepositoryFactorySupport {

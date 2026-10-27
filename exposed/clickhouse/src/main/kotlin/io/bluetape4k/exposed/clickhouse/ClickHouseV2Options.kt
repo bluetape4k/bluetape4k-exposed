@@ -2,10 +2,11 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.AbstractValueObject
 import io.bluetape4k.ToStringBuilder
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requirePositiveNumber
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import java.time.ZoneId
-import java.util.ArrayList
-import java.util.Collections
-import java.util.LinkedHashMap
+import java.util.*
 
 /** ClickHouse JDBC V2 blocking socket read의 fail-safe 기본 상한입니다. */
 internal const val DEFAULT_CLICKHOUSE_SOCKET_OPERATION_TIMEOUT_MILLIS = 10_000
@@ -24,7 +25,7 @@ sealed interface ClickHouseV2Authentication {
     /** ClickHouse access token 인증입니다. */
     data class AccessToken(val value: String): ClickHouseV2Authentication {
         init {
-            requireNotBlank(value, "access token")
+            value.requireNotBlank("access token")
             require(value.none(Char::isISOControl)) { "access token에는 제어 문자를 사용할 수 없습니다." }
         }
 
@@ -34,7 +35,7 @@ sealed interface ClickHouseV2Authentication {
     /** HTTP bearer token 인증입니다. */
     data class BearerToken(val value: String): ClickHouseV2Authentication {
         init {
-            requireNotBlank(value, "bearer token")
+            value.requireNotBlank("bearer token")
             require(value.none(Char::isISOControl)) { "bearer token에는 제어 문자를 사용할 수 없습니다." }
         }
 
@@ -65,13 +66,13 @@ data class ClickHouseV2ProxyOptions(
     val password: ClickHouseV2SecretProvider? = null,
 ) {
     init {
-        requireNotBlank(type, "proxy type")
+        type.requireNotBlank("proxy type")
         require(type.equals("HTTP", ignoreCase = true)) { "proxy type은 HTTP만 지원합니다." }
-        requireNotBlank(host, "proxy host")
+        host.requireNotBlank("proxy host")
         require(host.none(Char::isISOControl)) { "proxy host에는 제어 문자를 사용할 수 없습니다." }
         require(port in MIN_PORT..MAX_PORT) { "proxy port는 1~65535 범위여야 합니다: $port" }
         user?.let {
-            requireNotBlank(it, "proxy user")
+            it.requireNotBlank("proxy user")
             require(it.none(Char::isISOControl)) { "proxy user에는 제어 문자를 사용할 수 없습니다." }
         }
     }
@@ -112,11 +113,11 @@ data class ClickHouseV2TlsOptions(
             "sslCertReference" to sslCertReference,
         ).forEach { (name, value) -> value?.let { validateReference(name, it) } }
         keyStoreType?.let {
-            requireNotBlank(it, "keyStoreType")
+            it.requireNotBlank("keyStoreType")
             require(it.none(Char::isISOControl)) { "keyStoreType에는 제어 문자를 사용할 수 없습니다." }
         }
         sslSocketSni?.let {
-            requireNotBlank(it, "sslSocketSni")
+            it.requireNotBlank("sslSocketSni")
             require(it.none(Char::isISOControl)) { "sslSocketSni에는 제어 문자를 사용할 수 없습니다." }
         }
     }
@@ -187,30 +188,35 @@ class ClickHouseV2Options(
     val rawProperties: Map<String, String> = Collections.unmodifiableMap(LinkedHashMap(rawProperties))
 
     init {
-        requirePositive("connectionTimeoutMillis", connectionTimeoutMillis)
-        requireNonNegative("socketOperationTimeoutMillis", socketOperationTimeoutMillis)
-        requireNonNegative("connectionRequestTimeoutMillis", connectionRequestTimeoutMillis)
+        connectionTimeoutMillis?.requirePositiveNumber("socketTimeoutMillis")
+        socketOperationTimeoutMillis?.requireZeroOrPositiveNumber("socketOperationTimeoutMillis")
+        connectionRequestTimeoutMillis?.requireZeroOrPositiveNumber("connectionRequestTimeoutMillis")
+
         connectionTtlMillis?.let {
             require(it == -1L || it > 0) { "connectionTtlMillis는 -1 또는 양수여야 합니다: $it" }
         }
-        requirePositive("httpKeepAliveTimeoutMillis", httpKeepAliveTimeoutMillis)
-        maxOpenConnections?.let { require(it > 0) { "maxOpenConnections는 양수여야 합니다: $it" } }
-        lz4UncompressedBufferSize?.let {
-            require(it > 0) { "lz4UncompressedBufferSize는 양수여야 합니다: $it" }
+        httpKeepAliveTimeoutMillis?.requirePositiveNumber("httpKeepAliveTimeoutMillis")
+        maxOpenConnections?.requirePositiveNumber { "maxOpenConnections는 양수여야 합니다: $maxOpenConnections" }
+        lz4UncompressedBufferSize?.requirePositiveNumber {
+            "lz4UncompressedBufferSize는 양수여야 합니다: $lz4UncompressedBufferSize"
         }
-        retryOnFailure?.let { require(it >= 0) { "retryOnFailure는 음수가 아니어야 합니다: $it" } }
+        retryOnFailure?.requireZeroOrPositiveNumber {
+            "retryOnFailure는 음수가 아니어야 합니다: $retryOnFailure"
+        }
 
         clientName?.let { validateText("clientName", it, allowBlank = true) }
         sessionDbRoles.forEach {
             validateText("sessionDbRoles", it, allowBlank = false)
             require(',' !in it) { "sessionDbRoles에는 comma를 사용할 수 없습니다." }
         }
-        require(sessionDbRoles.distinct().size == sessionDbRoles.size) { "sessionDbRoles에는 중복 역할을 사용할 수 없습니다." }
+        require(sessionDbRoles.distinct().size == sessionDbRoles.size) {
+            "sessionDbRoles에는 중복 역할을 사용할 수 없습니다."
+        }
         queryId?.let { validateText("queryId", it, allowBlank = false) }
         logComment?.let { validateText("logComment", it, allowBlank = false) }
 
         serverSettings.forEach { (key, value) ->
-            requireNotBlank(key, "serverSettings key")
+            key.requireNotBlank("serverSettings key")
             require(key.none(Char::isISOControl)) { "serverSettings key에는 제어 문자를 사용할 수 없습니다." }
             require(value.none(Char::isISOControl)) { "serverSettings[$key]에는 제어 문자를 사용할 수 없습니다." }
         }
@@ -447,7 +453,9 @@ private fun validateRawProperties(properties: Map<String, String>) {
         require(key.isNotBlank()) { "rawProperties key는 공백일 수 없습니다." }
         require(key.none(Char::isISOControl)) { "rawProperties key에는 제어 문자를 사용할 수 없습니다." }
         require(value.none(Char::isISOControl)) { "rawProperties[$key]에는 제어 문자를 사용할 수 없습니다." }
-        require(key !in FORBIDDEN_RAW_KEYS) { "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key" }
+        require(key !in FORBIDDEN_RAW_KEYS) {
+            "raw property는 보안 또는 다른 이슈가 소유한 key를 사용할 수 없습니다: $key"
+        }
         if (key.startsWith(HTTP_HEADER_PREFIX)) {
             val headerName = key.removePrefix(HTTP_HEADER_PREFIX)
             validateHeaderName(headerName)
@@ -483,7 +491,7 @@ private fun validateCustomHeaders(headers: Map<String, String>) {
 }
 
 private fun validateHeaderName(name: String) {
-    requireNotBlank(name, "custom header name")
+    name.requireNotBlank("custom header name")
     require(name.none(Char::isISOControl)) { "custom header 이름에는 제어 문자를 사용할 수 없습니다." }
     val forbidden = setOf(
         "authorization",
@@ -513,29 +521,12 @@ internal fun normalizeHeaderName(name: String): String =
 private fun headerPropertyKey(name: String): String = "$HTTP_HEADER_PREFIX${normalizeHeaderName(name)}"
 
 private fun validateReference(name: String, value: String) {
-    requireNotBlank(value, name)
+    value.requireNotBlank(name)
     require(value.none(Char::isISOControl)) { "${name}에는 제어 문자를 사용할 수 없습니다." }
     require(!value.contains("BEGIN ", ignoreCase = true)) { "${name}에는 인증서·키 본문을 넣을 수 없습니다." }
 }
 
 private fun validateText(name: String, value: String, allowBlank: Boolean) {
-    if (!allowBlank) requireNotBlank(value, name)
+    if (!allowBlank) value.requireNotBlank(name)
     require(value.none(Char::isISOControl)) { "${name}에는 제어 문자를 사용할 수 없습니다." }
-}
-
-private fun requirePositive(name: String, value: Long?) {
-        value?.let { require(it > 0) { "${name}은 양수여야 합니다: $it" } }
-}
-
-private fun requireNonNegative(name: String, value: Long?) {
-        value?.let { require(it >= 0) { "${name}은 음수가 아니어야 합니다: $it" } }
-}
-
-private fun requireNonNegative(name: String, value: Int?) {
-    value?.let { require(it >= 0) { "${name}은 음수가 아니어야 합니다: $it" } }
-}
-
-private fun requireNotBlank(value: String, name: String): String {
-    require(value.isNotBlank()) { "${name}은 공백일 수 없습니다." }
-    return value
 }

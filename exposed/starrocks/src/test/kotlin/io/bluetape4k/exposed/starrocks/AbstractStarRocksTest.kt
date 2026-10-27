@@ -1,5 +1,7 @@
 package io.bluetape4k.exposed.starrocks
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -37,25 +39,31 @@ abstract class AbstractStarRocksTest {
         val connectionProperties
             get() = starRocks.connectionProperties
 
-        val db: Database by lazy {
-            StarRocksDatabase.connect(
-                host = host,
-                port = port,
-                catalog = StarRocksTestServer.CATALOG,
-                database = databaseName,
-                user = StarRocksTestServer.USER,
-            )
+        val dataSource by lazy {
+            val config = HikariConfig().also {
+                it.jdbcUrl = jdbcUrl
+                it.driverClassName = StarRocksDatabase.DRIVER
+                it.username = StarRocksTestServer.USER
+                it.password = ""
+
+                // it.catalog = StarRocksTestServer.CATALOG   // jdbcUrl 에 이미 catalog, databaseName 이 포함되어 있다.
+
+                connectionProperties.forEach { (k, v) ->
+                    it.dataSourceProperties[k] = v
+                }
+            }
+            HikariDataSource(config)
         }
 
-        @JvmStatic
-        @BeforeAll
-        fun startStarRocks() {
-            Class.forName(StarRocksDatabase.DRIVER)
-            starRocks.verifyHostPortMapping()
-            waitForStarRocksReady()
-            createDatabase()
-            Thread.sleep(3000L)
-            waitForClusterCapacity()
+        val db: Database by lazy {
+            StarRocksDatabase.connect(dataSource)
+//            StarRocksDatabase.connect(
+//                host = host,
+//                port = port,
+//                catalog = StarRocksTestServer.CATALOG,
+//                database = databaseName,
+//                user = StarRocksTestServer.USER,
+//            )
         }
 
         private const val MAX_ATTEMPTS = 60
@@ -147,6 +155,16 @@ abstract class AbstractStarRocksTest {
                 }
             }
         }
+    }
+
+    @BeforeAll
+    fun startStarRocks() {
+        Class.forName(StarRocksDatabase.DRIVER)
+        starRocks.verifyHostPortMapping()
+        waitForStarRocksReady()
+        createDatabase()
+        Thread.sleep(3000L)
+        waitForClusterCapacity()
     }
 
     @BeforeEach

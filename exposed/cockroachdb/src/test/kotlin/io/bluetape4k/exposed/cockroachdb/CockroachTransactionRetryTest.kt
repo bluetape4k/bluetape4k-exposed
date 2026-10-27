@@ -7,7 +7,8 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
-import org.jetbrains.exposed.v1.core.Table
+import io.bluetape4k.logging.debug
+import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -27,7 +28,9 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
 
     @Test
     fun `retry predicate detects CockroachDB transaction retry error`() {
-        retryableSqlException().isCockroachRetryableTransactionError().shouldBeTrue()
+        retryableSqlException()
+            .isCockroachRetryableTransactionError()
+            .shouldBeTrue()
     }
 
     @Test
@@ -79,6 +82,7 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
         }
 
         attempts shouldBeEqualTo 3
+        log.debug { "failure=$failure" }
         failure.message shouldBeEqualTo "restart transaction: attempt 3"
         failure.suppressed shouldHaveSize 2
     }
@@ -96,6 +100,7 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
         }
 
         attempts shouldBeEqualTo 1
+        log.debug { "failure=$failure" }
         failure shouldBeEqualTo duplicateKey
     }
 
@@ -112,6 +117,7 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
         }
 
         attempts shouldBeEqualTo 1
+        log.debug { "failure=$failure" }
         failure shouldBeEqualTo cancellation
     }
 
@@ -166,9 +172,10 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
             maxRetryDelay = 25.milliseconds,
         )
 
+        log.debug { "options=$options" }
         options.retryDelayMillis(0) shouldBeEqualTo 10L
         options.retryDelayMillis(1) shouldBeEqualTo 20L
-        options.retryDelayMillis(2) shouldBeEqualTo 25L
+        options.retryDelayMillis(2) shouldBeEqualTo options.maxRetryDelayMillis
     }
 
     @Test
@@ -253,10 +260,7 @@ class CockroachTransactionRetryTest: AbstractCockroachDbTest() {
     ): SQLException =
         SQLException(message, "40001")
 
-    object RetryEvents: Table("bt4k_cockroach_retry_events") {
-        val id = long("id").autoIncrement()
+    object RetryEvents: LongIdTable("bt4k_cockroach_retry_events") {
         val eventName = varchar("event_name", 64)
-
-        override val primaryKey: PrimaryKey = PrimaryKey(id)
     }
 }

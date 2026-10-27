@@ -67,7 +67,7 @@ class SimpleExposedR2dbcRepository<R: Any, ID: Any>(
 
     private var qbeExecutor: R2dbcFluentQueryExecutor<R>? = null
 
-    /** Factory가 domain metadata와 projection collaborator를 주입하는 internal 경계입니다. */
+    /** Factory가 `domain metadata` 와 projection collaborator를 주입하는 internal 경계입니다. */
     internal fun configureQbe(
         domainType: KClass<R>,
         projectionFactory: ProjectionFactory,

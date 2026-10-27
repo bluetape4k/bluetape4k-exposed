@@ -60,13 +60,13 @@ class CteQueryTest: AbstractExposedTest() {
                 .orderBy(activeUsers[CteUsers.id])
 
             val builder = QueryBuilder(prepared = true)
+
             val sql = query.prepareSQL(builder)
             log.debug { "Generated SQL: $sql" }
-
             sql shouldContain "WITH"
             sql.lowercase() shouldContain "active_users"
-            builder.args.map { it.second } shouldBeEqualTo listOf(true)
 
+            builder.args.map { it.second } shouldBeEqualTo listOf(true)
             query.map { it[activeName] } shouldBeEqualTo listOf("root", "child")
         }
     }

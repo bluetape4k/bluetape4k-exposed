@@ -10,6 +10,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -28,10 +29,10 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
     companion object: KLogging()
 
-    private val expr = mockk<Expression<Any?>>()
-    private val row = mockk<ResultRow>()
-
-    private data class Payload(val user: JacksonSchema.User, val active: Boolean): Serializable {
+    private data class Payload(
+        val user: JacksonSchema.User,
+        val active: Boolean,
+    ): Serializable {
         companion object {
             private const val serialVersionUID = 1L
         }
@@ -41,6 +42,9 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         val jsonText = text("json_text")
         val nullableText = text("nullable_text").nullable()
     }
+
+    private val expr = mockk<Expression<Any?>>(relaxed = true)
+    private val row = mockk<ResultRow>(relaxed = true)
 
     @BeforeEach
     fun setUpMocks() {
@@ -61,8 +65,12 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
             val row = JsonTextTable.selectAll().single()
 
+            log.debug { "row=$row" }
             row.getJackson<Payload>(JsonTextTable.jsonText) shouldBeEqualTo payload
-            row.getJsonNode(JsonTextTable.jsonText).path("user").path("name").asText() shouldBeEqualTo "tester"
+            row.getJsonNode(JsonTextTable.jsonText)
+                .path("user")
+                .path("name")
+                .asText() shouldBeEqualTo "tester"
             row.getJacksonOrNull<Payload>(JsonTextTable.nullableText).shouldBeNull()
         }
     }
@@ -78,6 +86,7 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
 
             val row = JsonTextTable.selectAll().single()
 
+            log.debug { "row=$row" }
             assertFailsWith<IllegalStateException> {
                 row.getJsonNode(JsonTextTable.nullableText)
             }
@@ -130,6 +139,8 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         every { row.getOrNull(expr) } returns jsonBytes
 
         val node = row.getJsonNodeOrNull(expr)
+
+        log.debug { "node=$node" }
         node.shouldNotBeNull()
         node.path("x").intValue() shouldBeEqualTo 123
     }
@@ -154,6 +165,8 @@ class ResultRowExtensionsTest: AbstractExposedTest() {
         every { row.getOrNull(expr) } returns customObj
 
         val node = row.getJsonNodeOrNull(expr)
+
+        log.debug { "node=$node" }
         node.shouldNotBeNull()
         node.path("z").intValue() shouldBeEqualTo 7
     }

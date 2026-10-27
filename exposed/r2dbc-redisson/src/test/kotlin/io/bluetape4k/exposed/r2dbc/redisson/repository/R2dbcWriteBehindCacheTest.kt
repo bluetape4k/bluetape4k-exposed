@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserRedissonRepository
@@ -15,13 +16,14 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.inTopLevelSuspendTransaction
 import org.junit.jupiter.api.Nested
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -38,22 +40,22 @@ class R2dbcWriteBehindCacheTest {
             statement: suspend R2dbcTransaction.() -> Unit,
         ) = withUserTable(testDB, context, statement)
 
-        override suspend fun getExistingId() =
-            suspendTransaction {
-                UserTable
-                    .select(UserTable.id)
-                    .limit(1)
-                    .first()[UserTable.id]
-                    .value
-            }
+        override suspend fun getExistingId() = inTopLevelSuspendTransaction {
+            UserTable
+                .select(UserTable.id)
+                .limit(1)
+                .log("ID")
+                .first()[UserTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds() =
-            suspendTransaction {
-                UserTable
-                    .selectAll()
-                    .map { it[UserTable.id].value }
-                    .toList()
-            }
+        override suspend fun getExistingIds() = inTopLevelSuspendTransaction {
+            UserTable
+                .selectAll()
+                .map { it[UserTable.id].value }
+                .log("ID")
+                .toList()
+        }
 
         override suspend fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -63,24 +65,26 @@ class R2dbcWriteBehindCacheTest {
     @Nested
     inner class R2dbcAutoIncIdReadWriteBehindRemoteCache: R2dbcAutoIncIdReadWriteBehind() {
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND
+            .copy(
+                name = "r2dbc:write-behind:remote:users",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:write-behind:remote:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcAutoIncIdReadWriteBehindNearCache: R2dbcAutoIncIdReadWriteBehind() {
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:write-behind:near:users",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:write-behind:near:users")
-            )
+            R2dbcUserRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
@@ -93,21 +97,19 @@ class R2dbcWriteBehindCacheTest {
             statement: suspend R2dbcTransaction.() -> Unit,
         ) = withUserCredentialsTable(testDB, context, statement)
 
-        override suspend fun getExistingId() =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId() = inTopLevelSuspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds() =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-                    .toList()
-            }
+        override suspend fun getExistingIds() = inTopLevelSuspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+                .toList()
+        }
 
         override suspend fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -117,24 +119,26 @@ class R2dbcWriteBehindCacheTest {
     @Nested
     inner class R2dbcClientGeneratedIdReadBehindRemoteCache: R2dbcClientGeneratedIdReadWriteBehind() {
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND
+            .copy(
+                name = "r2dbc:write-behind:remote:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:write-behind:remote:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 
     @Nested
     inner class R2dbcClientGeneratedIdReadBehindNearCache: R2dbcClientGeneratedIdReadWriteBehind() {
         override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
+            .copy(
+                name = "r2dbc:write-behind:near:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
-            R2dbcUserCredentialRedissonRepository(
-                redissonClient,
-                config = cacheConfig.copy(name = "r2dbc:write-behind:near:user-credentials")
-            )
+            R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
         }
     }
 }

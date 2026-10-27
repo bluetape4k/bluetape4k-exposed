@@ -1,13 +1,18 @@
 package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 class ClickHouseDdlSanitizerTest {
 
+    companion object: KLogging()
+
     @Test
     fun `Exposed 순서의 DEFAULT 뒤 NULL 제약만 제거한다`() {
-        listOf("NULL", "'hello NULL'", "[NULL, NULL]", "if(1 IS NULL, NULL, NULL)").forEach { expression ->
+        listOf(
+            "NULL", "'hello NULL'", "[NULL, NULL]", "if(1 IS NULL, NULL, NULL)"
+        ).forEach { expression ->
             sanitizeForClickHouse("CREATE TABLE t (a Nullable(String) DEFAULT $expression NULL)") shouldBeEqualTo
                     "CREATE TABLE t (a Nullable(String) DEFAULT $expression)"
         }
@@ -26,7 +31,9 @@ class ClickHouseDdlSanitizerTest {
 
     @Test
     fun `escaped quote 뒤의 리터럴도 보존한다`() {
-        listOf("it''s NULL", """it\'s NOT NULL""", """path\\ NULL""").forEach { value ->
+        listOf(
+            "it''s NULL", """it\'s NOT NULL""", """path\\ NULL"""
+        ).forEach { value ->
             val sql = "CREATE TABLE t (s String DEFAULT '$value' NOT NULL)"
             sanitizeForClickHouse(sql) shouldBeEqualTo "CREATE TABLE t (s String DEFAULT '$value')"
         }

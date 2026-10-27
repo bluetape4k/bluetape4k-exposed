@@ -54,10 +54,12 @@ internal class OneShotR2dbcFaultFactory(
 
                 "commitTransaction" -> {
                     commitCount.incrementAndGet()
+
+                    @Suppress("ReactiveStreamsUnusedPublisher")
                     Mono.defer {
                         if (failureInjected.compareAndSet(false, true)) {
                             failureCount.incrementAndGet()
-                            Mono.error<Void>(R2dbcTransientResourceException("one-shot commit retry fault"))
+                            Mono.error(R2dbcTransientResourceException("one-shot commit retry fault"))
                         } else {
                             @Suppress("UNCHECKED_CAST")
                             Mono.from(invoke(delegate, method, args) as Publisher<Void>)
@@ -75,7 +77,9 @@ internal class OneShotR2dbcFaultFactory(
                     invoke(delegate, method, args)
                 }
 
-                else                -> invoke(delegate, method, args)
+                else                -> {
+                    invoke(delegate, method, args)
+                }
             }
         } as Connection
 

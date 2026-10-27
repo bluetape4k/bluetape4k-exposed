@@ -4,6 +4,8 @@ import io.bluetape4k.cache.nearcache.LettuceNearCacheConfig
 import io.bluetape4k.cache.nearcache.LettuceSuspendNearCache
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWriteMode
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
+import io.bluetape4k.exposed.jdbc.suspendTransactionWithIO
 import io.bluetape4k.exposed.lettuce.map.ExposedLettuceSuspendedLoadedMap
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapLoader
 import io.bluetape4k.exposed.lettuce.map.SuspendedExposedEntityMapWriter
@@ -15,7 +17,6 @@ import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.bluetape4k.support.requirePositiveNumber
 import io.lettuce.core.RedisClient
 import io.lettuce.core.codec.RedisCodec
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -27,7 +28,6 @@ import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import java.io.Serializable
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -121,21 +121,13 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
             client = client,
             loader = SuspendedExposedEntityMapLoader(
                 table = table,
-                toEntity = { row ->
-                    with(this@AbstractSuspendedJdbcLettuceRepository) {
-                        row.toEntity()
-                    }
-                }
+                toEntity = { row -> row.toEntity() }
             ),
             writer = SuspendedExposedEntityMapWriter(
                 table = table,
                 writeMode = config.writeMode,
-                updateEntity = { stmt, e ->
-                    with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.updateEntity(e) }
-                },
-                insertEntity = { stmt, e ->
-                    with(this@AbstractSuspendedJdbcLettuceRepository) { stmt.insertEntity(e) }
-                },
+                updateEntity = { stmt, e -> stmt.updateEntity(e) },
+                insertEntity = { stmt, e -> stmt.insertEntity(e) },
                 retryAttempts = config.writeRetryAttempts,
                 retryInterval = config.writeRetryInterval
             ),
@@ -149,34 +141,30 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // DB 직접 조회 (캐시 우회)
     // -------------------------------------------------------------------------
 
-    @Suppress("DEPRECATION")
-    override suspend fun findByIdFromDb(id: ID): E? = suspendedTransactionAsync(Dispatchers.IO) {
+    override suspend fun findByIdFromDb(id: ID): E? = inTopLevelSuspendTransactionWithIO {
         table
             .selectAll()
             .where { table.id eq id }
             .singleOrNull()
-            ?.let {
-                with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() }
-            }
-    }.await()
+            ?.toEntity()
+
+    }
 
     @Suppress("DEPRECATION")
-    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> =
-        suspendedTransactionAsync(Dispatchers.IO) {
-            if (ids.isEmpty()) return@suspendedTransactionAsync emptyList()
+    override suspend fun findAllFromDb(ids: Collection<ID>): List<E> {
+        if (ids.isEmpty()) return emptyList()
+        return inTopLevelSuspendTransactionWithIO {
             table
                 .selectAll()
                 .where { table.id inList ids }
-                .map {
-                    with(this@AbstractSuspendedJdbcLettuceRepository) { it.toEntity() }
-                }
-        }.await()
+                .map { it.toEntity() }
+        }
+    }
 
     @Suppress("DEPRECATION")
-    override suspend fun countFromDb(): Long =
-        suspendedTransactionAsync(Dispatchers.IO) {
-            table.selectAll().count()
-        }.await()
+    override suspend fun countFromDb(): Long = inTopLevelSuspendTransactionWithIO {
+        table.selectAll().count()
+    }
 
     // -------------------------------------------------------------------------
     // 캐시 기반 조회 (Read-through)
@@ -220,7 +208,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         where: () -> Op<Boolean>,
     ): List<E> {
         @Suppress("DEPRECATION")
-        val entities = suspendedTransactionAsync(Dispatchers.IO) {
+        val entities = suspendTransactionWithIO {
             table
                 .selectAll()
                 .where(where)
@@ -229,12 +217,8 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
                     limit?.let { limit(it) }
                     offset?.let { offset(it) }
                 }
-                .map {
-                    with(this@AbstractSuspendedJdbcLettuceRepository) {
-                        it.toEntity()
-                    }
-                }
-        }.await()
+                .map { it.toEntity() }
+        }
 
         // WHY: findAll은 캐시 우회 조회가 아니라 Read-through 경로이므로,
         //      DB에서 가져온 결과를 캐시에 적재해 다음 단일 조회(get/getAll)가 캐시를 히트하게 한다.
@@ -257,9 +241,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
      * 기본 구현은 에러를 던지며, [findAll] with where 사용 시 서브클래스에서 오버라이드해야 한다.
      */
     override fun extractId(entity: E): ID {
-        error(
-            "findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다."
-        )
+        error("findAll(where) 사용 시 extractId(entity)를 오버라이드하거나 엔티티에서 ID를 추출하는 방법을 제공해야 합니다.")
     }
 
     // -------------------------------------------------------------------------
@@ -309,7 +291,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun clear() {
-        log.debug { "캐시를 초기화: operation=clear" }
+        log.debug { "캐시 초기화: operation=clear" }
         nearCache?.clearAll()
         cache.clear()
     }

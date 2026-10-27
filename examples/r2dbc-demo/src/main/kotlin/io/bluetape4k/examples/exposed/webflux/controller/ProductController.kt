@@ -29,20 +29,23 @@ class ProductController(
         productRepository.findAllAsList()
 
     @GetMapping("/{id}")
-    suspend fun findById(@PathVariable id: Long): ProductRecord =
+    suspend fun findById(@PathVariable id: Long): ProductRecord = suspendTransaction {
         productRepository.findByIdOrNull(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    suspend fun create(@RequestBody dto: ProductRecord): ProductRecord =
+    suspend fun create(@RequestBody dto: ProductRecord): ProductRecord = suspendTransaction {
         productRepository.save(dto.copy(id = null))
+    }
 
     @PutMapping("/{id}")
     suspend fun update(@PathVariable id: Long, @RequestBody dto: ProductRecord): ProductRecord =
         suspendTransaction {
             val existing = productRepository.findByIdOrNull(id)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: $id")
+
             productRepository.save(dto.copy(id = existing.id ?: id))
         }
 

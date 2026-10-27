@@ -15,19 +15,22 @@ class ExposedItemWriterTest: AbstractExposedBatchTest() {
 
     companion object: KLogging()
 
+    private val writer = ExposedItemWriter<TargetRecord>(table = TargetTable) {
+        this[TargetTable.sourceName] = it.sourceName
+        this[TargetTable.transformedValue] = it.transformedValue
+    }
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `batchInsert로 정상적으로 레코드 삽입`(testDB: TestDB) {
         withBatchTables(testDB) {
-            val writer = ExposedItemWriter<TargetRecord>(table = TargetTable) {
-                this[TargetTable.sourceName] = it.sourceName
-                this[TargetTable.transformedValue] = it.transformedValue
+            val recordSize = 10
+            val items = List(recordSize) {
+                TargetRecord("name-$it", it * 2)
             }
-
-            val items = (1..10).map { TargetRecord("name-$it", it * 2) }
             writer.write(Chunk(items))
 
-            TargetTable.selectAll().count() shouldBeEqualTo 10L
+            TargetTable.selectAll().count() shouldBeEqualTo recordSize.toLong()
         }
     }
 
@@ -35,13 +38,7 @@ class ExposedItemWriterTest: AbstractExposedBatchTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `빈 chunk 전달 시 아무 동작 안 함`(testDB: TestDB) {
         withBatchTables(testDB) {
-            val writer = ExposedItemWriter<TargetRecord>(table = TargetTable) {
-                this[TargetTable.sourceName] = it.sourceName
-                this[TargetTable.transformedValue] = it.transformedValue
-            }
-
             writer.write(Chunk(emptyList()))
-
             TargetTable.selectAll().count() shouldBeEqualTo 0L
         }
     }
@@ -50,15 +47,14 @@ class ExposedItemWriterTest: AbstractExposedBatchTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `대량 chunk batchInsert 정상 동작`(testDB: TestDB) {
         withBatchTables(testDB) {
-            val writer = ExposedItemWriter<TargetRecord>(table = TargetTable) {
-                this[TargetTable.sourceName] = it.sourceName
-                this[TargetTable.transformedValue] = it.transformedValue
-            }
+            val recordSize = 1000
 
-            val items = (1..1000).map { TargetRecord("name-$it", it * 2) }
+            val items = List(recordSize) {
+                TargetRecord("name-$it", it * 2)
+            }
             writer.write(Chunk(items))
 
-            TargetTable.selectAll().count() shouldBeEqualTo 1000L
+            TargetTable.selectAll().count() shouldBeEqualTo recordSize.toLong()
         }
     }
 }

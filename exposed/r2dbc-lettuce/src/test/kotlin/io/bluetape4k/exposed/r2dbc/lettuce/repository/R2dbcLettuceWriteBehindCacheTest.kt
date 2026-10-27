@@ -13,9 +13,9 @@ import io.bluetape4k.exposed.r2dbc.lettuce.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios.R2dbcLettuceWriteBehindScenario
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.javatimes.millis
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
-import io.bluetape4k.redis.lettuce.map.WriteMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -35,6 +35,7 @@ import java.util.*
  * - `writeBehindDelay = 500ms`로 설정하여 테스트 시 빠른 flush를 유도한다.
  */
 class R2dbcLettuceWriteBehindCacheTest {
+
     companion object: KLoggingChannel()
 
     // -------------------------------------------------------------------------
@@ -49,13 +50,11 @@ class R2dbcLettuceWriteBehindCacheTest {
         R2dbcLettuceWriteBehindScenario<Long, UserRecord> {
         companion object: KLoggingChannel()
 
-        override val config =
-            LettuceCacheConfig(
-                writeMode = WriteMode.WRITE_BEHIND,
-                writeBehindDelay = Duration.ofMillis(500),
-                writeBehindBatchSize = 10,
-                keyPrefix = "r2dbc:write-behind:auto-inc:test"
-            )
+        override val config = LettuceCacheConfig.WRITE_BEHIND.copy(
+            writeBehindDelay = Duration.ofMillis(500),
+            writeBehindBatchSize = 10,
+            keyPrefix = "r2dbc:write-behind:auto-inc:test"
+        )
 
         override suspend fun withR2dbcEntityTable(
             testDB: TestDB,
@@ -83,13 +82,11 @@ class R2dbcLettuceWriteBehindCacheTest {
      */
     @Nested
     inner class R2dbcAutoIncIdWriteBehindRemoteCache: R2dbcAutoIncIdWriteBehind() {
-        override val config =
-            LettuceCacheConfig(
-                writeMode = WriteMode.WRITE_BEHIND,
-                writeBehindDelay = Duration.ofMillis(500),
-                writeBehindBatchSize = 10,
-                keyPrefix = "r2dbc:write-behind:auto-inc:remote:test"
-            )
+        override val config = LettuceCacheConfig.WRITE_BEHIND.copy(
+            writeBehindDelay = 500.millis(),
+            writeBehindBatchSize = 10,
+            keyPrefix = "r2dbc:write-behind:auto-inc:remote:test"
+        )
         override val repository by lazy { R2dbcUserLettuceRepository(redisClient, config) }
     }
 
@@ -98,13 +95,12 @@ class R2dbcLettuceWriteBehindCacheTest {
      */
     @Nested
     inner class R2dbcAutoIncIdWriteBehindNearCache: R2dbcAutoIncIdWriteBehind() {
-        override val config =
-            LettuceCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(
-                writeBehindDelay = Duration.ofMillis(500),
-                writeBehindBatchSize = 10,
-                keyPrefix = "r2dbc:write-behind:auto-inc:near:test",
-                nearCacheName = "r2dbc-lettuce-users-behind-near"
-            )
+        override val config = LettuceCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(
+            writeBehindDelay = 500.millis(),
+            writeBehindBatchSize = 10,
+            keyPrefix = "r2dbc:write-behind:auto-inc:near:test",
+            nearCacheName = "r2dbc-lettuce-users-behind-near"
+        )
         override val repository by lazy { R2dbcUserLettuceRepository(redisClient, config) }
     }
 
@@ -120,34 +116,30 @@ class R2dbcLettuceWriteBehindCacheTest {
         R2dbcLettuceWriteBehindScenario<UUID, UserCredentialsRecord> {
         companion object: KLoggingChannel()
 
-        override val config =
-            LettuceCacheConfig(
-                writeMode = WriteMode.WRITE_BEHIND,
-                writeBehindDelay = Duration.ofMillis(500),
-                writeBehindBatchSize = 10,
-                keyPrefix = "r2dbc:write-behind:client-uuid:test"
-            )
+        override val config = LettuceCacheConfig.WRITE_BEHIND.copy(
+            writeBehindDelay = 500.millis(),
+            writeBehindBatchSize = 10,
+            keyPrefix = "r2dbc:write-behind:client-uuid:test"
+        )
 
         override suspend fun withR2dbcEntityTable(
             testDB: TestDB,
             statement: suspend R2dbcTransaction.() -> Unit,
         ) = withUserCredentialsTable(testDB, statement)
 
-        override suspend fun getExistingId(): UUID =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .first()[UserCredentialsTable.id]
-                    .value
-            }
+        override suspend fun getExistingId(): UUID = suspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .first()[UserCredentialsTable.id]
+                .value
+        }
 
-        override suspend fun getExistingIds(): List<UUID> =
-            suspendTransaction {
-                UserCredentialsTable
-                    .select(UserCredentialsTable.id)
-                    .map { it[UserCredentialsTable.id].value }
-                    .toList()
-            }
+        override suspend fun getExistingIds(): List<UUID> = suspendTransaction {
+            UserCredentialsTable
+                .select(UserCredentialsTable.id)
+                .map { it[UserCredentialsTable.id].value }
+                .toList()
+        }
 
         override fun getNonExistentId(): UUID = Uuid.V7.nextId()
 
@@ -160,13 +152,11 @@ class R2dbcLettuceWriteBehindCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdWriteBehindRemoteCache: R2dbcClientGeneratedIdWriteBehind() {
-        override val config =
-            LettuceCacheConfig(
-                writeMode = WriteMode.WRITE_BEHIND,
-                writeBehindDelay = Duration.ofMillis(500),
-                writeBehindBatchSize = 10,
-                keyPrefix = "r2dbc:write-behind:client-uuid:remote:test"
-            )
+        override val config = LettuceCacheConfig.WRITE_BEHIND.copy(
+            writeBehindDelay = 500.millis(),
+            writeBehindBatchSize = 10,
+            keyPrefix = "r2dbc:write-behind:client-uuid:remote:test"
+        )
         override val repository by lazy { R2dbcUserCredentialLettuceRepository(redisClient, config) }
     }
 
@@ -175,9 +165,9 @@ class R2dbcLettuceWriteBehindCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdWriteBehindNearCache: R2dbcClientGeneratedIdWriteBehind() {
-        override val config =
-            LettuceCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(
-                writeBehindDelay = Duration.ofMillis(500),
+        override val config = LettuceCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE
+            .copy(
+                writeBehindDelay = 500.millis(),
                 writeBehindBatchSize = 10,
                 keyPrefix = "r2dbc:write-behind:client-uuid:near:test",
                 nearCacheName = "r2dbc-lettuce-cred-behind-near"

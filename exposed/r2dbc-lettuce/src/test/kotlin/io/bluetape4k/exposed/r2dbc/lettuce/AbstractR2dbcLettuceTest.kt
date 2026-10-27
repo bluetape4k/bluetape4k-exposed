@@ -48,7 +48,7 @@ abstract class AbstractR2dbcLettuceTest: AbstractExposedR2dbcTest() {
          * Lettuce 캐시 테스트는 H2 in-memory DB만 사용한다.
          */
         @JvmStatic
-        fun enableDialects() = setOf(TestDB.H2)
+        fun enableDialects() = setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8)
 
         const val ENABLE_DIALECTS_METHOD = "enableDialects"
     }

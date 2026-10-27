@@ -43,10 +43,10 @@ internal class R2dbcProjectionMapper(
                     if (!information.isClosed) {
                         throw UnsupportedOperationException("Open or SpEL projections are not supported")
                     }
-                    projectionFactory.createProjection(resultType.java, values) as T
+                    projectionFactory.createProjection(resultType.java, values) 
                 }
-                resultType.java.isRecord -> instantiateRecord(resultType.java, values) as T
-                else                     -> instantiateKotlin(resultType, values) as T
+                resultType.java.isRecord    -> instantiateRecord(resultType.java, values) as T
+                else                        -> instantiateKotlin(resultType, values) as T
             }
         } catch (unsupported: UnsupportedOperationException) {
             throw unsupported

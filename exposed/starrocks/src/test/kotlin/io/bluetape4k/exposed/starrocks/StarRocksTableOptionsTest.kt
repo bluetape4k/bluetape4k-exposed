@@ -28,7 +28,7 @@ class StarRocksTableOptionsTest {
         }
         assertFailsWith<IllegalArgumentException> {
             table.createStatement()
-        }.message.orEmpty() shouldContain "options"
+        }.message shouldContain "options"
     }
 
     @Test
@@ -38,7 +38,7 @@ class StarRocksTableOptionsTest {
         }
         assertFailsWith<IllegalArgumentException> {
             table.createStatement()
-        }.message.orEmpty() shouldContain "options"
+        }.message shouldContain "options"
     }
 
     @ParameterizedTest
@@ -50,7 +50,7 @@ class StarRocksTableOptionsTest {
         }
         assertFailsWith<IllegalArgumentException> {
             table.createStatement()
-        }.message.orEmpty() shouldContain "storageParameters"
+        }.message shouldContain "storageParameters"
     }
 
     @Test

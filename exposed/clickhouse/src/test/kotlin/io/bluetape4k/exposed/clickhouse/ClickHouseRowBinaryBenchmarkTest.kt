@@ -1,11 +1,12 @@
 package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.exposed.clickhouse.support.RowBinaryConnectionProviderFixture
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Locale
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
@@ -182,7 +183,7 @@ class ClickHouseRowBinaryBenchmarkTest {
         }
     }
 
-    private companion object {
+    private companion object: KLogging() {
         const val ROW_BINARY = "rowbinary"
         const val JDBC_FALLBACK = "jdbc-fallback"
         const val NARROW = "narrow"

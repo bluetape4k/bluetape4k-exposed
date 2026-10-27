@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.tink
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
@@ -58,7 +59,7 @@ class TinkColumnTypeDaoTest: AbstractExposedTest() {
             }
             flushCache()
 
-            val saved = E1.findById(entity.id)!!
+            val saved = E1.findById(entity.id).shouldNotBeNull()
 
             saved.varchar shouldBeEqualTo insertedVarchar
             saved.binary shouldBeEqualTo insertedBinary
@@ -89,7 +90,7 @@ class TinkColumnTypeDaoTest: AbstractExposedTest() {
             entity.varchar shouldBeEqualTo insertedVarchar
             entity.binary shouldBeEqualTo insertedBinary
 
-            val e1 = E1.findById(entity.id)!!
+            val e1 = E1.findById(entity.id).shouldNotBeNull()
             println("varchar=${e1.varchar}, binary=${e1.binary.toUtf8String()}")
 
             e1.varchar shouldBeEqualTo insertedVarchar

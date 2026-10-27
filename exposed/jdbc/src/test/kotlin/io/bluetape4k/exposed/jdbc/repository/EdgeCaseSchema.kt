@@ -78,10 +78,13 @@ object EdgeCaseSchema {
     /**
      * EdgeCaseTable을 사용하는 트랜잭션 블록을 실행한다.
      */
-    fun AbstractExposedTest.withEdgeCaseTable(
+    @Suppress("UnusedReceiverParameter")
+    inline fun AbstractExposedTest.withEdgeCaseTable(
         testDB: TestDB,
-        statement: JdbcTransaction.() -> Unit,
+        crossinline statement: JdbcTransaction.() -> Unit,
     ) {
-        withTables(testDB, EdgeCaseTable) { statement() }
+        withTables(testDB, EdgeCaseTable) {
+            statement()
+        }
     }
 }

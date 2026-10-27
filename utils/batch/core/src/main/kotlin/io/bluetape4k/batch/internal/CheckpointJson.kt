@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
     message = "Use io.bluetape4k.batch.CheckpointJson",
     replaceWith = ReplaceWith("io.bluetape4k.batch.CheckpointJson"),
 )
-interface CheckpointJson : io.bluetape4k.batch.CheckpointJson {
+interface CheckpointJson: io.bluetape4k.batch.CheckpointJson {
     override fun write(obj: Any): String
 
     override fun read(json: String): Any
@@ -29,7 +29,7 @@ interface CheckpointJson : io.bluetape4k.batch.CheckpointJson {
 
 private class LegacyCheckpointJson(
     private val delegate: io.bluetape4k.batch.CheckpointJson,
-) : CheckpointJson {
+): CheckpointJson {
     override fun write(obj: Any): String = delegate.write(obj)
 
     override fun read(json: String): Any = delegate.read(json)

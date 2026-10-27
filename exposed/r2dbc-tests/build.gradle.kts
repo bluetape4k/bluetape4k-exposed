@@ -111,6 +111,9 @@ dependencies {
     implementation(bt4k.r2dbc.mysql)
     implementation(bt4k.r2dbc.postgresql)
 
+    // Netty
+    implementation(bt4k.bluetape4k.netty)
+
     // Bluetape4k Modules for Testing
     api(bt4k.bluetape4k.assertions)
     api(bt4k.bluetape4k.junit5)
@@ -124,8 +127,6 @@ dependencies {
     compileOnly(bt4k.mariadb.java.client)
     compileOnly(bt4k.mysql.connector.j)
     compileOnly(bt4k.postgresql)
-
-
 
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "junit", module = "junit")

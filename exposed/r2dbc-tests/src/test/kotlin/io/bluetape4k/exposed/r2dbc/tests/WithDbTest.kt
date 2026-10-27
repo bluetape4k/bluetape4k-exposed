@@ -38,6 +38,7 @@ class WithDbTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `withDb 블록 내부에서 currentTestDB 가 설정된다`(testDB: TestDB) = runSuspendIO {
         withDb(testDB) {
+            currentTestDB.shouldNotBeNull()
             currentTestDB shouldBeEqualTo testDB
         }
     }

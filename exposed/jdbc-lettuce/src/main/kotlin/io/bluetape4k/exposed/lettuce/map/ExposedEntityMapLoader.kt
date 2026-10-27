@@ -64,11 +64,12 @@ class ExposedEntityMapLoader<ID: Any, E: Any>(
         options: JdbcParallelKeyEnumerationOptions<ID> = JdbcParallelKeyEnumerationOptions(),
     ): List<ID> = parallelJdbcKeyEnumeration(table, ranges, options)
 
-    override fun loadById(id: ID): E? = table
-        .selectAll()
-        .where { table.id eq id }
-        .singleOrNull()
-        ?.let(toEntity)
+    override fun loadById(id: ID): E? =
+        table
+            .selectAll()
+            .where { table.id eq id }
+            .singleOrNull()
+            ?.let(toEntity)
 
     /**
      * 전체 키를 lazy page로 반환한다.
@@ -139,6 +140,7 @@ private fun <ID: Any> loadJdbcPage(
     keysetSupported: Boolean?,
 ): List<ID> = transaction {
     val query = table.select(table.id).orderBy(table.id, SortOrder.ASC)
+
     val pagedQuery =
         if (keysetSupported == true && lastId != null) {
             query.where { table.rawIdColumn() greater lastId.asComparableKey() }
@@ -163,10 +165,10 @@ internal fun Any.isKeysetScalar(): Boolean =
                 is Byte, is Short, is Int, is Long, is Float, is Double,
                 is UByte, is UShort, is UInt, is ULong,
                 is java.math.BigDecimal, is java.math.BigInteger,
-                is String, is Char, is java.util.UUID,
+                is String, is Char, is java.util.UUID, is kotlin.uuid.Uuid,
                 is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
                      -> true
-                else -> javaClass.name.startsWith("java.time.")
+                else -> javaClass.name.startsWith("java.time.") || javaClass.name.startsWith("kotlin.time.")
             }
 
 @Suppress("UNCHECKED_CAST")

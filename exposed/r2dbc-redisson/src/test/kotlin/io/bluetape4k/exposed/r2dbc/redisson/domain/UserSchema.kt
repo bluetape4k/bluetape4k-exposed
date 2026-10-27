@@ -48,18 +48,21 @@ object UserSchema: KLoggingChannel() {
         val createdAt: Instant = Instant.now(),
         val updatedAt: Instant? = null,
     ): Serializable {
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
         fun withId(id: Long) = copy(id = id)
     }
 
-    fun ResultRow.toUserRecord(): UserRecord =
-        UserRecord(
-            id = this[UserTable.id].value,
-            firstName = this[UserTable.firstName],
-            lastName = this[UserTable.lastName],
-            email = this[UserTable.email],
-            createdAt = this[UserTable.createdAt],
-            updatedAt = this[UserTable.updatedAt]
-        )
+    fun ResultRow.toUserRecord(): UserRecord = UserRecord(
+        id = this[UserTable.id].value,
+        firstName = this[UserTable.firstName],
+        lastName = this[UserTable.lastName],
+        email = this[UserTable.email],
+        createdAt = this[UserTable.createdAt],
+        updatedAt = this[UserTable.updatedAt]
+    )
 
     private suspend fun insertUser(user: UserRecord): EntityID<Long> =
         UserTable.insertAndGetId {
@@ -106,13 +109,12 @@ object UserSchema: KLoggingChannel() {
 
     private val lastUserId = atomic(1000L)
 
-    fun newUserRecord(): UserRecord =
-        UserRecord(
-            id = lastUserId.getAndIncrement(),
-            firstName = faker.name().firstName(),
-            lastName = faker.name().lastName(),
-            email = Base58.randomString(4) + "." + faker.internet().emailAddress()
-        )
+    fun newUserRecord(): UserRecord = UserRecord(
+        id = lastUserId.getAndIncrement(),
+        firstName = faker.name().firstName(),
+        lastName = faker.name().lastName(),
+        email = Base58.randomString(4) + "." + faker.internet().emailAddress()
+    )
 
     suspend fun findUserById(id: Long): UserRecord? =
         UserTable
@@ -144,15 +146,14 @@ object UserSchema: KLoggingChannel() {
         fun withId(id: UUID) = copy(id = id)
     }
 
-    fun ResultRow.toUserCredentialsRecord(): UserCredentialsRecord =
-        UserCredentialsRecord(
-            id = this[UserCredentialsTable.id].value,
-            loginId = this[UserCredentialsTable.loginId],
-            email = this[UserCredentialsTable.email],
-            lastLoginAt = this[UserCredentialsTable.lastLoginAt],
-            createdAt = this[UserCredentialsTable.createdAt],
-            updatedAt = this[UserCredentialsTable.updatedAt]
-        )
+    fun ResultRow.toUserCredentialsRecord(): UserCredentialsRecord = UserCredentialsRecord(
+        id = this[UserCredentialsTable.id].value,
+        loginId = this[UserCredentialsTable.loginId],
+        email = this[UserCredentialsTable.email],
+        lastLoginAt = this[UserCredentialsTable.lastLoginAt],
+        createdAt = this[UserCredentialsTable.createdAt],
+        updatedAt = this[UserCredentialsTable.updatedAt]
+    )
 
     suspend fun withUserCredentialsTable(
         testDB: TestDB,
@@ -181,12 +182,11 @@ object UserSchema: KLoggingChannel() {
         loginId: String? = null,
         lastDays: Long = 100L,
     ): UUID =
-        UserCredentialsTable
-            .insertAndGetId {
-                it[UserCredentialsTable.loginId] = loginId ?: faker.credentials().username()
-                it[UserCredentialsTable.email] = faker.internet().safeEmailAddress()
-                it[UserCredentialsTable.lastLoginAt] = LocalDateTime.now().minusDays(lastDays).toInstant()
-            }.value
+        UserCredentialsTable.insertAndGetId {
+            it[UserCredentialsTable.loginId] = loginId ?: faker.credentials().username()
+            it[UserCredentialsTable.email] = faker.internet().safeEmailAddress()
+            it[UserCredentialsTable.lastLoginAt] = LocalDateTime.now().minusDays(lastDays).toInstant()
+        }.value
 
     suspend fun findUserCredentialsById(id: UUID): UserCredentialsRecord? =
         UserCredentialsTable

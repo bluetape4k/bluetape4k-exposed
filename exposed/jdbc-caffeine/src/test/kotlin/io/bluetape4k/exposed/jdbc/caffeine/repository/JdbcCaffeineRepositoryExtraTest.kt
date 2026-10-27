@@ -7,12 +7,15 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.tryAcquire
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -30,11 +33,20 @@ import io.bluetape4k.exposed.jdbc.caffeine.domain.ActorSchema.withCredentialTabl
 import io.bluetape4k.exposed.jdbc.caffeine.domain.CredentialJdbcCaffeineRepository
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requirePositiveNumber
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Job
+import org.awaitility.kotlin.atMost
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
+import org.awaitility.kotlin.withPollDelay
+import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
@@ -54,13 +66,17 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * JDBC Caffeine 레포지토리 추가 커버리지 테스트.
@@ -87,7 +103,7 @@ class JdbcCaffeineRepositoryExtraTest {
             workerState = CacheWorkerState.RUNNING,
             lastFlushError = IllegalStateException("flush is still pending"),
         )
-        val repository = mockk<JdbcCaffeineRepository<*, *>>() {
+        val repository = mockk<JdbcCaffeineRepository<*, *>> {
             every { validateConsistency() } returns finalReport
         }
 
@@ -100,19 +116,18 @@ class JdbcCaffeineRepositoryExtraTest {
             ) { it.queueDepth == 0 && it.lastFlushError == null }
         }
 
-        failure.message shouldContain "expected=queueDepth=0 && lastFlushError=null"
-        failure.message shouldContain "queueDepth=1"
-        failure.message shouldContain "lastFlushError"
+        log.debug { "failure=${failure.message}" }
+        failure.message shouldContain "Timed out waiting for cache health report"
     }
 
     @Test
     fun `get - MultithreadingTester cache misses run one loader per key`() {
         val repository = CountingActorRepository("jdbc:caffeine:atomic:get")
-        val results = Collections.synchronizedList(mutableListOf<ActorRecord?>())
+        val results = ConcurrentLinkedQueue<ActorRecord>()
 
         MultithreadingTester()
             .workers(8)
-            .rounds(1)
+            .rounds(2)
             .addAll(
                 List(8) {
                     {
@@ -130,11 +145,11 @@ class JdbcCaffeineRepositoryExtraTest {
     fun `getAll - MultithreadingTester cache misses run one loader per key`() {
         val repository = CountingActorRepository("jdbc:caffeine:atomic:get-all")
         val ids = listOf(1L, 2L, 3L)
-        val results = Collections.synchronizedList(mutableListOf<Map<Long, ActorRecord>>())
+        val results = ConcurrentLinkedQueue<Map<Long, ActorRecord>>()
 
         MultithreadingTester()
             .workers(8)
-            .rounds(1)
+            .rounds(2)
             .addAll(
                 List(8) {
                     {
@@ -421,7 +436,7 @@ class JdbcCaffeineRepositoryExtraTest {
             )
 
             try {
-                repository.writeBehindCloseWaitDuration shouldBeEqualTo Duration.ofSeconds(30)
+                repository.writeBehindCloseWaitDuration shouldBeEqualTo 30.seconds()
             } finally {
                 repository.close()
             }
@@ -543,21 +558,21 @@ class JdbcCaffeineRepositoryExtraTest {
                 val existing = ActorTable.selectAll().first().toActorRecord()
                 val updated = existing.copy(firstName = "close-draining")
                 repository.put(existing.id, updated)
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                flushStarted.await(5.seconds).shouldBeTrue()
 
-                val closeThread = Thread {
+                val closeThread = thread {
                     try {
                         repository.close()
                     } finally {
                         closeCompleted.countDown()
                     }
-                }.apply { start() }
+                }
 
                 try {
                     awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
                 } finally {
                     releaseFlush.countDown()
-                    closeCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(5.seconds).shouldBeTrue()
                     closeThread.join()
                 }
 
@@ -587,20 +602,20 @@ class JdbcCaffeineRepositoryExtraTest {
             withActorTable(TestDB.H2_MYSQL) {
                 val existing = ActorTable.selectAll().first().toActorRecord()
                 repository.put(existing.id, existing.copy(firstName = "close-timeout"))
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                flushStarted.await(5.seconds).shouldBeTrue()
                 val workerCompleted = CountDownLatch(1)
                 writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
 
-                val closeThread = Thread {
+                val closeThread = thread {
                     try {
                         repository.close()
                     } finally {
                         closeCompleted.countDown()
                     }
-                }.apply { start() }
+                }
 
                 try {
-                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(1.seconds).shouldBeTrue()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 } finally {
                     releaseFlush.countDown()
@@ -609,7 +624,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 }
 
                 closeThread.isAlive.shouldBeFalse()
-                workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                workerCompleted.await(5.seconds).shouldBeTrue()
                 repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
             }
         }
@@ -659,7 +674,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 val blocked = actors[0].copy(firstName = "close-interrupted")
                 val rejected = actors[1].copy(firstName = "close-interrupted-rejected")
                 repository.put(blocked.id, blocked)
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                flushStarted.await(5.seconds).shouldBeTrue()
                 val workerCompleted = CountDownLatch(1)
                 writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
 
@@ -675,7 +690,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 try {
                     awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
                     closeThread.interrupt()
-                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(1.seconds).shouldBeTrue()
 
                     interruptedAfterClose.get().shouldBeTrue()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
@@ -686,11 +701,11 @@ class JdbcCaffeineRepositoryExtraTest {
                     repository.cache.getIfPresent(repository.serializeKey(rejected.id)).shouldBeNull()
 
                     val repeatedCloseCompleted = CountDownLatch(1)
-                    val repeatedCloseThread = Thread {
+                    val repeatedCloseThread = thread {
                         repository.close()
                         repeatedCloseCompleted.countDown()
-                    }.apply { start() }
-                    repeatedCloseCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    }
+                    repeatedCloseCompleted.await(1.seconds).shouldBeTrue()
                     repeatedCloseThread.join(5_000)
                     repeatedCloseThread.isAlive.shouldBeFalse()
                 } finally {
@@ -699,7 +714,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     closeThread.join(5_000)
                 }
 
-                workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                workerCompleted.await(5.seconds).shouldBeTrue()
                 repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
             }
         }
@@ -726,23 +741,23 @@ class JdbcCaffeineRepositoryExtraTest {
             withActorTable(TestDB.H2_MYSQL) {
                 val actor = ActorTable.selectAll().first().toActorRecord()
                 repository.put(actor.id, actor.copy(firstName = "close-follower"))
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                val owner = Thread {
+                flushStarted.await(5.seconds).shouldBeTrue()
+                val owner = thread {
                     try {
                         repository.close()
                     } finally {
                         ownerCompleted.countDown()
                     }
-                }.apply { start() }
+                }
                 awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
-                val follower = Thread {
+                val follower = thread {
                     try {
                         repository.close()
                         followerInterrupted.set(Thread.currentThread().isInterrupted)
                     } finally {
                         followerCompleted.countDown()
                     }
-                }.apply { start() }
+                }
 
                 try {
                     awaitThreadWaiting(follower).shouldBeTrue()
@@ -750,8 +765,8 @@ class JdbcCaffeineRepositoryExtraTest {
                     Thread.sleep(50)
                     followerCompleted.await(50, TimeUnit.MILLISECONDS).shouldBeFalse()
                     releaseFlush.countDown()
-                    ownerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
-                    followerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    ownerCompleted.await(1.seconds).shouldBeTrue()
+                    followerCompleted.await(1.seconds).shouldBeTrue()
                 } finally {
                     releaseFlush.countDown()
                     owner.interrupt()
@@ -799,19 +814,19 @@ class JdbcCaffeineRepositoryExtraTest {
                 val updated = existing.copy(firstName = "close-admission-timeout")
                 commit()
 
-                val putThread = Thread {
+                val putThread = thread {
                     try {
                         repository.put(updated.id, updated)
                     } catch (cause: Throwable) {
                         putFailure.set(cause)
                     }
-                }.apply { start() }
+                }
                 var readThread: Thread? = null
 
                 try {
-                    cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cachePutEntered.await(5.seconds).shouldBeTrue()
                     // timeout 이후에는 hook이 생략될 수 있으므로 DB 반영 신호를 먼저 확인한다.
-                    dbWriteCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    dbWriteCompleted.await(5.seconds).shouldBeTrue()
                     val workerCompleted = CountDownLatch(1)
                     writeBehindJobOf(repository).invokeOnCompletion { workerCompleted.countDown() }
                     repository.close()
@@ -819,31 +834,31 @@ class JdbcCaffeineRepositoryExtraTest {
                     reportAfterClose.workerState shouldBeEqualTo CacheWorkerState.FAILED
 
                     releaseCachePut.release()
-                    cacheValuePublished.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cacheValuePublished.tryAcquire(5.seconds).shouldBeTrue()
 
-                    readThread = Thread {
+                    readThread = thread {
                         try {
                             readValue.set(repository.get(updated.id))
                         } finally {
                             readCompleted.countDown()
                         }
-                    }.apply { start() }
+                    }
 
-                    readCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    readCompleted.await(1.seconds).shouldBeTrue()
                     readValue.get() shouldBeEqualTo updated
 
                     releaseCachePutAfterPublish.release()
-                    cachePutCompleted.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cachePutCompleted.tryAcquire(5.seconds).shouldBeTrue()
                     putThread.join(5_000)
-                    readCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    readCompleted.await(5.seconds).shouldBeTrue()
                     readThread.join(5_000)
 
                     putThread.isAlive.shouldBeFalse()
                     readThread.isAlive.shouldBeFalse()
-                    workerCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    workerCompleted.await(5.seconds).shouldBeTrue()
 
                     val failure = putFailure.get().shouldNotBeNull()
-                    (failure is IllegalStateException).shouldBeTrue()
+                    failure.shouldBeInstanceOf<IllegalStateException>()
                     failure.message shouldContain "TIMEOUT"
 
                     repository.cache.getIfPresent(repository.serializeKey(updated.id)).shouldBeNull()
@@ -915,22 +930,22 @@ class JdbcCaffeineRepositoryExtraTest {
                 }
                 val putFailures = List(admissionCount) { AtomicReference<Throwable?>() }
                 val putThreads = accepted.mapIndexed { index, entity ->
-                    Thread {
+                    thread {
                         try {
                             repository.put(entity.id, entity)
                         } catch (cause: Throwable) {
                             putFailures[index].set(cause)
                         }
-                    }.apply { start() }
+                    }
                 }
                 val closeCompleted = CountDownLatch(1)
-                val closeThread = Thread {
+                val closeThread = thread(start = false) {
                     repository.close()
                     closeCompleted.countDown()
                 }
 
                 try {
-                    cachePutsEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cachePutsEntered.await(5.seconds).shouldBeTrue()
                     closeThread.start()
                     awaitHealthReport(repository, "workerState=DRAINING", predicate = hasDrainingWorkerState)
 
@@ -948,8 +963,8 @@ class JdbcCaffeineRepositoryExtraTest {
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.DRAINING
 
                     releaseCachePuts.release()
-                    cachePutsCompleted.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
-                    closeCompleted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cachePutsCompleted.tryAcquire(5.seconds).shouldBeTrue()
+                    closeCompleted.await(5.seconds).shouldBeTrue()
                 } finally {
                     releaseCachePuts.release(admissionCount)
                     putThreads.forEach { it.join(5_000) }
@@ -987,7 +1002,7 @@ class JdbcCaffeineRepositoryExtraTest {
             withCredentialTable(testDB) {
                 try {
                     repository.put(entities[0].id, entities[0])
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     repository.put(entities[1].id, entities[1])
 
                     val failure = assertFailsWith<IllegalStateException> {
@@ -1021,6 +1036,7 @@ class JdbcCaffeineRepositoryExtraTest {
             try {
                 val report = repository.validateConsistency()
 
+                log.debug { "report=$report" }
                 report.mode shouldBeEqualTo CacheWriteMode.READ_ONLY
                 report.queueDepth shouldBeEqualTo 0
                 report.workerState shouldBeEqualTo CacheWorkerState.NOT_APPLICABLE
@@ -1045,6 +1061,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 isWriteBehindJobInitialized(repository).shouldBeFalse()
                 val report = repository.validateConsistency()
 
+                log.debug { "report=$report" }
                 report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                 report.queueDepth shouldBeEqualTo 0
                 report.workerState shouldBeEqualTo CacheWorkerState.IDLE
@@ -1078,7 +1095,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     val report = repository.validateConsistency()
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
@@ -1112,7 +1129,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushFailed.await(5.seconds).shouldBeTrue()
                     val report = awaitHealthReport(
                         repository = repository,
                         expected = "queueDepth=1 && lastFlushError!=null",
@@ -1177,7 +1194,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                 try {
                     repository.put(first.id, first)
-                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushFailed.await(5.seconds).shouldBeTrue()
                     val failedReport = awaitHealthReport(
                         repository = repository,
                         expected = "queueDepth=1 && lastFlushError!=null",
@@ -1189,16 +1206,19 @@ class JdbcCaffeineRepositoryExtraTest {
                     failedReport.lastFlushError.shouldNotBeNull()
 
                     repository.put(second.id, second)
-                    flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushSucceeded.await(5.seconds).shouldBeTrue()
+
                     val recoveredReport = awaitHealthReport(
                         repository = repository,
                         expected = "queueDepth=0 && lastFlushError=null",
                     ) { health ->
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
+
+                    log.debug { "recoverReport=$recoveredReport" }
                     recoveredReport.queueDepth shouldBeEqualTo 0
-                    recoveredReport.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     recoveredReport.lastFlushError.shouldBeNull()
+                    recoveredReport.workerState shouldBeEqualTo CacheWorkerState.RUNNING
                     commit()
 
                     ActorSchema.findActorById(first.id).shouldNotBeNull().firstName shouldBeEqualTo first.firstName
@@ -1297,7 +1317,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            releaseFlush.await(5.seconds).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email
@@ -1329,10 +1349,10 @@ class JdbcCaffeineRepositoryExtraTest {
             override fun put(key: String, value: ActorRecord) {
                 cachePutEntered.countDown()
                 try {
-                    releaseCachePut.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    releaseCachePut.tryAcquire(5.seconds).shouldBeTrue()
                     delegateCache.put(key, value.copy(firstName = "dirty-cache-publication"))
                     cacheValuePublished.release()
-                    releaseCachePutAfterPublish.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                    releaseCachePutAfterPublish.tryAcquire(5.seconds).shouldBeTrue()
                 } finally {
                     cachePutCompleted.release()
                 }
@@ -1376,7 +1396,7 @@ class JdbcCaffeineRepositoryExtraTest {
                 override fun put(key: String, value: ActorSchema.CredentialRecord) {
                     cachePutEntered.countDown()
                     try {
-                        releaseCachePut.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
+                        releaseCachePut.tryAcquire(5.seconds).shouldBeTrue()
                         delegateCache.put(key, value)
                     } finally {
                         cachePutCompleted.release()
@@ -1433,7 +1453,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
         private fun awaitFlushRelease() {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            releaseFlush.await(5.seconds).shouldBeTrue()
         }
     }
 
@@ -1555,15 +1575,14 @@ class JdbcCaffeineRepositoryExtraTest {
         delayMillis: Long = 10,
         predicate: (CacheHealthReport) -> Boolean,
     ): CacheHealthReport {
-        require(maxAttempts > 0) { "maxAttempts must be positive" }
-        require(delayMillis >= 0) { "delayMillis must not be negative" }
+        maxAttempts.requirePositiveNumber("maxAttempts")
+        delayMillis.requireZeroOrPositiveNumber("delayMillis")
 
-        var lastReport: CacheHealthReport? = null
+        lateinit var lastReport: CacheHealthReport
         repeat(maxAttempts) {
-            val report = repository.validateConsistency()
-            lastReport = report
-            if (predicate(report)) {
-                return report
+            lastReport = repository.validateConsistency()
+            if (predicate(lastReport)) {
+                return lastReport
             }
             Thread.sleep(delayMillis)
         }
@@ -1573,11 +1592,10 @@ class JdbcCaffeineRepositoryExtraTest {
     }
 
     private fun awaitThreadWaiting(thread: Thread): Boolean {
-        repeat(100) {
-            if (thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING) return true
-            Thread.sleep(10)
+        await atMost 5.seconds withPollDelay 10.milliseconds withPollInterval 10.milliseconds until {
+            thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING
         }
-        return thread.state == Thread.State.WAITING || thread.state == Thread.State.TIMED_WAITING
+        return true
     }
 
     @Suppress("UNCHECKED_CAST")

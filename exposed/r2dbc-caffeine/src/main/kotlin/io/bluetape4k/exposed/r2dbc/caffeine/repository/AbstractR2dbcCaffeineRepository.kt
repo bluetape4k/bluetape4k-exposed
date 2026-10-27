@@ -195,9 +195,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         scope.launch {
             val batch = mutableListOf<Pair<ID, E>>()
             try {
-                for (entry in writeBehindQueue) {
-                    if (!entry.accepted.await()) continue
-                    batch.add(entry.id to entry.entity)
+                for ((id, entity, accepted) in writeBehindQueue) {
+                    if (!accepted.await()) continue
+                    batch.add(id to entity)
                     // 큐에 남아있는 항목을 배치 크기까지 추가로 수집
                     while (batch.size < config.writeBehindBatchSize) {
                         val next = writeBehindQueue.tryReceive().getOrNull() ?: break
@@ -242,11 +242,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                         // lifecycle fence가 회계를
                         // late-side-effect guard와 함께 정산한다.
                     } else {
-                        if (writeBehindLateSideEffectGuard.get()) {
-                            batch.clear()
-                            return@launch
+                        if (!writeBehindLateSideEffectGuard.get()) {
+                            retainWriteBehindFailedBatch(batch)
                         }
-                        retainWriteBehindFailedBatch(batch)
                         batch.clear()
                     }
                 }
@@ -265,10 +263,10 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
                     return@invokeOnCompletion
                 }
                 writeBehindCoordinator.onWorkerCompleted(
-                    when {
-                        cause == null -> WriteBehindWorkerCompletion.DRAINED
-                        cause is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
-                        else          -> WriteBehindWorkerCompletion.FAILED
+                    when (cause) {
+                        null                     -> WriteBehindWorkerCompletion.DRAINED
+                        is CancellationException -> WriteBehindWorkerCompletion.CANCELLED
+                        else                     -> WriteBehindWorkerCompletion.FAILED
                     }
                 )
                 writeBehindLifecycleLock.withLock {
@@ -292,7 +290,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
         if (remainingNanos <= 0L) return@withContext false
         val remainingMillis = remainingNanos / 1_000_000L
         if (remainingMillis <= 0L) return@withContext false
-        withTimeoutOrNull(remainingMillis) {
+        withTimeoutOrNull(timeMillis = remainingMillis) {
             flushBatchWithRetry(batch, deadlineNanos)
         } ?: false
     }
@@ -469,9 +467,9 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             if (deadlineNanos != null) {
                 val remainingNanos = deadlineNanos - System.nanoTime()
                 if (remainingNanos <= 0L) continue
-                delay(minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
+                delay(timeMillis = minOf(backoffMillis, remainingNanos / NANOS_PER_MILLISECOND))
             } else {
-                delay(backoffMillis)
+                delay(timeMillis = backoffMillis)
             }
         }
         return false

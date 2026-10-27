@@ -6,6 +6,7 @@ import io.bluetape4k.exposed.redisson.domain.UserSchema.toUserRecord
 import io.bluetape4k.exposed.redisson.repository.AbstractJdbcRedissonRepository
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.autoIncColumnType
 import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
@@ -15,7 +16,10 @@ import java.time.Instant
 
 class UserCacheRepository(
     redissonClient: RedissonClient,
-    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(name = "exposed:remote:users"),
+    config: RedissonCacheConfig = RedissonCacheConfig.READ_WRITE_THROUGH.copy(
+        name = "exposed:remote:users",
+        codec = RedissonCodecs.FastForyComposite
+    ),
 ): AbstractJdbcRedissonRepository<Long, UserRecord>(
     redissonClient,
     config,

@@ -2,12 +2,22 @@ package io.bluetape4k.exposed.core.statements.api
 
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldContentEqual
+import io.bluetape4k.junit5.faker.Fakers
+import io.bluetape4k.logging.KLogging
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 class ExposedBlobExtensionsTest {
-    @Test
+
+    companion object: KLogging() {
+        private const val REPEAT_SIZE = 10
+    }
+
+    @RepeatedTest(REPEAT_SIZE)
     fun `String toExposedBlob and toUtf8String are reversible`() {
-        val text = "hello exposed"
+        val text = Fakers.defaultFaker.lorem().paragraph()
         val blob = text.toExposedBlob()
 
         blob.toUtf8String() shouldBeEqualTo text
@@ -21,9 +31,9 @@ class ExposedBlobExtensionsTest {
         blob.toByteArray().shouldBeEmpty()
     }
 
-    @Test
+    @RepeatedTest(REPEAT_SIZE)
     fun `ByteArray toExposedBlob and toByteArray are reversible`() {
-        val bytes = byteArrayOf(1, 2, 3, 4)
+        val bytes = Fakers.faker.random().nextRandomBytes(Random.nextInt(512, 1024))
         val blob = bytes.toExposedBlob()
 
         blob.toByteArray() shouldBeEqualTo bytes
@@ -51,11 +61,11 @@ class ExposedBlobExtensionsTest {
         blob.toByteArray().shouldBeEmpty()
     }
 
-    @Test
+    @RepeatedTest(REPEAT_SIZE)
     fun `toInputStream 은 blob bytes 를 그대로 읽을 수 있다`() {
-        val bytes = byteArrayOf(10, 20, 30)
+        val bytes = Fakers.faker.random().nextRandomBytes(Random.nextInt(512, 1024))
         val blob = bytes.toExposedBlob()
 
-        blob.toInputStream().readBytes() shouldBeEqualTo bytes
+        blob.toInputStream().readBytes() shouldContentEqual bytes 
     }
 }

@@ -6,12 +6,15 @@ dependencies {
     api(project(":bluetape4k-exposed-ktor-r2dbc"))
     api(bt4k.bluetape4k.tenant)
     api(bt4k.bluetape4k.ktor.tenant)
+
+    // Coroutines
+    api(bt4k.bluetape4k.coroutines)
     api(libs.kotlinx.coroutines.core)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     testImplementation(bt4k.bluetape4k.ktor.testing)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.r2dbc.h2)
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.micrometer.test)
 }

@@ -1,7 +1,7 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
 import io.bluetape4k.junit5.faker.Fakers
-import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import org.jetbrains.exposed.v1.core.Schema
 import org.junit.jupiter.api.BeforeAll
 import java.util.*
@@ -25,6 +25,16 @@ import java.util.*
  */
 abstract class AbstractExposedR2dbcTest {
 
+    companion object: KLoggingChannel() {
+        @JvmStatic
+        val faker = Fakers.faker
+
+        @JvmStatic
+        fun enableDialects() = TestDB.enabledDialects()
+
+        const val ENABLE_DIALECTS_METHOD = "enableDialects"
+    }
+
     init {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
     }
@@ -41,16 +51,6 @@ abstract class AbstractExposedR2dbcTest {
         val dialects = enableDialects()
         if (TestDB.POSTGRESQL in dialects) Containers.Postgres
         if (TestDB.MYSQL_V8 in dialects) Containers.MySQL8
-    }
-
-    companion object: KLogging() {
-        @JvmStatic
-        val faker = Fakers.faker
-
-        @JvmStatic
-        fun enableDialects() = TestDB.enabledDialects()
-
-        const val ENABLE_DIALECTS_METHOD = "enableDialects"
     }
 
     /**
@@ -72,5 +72,4 @@ abstract class AbstractExposedR2dbcTest {
         quota = "20M",
         on = "USERS"
     )
-
 }

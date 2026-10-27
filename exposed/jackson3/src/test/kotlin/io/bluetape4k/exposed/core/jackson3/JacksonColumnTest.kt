@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.core.Op
@@ -122,20 +123,20 @@ class JacksonColumnTest: AbstractExposedTest() {
             // SQLServer & Oracle return null if extracted JSON is not scalar
             val requiresScala = currentDialectTest is SQLServerDialect || currentDialectTest is OracleDialect
             val isActive = tester.jacksonColumn.extract<Boolean>("${pathPrefix}active", toScalar = requiresScala)
-            val row = tester.select(isActive).singleOrNull()
-            row?.get(isActive) shouldBeEqualTo data1.active
+            val row = tester.select(isActive).single()
+            row[isActive] shouldBeEqualTo data1.active
 
             val storedUser = tester.jacksonColumn.extract<User>("${pathPrefix}user", toScalar = false)
-            val row2 = tester.select(storedUser).singleOrNull()
-            row2?.get(storedUser) shouldBeEqualTo user1
+            val row2 = tester.select(storedUser).single()
+            row2[storedUser] shouldBeEqualTo user1
 
             val path = when (currentDialectTest) {
                 is PostgreSQLDialect -> arrayOf("user", "name")
                 else -> arrayOf(".user.name")
             }
             val username = tester.jacksonColumn.extract<String>(*path)
-            val row3 = tester.select(username).singleOrNull()
-            row3?.get(username) shouldBeEqualTo user1.name
+            val row3 = tester.select(username).single()
+            row3[username] shouldBeEqualTo user1.name
         }
     }
 
@@ -168,8 +169,8 @@ class JacksonColumnTest: AbstractExposedTest() {
             }
             val tooManyLogins = logins greaterEq 1000
 
-            val row = tester.select(tester.id).where { tooManyLogins }.singleOrNull()
-            row?.get(tester.id) shouldBeEqualTo newId
+            val row = tester.select(tester.id).where { tooManyLogins }.single()
+            row[tester.id] shouldBeEqualTo newId
         }
     }
 
@@ -503,7 +504,7 @@ class JacksonColumnTest: AbstractExposedTest() {
 
         fun selectIdWhere(condition: () -> Op<Boolean>): List<EntityID<Int>> {
             val query = iterables.select(iterables.id).where(condition())
-            return query.map { it[iterables.id] }
+            return query.map { it[iterables.id] }.also { log.debug { "id=$it" } }
         }
 
         withTables(testDB, iterables) {
@@ -567,6 +568,8 @@ class JacksonColumnTest: AbstractExposedTest() {
                 defaultTester.insert { }
 
                 defaultTester.selectAll().single().also {
+                    log.debug { "row=$it" }
+
                     it[defaultTester.user1].name shouldBeEqualTo defaultUser.name
                     it[defaultTester.user1].team shouldBeEqualTo defaultUser.team
 
@@ -606,6 +609,8 @@ class JacksonColumnTest: AbstractExposedTest() {
             }
 
             val row = iterables.selectAll().single()
+
+            log.debug { "row=$row" }
             row[iterables.userList] shouldBeEqualTo listOf(user1, user2)
             row[iterables.intList] shouldBeEqualTo integerList
             row[iterables.userArray] shouldBeEqualTo arrayOf(user1, user2)
@@ -722,6 +727,8 @@ class JacksonColumnTest: AbstractExposedTest() {
             testerDatabaseGenerated.insert { }
 
             val value = testerDatabaseGenerated.selectAll().single()[tester.value]
+
+            log.debug { "value=$value" }
             value shouldBeEqualTo defaultUser
         }
     }

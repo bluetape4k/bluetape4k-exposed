@@ -3,19 +3,21 @@
 package io.bluetape4k.exposed.r2dbc.caffeine.snapshot
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotMapper
-import io.bluetape4k.exposed.cache.snapshot.CacheSnapshotValueValidator
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
+import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOutcome
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheStore
 import io.bluetape4k.exposed.cache.snapshot.SnapshotValueSizer
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
+import io.bluetape4k.javatimes.days
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.IsolationLevel
@@ -25,7 +27,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
+import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.Transaction
@@ -43,18 +48,25 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.currentOrNull
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
+import org.testcontainers.utility.Base58
 import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class R2dbcSnapshotTransactionTest {
+
+    companion object: KLoggingChannel() {
+        private const val RACE_REPETITIONS: Int = 100
+        private const val MAX_COMMIT_EVENTS: Int = 3
+    }
 
     @Test
     fun `commit publishes staged snapshot only after database success and performs zero extra SQL writes`() =
@@ -169,7 +181,9 @@ class R2dbcSnapshotTransactionTest {
         val cache = cache("invalidate:v1")
         populate(database, cache, 1L, "old")
 
-        suspendTransaction(db = database) { stageInvalidation(cache, 1L) }
+        suspendTransaction(db = database) {
+            stageInvalidation(cache, 1L)
+        }
 
         cache.lookup(1L).snapshot.shouldBeNull()
     }
@@ -184,12 +198,12 @@ class R2dbcSnapshotTransactionTest {
         suspendTransaction(db = database) {
             maxAttempts = 1
             val receiver = this
-            stageSnapshot(cache, miss, "source", CacheSnapshotMapper { source ->
-                (transactionManager.currentOrNull() === receiver) shouldBeEqualTo true
-                outerTransaction shouldBeEqualTo null
+            stageSnapshot(cache, miss, "source") { source ->
+                transactionManager.currentOrNull() shouldBe receiver
+                outerTransaction.shouldBeNull()
                 mappings.incrementAndGet()
                 CacheSnapshot(Payload(source))
-            })
+            }
         }
 
         mappings.get() shouldBeEqualTo 1
@@ -206,16 +220,16 @@ class R2dbcSnapshotTransactionTest {
         suspendTransaction(db = database) {
             maxAttempts = 1
             assertFailsWith<MapperMarker> {
-                stageSnapshot(cache, miss, "bad", CacheSnapshotMapper {
+                stageSnapshot(cache, miss, "bad") {
                     mappings.incrementAndGet()
                     throw MapperMarker()
-                })
+                }
             }
             assertFailsWith<IllegalStateException> {
-                stageSnapshot(cache, miss, "again", CacheSnapshotMapper {
+                stageSnapshot(cache, miss, "again") {
                     mappings.incrementAndGet()
                     CacheSnapshot(Payload(it))
-                })
+                }
             }
         }
 
@@ -253,10 +267,10 @@ class R2dbcSnapshotTransactionTest {
         suspendTransaction(db = database) { captured.set(this) }
         val staleMiss = cache.lookup(1L).miss.shouldNotBeNull()
         assertFailsWith<IllegalStateException> {
-            captured.get().stageSnapshot(cache, staleMiss, "stale", CacheSnapshotMapper {
+            captured.get().stageSnapshot(cache, staleMiss, "stale") {
                 mappings.incrementAndGet()
                 CacheSnapshot(Payload(it))
-            })
+            }
         }
         suspendTransaction(db = database) {
             maxAttempts = 1
@@ -267,12 +281,14 @@ class R2dbcSnapshotTransactionTest {
             suspendTransaction(db = database) {
                 val nestedMiss = cache.lookup(2L).miss.shouldNotBeNull()
                 assertFailsWith<IllegalStateException> {
-                    stageSnapshot(cache, nestedMiss, "nested", CacheSnapshotMapper {
+                    stageSnapshot(cache, nestedMiss, "nested") {
                         mappings.incrementAndGet()
                         CacheSnapshot(Payload(it))
-                    })
+                    }
                 }
-                assertFailsWith<IllegalStateException> { stageInvalidation(cache, 3L) }
+                assertFailsWith<IllegalStateException> {
+                    stageInvalidation(cache, 3L)
+                }
             }
         }
 
@@ -288,7 +304,7 @@ class R2dbcSnapshotTransactionTest {
                 snapshot = SnapshotCacheConfig("validator:v1", "payload-v1"),
                 fenceStripes = 64,
             ),
-            validator = CacheSnapshotValueValidator { throw ValidatorMarker() },
+            validator = { throw ValidatorMarker() },
         )
         val miss = cache.lookup(1L).miss.shouldNotBeNull()
 
@@ -318,7 +334,9 @@ class R2dbcSnapshotTransactionTest {
 
         suspendTransaction(db = database) {
             stageInvalidation(first, 1L)
-            assertFailsWith<IllegalStateException> { stageInvalidation(second, 2L) }
+            assertFailsWith<IllegalStateException> {
+                stageInvalidation(second, 2L)
+            }
         }
 
         first.lookup(1L).snapshot.shouldBeNull()
@@ -340,21 +358,21 @@ class R2dbcSnapshotTransactionTest {
                 val invalidated = CountDownLatch(1)
                 val newerInvalidation = async(Dispatchers.IO) {
                     ready.countDown()
-                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    start.await(5.seconds).shouldBeTrue()
                     suspendTransaction(db = database) { stageInvalidation(cache, id) }
                     invalidated.countDown()
                 }
                 val olderFill = async(Dispatchers.IO) {
                     ready.countDown()
-                    start.await(5, TimeUnit.SECONDS).shouldBeTrue()
-                    invalidated.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    start.await(5.seconds).shouldBeTrue()
+                    invalidated.await(5.seconds).shouldBeTrue()
                     suspendTransaction(db = database) {
                         maxAttempts = 1
                         stageSnapshot(cache, oldMiss, CacheSnapshot(Payload("stale-$id")))
                     }
                 }
 
-                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                ready.await(5.seconds).shouldBeTrue()
                 start.countDown()
                 withTimeout(timeMillis = 5_000) {
                     newerInvalidation.await()
@@ -471,7 +489,9 @@ class R2dbcSnapshotTransactionTest {
                 override fun beforeCommit(transaction: Transaction) {
                     runCatching {
                         (transaction as R2dbcTransaction).stageInvalidation(cache, 2L)
-                    }.onFailure { rejected.set(true) }
+                    }.onFailure {
+                        rejected.set(true)
+                    }
                 }
             })
         }
@@ -534,13 +554,10 @@ class R2dbcSnapshotTransactionTest {
             cache.lookup(1L).snapshot.shouldBeNull()
             failures.size shouldBeEqualTo 0
 
-            await
-                .atMost(Duration.ofSeconds(5))
-                .pollInterval(Duration.ofMillis(500))
-                .until {
-                    System.gc()
-                    payloadReference.get() == null
-                }
+            await atMost 5.seconds withPollInterval 500.milliseconds until {
+                System.gc()
+                payloadReference.get() == null
+            }
         }
     }
 
@@ -592,6 +609,7 @@ class R2dbcSnapshotTransactionTest {
         val reads = AtomicInteger()
 
         val first = cache.lookup(1L).miss.shouldNotBeNull()
+
         assertFailsWith<RollbackMarker> {
             suspendTransaction(db = database) {
                 maxAttempts = 1
@@ -717,7 +735,7 @@ class R2dbcSnapshotTransactionTest {
         return R2dbcDatabase.connect(
             manager = { database -> CancellingTransactionManager(TransactionManager(database), probe) },
         ) {
-            setUrl("r2dbc:h2:mem:///unknown-commit-${UUID.randomUUID()};DB_CLOSE_DELAY=-1;")
+            setUrl("r2dbc:h2:mem:///unknown-commit-${Base58.randomString(8)};DB_CLOSE_DELAY=-1;")
         }
     }
 
@@ -754,8 +772,8 @@ class R2dbcSnapshotTransactionTest {
         AFTER_ROLLBACK
     }
 
-    private object NeverExpiredDeadline: io.bluetape4k.exposed.cache.snapshot.SnapshotCacheDeadline {
-        override fun remaining(): Duration = Duration.ofDays(1)
+    private object NeverExpiredDeadline: SnapshotCacheDeadline {
+        override fun remaining(): Duration = 1.days()
         override val isExpired: Boolean = false
     }
 
@@ -829,8 +847,5 @@ class R2dbcSnapshotTransactionTest {
         AFTER_COMMIT
     }
 
-    companion object: KLoggingChannel() {
-        private const val RACE_REPETITIONS: Int = 100
-        private const val MAX_COMMIT_EVENTS: Int = 3
-    }
+
 }

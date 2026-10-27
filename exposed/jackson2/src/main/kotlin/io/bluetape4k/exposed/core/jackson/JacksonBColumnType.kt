@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.jackson
 
 import io.bluetape4k.jackson.JacksonSerializer
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.vendors.H2Dialect
@@ -112,7 +113,7 @@ inline fun <reified T: Any> Table.jacksonb(
         //      NullPointerException보다 IllegalArgumentException이 의도를 더 정확히 전달합니다.
         //   ② 타입명과 원본 JSON 문자열을 메시지에 포함해 운영 로그에서 원인을 즉시 추적할 수 있습니다.
         deserialize = {
-            requireNotNull(serializer.deserializeFromString<T>(it)) {
+            serializer.deserializeFromString<T>(it).requireNotNull {
                 "JSONB 역직렬화 결과가 null입니다. 타입 [${T::class.qualifiedName}] 으로 변환할 수 없는 JSON 입니다: $it"
             }
         }

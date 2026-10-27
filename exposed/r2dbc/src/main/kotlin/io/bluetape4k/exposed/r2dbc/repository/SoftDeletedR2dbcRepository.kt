@@ -7,6 +7,7 @@ import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.andWhere
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.update
 import java.util.*
@@ -84,7 +85,11 @@ interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>
      * @return 활성 엔티티 개수
      */
     suspend fun countActive(predicate: () -> Op<Boolean> = { Op.TRUE }): Long =
-        table.selectAll().where { (table.isDeleted eq false).and(predicate) }.count()
+        table.selectAll()
+            .where { predicate() }
+            .andWhere { table.isDeleted eq false }
+            .count()
+    //.where { (table.isDeleted eq false).and(predicate) }.count()
 
     /**
      * soft delete 된(`isDeleted = true`) 엔티티 개수를 반환합니다.
@@ -92,7 +97,11 @@ interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>
      * @return 삭제된 엔티티 개수
      */
     suspend fun countDeleted(predicate: () -> Op<Boolean> = { Op.TRUE }): Long =
-        table.selectAll().where { (table.isDeleted eq true).and(predicate) }.count()
+        table.selectAll()
+            .where { predicate() }
+            .andWhere { table.isDeleted eq true }
+            .count()
+    //.where { (table.isDeleted eq true).and(predicate) }.count()
 
     /**
      * 활성 상태(`isDeleted = false`)인 엔티티만 조회합니다.
@@ -108,9 +117,7 @@ interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>
         sortOrder: SortOrder = SortOrder.ASC,
         predicate: () -> Op<Boolean> = { Op.TRUE },
     ): Flow<E> =
-        findAll(limit, offset, sortOrder) {
-            (table.isDeleted eq false).and(predicate)
-        }
+        findAll(limit, offset, sortOrder) { predicate() and (table.isDeleted eq false) }
 
     /**
      * soft delete 된(`isDeleted = true`) 엔티티만 조회합니다.
@@ -126,9 +133,7 @@ interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>
         sortOrder: SortOrder = SortOrder.ASC,
         predicate: () -> Op<Boolean> = { Op.TRUE },
     ): Flow<E> =
-        findAll(limit, offset, sortOrder) {
-            (table.isDeleted eq true).and(predicate)
-        }
+        findAll(limit, offset, sortOrder) { predicate() and (table.isDeleted eq true) }
 
     /**
      * 조건에 맞는 엔티티를 일괄 soft delete 합니다.
@@ -164,9 +169,7 @@ interface SoftDeletedR2dbcRepository<ID: Any, E: Any, T: SoftDeletedIdTable<ID>>
         sortOrder: SortOrder = SortOrder.ASC,
         predicate: () -> Op<Boolean> = { Op.TRUE },
     ): ExposedPage<E> =
-        findPage(pageNumber, pageSize, sortOrder) {
-            (table.isDeleted eq false).and(predicate)
-        }
+        findPage(pageNumber, pageSize, sortOrder) { predicate() and (table.isDeleted eq false) }
 }
 
 /**

@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.r2dbc.tests
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -23,7 +24,7 @@ import java.util.concurrent.CancellationException
 
 class R2dbcFixtureCleanupTest {
     private class BodyFailure(val marker: Int): IllegalArgumentException("body sentinel")
-    private class DropFailure(val index: Int): IllegalStateException("drop-$index")
+    private class DropFailure(index: Int): IllegalStateException("drop-$index")
 
     private val selected = TestDB.valueOf(System.getenv("EXPOSED_TEST_DB") ?: "H2").also {
         check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
@@ -65,7 +66,7 @@ class R2dbcFixtureCleanupTest {
                 bodyRan.shouldBeFalse()
 
                 if (dropTables) {
-                    (drops >= 2) shouldBeEqualTo true
+                    drops shouldBeGreaterOrEqualTo 2
                     withDb(fixture) {
                         broken.exists().shouldBeFalse()
                     }

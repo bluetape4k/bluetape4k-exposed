@@ -13,6 +13,8 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.preserveFailure
 import io.bluetape4k.exposed.r2dbc.tests.withDb
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.bluetape4k.support.requireNotBlank
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -46,7 +48,8 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
                         R2dbcMigrationEvolved,
                         withLogs = false,
-                    )
+                    ).onEach { log.debug { "statement=$it" } }
+
                     statements.size shouldBeEqualTo 1
 
                     val validated = validateAdditiveStatement(
@@ -54,6 +57,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                         expectedTable = R2dbcMigrationEvolved.tableName,
                         expectedColumn = R2dbcMigrationEvolved.description.name,
                     )
+                    log.debug { "validated=$validated" }
 
                     this.exec(validated)
 
@@ -86,7 +90,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
                     val statements = MigrationUtils.statementsRequiredForDatabaseMigration(
                         R2dbcTypeChangeEvolved,
                         withLogs = false,
-                    )
+                    ).onEach { log.debug { "statement=$it" } }
 
                     statements.shouldNotBeEmpty()
                     statements.any {
@@ -172,7 +176,7 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
             }
 
             thrown shouldBeSameInstanceAs primary
-            thrown.suppressed.isEmpty().shouldBeTrue()
+            thrown.suppressed.shouldBeEmpty()
         }
 
         @Test
@@ -277,12 +281,13 @@ class R2dbcMigrationDriftTest: AbstractExposedR2dbcTest() {
             .replace(WHITESPACE, " ")
             .trim()
             .uppercase(Locale.ROOT)
+
         return normalized.startsWith("ALTER TABLE ${expectedTable.uppercase(Locale.ROOT)} ") &&
                 Regex("\\b${Regex.escape(expectedColumn.uppercase(Locale.ROOT))}\\b").containsMatchIn(normalized) &&
                 Regex("\\b(TEXT|CLOB)\\b").containsMatchIn(normalized)
     }
 
-    companion object {
+    companion object: KLoggingChannel() {
         private const val IDENTIFIER_TOKEN = "(?:\"[^\"]+\"|`[^`]+`|[A-Za-z_][A-Za-z0-9_]*)"
         private val ADDITIVE_STATEMENT = Regex(
             "^ALTER TABLE ($IDENTIFIER_TOKEN) ADD(?: COLUMN)? ($IDENTIFIER_TOKEN) " +

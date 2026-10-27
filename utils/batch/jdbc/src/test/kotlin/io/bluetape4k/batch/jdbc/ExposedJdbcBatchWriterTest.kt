@@ -1,16 +1,17 @@
 package io.bluetape4k.batch.jdbc
 
+import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.batch.BatchTargetTable
 import io.bluetape4k.batch.TargetRecord
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
-import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import io.bluetape4k.assertions.assertFailsWith
 
 /**
  * [ExposedJdbcBatchWriter] 통합 테스트.
@@ -21,7 +22,9 @@ import io.bluetape4k.assertions.assertFailsWith
  * 3. 중복 키 (ignore = true)
  * 4. 다회 write 누적
  */
-class ExposedJdbcBatchWriterTest : AbstractBatchJdbcTest() {
+class ExposedJdbcBatchWriterTest: AbstractBatchJdbcTest() {
+
+    companion object: KLogging()
 
     private fun makeWriter(testDB: TestDB, ignore: Boolean = false): ExposedJdbcBatchWriter<TargetRecord> =
         ExposedJdbcBatchWriter(

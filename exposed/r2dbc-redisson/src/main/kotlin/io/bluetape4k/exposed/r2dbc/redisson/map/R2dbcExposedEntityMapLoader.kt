@@ -72,21 +72,24 @@ open class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
         try {
             while (hasMore) {
                 val cursor = lastId
-                val query = entityTable.select(entityTable.id).orderBy(entityTable.id, SortOrder.ASC)
-                val chunk =
-                    if (keysetSupported == true && cursor != null) {
+                val query = entityTable
+                    .select(entityTable.id)
+                    .orderBy(entityTable.id, SortOrder.ASC)
+
+                val chunk = when (keysetSupported) {
+                    true if cursor != null ->
                         query
                             .where { entityTable.rawIdColumn() greater cursor.asComparableKey() }
                             .limit(batchSize)
                             .map { it[entityTable.id].value }
                             .toList()
-                    } else {
+                    else                   ->
                         query
                             .limit(batchSize)
                             .offset(offset)
                             .map { it[entityTable.id].value }
                             .toList()
-                    }
+                }
 
                 if (chunk.isEmpty()) {
                     hasMore = false

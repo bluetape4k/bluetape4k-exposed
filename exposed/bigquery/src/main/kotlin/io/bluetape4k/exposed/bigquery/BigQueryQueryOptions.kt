@@ -40,16 +40,15 @@ data class BigQueryQueryOptions(
     }
 
     internal fun applyTo(request: QueryRequest): QueryRequest = request.apply {
-        setDryRun(this@BigQueryQueryOptions.dryRun)
-        this@BigQueryQueryOptions.maximumBytesBilled?.let(::setMaximumBytesBilled)
-        this@BigQueryQueryOptions.labels
-            .takeIf { it.isNotEmpty() }
-            ?.let { set("labels", it) }
-        this@BigQueryQueryOptions.priority?.let { set("priority", it.apiValue) }
-        this@BigQueryQueryOptions.location?.let(::setLocation)
-        this@BigQueryQueryOptions.destinationTable?.let { set("destinationTable", it.toTableReference()) }
-        this@BigQueryQueryOptions.timeoutMs?.let(::setTimeoutMs)
-        this@BigQueryQueryOptions.useQueryCache?.let(::setUseQueryCache)
+        val options = this@BigQueryQueryOptions
+        setDryRun(options.dryRun)
+        options.maximumBytesBilled?.let(::setMaximumBytesBilled)
+        options.labels.takeIf { it.isNotEmpty() }?.let { set("labels", it) }
+        options.priority?.let { set("priority", it.apiValue) }
+        options.location?.let(::setLocation)
+        options.destinationTable?.let { set("destinationTable", it.toTableReference()) }
+        options.timeoutMs?.let(::setTimeoutMs)
+        options.useQueryCache?.let(::setUseQueryCache)
     }
 
     internal fun asDryRun(): BigQueryQueryOptions =

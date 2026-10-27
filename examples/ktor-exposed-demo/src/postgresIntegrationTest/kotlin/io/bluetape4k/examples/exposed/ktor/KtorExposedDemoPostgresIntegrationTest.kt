@@ -1,17 +1,18 @@
 package io.bluetape4k.examples.exposed.ktor
 
-import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.examples.exposed.ktor.order.DemoDiagnosticSink
 import io.bluetape4k.examples.exposed.ktor.order.OrderConfirmationResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderResponse
 import io.bluetape4k.examples.exposed.ktor.order.OrderStatus
+import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.ktor.core.HealthResponse
 import io.bluetape4k.ktor.testing.bluetape4kJsonClient
 import io.bluetape4k.ktor.testing.decodeJsonBody
 import io.bluetape4k.ktor.testing.shouldHaveStatus
-import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.testcontainers.database.PostgreSQLServer
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -30,14 +31,14 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.testcontainers.postgresql.PostgreSQLContainer
-import java.util.UUID
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 @Execution(ExecutionMode.SAME_THREAD)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KtorExposedDemoPostgresIntegrationTest {
 
-    private val postgres = PostgreSQLContainer("postgres:16-alpine")
+    private val postgres by lazy { PostgreSQLServer.Launcher.postgres }
 
     @BeforeAll
     fun startPostgreSql() {
@@ -114,7 +115,7 @@ class KtorExposedDemoPostgresIntegrationTest {
                 client.get("/healthz/exposed")
                     .shouldHaveStatus(HttpStatusCode.OK)
                     .decodeJsonBody<HealthResponse>() shouldBeEqualTo
-                    HealthResponse.up(mapOf("exposed" to HealthResponse.UP))
+                        HealthResponse.up(mapOf("exposed" to HealthResponse.UP))
                 client.get("/readyz/exposed")
                     .shouldHaveStatus(HttpStatusCode.OK)
                     .decodeJsonBody<HealthResponse>() shouldBeEqualTo HealthResponse.up(

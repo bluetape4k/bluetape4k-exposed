@@ -5,6 +5,7 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -64,9 +65,11 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             rows shouldHaveSize 1
 
             val result = rows.first()[GeoPoints.location]
+            log.debug { "서울=$result" }
             result.shouldNotBeNull()
             result.coordinate.x.shouldBeNear(lng)
             result.coordinate.y.shouldBeNear(lat)
+            result shouldBeEqualTo wgs84Point(lng, lat)
         }
     }
 
@@ -87,7 +90,8 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             rows shouldHaveSize 1
 
             val result = rows.first()[GeoPolygons.area]
-            result.shouldNotBeNull()
+            log.debug { "Polygon=$result" }
+            result shouldBeEqualTo polygon
         }
     }
 
@@ -108,8 +112,10 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             rows shouldHaveSize 1
 
             val result = rows.first()[GeoLines.path]
+            log.debug { "LineString=$result" }
             result.shouldNotBeNull()
             result.numPoints shouldBeEqualTo 2
+            result shouldBeEqualTo line
         }
     }
 
@@ -152,8 +158,13 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
                 }
             }
 
-            val rows = GeoPoints.selectAll().toList()
+            val rows = GeoPoints.selectAll().toList().onEach { log.debug { "row=$it" } }
             rows shouldHaveSize 5
+            rows.forEach {
+                val city = it[GeoPoints.name]
+                val location = it[GeoPoints.location]
+                log.debug { "city=$city, location=$location" }
+            }
         }
     }
 
@@ -171,8 +182,9 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
             val rows = GeoGeometries.selectAll().toList()
             rows shouldHaveSize 1
 
-            val result = rows.first()[GeoGeometries.geom]
+            val result = rows.single()[GeoGeometries.geom]
             result.shouldNotBeNull()
+            result shouldBeEqualTo wgs84Point(lng, lat)
         }
     }
 
@@ -180,6 +192,7 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
     fun `GeometryColumnType sqlType 검증`() {
         transaction(db) {
             val sqlType = pointColumnType().sqlType()
+            log.debug { "sqlType=$sqlType" }
             sqlType shouldBeEqualTo "POINT SRID 4326"
         }
     }
@@ -193,6 +206,7 @@ class GeometryColumnTypeTest: AbstractMySqlGisTest() {
 
         val literal = pointColumnType().nonNullValueToString(point)
 
+        log.debug { "literal=$literal" }
         literal shouldBeEqualTo "ST_GeomFromWKB(X'$expectedHex', 4326, 'axis-order=long-lat')"
         literal shouldContain expectedHex
     }

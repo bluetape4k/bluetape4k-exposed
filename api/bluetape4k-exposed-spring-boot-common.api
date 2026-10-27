@@ -56,6 +56,7 @@ public final class io/bluetape4k/spring/data/exposed/common/repository/query/Par
 }
 
 public final class io/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider$Companion {
+	public final fun invoke (Lorg/springframework/data/repository/query/Parameters;[Ljava/lang/Object;)Lio/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider;
 	public final fun of (Lorg/springframework/data/repository/query/Parameters;[Ljava/lang/Object;)Lio/bluetape4k/spring/data/exposed/common/repository/query/ParameterMetadataProvider;
 }
 

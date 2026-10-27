@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import io.r2dbc.spi.Readable
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -79,7 +80,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getAs는 인덱스 기반 null 값이면 상세 메시지로 예외를 던진다`() {
         val readable = FakeReadable(valuesByIndex = mapOf(1 to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getAs<String>(1) }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getAs<String>(1)
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[1]"
         msg shouldContain "String"
@@ -88,7 +92,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getAs는 이름 기반 null 값이면 상세 메시지로 예외를 던진다`() {
         val readable = FakeReadable(valuesByName = mapOf("col" to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getAs<String>("col") }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getAs<String>("col")
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[col]"
         msg shouldContain "String"
@@ -658,7 +665,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getUuid는 인덱스 기반 null이면 예외를 던진다`() {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getUuid(0) }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getUuid(0)
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[0]"
     }
@@ -666,7 +676,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getUuid는 이름 기반 null이면 예외를 던진다`() {
         val readable = FakeReadable(valuesByName = mapOf("uid" to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getUuid("uid") }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getUuid("uid")
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[uid]"
     }
@@ -704,7 +717,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getExposedBlob은 이름 기반 미지원 타입일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByName = mapOf("blob" to 123))
-        val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob("blob") }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getExposedBlob("blob")
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[blob]"
         msg shouldContain "unsupported blob value type"
@@ -723,7 +739,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getExposedBlob은 인덱스 기반 미지원 타입일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to 42))
-        val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob(0) }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getExposedBlob(0)
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[0]"
         msg shouldContain "unsupported blob value type"
@@ -732,7 +751,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getExposedBlob은 인덱스 기반 null일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByIndex = mapOf(0 to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob(0) }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getExposedBlob(0)
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[0]"
         msg shouldContain "unsupported blob value type"
@@ -741,7 +763,10 @@ class ReadableExtensionsTest {
     @Test
     fun `getExposedBlob은 이름 기반 null일 때 예외를 던진다`() = runSuspendIO {
         val readable = FakeReadable(valuesByName = mapOf("col" to null))
-        val ex = assertFailsWith<IllegalStateException> { readable.getExposedBlob("col") }
+        val ex = assertFailsWith<IllegalStateException> {
+            readable.getExposedBlob("col")
+        }
+        log.debug { "ex=$ex" }
         val msg = ex.message.shouldNotBeNull()
         msg shouldContain "Column[col]"
         msg shouldContain "unsupported blob value type"

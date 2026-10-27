@@ -200,7 +200,8 @@ class ExposedR2dbcRepositoryFactory: RepositoryFactorySupport() {
         args: Array<out Any?>?,
     ): Any? {
         val continuation = args?.lastOrNull() as? Continuation<Any?>
-        if (continuation == null) return query.execute(args ?: emptyArray())
+            ?: return query.execute(args ?: emptyArray())
+
         return suspend {
             @Suppress("UNCHECKED_CAST")
             when (query) {

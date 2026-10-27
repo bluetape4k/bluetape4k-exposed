@@ -6,6 +6,8 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
@@ -37,6 +39,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.util.concurrent.CompletionException
+import kotlin.time.Duration.Companion.seconds
 
 /** [SuspendedExposedEntityMapLoader]의 bounded AsyncIterator 계약을 검증한다. */
 class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
@@ -95,7 +98,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
 
                 val iterator = loader.loadAllKeys()
                 val ids = buildList {
-                    while (iterator.hasNext().await() == true) {
+                    while (iterator.hasNext().await()) {
                         add(iterator.next().await())
                     }
                 }
@@ -199,7 +202,7 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
                 toEntity = { toLoaderEntity() },
             )
             val failure = runCatching { loader.loadAllKeys().hasNext().await() }.exceptionOrNull()
-            (failure != null).shouldBeTrue()
+            failure.shouldNotBeNull()
         } finally {
             scope.cancel()
         }
@@ -223,11 +226,10 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
                 cause.shouldBeInstanceOf<AssertionError>()
                 cause.message shouldBeEqualTo fatal.message
 
-                withTimeout(timeMillis = 1_000) {
-                    val observed = observedFatal.await()
-                    observed.shouldBeInstanceOf<AssertionError>()
-                    observed.message shouldBeEqualTo fatal.message
-                }
+
+                val observed = observedFatal.awaitUntil(1.seconds)
+                observed.shouldBeInstanceOf<AssertionError>()
+                observed.message shouldBeEqualTo fatal.message
             } finally {
                 scope.cancel()
             }
@@ -237,28 +239,26 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
     @Test
     fun `loadAllKeys - producer 오류가 기본 및 일반 scope를 오염시키지 않는다`() = runSuspendIO {
         suspend fun assertEnumerationRecovery(scope: CoroutineScope) {
-            val failingLoader =
-                SuspendedEntityMapLoader<Long, LoaderEntity>(
-                    loadByIdFromDB = { null },
-                    loadAllIdsFromDB = { error("producer failure") },
-                    scope = scope,
-                )
+            val failingLoader = SuspendedEntityMapLoader<Long, LoaderEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { error("producer failure") },
+                scope = scope,
+            )
             val failure = runCatching { failingLoader.loadAllKeys().hasNext().await() }.exceptionOrNull()
             val cause = (failure as? CompletionException)?.cause ?: failure
             cause.shouldBeInstanceOf<IllegalStateException>()
 
-            val succeedingLoader =
-                SuspendedEntityMapLoader<Long, LoaderEntity>(
-                    loadByIdFromDB = { null },
-                    loadAllIdsFromDB = { channel -> channel.send(7L) },
-                    scope = scope,
-                )
+            val succeedingLoader = SuspendedEntityMapLoader<Long, LoaderEntity>(
+                loadByIdFromDB = { null },
+                loadAllIdsFromDB = { channel -> channel.send(7L) },
+                scope = scope,
+            )
             val iterator = succeedingLoader.loadAllKeys()
             iterator.hasNext().await().shouldBeTrue()
             iterator.next().await() shouldBeEqualTo 7L
             iterator.hasNext().await().shouldBeFalse()
             yield()
-            scope.coroutineContext[Job]?.children?.toList().shouldHaveSize(0)
+            scope.coroutineContext[Job]?.children?.toList().shouldBeEmpty()
         }
 
         val defaultFailure = SuspendedEntityMapLoader<Long, LoaderEntity>(

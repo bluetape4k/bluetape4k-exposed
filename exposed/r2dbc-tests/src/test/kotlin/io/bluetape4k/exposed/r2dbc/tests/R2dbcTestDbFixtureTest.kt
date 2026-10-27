@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CompletableDeferred
@@ -72,7 +73,7 @@ class R2dbcTestDbFixtureTest {
             }
         }
         assertFailsWith<IllegalStateException> {
-            TransactionManager.managerFor(checkNotNull(temporary))
+            TransactionManager.managerFor(temporary.shouldNotBeNull())
         }
         withDb(fixture) {
             db shouldBeSameInstanceAs fixture.database
@@ -201,7 +202,7 @@ class R2dbcTestDbFixtureTest {
         creates shouldBeEqualTo 2
 
         assertFailsWith<IllegalStateException> {
-            TransactionManager.managerFor(checkNotNull(temporary))
+            TransactionManager.managerFor(temporary.shouldNotBeNull())
         }
         withDb(fixture) {
             db shouldBeSameInstanceAs fixture.database

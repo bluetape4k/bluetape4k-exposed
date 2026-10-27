@@ -96,6 +96,7 @@ public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/AbstractR2dbcL
 
 public final class io/bluetape4k/exposed/r2dbc/lettuce/repository/ExposedR2dbcLettuceCodecs {
 	public static final field INSTANCE Lio/bluetape4k/exposed/r2dbc/lettuce/repository/ExposedR2dbcLettuceCodecs;
+	public final fun fastFory ()Lio/lettuce/core/codec/RedisCodec;
 	public final fun jackson3 (Ljava/lang/Class;)Lio/lettuce/core/codec/RedisCodec;
 	public final fun requireExplicit ()Lio/lettuce/core/codec/RedisCodec;
 }

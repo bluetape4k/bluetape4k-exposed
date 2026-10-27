@@ -4,7 +4,8 @@ import io.bluetape4k.exposed.trino.domain.Events
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
 import io.bluetape4k.testcontainers.database.TrinoServer
-import kotlinx.coroutines.runBlocking
+import io.bluetape4k.testcontainers.database.getDataSource
+import kotlinx.coroutines.delay
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import java.sql.SQLException
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Trino JDBC를 사용하는 테스트 기반 클래스.
@@ -51,14 +53,23 @@ abstract class AbstractTrinoTest {
 
         val trino: TrinoServer by lazy { TrinoServer.Launcher.trino }
 
+        val dataSource by lazy {
+            trino.getDataSource {
+                dataSourceProperties["catalog"] = "memory"
+                dataSourceProperties["schema"] = "default"
+                dataSourceProperties["user"] = trino.username ?: "trino"
+            }
+        }
+
         val db: Database by lazy {
-            TrinoDatabase.connect(
-                host = trino.host,
-                port = trino.port,
-                catalog = "memory",
-                schema = "default",
-                user = trino.username ?: "trino",
-            )
+            TrinoDatabase.connect(dataSource)
+//            TrinoDatabase.connect(
+//                host = trino.host,
+//                port = trino.port,
+//                catalog = "memory",
+//                schema = "default",
+//                user = trino.username ?: "trino",
+//            )
         }
 
         /**
@@ -72,7 +83,12 @@ abstract class AbstractTrinoTest {
         fun waitForTrinoReady() {
             repeat(15) { attempt ->
                 runCatching {
-                    transaction(db) { exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) } }
+                    transaction(db) {
+                        exec("SELECT 1") { rs ->
+                            rs.next()
+                            rs.getInt(1)
+                        }
+                    }
                 }.onSuccess {
                     return
                 }.onFailure { e ->
@@ -144,12 +160,12 @@ abstract class AbstractTrinoTest {
         }
     }
 
-    protected fun withEventsTableSuspend(block: suspend () -> Unit) {
+    protected suspend fun withEventsTableSuspend(block: suspend () -> Unit) {
         repeat(5) { attempt ->
             runCatching {
                 resetEventsTable()
                 try {
-                    runBlocking { block() }
+                    block()
                     return
                 } finally {
                     runCatching { dropEventsTable() }
@@ -157,7 +173,7 @@ abstract class AbstractTrinoTest {
             }.onFailure { e ->
                 if (attempt < 4 && e.isNoNodesAvailable()) {
                     log.warn("withEventsTableSuspend 재시도 ${attempt + 1}/5: ${e.message}")
-                    Thread.sleep(1000L)
+                    delay(1.seconds)
                 } else {
                     throw e
                 }

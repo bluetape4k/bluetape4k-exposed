@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.exposed.duckdb.AbstractDuckDBTest
 import io.bluetape4k.exposed.duckdb.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -58,7 +59,7 @@ class SelectTest: AbstractDuckDBTest() {
     fun `selectAll - 전체 이벤트 조회`() {
         val rows = transaction(db) {
             Events.selectAll().toList()
-        }
+        }.onEach { log.debug { "row=$it" } }
 
         rows.shouldNotBeEmpty()
         rows shouldHaveSize 5
@@ -68,7 +69,7 @@ class SelectTest: AbstractDuckDBTest() {
     fun `where - 리전 필터`() {
         val rows = transaction(db) {
             Events.selectAll().where { Events.region eq "kr" }.toList()
-        }
+        }.onEach { log.debug { "row=$it" } }
 
         rows shouldHaveSize 2
         rows.all { it[Events.region] == "kr" }.shouldBeTrue()
@@ -81,10 +82,10 @@ class SelectTest: AbstractDuckDBTest() {
                 .orderBy(Events.userId to SortOrder.DESC)
                 .limit(1)
                 .toList()
-        }
+        }.onEach { log.debug { "row=$it" } }
 
         rows shouldHaveSize 1
-        rows[0][Events.userId] shouldBeEqualTo 300L
+        rows.single()[Events.userId] shouldBeEqualTo 300L
     }
 
     @Test
@@ -113,6 +114,6 @@ class SelectTest: AbstractDuckDBTest() {
                 .sumOf { it[Events.amount] ?: BigDecimal.ZERO }
         }
 
-        total shouldBeEqualTo BigDecimal("20.00")
+        total shouldBeEqualTo 20.00.toBigDecimal()
     }
 }

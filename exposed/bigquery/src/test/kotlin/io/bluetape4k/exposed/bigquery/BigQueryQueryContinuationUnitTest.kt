@@ -11,14 +11,14 @@ import com.google.api.services.bigquery.model.TableFieldSchema
 import com.google.api.services.bigquery.model.TableRow
 import com.google.api.services.bigquery.model.TableSchema
 import io.bluetape4k.assertions.assertFailsWith
-import io.bluetape4k.assertions.coInvoking
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.bigquery.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -30,7 +30,6 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Unit tests for BigQuery query-job continuation without real BigQuery credentials.
@@ -83,19 +82,21 @@ class BigQueryQueryContinuationUnitTest {
         )
 
         val rows = executor().toList()
+            .onEach { log.debug { "row=$it" } }
 
         rows shouldHaveSize 2
         rows[0][Events.eventId] shouldBeEqualTo 1L
         rows[0][Events.region] shouldBeEqualTo "kr"
         rows[1][Events.eventId] shouldBeEqualTo 2L
         rows[1][Events.region] shouldBeEqualTo "us"
+
         verify(exactly = 2) { jobs.getQueryResults(PROJECT_ID, JOB_ID) }
         verify(exactly = 1) { getQueryResultsCall.setPageToken("page-1") }
         verify(exactly = 1) { getQueryResultsCall.setPageToken("page-2") }
     }
 
     @Test
-    fun `toFlow follows incomplete job and page tokens using continuation schema`() = runTest(timeout = 30.seconds) {
+    fun `toFlow follows incomplete job and page tokens using continuation schema`() = runTest {
         givenQueryPages(
             initial = queryResponse(jobComplete = false, pageToken = "page-1"),
             continuations = listOf(
@@ -112,18 +113,19 @@ class BigQueryQueryContinuationUnitTest {
             ),
         )
 
-        val rows = executor().toFlow().toList()
+        val rows = executor().toFlow().log("ROW").toList()
 
         rows shouldHaveSize 2
         rows[0][Events.eventId] shouldBeEqualTo 10L
         rows[0][Events.region] shouldBeEqualTo "eu"
         rows[1][Events.eventId] shouldBeEqualTo 11L
         rows[1][Events.region] shouldBeEqualTo "apac"
+
         verify(exactly = 2) { jobs.getQueryResults(PROJECT_ID, JOB_ID) }
     }
 
     @Test
-    fun `toFlow does not fetch continuation page after downstream cancellation`() = runTest(timeout = 30.seconds) {
+    fun `toFlow does not fetch continuation page after downstream cancellation`() = runTest {
         givenQueryPages(
             initial = queryResponse(
                 rows = listOf(tableRow(21L, "kr")),
@@ -140,33 +142,35 @@ class BigQueryQueryContinuationUnitTest {
             ),
         )
 
-        val rows = executor().toFlow().take(1).toList()
+        val rows = executor().toFlow().log("ROW").take(1).toList()
 
         rows shouldHaveSize 1
         rows[0][Events.eventId] shouldBeEqualTo 21L
+
         verify(exactly = 0) { jobs.getQueryResults(any(), any()) }
     }
 
     @Test
-    fun `toList and toFlow surface continuation page errors as BigQueryQueryException`() =
-        runTest(timeout = 30.seconds) {
-            givenQueryPages(
-                initial = queryResponse(jobComplete = false, pageToken = "page-1"),
-                continuations = listOf(pageError("backendError"), pageError("backendError")),
-            )
+    fun `toList and toFlow surface continuation page errors as BigQueryQueryException`() = runTest {
+        givenQueryPages(
+            initial = queryResponse(jobComplete = false, pageToken = "page-1"),
+            continuations = listOf(pageError("backendError"), pageError("backendError")),
+        )
 
-            val listError = assertFailsWith<BigQueryQueryException> {
-                executor().toList()
-            }
-            val flowError = coInvoking {
-                executor().toFlow().toList()
-            } shouldThrow BigQueryQueryException::class
-
-            listError.message.shouldNotBeNull() shouldContain "reasons=internalError"
-            flowError.message.shouldNotBeNull() shouldContain "reasons=internalError"
-            listError.message.orEmpty() shouldNotContain "backendError"
-            flowError.message.orEmpty() shouldNotContain "backendError"
+        val listError = assertFailsWith<BigQueryQueryException> {
+            executor().toList()
         }
+        log.debug { "listError=$listError" }
+        listError.message shouldContain "reasons=internalError"
+        listError.message shouldNotContain "backendError"
+
+        val flowError = assertFailsWith<BigQueryQueryException> {
+            executor().toFlow().toList()
+        }
+        log.debug { "flowError=$flowError" }
+        flowError.message shouldContain "reasons=internalError"
+        flowError.message shouldNotContain "backendError"
+    }
 
     @Test
     fun `missing jobReference fails clearly when more pages are required`() {
@@ -178,7 +182,7 @@ class BigQueryQueryContinuationUnitTest {
             executor().toList()
         }
 
-        error.message.shouldNotBeNull() shouldContain "jobReference"
+        error.message shouldContain "jobReference"
         verify(exactly = 0) { jobs.getQueryResults(any(), any()) }
     }
 
@@ -238,6 +242,4 @@ class BigQueryQueryContinuationUnitTest {
                 TableCell().setV(region),
             )
         )
-
-
 }

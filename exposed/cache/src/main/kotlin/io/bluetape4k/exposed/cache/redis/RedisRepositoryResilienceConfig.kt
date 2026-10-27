@@ -1,6 +1,10 @@
 package io.bluetape4k.exposed.cache.redis
 
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.requirePositiveDuration
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requirePositiveNumber
 import java.io.Serializable
 import java.time.Duration
 
@@ -27,10 +31,10 @@ import java.time.Duration
  */
 data class RedisRepositoryResilienceConfig(
     val retryMaxAttempts: Int = 3,
-    val retryWaitDuration: Duration = Duration.ofMillis(500),
+    val retryWaitDuration: Duration = 500.millis(),
     val retryExponentialBackoff: Boolean = true,
     val circuitBreakerEnabled: Boolean = false,
-    val timeoutDuration: Duration = Duration.ofSeconds(2),
+    val timeoutDuration: Duration = 2.seconds(),
 ): Serializable {
     companion object: KLogging() {
         private const val serialVersionUID = 1L
@@ -38,14 +42,8 @@ data class RedisRepositoryResilienceConfig(
 
     init {
         // Resilience4j 설정으로 전달되기 전에 잘못된 값을 차단해 Redis 장애 경로의 런타임 실패를 방지합니다.
-        require(retryMaxAttempts >= 1) {
-            "retryMaxAttempts[$retryMaxAttempts] must be at least 1."
-        }
-        require(retryWaitDuration > Duration.ZERO) {
-            "retryWaitDuration[$retryWaitDuration] must be positive."
-        }
-        require(timeoutDuration > Duration.ZERO) {
-            "timeoutDuration[$timeoutDuration] must be positive."
-        }
+        retryMaxAttempts.requirePositiveNumber("retryMaxAttempts")
+        retryWaitDuration.requirePositiveDuration("retryWaitDuration")
+        timeoutDuration.requirePositiveDuration("timeoutDuration")
     }
 }

@@ -6,10 +6,12 @@ import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.core.auditable.AuditableIntIdTable
 import io.bluetape4k.exposed.core.auditable.UserContext
+import io.bluetape4k.exposed.dao.entityToStringBuilder
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.entityCache
 import org.junit.jupiter.api.condition.EnabledForJreRange
@@ -39,6 +41,14 @@ class AuditableIntEntityTest: AbstractExposedTest() {
         override var createdAt by Comments.createdAt
         override var updatedBy by Comments.updatedBy
         override var updatedAt by Comments.updatedAt
+
+        override fun toString(): String = entityToStringBuilder()
+            .add("content", content)
+            .add("createdBy", createdBy)
+            .add("createdAt", createdAt)
+            .add("updatedBy", updatedBy)
+            .add("updatedAt", updatedAt)
+            .toString()
     }
 
     @ParameterizedTest
@@ -51,6 +61,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy.shouldNotBeNull()
             loaded.createdAt.shouldNotBeNull()
         }
@@ -66,6 +77,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.updatedAt.shouldBeNull()
             loaded.updatedBy.shouldBeNull()
         }
@@ -86,6 +98,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(commentId).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy shouldBeEqualTo authorName
         }
     }
@@ -100,12 +113,14 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.content = "수정 후 댓글"
             loaded.flush()
 
             entityCache.clear()
 
             val updated = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "updated=$updated" }
             updated.updatedBy.shouldNotBeNull()
             updated.content shouldBeEqualTo "수정 후 댓글"
         }
@@ -122,6 +137,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.createdBy shouldBeEqualTo UserContext.DEFAULT_USERNAME
         }
     }
@@ -135,8 +151,9 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             }
             entityCache.clear()
 
-            val reloaded = Comment.findById(comment.id).shouldNotBeNull()
-            reloaded shouldBeEqualTo comment
+            val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
+            loaded shouldBeEqualTo comment
         }
     }
 
@@ -148,7 +165,7 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             val comment2 = Comment.new { content = "댓글 2" }
             entityCache.clear()
 
-            comment1 shouldNotBeEqualTo comment2
+            comment2 shouldNotBeEqualTo comment1
         }
     }
 
@@ -163,10 +180,12 @@ class AuditableIntEntityTest: AbstractExposedTest() {
             entityCache.clear()
 
             val loaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "loaded=$loaded" }
             loaded.flush()
             entityCache.clear()
 
             val reloaded = Comment.findById(comment.id).shouldNotBeNull()
+            log.debug { "reloaded=$reloaded" }
             reloaded.updatedBy.shouldBeNull()
             reloaded.updatedAt.shouldBeNull()
         }

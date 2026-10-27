@@ -1,17 +1,22 @@
 package io.bluetape4k.exposed.jdbc
 
-import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.TestDBConfig
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.testcontainers.database.getDataSource
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -32,6 +37,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.sql.SQLIntegrityConstraintViolationException
 import java.sql.SQLTransientConnectionException
+import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -41,6 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * MySQL 8 Connector/J와 Hikari pool에서 parallel JDBC key enumeration의 계약을 고정합니다.
@@ -89,7 +96,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
                 actual shouldBeEqualTo expected
                 (actual.size == actual.distinct().size).shouldBeTrue()
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 executor.close()
             }
@@ -153,11 +160,11 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     ),
                 )
 
-                result shouldBeEqualTo emptyList()
+                result.shouldBeEmpty()
                 fixture.tracker.requests.get() shouldBeEqualTo 0
                 fixture.tracker.active.get() shouldBeEqualTo 0
                 fixture.tracker.peak.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 executor.close()
             }
@@ -192,7 +199,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             ) { _, _ ->
                                 fixture.table.selectAll().toList()
                                 acquired.countDown()
-                                check(release.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                                check(release.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                                     "release barrier timed out"
                                 }
                                 emptyList()
@@ -200,11 +207,11 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         }.onFailure(readerFailure::set)
                     }
 
-                    check(acquired.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    check(acquired.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                         "expected $expectedPeak MySQL leases, observed ${fixture.tracker.peak.get()}"
                     }
                     release.countDown()
-                    future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    future.get(LATCH_TIMEOUT_SECONDS.seconds)
                     readerFailure.get()?.let { throw it }
                     check(fixture.tracker.peak.get() == expectedPeak) {
                         "expected peak=$expectedPeak, actual=${fixture.tracker.peak.get()}, " +
@@ -214,7 +221,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 } finally {
                     release.countDown()
                     future?.cancel(true)
-                    runCatching { future?.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+                    runCatching { future?.get(LATCH_TIMEOUT_SECONDS.seconds) }
                     executor.close()
                 }
             }
@@ -266,7 +273,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 hasConnectionTimeoutCause(failure).shouldBeTrue()
                 fixture.tracker.requests.get() shouldBeEqualTo 2
                 fixture.tracker.active.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
                 executor.close()
             }
@@ -305,7 +312,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             table.selectAll().toList()
                             started.countDown()
                             if (range.upperExclusive == 1L) {
-                                check(started.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                                check(started.await(LATCH_TIMEOUT_SECONDS.seconds))
                                 throw expected
                             }
 
@@ -327,14 +334,14 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 }.exceptionOrNull() ?: error("MySQL range failure must be preserved")
 
                 failure shouldBeEqualTo expected
-                check(interruptObserved.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                check(interruptObserved.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                     "MySQL sibling must observe cancellation"
                 }
                 fixture.tracker.active.get() shouldBeEqualTo 0
                 activeChildren.get() shouldBeEqualTo 0
-                executor.isShutdown.shouldBeEqualTo(false)
+                executor.isShutdown.shouldBeFalse()
             } finally {
-                check(allFinished.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                check(allFinished.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                     "MySQL interrupt-ignoring sibling must finish"
                 }
                 executor.close()
@@ -424,7 +431,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 try {
                     awaitMySQLSleep(observer, connectionId)
                     statement.cancel()
-                    future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    future.get(LATCH_TIMEOUT_SECONDS.seconds)
 
                     check(elapsedNanos.get() < TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)) {
                         "Statement.cancel did not finish the MySQL query promptly"
@@ -447,7 +454,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     runCatching { statement.cancel() }
                     runCatching { target.close() }
                     runCatching { observer.close() }
-                    runCatching { future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+                    runCatching { future.get(LATCH_TIMEOUT_SECONDS.seconds) }
                 }
             } finally {
                 runCatching { statement.close() }
@@ -481,7 +488,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             val connectionFailure = runCatching { connection.close() }.exceptionOrNull()
                 ?: error("connection close failure must be preserved")
             connectionFailure.message shouldContain "delegate connection close failed"
-            (connectionFixture.tracker.active.get() > 0).shouldBeTrue()
+            connectionFixture.tracker.active.get() shouldBeGreaterThan 0
             connectionFixture.tracker.failOnConnectionClose = false
             connection.close()
         } finally {
@@ -506,9 +513,9 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         database = fixture.database,
                     ),
                 ) shouldBeEqualTo listOf(1L, 3L, 4L)
-                executor.isShutdown.shouldBeEqualTo(false)
-                val probe = executor.submit(java.util.concurrent.Callable { 1 })
-                    .get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                executor.isShutdown.shouldBeFalse()
+                val probe = executor.submit(Callable { 1 })
+                    .get(LATCH_TIMEOUT_SECONDS.seconds)
                 probe shouldBeEqualTo 1
             } finally {
                 executor.close()
@@ -535,7 +542,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         return try {
             writerExecutor.submit {
                 try {
-                    check(readerReady.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    check(readerReady.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                         "reader did not reach the mutation barrier"
                     }
                     transaction(
@@ -567,7 +574,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         .orderBy(table.id)
                         .map { it[table.id].value }
                     readerReady.countDown()
-                    check(writerDone.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    check(writerDone.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                         "writer did not commit before the second statement"
                     }
                     val after = table.selectAll()
@@ -695,17 +702,13 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 check(jdbcUrl.startsWith(mysql.jdbcUrl)) {
                     "MySQL fixture must use the Testcontainers URL: $jdbcUrl"
                 }
-                val hikari = HikariDataSource(HikariConfig().apply {
-                    this.jdbcUrl = jdbcUrl
-                    username = mysql.username
-                    password = mysql.password
-                    driverClassName = MYSQL_DRIVER
+                val dataSource = mysql.getDataSource {
                     maximumPoolSize = poolSize
                     minimumIdle = 0
                     connectionTimeout = DEFAULT_HIKARI_TIMEOUT_MS
                     poolName = "issue-698-mysql-$poolSize"
-                })
-                val tracker = TrackingDataSource(hikari).apply {
+                }
+                val tracker = TrackingDataSource(dataSource).apply {
                     this.failOnDelegateClose = false
                 }
                 return try {
@@ -732,7 +735,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         dropSchemaAction = dropSchemaAction ?: { transaction(database) { SchemaUtils.drop(table) } },
                     )
                 } catch (cause: Throwable) {
-                    runCatching { hikari.close() }.onFailure(cause::addSuppressed)
+                    runCatching { dataSource.close() }.onFailure(cause::addSuppressed)
                     throw cause
                 }
             }
@@ -775,7 +778,7 @@ class MySQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
         override fun getParentLogger() = delegate.parentLogger
 
-        override fun <T: Any?> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
+        override fun <T> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
 
         override fun isWrapperFor(iface: Class<*>?): Boolean = delegate.isWrapperFor(iface)
 

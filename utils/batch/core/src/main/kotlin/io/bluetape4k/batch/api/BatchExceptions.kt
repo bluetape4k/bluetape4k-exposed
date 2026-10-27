@@ -25,11 +25,11 @@ import io.bluetape4k.logging.KLogging
 class BatchStepFailedException(
     val stepReport: StepReport,
     cause: Throwable? = stepReport.error,
-) : RuntimeException(
+): RuntimeException(
     "Step '${stepReport.stepName}' failed: status=${stepReport.status}",
     cause,
 ) {
-    companion object : KLogging()
+    companion object: KLogging()
 }
 
 /**
@@ -40,10 +40,10 @@ class BatchExecutionAlreadyClaimedException(
     executionType: String,
     executionId: Long,
     ownerId: String?,
-) : RuntimeException(
+): RuntimeException(
     "$executionType execution is already claimed: id=$executionId",
 ) {
-    companion object : KLogging()
+    companion object: KLogging()
 }
 
 /**
@@ -53,7 +53,7 @@ class BatchExecutionAlreadyClaimedException(
  */
 class BatchCompletionStatusException(
     val status: BatchStatus,
-) : IllegalArgumentException(
+): IllegalArgumentException(
     "Batch completion requires a terminal status: status=$status",
 )
 
@@ -65,7 +65,7 @@ class BatchCompletionStatusException(
  */
 class BatchRepositoryRecoveryExhaustedException(
     val correlationId: String,
-) : IllegalStateException(
+): IllegalStateException(
     "Batch repository recovery budget exhausted; correlationId=$correlationId",
 ) {
     init {

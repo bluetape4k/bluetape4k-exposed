@@ -6,9 +6,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.UUID
-import kotlin.jvm.javaObjectType
+import java.util.*
 import kotlin.reflect.KClass
+import kotlin.uuid.Uuid
 
 /**
  * Checkpoint 객체를 직렬화 봉투([TypedCheckpoint])로 감싸 round-trip을 보장한다.
@@ -55,6 +55,7 @@ interface CheckpointJson {
             LocalDateTime::class,
             OffsetDateTime::class,
             UUID::class,
+            Uuid::class,
             Map::class,
             List::class,
             Set::class,
@@ -93,7 +94,7 @@ interface CheckpointJson {
         } catch (e: ClassNotFoundException) {
             throw IllegalStateException(
                 "CheckpointJson.jackson3() requires bluetape4k-jackson3 (tools.jackson) on classpath. " +
-                    "Provide a custom CheckpointJson or add the bluetape4k-jackson3 dependency.",
+                        "Provide a custom CheckpointJson or add the bluetape4k-jackson3 dependency.",
                 e,
             )
         }
@@ -112,7 +113,7 @@ interface CheckpointJson {
  */
 internal class Jackson3CheckpointJson(
     allowedCheckpointClasses: Iterable<KClass<out Any>>,
-) : CheckpointJson {
+): CheckpointJson {
     private val mapper = io.bluetape4k.jackson3.Jackson.defaultJsonMapper
     private val registry = CheckpointClassRegistry(allowedCheckpointClasses)
 

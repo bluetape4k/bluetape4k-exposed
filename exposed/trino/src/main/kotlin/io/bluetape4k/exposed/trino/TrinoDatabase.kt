@@ -189,12 +189,13 @@ object TrinoDatabase: KLogging() {
     fun connect(dataSource: javax.sql.DataSource): Database {
         return Database.connect(
             getNewConnection = {
-                val raw = dataSource.connection
-                runCatching { TrinoConnectionWrapper(raw) }
-                    .getOrElse { e ->
-                        raw.runCatching { close() }
-                        throw e
-                    }
+                val conn = dataSource.connection
+                runCatching {
+                    TrinoConnectionWrapper(conn)
+                }.getOrElse { e ->
+                    runCatching { conn.close() }
+                    throw e
+                }
             }
         )
     }

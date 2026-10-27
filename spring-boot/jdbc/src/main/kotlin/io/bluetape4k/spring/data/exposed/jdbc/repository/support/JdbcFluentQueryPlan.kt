@@ -3,6 +3,8 @@ package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
+import io.bluetape4k.support.requireGe
+import io.bluetape4k.support.requireNotNull
 import org.springframework.dao.InvalidDataAccessApiUsageException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.Sort
@@ -79,7 +81,7 @@ internal class JdbcFluentQueryPlan<E: Any> internal constructor(
         copy(resultType = projectionType)
 
     fun withProperties(properties: Collection<String>?): JdbcFluentQueryPlan<E> {
-        requireNotNull(properties) { "FluentQuery projection properties must not be null." }
+        properties.requireNotNull { "FluentQuery projection properties must not be null." }
         val explicit = properties.toCollection(LinkedHashSet())
         return copy(
             explicitProperties = explicit,
@@ -88,7 +90,7 @@ internal class JdbcFluentQueryPlan<E: Any> internal constructor(
     }
 
     fun withSort(additionalSort: Sort?): JdbcFluentQueryPlan<E> {
-        requireNotNull(additionalSort) { "FluentQuery sort must not be null." }
+        additionalSort.requireNotNull { "FluentQuery sort must not be null." }
         return if (additionalSort.isUnsorted) this else copy(sort = sort.and(additionalSort))
     }
 
@@ -96,7 +98,7 @@ internal class JdbcFluentQueryPlan<E: Any> internal constructor(
         copy(sort = pageableSort)
 
     fun withLimit(newLimit: Int): JdbcFluentQueryPlan<E> {
-        require(newLimit >= 0) { "FluentQuery limit must be zero or positive." }
+        newLimit.requireGe(0) { "FluentQuery limit must be zero or positive." }
         return copy(limit = newLimit)
     }
 

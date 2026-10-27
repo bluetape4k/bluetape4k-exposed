@@ -2,11 +2,12 @@ package io.bluetape4k.spring.batch.exposed.partition
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldBeInRange
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.batch.exposed.AbstractExposedBatchTest
 import io.bluetape4k.spring.batch.exposed.SourceTable
 import io.bluetape4k.spring.batch.exposed.insertTestData
@@ -31,6 +32,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
 
             val partitions = partitioner.partition(4)
 
+            log.debug { "partitions=$partitions" }
             partitions shouldHaveSize 1
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 0L
             partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo -1L
@@ -50,6 +52,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
             )
 
             val partitions = partitioner.partition(4)
+                .onEach { log.debug { "partition=$it" } }
 
             partitions shouldHaveSize 4
 
@@ -78,11 +81,12 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                 database = testDB.db,
             )
 
-            val partitions = partitioner.partition(8)
-
+            val partitions = partitioner.partition(8).onEach { log.debug { "partition=$it" } }
             partitions shouldHaveSize 1
-            partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 1L
-            partitions["partition-0"]!!.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo 1L
+            partitions["partition-0"].shouldNotBeNull().let {
+                it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) shouldBeEqualTo 1L
+                it.getLong(ExposedRangePartitioner.PARTITION_MAX_ID) shouldBeEqualTo 1L
+            }
         }
     }
 
@@ -100,8 +104,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
 
             val partitions = partitioner.partition(10)
 
-            partitions.size shouldBeLessOrEqualTo 3
-            partitions.size shouldBeGreaterOrEqualTo 1
+            partitions.size shouldBeInRange 1..3
         }
     }
 
@@ -124,6 +127,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
                             context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
+                .onEach { log.debug { "range=$it" } }
 
             ranges shouldBeEqualTo listOf(
                 Long.MIN_VALUE to -4_611_686_018_427_387_905L,
@@ -153,6 +157,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
                             context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
+                .onEach { log.debug { "range=$it" } }
 
             ranges shouldBeEqualTo listOf(
                 Long.MAX_VALUE - 2L to Long.MAX_VALUE - 2L,
@@ -181,6 +186,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                     context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
                             context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                 }
+                .onEach { log.debug { "range=$it" } }
 
             ranges shouldBeEqualTo listOf(-3L to -3L, -2L to -2L, -1L to -1L, 0L to 3L)
             ranges.first().first shouldBeEqualTo -3L
@@ -222,6 +228,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
             )
 
             val expectedRanges = listOf(1L to 2L, 3L to 4L, 5L to 6L, 7L to 10L)
+
             listOf(0, -1).forEach { requestedGridSize ->
                 val ranges = partitioner.partition(requestedGridSize).values
                     .sortedBy { it.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) }
@@ -229,6 +236,7 @@ class ExposedRangePartitionerTest: AbstractExposedBatchTest() {
                         context.getLong(ExposedRangePartitioner.PARTITION_MIN_ID) to
                                 context.getLong(ExposedRangePartitioner.PARTITION_MAX_ID)
                     }
+                    .onEach { log.debug { "range=$it" } }
 
                 ranges shouldBeEqualTo expectedRanges
             }

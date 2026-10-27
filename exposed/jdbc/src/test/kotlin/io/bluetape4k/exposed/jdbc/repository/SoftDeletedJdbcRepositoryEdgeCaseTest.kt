@@ -375,6 +375,7 @@ class SoftDeletedJdbcRepositoryEdgeCaseTest: AbstractExposedTest() {
             actives shouldHaveSize 2
             actives.all { !it.isDeleted }.shouldBeTrue()
             actives.none { it.id == deletedId }.shouldBeTrue()
+            actives.map { it.id } shouldBeEqualTo listOf(activeId1, activeId2)
 
             val deleted = repository.findDeleted()
             deleted shouldHaveSize 1

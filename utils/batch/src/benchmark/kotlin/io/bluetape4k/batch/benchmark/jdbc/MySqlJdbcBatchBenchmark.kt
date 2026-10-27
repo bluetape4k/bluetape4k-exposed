@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit
 @State(Scope.Benchmark)
 class MySqlJdbcBatchBenchmark {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * MySQL 시드 시나리오 전용 JMH State.
@@ -52,19 +52,19 @@ class MySqlJdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class SeedState : AbstractJdbcSeedState() {
+    class SeedState: AbstractJdbcSeedState() {
 
-        companion object : KLogging()
+        companion object: KLogging()
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.MYSQL
 
         private fun mysqlOptions() = "?useSSL=false" +
-            "&characterEncoding=UTF-8" +
-            "&zeroDateTimeBehavior=convertToNull" +
-            "&useLegacyDatetimeCode=false" +
-            "&serverTimezone=UTC" +
-            "&allowPublicKeyRetrieval=true" +
-            "&rewriteBatchedStatements=true"
+                "&characterEncoding=UTF-8" +
+                "&zeroDateTimeBehavior=convertToNull" +
+                "&useLegacyDatetimeCode=false" +
+                "&serverTimezone=UTC" +
+                "&allowPublicKeyRetrieval=true" +
+                "&rewriteBatchedStatements=true"
 
         /**
          * MySQL 8.0 JDBC URL을 반환합니다.
@@ -125,19 +125,19 @@ class MySqlJdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class JobState : AbstractJdbcJobState() {
+    class JobState: AbstractJdbcJobState() {
 
-        companion object : KLogging()
+        companion object: KLogging()
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.MYSQL
 
         private fun mysqlOptions() = "?useSSL=false" +
-            "&characterEncoding=UTF-8" +
-            "&zeroDateTimeBehavior=convertToNull" +
-            "&useLegacyDatetimeCode=false" +
-            "&serverTimezone=UTC" +
-            "&allowPublicKeyRetrieval=true" +
-            "&rewriteBatchedStatements=true"
+                "&characterEncoding=UTF-8" +
+                "&zeroDateTimeBehavior=convertToNull" +
+                "&useLegacyDatetimeCode=false" +
+                "&serverTimezone=UTC" +
+                "&allowPublicKeyRetrieval=true" +
+                "&rewriteBatchedStatements=true"
 
         /**
          * MySQL 8.0 JDBC URL을 반환합니다.

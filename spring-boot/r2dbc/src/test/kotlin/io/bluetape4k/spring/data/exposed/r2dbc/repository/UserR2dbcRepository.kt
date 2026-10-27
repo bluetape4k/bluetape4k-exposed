@@ -160,18 +160,18 @@ interface UserR2dbcRepository: ExposedR2dbcQueryByExampleRepository<User, Long> 
     suspend fun findCommentAliasProjectionNative(): List<User>
 
     @Query(
-        """
-        SELECT id, ${'$'}${'$'} SELECT email FROM ignored ${'$'}${'$'} AS marker
-          FROM $USERS_TABLE_NAME
+        $$"""
+        SELECT id, $$ SELECT email FROM ignored $$ AS marker
+          FROM $$USERS_TABLE_NAME
          WHERE 1 = 0
         """
     )
     suspend fun findPostgresDollarQuoteNative(): List<User>
 
     @Query(
-        """
-        SELECT email, ${'$'}${'$'}x,id,y${'$'}${'$'} AS marker
-          FROM $USERS_TABLE_NAME
+        $$$"""
+        SELECT email, $$x,id,y$$ AS marker
+          FROM $$$USERS_TABLE_NAME
          WHERE 1 = 0
         """
     )

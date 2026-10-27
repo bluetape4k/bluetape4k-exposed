@@ -10,6 +10,8 @@ import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
@@ -40,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * PostgreSQL JDBC driver에서 bounded Virtual Thread key enumeration의 실제 driver·pool·isolation
@@ -73,6 +76,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             val failure = AtomicReference<Throwable?>()
             val backendPid = invokePostgreSQLConnectionMethod(target, "getBackendPID") as Int
             target.autoCommit = false
+
             try {
                 val query = executor.submit {
                     try {
@@ -90,7 +94,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
                 awaitActiveSleep(observer, backendPid)
                 invokePostgreSQLConnectionMethod(target, "cancelQuery")
-                query.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                query.get(LATCH_TIMEOUT_SECONDS.seconds)
 
                 val cancellation = failure.get() as? SQLException
                     ?: error("cancelQuery must interrupt the active PostgreSQL statement")
@@ -253,7 +257,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             table.selectAll().toList()
                             started.countDown()
                             if (range.upperExclusive == 1L) {
-                                check(started.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                                check(started.await(LATCH_TIMEOUT_SECONDS.seconds))
                                 throw expected
                             }
 
@@ -275,14 +279,14 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 }.exceptionOrNull() ?: error("PostgreSQL range failure must be preserved")
 
                 failure shouldBeEqualTo expected
-                check(interruptObserved.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                check(interruptObserved.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                     "PostgreSQL sibling must observe cancellation"
                 }
                 fixture.tracker.active.get() shouldBeEqualTo 0
                 activeChildren.get() shouldBeEqualTo 0
                 executor.isShutdown.shouldBeFalse()
             } finally {
-                check(allFinished.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                check(allFinished.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                     "PostgreSQL interrupt-ignoring sibling must finish"
                 }
                 executor.close()
@@ -365,7 +369,7 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         return try {
             writerExecutor.submit {
                 try {
-                    check(readerReady.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    check(readerReady.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                         "reader did not reach the mutation barrier"
                     }
                     transaction(
@@ -397,12 +401,13 @@ class PostgreSQLJdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         .orderBy(table.id)
                         .map { it[table.id].value }
                     readerReady.countDown()
-                    check(writerDone.await(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    check(writerDone.await(LATCH_TIMEOUT_SECONDS.seconds)) {
                         "writer did not commit before the second statement"
                     }
                     val after = table.selectAll()
                         .orderBy(table.id)
                         .map { it[table.id].value }
+
                     if (isolation == Connection.TRANSACTION_READ_COMMITTED) after else before
                 }
             }

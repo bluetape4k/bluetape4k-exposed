@@ -4,10 +4,12 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeLessOrEqualTo
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.clickhouse.AbstractClickHouseTest
 import io.bluetape4k.exposed.clickhouse.domain.Events
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.batchInsert
@@ -65,7 +67,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `quantile 0_5 중앙값이 예상 범위에 있음`() {
         val result = transaction(db) {
             exec("SELECT quantile(0.5)(event_id) FROM events") { rs ->
-                rs.next(); rs.getDouble(1)
+                rs.next()
+                rs.getDouble(1)
             }
         }
         // 1~10000의 중앙값은 약 5000
@@ -78,7 +81,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `quantile 0_95 95번째 백분위수가 예상 범위에 있음`() {
         val result = transaction(db) {
             exec("SELECT quantile(0.95)(event_id) FROM events") { rs ->
-                rs.next(); rs.getDouble(1)
+                rs.next()
+                rs.getDouble(1)
             }
         }
         // 95th percentile of 1~10000 ≈ 9500
@@ -91,7 +95,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `uniq 근사 count distinct 반환`() {
         val result = transaction(db) {
             exec("SELECT uniq(region) FROM events") { rs ->
-                rs.next(); rs.getLong(1)
+                rs.next()
+                rs.getLong(1)
             }
         }
         // region은 region_0~region_9 총 10종류 (HyperLogLog 근사이므로 8 이상이면 정상)
@@ -103,7 +108,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `uniqExact 정확한 count distinct 반환`() {
         val result = transaction(db) {
             exec("SELECT uniqExact(region) FROM events") { rs ->
-                rs.next(); rs.getLong(1)
+                rs.next()
+                rs.getLong(1)
             }
         }
         // 정확히 10종류
@@ -115,7 +121,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `argMax event_id 최대인 row의 event_name 반환`() {
         val result = transaction(db) {
             exec("SELECT argMax(event_name, event_id) FROM events") { rs ->
-                rs.next(); rs.getString(1)
+                rs.next()
+                rs.getString(1)
             }
         }
         // event_id가 최대(10000)인 row의 event_name = "event_10000"
@@ -127,7 +134,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
     fun `argMin event_id 최소인 row의 event_name 반환`() {
         val result = transaction(db) {
             exec("SELECT argMin(event_name, event_id) FROM events") { rs ->
-                rs.next(); rs.getString(1)
+                rs.next()
+                rs.getString(1)
             }
         }
         // event_id가 최소(1)인 row의 event_name = "event_1"
@@ -144,9 +152,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
             queryBuilder.toString()
         }
 
-        require(sql.contains("argMax")) {
-            "Expected SQL to contain 'argMax', but was: $sql"
-        }
+        log.debug { "sql=$sql" }
+        sql shouldContain "argMax" // "Expected SQL to contain 'argMax', but was: $sql"
     }
 
     @Test
@@ -158,9 +165,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
             queryBuilder.toString()
         }
 
-        require(sql.contains("argMin")) {
-            "Expected SQL to contain 'argMin', but was: $sql"
-        }
+        log.debug { "sql=$sql" }
+        sql shouldContain "argMin"
     }
 
     @Test
@@ -172,9 +178,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
             queryBuilder.toString()
         }
 
-        require(sql.contains("quantile(0.95)")) {
-            "Expected SQL to contain 'quantile(0.95)', but was: $sql"
-        }
+        log.debug { "sql=$sql" }
+        sql shouldContain "quantile(0.95)"
     }
 
     @Test
@@ -186,9 +191,8 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
             queryBuilder.toString()
         }
 
-        require(sql.contains("uniq(")) {
-            "Expected SQL to contain 'uniq(', but was: $sql"
-        }
+        log.debug { "sql=$sql" }
+        sql shouldContain "uniq("
     }
 
     @Test
@@ -200,8 +204,7 @@ class AggregateFunctionsTest: AbstractClickHouseTest() {
             queryBuilder.toString()
         }
 
-        require(sql.contains("uniqExact(")) {
-            "Expected SQL to contain 'uniqExact(', but was: $sql"
-        }
+        log.debug { "sql=$sql" }
+        sql shouldContain "uniqExact("
     }
 }

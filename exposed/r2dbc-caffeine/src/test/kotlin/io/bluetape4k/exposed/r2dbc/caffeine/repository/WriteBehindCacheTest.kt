@@ -11,6 +11,8 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
@@ -31,6 +33,8 @@ import io.bluetape4k.exposed.r2dbc.caffeine.domain.ActorSchema.withCredentialTab
 import io.bluetape4k.exposed.r2dbc.caffeine.domain.CredentialR2dbcCaffeineRepository
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
@@ -67,6 +71,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * R2DBC Caffeine Write-Behind 캐시 통합 테스트.
@@ -224,7 +230,7 @@ class WriteBehindCacheTest {
             )
 
             try {
-                repository.writeBehindCloseWaitDuration shouldBeEqualTo Duration.ofSeconds(30)
+                repository.writeBehindCloseWaitDuration shouldBeEqualTo 30.seconds()
             } finally {
                 repository.close()
             }
@@ -257,7 +263,7 @@ class WriteBehindCacheTest {
                     .copy(firstName = "cancel-safe-final-flush")
 
                 try {
-                    val putFailure = async {
+                    val putFailure = this@runSuspendIO.async {
                         try {
                             repository.put(existingId, updated)
                             null
@@ -265,7 +271,7 @@ class WriteBehindCacheTest {
                             failure
                         }
                     }
-                    cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    cachePutEntered.await(5.seconds).shouldBeTrue()
                     awaitHealthReport(repository) { it.workerState == CacheWorkerState.FAILED }
                         .workerState shouldBeEqualTo CacheWorkerState.FAILED
                     releaseCachePut.countDown()
@@ -316,12 +322,12 @@ class WriteBehindCacheTest {
                 }
 
                 try {
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     closeFuture.isDone.shouldBeFalse()
                     awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
                         .workerState shouldBeEqualTo CacheWorkerState.DRAINING
                     releaseFlush.countDown()
-                    closeFuture.get(5, TimeUnit.SECONDS)
+                    closeFuture.get(5.seconds)
 
                     findActorById(existingId)?.firstName shouldBeEqualTo updated.firstName
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.STOPPED
@@ -367,14 +373,14 @@ class WriteBehindCacheTest {
                 ),
                 flushStarted = flushStarted,
                 releaseFlush = releaseFlush,
-                closeWaitDuration = Duration.ofMillis(50),
+                closeWaitDuration = 50.millis(),
             )
 
             withActorTable(TestDB.H2) {
                 val actor = ActorTable.selectAll().first().toActorRecord()
                 try {
                     repository.put(actor.id, actor.copy(firstName = "close-timeout"))
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     repository.close()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 } finally {
@@ -407,7 +413,7 @@ class WriteBehindCacheTest {
             withActorTable(TestDB.H2) {
                 val actor = ActorTable.selectAll().first().toActorRecord()
                 repository.put(actor.id, actor.copy(firstName = "close-interrupted"))
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                flushStarted.await(5.seconds).shouldBeTrue()
                 val closeThread = Thread {
                     try {
                         repository.close()
@@ -420,7 +426,7 @@ class WriteBehindCacheTest {
                 try {
                     awaitHealthReport(repository) { it.workerState == CacheWorkerState.DRAINING }
                     closeThread.interrupt()
-                    closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    closeCompleted.await(1.seconds).shouldBeTrue()
                     interrupted.get().shouldBeTrue()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 } finally {
@@ -457,7 +463,7 @@ class WriteBehindCacheTest {
             withActorTable(TestDB.H2) {
                 val actor = ActorTable.selectAll().first().toActorRecord()
                 repository.put(actor.id, actor.copy(firstName = "close-follower"))
-                flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                flushStarted.await(5.seconds).shouldBeTrue()
                 val owner = Thread {
                     try {
                         repository.close()
@@ -478,11 +484,11 @@ class WriteBehindCacheTest {
                 try {
                     awaitThreadState(follower, Thread.State.WAITING).shouldBeTrue()
                     follower.interrupt()
-                    delay(50)
-                    followerCompleted.await(50, TimeUnit.MILLISECONDS).shouldBeFalse()
+                    delay(50.milliseconds)
+                    followerCompleted.await(50.milliseconds).shouldBeFalse()
                     releaseFlush.countDown()
-                    ownerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
-                    followerCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                    ownerCompleted.await(1.seconds).shouldBeTrue()
+                    followerCompleted.await(1.seconds).shouldBeTrue()
                 } finally {
                     releaseFlush.countDown()
                     owner.interrupt()
@@ -543,7 +549,7 @@ class WriteBehindCacheTest {
                     lifecycleLock.unlock()
                 }
 
-                closeCompleted.await(1, TimeUnit.SECONDS).shouldBeTrue()
+                closeCompleted.await(1.seconds).shouldBeTrue()
                 interrupted.get().shouldBeTrue()
                 repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                 val rejected = ActorSchema.newActorRecord()
@@ -702,7 +708,7 @@ class WriteBehindCacheTest {
                                 cause
                             }
                         }
-                        cachePutEntered.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                        cachePutEntered.await(5.seconds).shouldBeTrue()
                         writeBehindJobOf(repository).cancelAndJoin()
                         repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.FAILED
                         releaseCachePut.countDown()
@@ -823,7 +829,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     val report = repository.validateConsistency()
                     report.mode shouldBeEqualTo CacheWriteMode.WRITE_BEHIND
                     report.queueDepth shouldBeEqualTo 1
@@ -859,7 +865,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(existingId, updated)
-                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushFailed.await(5.seconds).shouldBeTrue()
                     val report = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -900,7 +906,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(first.id, first)
-                    flushFailed.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushFailed.await(5.seconds).shouldBeTrue()
                     val failedReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 1 && health.lastFlushError != null
                     }
@@ -908,7 +914,7 @@ class WriteBehindCacheTest {
                     failedReport.lastFlushError.shouldNotBeNull()
 
                     repository.put(second.id, second)
-                    flushSucceeded.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushSucceeded.await(5.seconds).shouldBeTrue()
                     val recoveredReport = awaitHealthReport(repository) { health ->
                         health.queueDepth == 0 && health.lastFlushError == null
                     }
@@ -946,6 +952,7 @@ class WriteBehindCacheTest {
                     terminal.workerState shouldBeEqualTo CacheWorkerState.FAILED
                     terminal.queueDepth shouldBeEqualTo 1
                     attempts.get() shouldBeEqualTo 8
+
                     assertFailsWith<IllegalStateException> {
                         repository.put(existing.id, existing.copy(firstName = "rejected-after-failure"))
                     }
@@ -983,7 +990,7 @@ class WriteBehindCacheTest {
 
                 try {
                     repository.put(blocked.id, blocked)
-                    flushStarted.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                    flushStarted.await(5.seconds).shouldBeTrue()
                     repository.put(queued.id, queued)
 
                     val failure = assertFailsWith<IllegalStateException> {
@@ -1126,7 +1133,7 @@ class WriteBehindCacheTest {
         config: LocalCacheConfig,
         private val flushStarted: CountDownLatch,
         private val releaseFlush: CountDownLatch,
-        private val closeWaitDuration: Duration = Duration.ofSeconds(30),
+        closeWaitDuration: Duration = 30.seconds(),
     ): AbstractR2dbcCaffeineRepository<Long, ActorRecord>(config) {
 
         override val writeBehindCloseWaitDuration: Duration = closeWaitDuration
@@ -1137,7 +1144,7 @@ class WriteBehindCacheTest {
 
         override fun UpdateStatement.updateEntity(entity: ActorRecord) {
             flushStarted.countDown()
-            releaseFlush.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            releaseFlush.await(5.seconds).shouldBeTrue()
             this[ActorTable.firstName] = entity.firstName
             this[ActorTable.lastName] = entity.lastName
             this[ActorTable.email] = entity.email
@@ -1239,7 +1246,7 @@ class WriteBehindCacheTest {
 
         override fun put(key: K, valueFuture: CompletableFuture<out V>) {
             cachePutEntered.countDown()
-            releaseCachePut.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            releaseCachePut.await(5.seconds).shouldBeTrue()
             delegate.put(key, valueFuture)
         }
     }
@@ -1253,7 +1260,7 @@ class WriteBehindCacheTest {
             if (predicate(report)) {
                 return report
             }
-            delay(10)
+            delay(10.milliseconds)
         }
         return repository.validateConsistency()
     }
@@ -1273,7 +1280,7 @@ class WriteBehindCacheTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun writeBehindJobLazyOf(repository: AbstractR2dbcCaffeineRepository<*, *>): Lazy<Job> {
-        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField("writeBehindJob\$delegate")
+        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField($$"writeBehindJob$delegate")
         field.isAccessible = true
 
         return field.get(repository) as Lazy<Job>
@@ -1284,7 +1291,7 @@ class WriteBehindCacheTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun writeBehindQueueOf(repository: AbstractR2dbcCaffeineRepository<*, *>): kotlinx.coroutines.channels.Channel<Any> {
-        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField("writeBehindQueue\$delegate")
+        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField($$"writeBehindQueue$delegate")
         field.isAccessible = true
         return (field.get(repository) as Lazy<kotlinx.coroutines.channels.Channel<Any>>).value
     }
@@ -1335,7 +1342,7 @@ class WriteBehindCacheTest {
         repository: AbstractR2dbcCaffeineRepository<*, *>,
         replacement: AsyncCache<*, *>,
     ) {
-        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField("cache\$delegate")
+        val field = AbstractR2dbcCaffeineRepository::class.java.getDeclaredField($$"cache$delegate")
         field.isAccessible = true
         field.set(repository, lazyOf(replacement))
     }

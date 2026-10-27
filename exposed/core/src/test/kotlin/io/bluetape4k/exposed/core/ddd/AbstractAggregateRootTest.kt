@@ -4,7 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBe
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBe
 import io.bluetape4k.assertions.shouldStartWith
@@ -89,12 +89,12 @@ class AbstractAggregateRootTest {
         second[1] shouldBe confirmed
         first shouldBeEqualTo second
 
-        @Suppress("UNCHECKED_CAST")
-        (first as MutableList<DomainEvent<OrderId>>).clear()
-        val afterMisuse = order.domainEvents()
+
+        first.shouldBeInstanceOf<MutableList<DomainEvent<OrderId>>>().clear()
+
+        val afterMisuse = order.domainEvents().onEach { log.debug { "event=$it" } }
         afterMisuse shouldHaveSize 2
-        afterMisuse[0] shouldBe placed
-        afterMisuse[1] shouldBe confirmed
+        afterMisuse shouldBeEqualTo listOf(placed, confirmed)
     }
 
     @Test
@@ -114,9 +114,7 @@ class AbstractAggregateRootTest {
         handedOff shouldBeEqualTo listOf(listOf(placed, confirmed))
 
         order.domainEvents().shouldBeEmpty()
-        order.drainDomainEvents {
-            error("Empty drain should not invoke handoff")
-        }.shouldBeEmpty()
+        order.drainDomainEvents { error("Empty drain should not invoke handoff") }.shouldBeEmpty()
         order.domainEvents().shouldBeEmpty()
     }
 
@@ -143,9 +141,7 @@ class AbstractAggregateRootTest {
         order.clearDomainEvents()
 
         order.domainEvents().shouldBeEmpty()
-        order.drainDomainEvents {
-            error("Empty drain should not invoke handoff")
-        }.isEmpty().shouldBeTrue()
+        order.drainDomainEvents { error("Empty drain should not invoke handoff") }.shouldBeEmpty()
     }
 
     @Test
@@ -156,6 +152,7 @@ class AbstractAggregateRootTest {
             order.place(OrderPlaced(OrderId(2L)))
         }
 
+        log.debug { "error=$error" }
         error.message shouldStartWith "Domain event aggregateId must match aggregate id"
     }
 

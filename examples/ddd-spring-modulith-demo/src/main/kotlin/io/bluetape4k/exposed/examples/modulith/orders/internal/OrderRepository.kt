@@ -6,8 +6,8 @@ import io.bluetape4k.exposed.examples.modulith.orders.OrderStatus
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.javatime.timestamp
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -33,33 +33,30 @@ class OrderRepository {
         order
     }
 
-    fun findByOrderId(orderId: OrderId): Order? =
-        transaction {
-            table.selectAll()
+    fun findByOrderId(orderId: OrderId): Order? = transaction {
+        table.selectAll()
             .where { table.id eq orderId.value }
             .singleOrNull()
             ?.toOrder()
-        }
+    }
 
-    fun count(): Long =
-        transaction { table.selectAll().count() }
+    fun count(): Long = transaction { table.selectAll().count() }
 
     fun deleteAll() {
         transaction { table.deleteAll() }
     }
 
-    private fun ResultRow.toOrder(): Order =
-        Order(
-            id = OrderId(this[table.id]),
-            orderKey = this[table.orderKey],
-            customerId = this[table.customerId],
-            note = this[table.note],
-            status = OrderStatus.valueOf(this[table.status]),
-            acceptedAt = this[table.acceptedAt],
-        )
+    private fun ResultRow.toOrder(): Order = Order(
+        id = OrderId(this[table.id]),
+        orderKey = this[table.orderKey],
+        customerId = this[table.customerId],
+        note = this[table.note],
+        status = OrderStatus.valueOf(this[table.status]),
+        acceptedAt = this[table.acceptedAt],
+    )
 }
 
-object OrderTable : Table("DDD_MODULITH_ORDERS") {
+object OrderTable: Table("DDD_MODULITH_ORDERS") {
     val id = varchar("ORDER_ID", 80)
     val orderKey = varchar("ORDER_KEY", 120)
     val customerId = varchar("CUSTOMER_ID", 120)
@@ -73,7 +70,7 @@ object OrderTable : Table("DDD_MODULITH_ORDERS") {
 @Component
 class OrderSchemaInitializer(
     private val orderRepository: OrderRepository,
-) : SmartInitializingSingleton {
+): SmartInitializingSingleton {
 
     override fun afterSingletonsInstantiated() {
         transaction {

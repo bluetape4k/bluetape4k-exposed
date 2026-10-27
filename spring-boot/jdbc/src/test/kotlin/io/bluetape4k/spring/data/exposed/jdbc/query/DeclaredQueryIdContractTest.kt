@@ -6,6 +6,7 @@ import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.DeclaredExposedQuery
 import io.bluetape4k.spring.data.exposed.jdbc.repository.query.ExposedQueryMethod
 import io.bluetape4k.spring.data.exposed.jdbc.repository.support.ExposedEntityInformationImpl
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -15,6 +16,7 @@ import org.jetbrains.exposed.v1.dao.LongEntityClass
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class DeclaredQueryIdContractTest {
@@ -31,8 +33,9 @@ class DeclaredQueryIdContractTest {
         var name by Accounts.name
     }
 
+    private val method = mockk<ExposedQueryMethod>()
+
     private fun execute(sql: String): Any? {
-        val method = mockk<ExposedQueryMethod>()
         every { method.getAnnotatedQuery() } returns sql
         every { method.name } returns "query"
 
@@ -50,6 +53,11 @@ class DeclaredQueryIdContractTest {
                 SchemaUtils.drop(Accounts)
             }
         }
+    }
+
+    @BeforeEach
+    fun beforeEach() {
+        clearMocks(method)
     }
 
     @Test

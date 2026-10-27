@@ -1,11 +1,13 @@
 package io.bluetape4k.batch.api
 
-import io.bluetape4k.logging.KLogging
-import io.bluetape4k.assertions.shouldBe
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import java.time.Instant
 
@@ -14,7 +16,7 @@ import java.time.Instant
  */
 class JobExecutionTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── 1. 기본 생성 ────────────────────────────────────────────────────────
 
@@ -24,7 +26,7 @@ class JobExecutionTest {
 
         exec.id shouldBeEqualTo 1L
         exec.jobName shouldBeEqualTo "importJob"
-        exec.params shouldBeEqualTo emptyMap()
+        exec.params.shouldBeEmpty()
         exec.status shouldBeEqualTo BatchStatus.STARTING
         exec.startTime.shouldNotBeNull()
         exec.endTime.shouldBeNull()
@@ -110,25 +112,25 @@ class JobExecutionTest {
     @Test
     fun `STARTING status - isTerminal은 false`() {
         val exec = JobExecution(id = 1L, jobName = "job", status = BatchStatus.STARTING)
-        exec.status.isTerminal shouldBe false
+        exec.status.isTerminal.shouldBeFalse()
     }
 
     @Test
     fun `RUNNING status - isTerminal은 false`() {
         val exec = JobExecution(id = 1L, jobName = "job", status = BatchStatus.RUNNING)
-        exec.status.isTerminal shouldBe false
+        exec.status.isTerminal.shouldBeFalse()
     }
 
     @Test
     fun `COMPLETED status - isTerminal은 true`() {
         val exec = JobExecution(id = 1L, jobName = "job", status = BatchStatus.COMPLETED)
-        exec.status.isTerminal shouldBe true
+        exec.status.isTerminal.shouldBeTrue()
     }
 
     @Test
     fun `FAILED status - isTerminal은 true`() {
         val exec = JobExecution(id = 1L, jobName = "job", status = BatchStatus.FAILED)
-        exec.status.isTerminal shouldBe true
+        exec.status.isTerminal.shouldBeTrue()
     }
 
     // ─── 5. Serializable 보장 ────────────────────────────────────────────────
@@ -136,6 +138,6 @@ class JobExecutionTest {
     @Test
     fun `JobExecution은 Serializable을 구현한다`() {
         val exec = JobExecution(id = 1L, jobName = "job")
-        exec shouldBeInstanceOf java.io.Serializable::class
+        exec.shouldBeInstanceOf<java.io.Serializable>()
     }
 }

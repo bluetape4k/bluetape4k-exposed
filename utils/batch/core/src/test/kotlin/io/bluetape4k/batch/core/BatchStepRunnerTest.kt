@@ -1,20 +1,21 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchProcessor
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
+import io.bluetape4k.batch.api.BatchProcessor
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.SkipPolicy
 import io.bluetape4k.batch.api.StepReport
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeFalse
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.workflow.api.RetryPolicy
 import kotlinx.coroutines.CancellationException
@@ -146,7 +147,7 @@ class BatchStepRunnerTest {
     }
 
     /** close() 시 예외를 던지는 reader (양쪽 close 실패 테스트용). */
-    class FailOnCloseReader<T : Any> : BatchReader<T> {
+    class FailOnCloseReader<T: Any>: BatchReader<T> {
         override suspend fun read(): T? = null
 
         override suspend fun close() {
@@ -186,8 +187,7 @@ class BatchStepRunnerTest {
     ) {
         val se = repo.findOrCreateStepExecution(je, stepName)
         repo.completeStepExecution(
-            se,
-            StepReport(
+            se, StepReport(
                 stepName = stepName,
                 status = status,
                 readCount = readCount,
@@ -223,11 +223,11 @@ class BatchStepRunnerTest {
     fun `1 정상 경로 - read, process, write 후 COMPLETED`() = runSuspendIO {
         val reader = ListBatchReader(listOf("a", "b", "c", "d", "e"))
         val writer = CollectingWriter<String>()
-        val step = makeStep<String, String>(chunkSize = 2, reader = reader, writer = writer)
+        val step = makeStep(chunkSize = 2, reader = reader, writer = writer)
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 5L
         report.writeCount shouldBeEqualTo 5L
         report.skipCount shouldBeEqualTo 0L
@@ -243,14 +243,14 @@ class BatchStepRunnerTest {
     fun `2 빈 리더 - EOF 즉시 반환 COMPLETED, 0 items`() = runSuspendIO {
         val reader = ListBatchReader<String>(emptyList())
         val writer = CollectingWriter<String>()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 0L
         report.writeCount shouldBeEqualTo 0L
-        writer.collected.isEmpty().shouldBeTrue()
+        writer.collected.shouldBeEmpty()
     }
 
     // ─── 3. Processor null 필터 ──────────────────────────────────────────────
@@ -265,7 +265,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 5L
         report.writeCount shouldBeEqualTo 3L
         report.skipCount shouldBeEqualTo 0L  // null 필터는 skip이 아님
@@ -291,7 +291,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.readCount shouldBeEqualTo 3L
         report.writeCount shouldBeEqualTo 2L
         report.skipCount shouldBeEqualTo 1L
@@ -317,9 +317,9 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.error.shouldNotBeNull()
-        report.error shouldBeInstanceOf RuntimeException::class
+        report.error.shouldBeInstanceOf<RuntimeException>()
     }
 
     // ─── 6. Writer 재시도 성공 ────────────────────────────────────────────────
@@ -337,7 +337,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.writeCount shouldBeEqualTo 2L
         writer.collected shouldBeEqualTo listOf("a", "b")
     }
@@ -358,7 +358,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo 3L  // chunk.size
         report.writeCount shouldBeEqualTo 0L
     }
@@ -379,7 +379,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.error.shouldNotBeNull()
     }
 
@@ -388,11 +388,11 @@ class BatchStepRunnerTest {
     @Test
     fun `9 CancellationException - STOPPED 저장 후 재던짐`() = runSuspendIO {
         val reader = object: BatchReader<String> {
-            override suspend fun read(): String? = throw CancellationException("테스트 취소")
+            override suspend fun read(): String = throw CancellationException("테스트 취소")
         }
         val writer = CollectingWriter<String>()
         val repo = InMemoryBatchJobRepository()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
 
         val je = makeJobExecution()
         val runner = BatchStepRunner(step, je, repo)
@@ -409,9 +409,10 @@ class BatchStepRunnerTest {
 
         // StepExecution이 STOPPED로 저장되어야 함
         val je2 = repo.findOrCreateJobExecution(je.jobName, je.params)
+
         val se = repo.findOrCreateStepExecution(je2, step.name)
         // findOrCreate는 저장 상태를 바꾸지 않고, claim 단계에서 RUNNING으로 복원한다.
-        se.status shouldBe BatchStatus.STOPPED
+        se.status shouldBeEqualTo BatchStatus.STOPPED
     }
 
     // ─── 10. 이미 COMPLETED StepExecution ────────────────────────────────────
@@ -421,7 +422,7 @@ class BatchStepRunnerTest {
         val reader = ListBatchReader(listOf("a"))
         val writer = CollectingWriter<String>()
         val repo = InMemoryBatchJobRepository()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
         val je = makeJobExecution()
 
         // StepExecution을 미리 COMPLETED 상태로 만들기
@@ -430,10 +431,10 @@ class BatchStepRunnerTest {
         val runner = BatchStepRunner(step, je, repo)
         val report = runner.run()
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.readCount shouldBeEqualTo 50L  // 기존 통계 반환
         reader.wasOpened.shouldBeFalse()       // open 호출 없음
-        writer.collected.isEmpty().shouldBeTrue()
+        writer.collected.shouldBeEmpty()
     }
 
     // ─── 12. commitTimeout 초과 → WriteTimeoutException → skip 허용 ──────────
@@ -455,7 +456,7 @@ class BatchStepRunnerTest {
         val report = runStep(step)
 
         // WriteTimeoutException이 발생 → skip 허용 → COMPLETED_WITH_SKIPS
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo 2L
         report.writeCount shouldBeEqualTo 0L
     }
@@ -476,7 +477,7 @@ class BatchStepRunnerTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.writeCount shouldBeEqualTo 2L
         writer.collected shouldBeEqualTo listOf("x", "y")
     }
@@ -487,14 +488,14 @@ class BatchStepRunnerTest {
     fun `14 reader open 실패 - step FAILED 반환`() = runSuspendIO {
         val reader = FailOnOpenReader<String>()
         val writer = CollectingWriter<String>()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.error.shouldNotBeNull()
         report.readCount shouldBeEqualTo 0L
-        writer.collected.isEmpty().shouldBeTrue()
+        writer.collected.shouldBeEmpty()
     }
 
     // ─── 15. writer.close() throws → 성공 결과 은닉 없음 ────────────────────
@@ -503,18 +504,18 @@ class BatchStepRunnerTest {
     fun `15 writer close 실패 - 성공 결과 대신 sanitized FAILED를 저장`() = runSuspendIO {
         val reader = ListBatchReader(listOf("a", "b", "c"))
         val writer = FailOnCloseWriter<String>()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         val failure = report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
-        failure.cause shouldBe null
+        failure.cause.shouldBeNull()
         failure.category shouldBeEqualTo BatchInfrastructureFailureException.REPOSITORY_FAILURE
         failure.correlationId.length shouldBeEqualTo 16
         writer.collected shouldBeEqualTo listOf("a", "b", "c")
 
-        repo.findOrCreateStepExecution(makeJobExecution(), step.name).status shouldBe BatchStatus.FAILED
+        repo.findOrCreateStepExecution(makeJobExecution(), step.name).status shouldBeEqualTo BatchStatus.FAILED
     }
 
     @Test
@@ -523,9 +524,9 @@ class BatchStepRunnerTest {
         val writer = FailOnCloseWriter<String>()
         val report = runStep(makeStep(reader = reader, writer = writer))
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         val failure = report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
-        failure.cause shouldBe null
+        failure.cause.shouldBeNull()
         failure.suppressed shouldHaveSize 1
         failure.suppressed.single().shouldBeInstanceOf<BatchInfrastructureFailureException>()
     }
@@ -537,7 +538,7 @@ class BatchStepRunnerTest {
         val reader = ListBatchReader(listOf("a"))
         val writer = CollectingWriter<String>()
         val repo = InMemoryBatchJobRepository()
-        val step = makeStep<String, String>(reader = reader, writer = writer)
+        val step = makeStep(reader = reader, writer = writer)
         val je = makeJobExecution()
 
         preCompleteStep(
@@ -553,7 +554,7 @@ class BatchStepRunnerTest {
         val runner = BatchStepRunner(step, je, repo)
         val report = runner.run()
 
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo 2L
         reader.wasOpened.shouldBeFalse()
     }

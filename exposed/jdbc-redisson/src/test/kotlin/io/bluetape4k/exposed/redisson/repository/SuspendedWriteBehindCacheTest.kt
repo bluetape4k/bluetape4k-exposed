@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.redisson.repository
 
+import io.bluetape4k.exposed.jdbc.inTopLevelSuspendTransactionWithIO
 import io.bluetape4k.exposed.redisson.AbstractRedissonTest
 import io.bluetape4k.exposed.redisson.domain.SuspendedUserCacheRepository
 import io.bluetape4k.exposed.redisson.domain.SuspendedUserCredentialCacheRepository
@@ -15,14 +16,13 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.Nested
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
-@Suppress("DEPRECATION")
 class SuspendedWriteBehindCacheTest {
 
     companion object: KLoggingChannel()
@@ -37,7 +37,7 @@ class SuspendedWriteBehindCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserTable(testDB, context, statement)
 
-        override suspend fun getExistingId() = newSuspendedTransaction {
+        override suspend fun getExistingId() = inTopLevelSuspendTransactionWithIO {
             UserTable
                 .select(UserTable.id)
                 .limit(1)
@@ -45,7 +45,7 @@ class SuspendedWriteBehindCacheTest {
                 .value
         }
 
-        override suspend fun getExistingIds() = newSuspendedTransaction {
+        override suspend fun getExistingIds() = inTopLevelSuspendTransactionWithIO {
             UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
@@ -59,7 +59,10 @@ class SuspendedWriteBehindCacheTest {
     @Nested
     inner class SuspendedAutoIncIdReadWriteBehindRemoteCache: SuspendedAutoIncIdReadWriteBehind() {
 
-        override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND.copy(name = "suspended:write-behind:remote:users")
+        override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND.copy(
+            name = "suspended:write-behind:remote:users",
+            codec = RedissonCodecs.FastForyComposite
+        )
 
         override val repository by lazy {
             SuspendedUserCacheRepository(
@@ -72,8 +75,10 @@ class SuspendedWriteBehindCacheTest {
     @Nested
     inner class SuspendedAutoIncIdReadWriteBehindNearCache: SuspendedAutoIncIdReadWriteBehind() {
 
-        override val cacheConfig =
-            RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(name = "suspended:write-behind:near:users")
+        override val cacheConfig = RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(
+            name = "suspended:write-behind:near:users",
+            codec = RedissonCodecs.FastForyComposite
+        )
 
         override val repository by lazy {
             SuspendedUserCacheRepository(
@@ -93,14 +98,14 @@ class SuspendedWriteBehindCacheTest {
             statement: suspend JdbcTransaction.() -> Unit,
         ) = withSuspendedUserCredentialsTable(testDB, context, statement)
 
-        override suspend fun getExistingId() = newSuspendedTransaction {
+        override suspend fun getExistingId() = inTopLevelSuspendTransactionWithIO {
             UserCredentialsTable
                 .select(UserCredentialsTable.id)
                 .first()[UserCredentialsTable.id]
                 .value
         }
 
-        override suspend fun getExistingIds() = newSuspendedTransaction {
+        override suspend fun getExistingIds() = inTopLevelSuspendTransactionWithIO {
             UserCredentialsTable
                 .select(UserCredentialsTable.id)
                 .map { it[UserCredentialsTable.id].value }
@@ -115,7 +120,10 @@ class SuspendedWriteBehindCacheTest {
     inner class SuspendedClientGeneratedIdReadBehindRemoteCache: SuspendedClientGeneratedIdReadWriteBehind() {
 
         override val cacheConfig =
-            RedissonCacheConfig.WRITE_BEHIND.copy(name = "suspended:write-behind:remote:user-credentials")
+            RedissonCacheConfig.WRITE_BEHIND.copy(
+                name = "suspended:write-behind:remote:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
             SuspendedUserCredentialCacheRepository(
@@ -129,7 +137,10 @@ class SuspendedWriteBehindCacheTest {
     inner class SuspendedClientGeneratedIdReadBehindNearCache: SuspendedClientGeneratedIdReadWriteBehind() {
 
         override val cacheConfig =
-            RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(name = "suspended:write-behind:near:user-credentials")
+            RedissonCacheConfig.WRITE_BEHIND_WITH_NEAR_CACHE.copy(
+                name = "suspended:write-behind:near:user-credentials",
+                codec = RedissonCodecs.FastForyComposite
+            )
 
         override val repository by lazy {
             SuspendedUserCredentialCacheRepository(

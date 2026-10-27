@@ -9,7 +9,9 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.testcontainers.database.PostgisServer
+import io.bluetape4k.testcontainers.database.getDataSource
 import net.postgis.jdbc.geometry.LineString
 import net.postgis.jdbc.geometry.LinearRing
 import net.postgis.jdbc.geometry.Point
@@ -37,17 +39,18 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
         private const val SRID = 4326
 
         @JvmStatic
-        val postgisContainer = PostgisServer.Launcher.postgis
+        val postgisContainer by lazy { PostgisServer.Launcher.postgis }
 
         @JvmStatic
-        val db: Database by lazy {
-            Database.connect(
-                url = postgisContainer.jdbcUrl,
-                driver = "org.postgresql.Driver",
-                user = postgisContainer.username!!,
-                password = postgisContainer.password!!,
-            )
+        val dataSource by lazy {
+            postgisContainer.getDataSource {
+                maximumPoolSize = 4
+                poolName = "postgis-pool"
+            }
         }
+
+        @JvmStatic
+        val db: Database by lazy { Database.connect(dataSource) }
 
         /**
          * Point 생성 헬퍼. PostGIS 좌표 순서: x=경도(lng), y=위도(lat)
@@ -238,6 +241,8 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val intersectsRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stIntersects(GeometryPairs.geomB) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
+
             intersectsRows shouldHaveSize 1
         }
     }
@@ -257,6 +262,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val intersectsRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stIntersects(GeometryPairs.geomB) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
             intersectsRows.shouldBeEmpty()
         }
     }
@@ -305,6 +311,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val containsRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stContains(GeometryPairs.geomB) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
             containsRows shouldHaveSize 1
 
             // 역방향은 포함하지 않음
@@ -330,6 +337,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val containsRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stContains(GeometryPairs.geomB) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
             containsRows shouldHaveSize 1
         }
     }
@@ -354,6 +362,8 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val withinRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stWithin(GeometryPairs.geomB) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
+
             withinRows shouldHaveSize 1
 
             // 역방향은 성립하지 않음
@@ -383,6 +393,7 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val withinRows = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stDWithin(GeometryPairs.geomB, 0.31) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
             withinRows shouldHaveSize 1
 
             val outsideRows = GeometryPairs.selectAll()
@@ -410,13 +421,17 @@ class GeoGeometryColumnTypeTest: AbstractExposedTest() {
             val containsNames = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stContains(GeometryPairs.geomB) }
                 .map { it[GeometryPairs.name] }
+                .onEach { log.debug { "name=$it" } }
+            
             containsNames shouldHaveSize 1
-            containsNames.first() shouldBeEqualTo "포함"
+            containsNames.single() shouldBeEqualTo "포함"
 
             // 교차: inside만 (apart는 분리)
             val intersectsNames = GeometryPairs.selectAll()
                 .where { GeometryPairs.geomA.stIntersects(GeometryPairs.geomB) }
                 .map { it[GeometryPairs.name] }
+                .onEach { log.debug { "name=$it" } }
+
             intersectsNames shouldHaveSize 1
             intersectsNames.first() shouldBeEqualTo "포함"
         }

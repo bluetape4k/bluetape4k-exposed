@@ -73,7 +73,7 @@ object UserSchema: KLoggingChannel() {
             id = lastUserId.getAndIncrement(),
             firstName = faker.name().firstName(),
             lastName = faker.name().lastName(),
-            email = Base58.randomString(4) + "." + faker.internet().emailAddress()
+            email = Base58.randomString(8) + "." + faker.internet().emailAddress()
         )
 
     private suspend fun insertUser(user: UserRecord) {

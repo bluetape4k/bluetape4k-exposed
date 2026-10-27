@@ -37,7 +37,7 @@ private val BATCH_COMPLETED_STATUSES = listOf(
  * 동시 INSERT 경쟁은 `UNIQUE constraint violation` catch 후 재조회로 처리한다.
  * `SELECT ... FOR UPDATE`는 사용하지 않는다 (빈 결과 시 무의미).
  */
-object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
+object BatchJobExecutionTable: LongIdTable("batch_job_execution") {
     /** Job 이름 — 인덱스 포함 */
     val jobName = varchar("job_name", 100).index()
 
@@ -72,7 +72,7 @@ object BatchJobExecutionTable : LongIdTable("batch_job_execution") {
         uniqueIndex("batch_job_execution_active_uidx", jobName, paramsHash, activeKey)
         check("batch_job_exec_status_active_key_chk") {
             ((status inList BATCH_ACTIVE_STATUSES) and activeKey.isNotNull() and (activeKey eq BATCH_ACTIVE_KEY)) or
-                ((status inList BATCH_COMPLETED_STATUSES) and activeKey.isNull())
+                    ((status inList BATCH_COMPLETED_STATUSES) and activeKey.isNull())
         }
     }
 }

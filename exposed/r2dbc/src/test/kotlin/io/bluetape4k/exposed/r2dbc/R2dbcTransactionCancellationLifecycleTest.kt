@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.r2dbc.spi.Connection
@@ -30,8 +31,7 @@ import reactor.core.publisher.Sinks
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
-import java.time.Duration
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /** 실제 연결과 제어 가능한 Publisher로 취소 시 구독 해제와 정리 완료를 확인한다. */
 class R2dbcTransactionCancellationLifecycleTest {
@@ -51,14 +51,14 @@ class R2dbcTransactionCancellationLifecycleTest {
     }
 
     // 추가 상태는 coroutine stacktrace recovery의 예외 복사를 배제한다.
-    private class BoundaryCancellation(val boundary: Boundary): CancellationException(boundary.name)
-    private class BeginFailure(val boundary: Boundary): IllegalStateException(boundary.name)
+    private class BoundaryCancellation(boundary: Boundary): CancellationException(boundary.name)
+    private class BeginFailure(boundary: Boundary): IllegalStateException(boundary.name)
 
     @ParameterizedTest
     @MethodSource("cases")
     fun `취소된 Publisher를 해제하고 획득한 연결을 한번만 정리한다`(testDB: TestDB, boundary: Boundary) = runSuspendIO {
         val previousDatabase = TransactionManager.defaultDatabase
-        val events = CopyOnWriteArrayList<String>()
+        val events = ConcurrentLinkedQueue<String>()
         val reached = CompletableDeferred<Unit>()
         val cancellation = BoundaryCancellation(boundary)
         val beginFailure = BeginFailure(boundary)
@@ -67,7 +67,7 @@ class R2dbcTransactionCancellationLifecycleTest {
         fun <T: Any> pending(): Mono<T> = Mono.never<T>()
             .doOnSubscribe { reached.complete(Unit) }
             .doOnCancel { events.add("cancel") }
-            .timeout(Duration.ofSeconds(5))
+            .timeout(5.seconds())
 
         val delegate = ConnectionFactories.get(testDB.connection())
 
@@ -77,7 +77,7 @@ class R2dbcTransactionCancellationLifecycleTest {
             override fun create(): Publisher<out Connection> =
                 (if (boundary == Boundary.ACQUISITION) {
                     // Exposed의 acquisition은 NonCancellable이다. 취소 요청 뒤 연결을 전달해 정리를 관측한다.
-                    acquisitionRelease.asMono().timeout(Duration.ofSeconds(5))
+                    acquisitionRelease.asMono().timeout(5.seconds())
                         .doOnSubscribe { reached.complete(Unit) }
                         .thenMany(Flux.from(delegate.create()))
                 } else Flux.from(delegate.create())).map { connection ->

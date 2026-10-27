@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package io.bluetape4k.spring.modulith.exposed
 
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -33,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.ClassUtils
 import java.time.Instant
 import java.util.*
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 class UnloadableEventPublicationException(
@@ -71,12 +68,12 @@ class ExposedEventPublicationRepository(
 
     override fun create(publication: TargetEventPublication): TargetEventPublication {
         table.insert { row ->
-            row[table.id] = publication.identifier.toKotlinUuid()
+            row[table.id] = publication.identifier
             row[table.eventType] = publication.event.javaClass.name
             row[table.listenerId] = publication.targetIdentifier.value
             row[table.publicationDate] = publication.publicationDate
             row[table.serializedEvent] = serialize(publication.event)
-            row[table.status] = publication.status.name
+            row[table.status] = publication.status
             row[table.completionAttempts] = publication.completionAttempts
             row[table.lastResubmissionDate] = publication.lastResubmissionDate ?: publication.publicationDate
         }
@@ -107,7 +104,7 @@ class ExposedEventPublicationRepository(
                         (table.completionDate.isNull()) and
                         (table.serializedEvent eq serialized)
             }) { row ->
-                row[table.status] = Status.COMPLETED.name
+                row[table.status] = Status.COMPLETED
                 row[table.completionDate] = completionDate
             }
         }
@@ -115,16 +112,16 @@ class ExposedEventPublicationRepository(
 
     override fun markCompleted(identifier: UUID, completionDate: Instant) {
         when (completionMode) {
-            CompletionMode.DELETE -> table.deleteWhere { table.id eq identifier.toKotlinUuid() }
+            CompletionMode.DELETE  -> table.deleteWhere { table.id eq identifier }
             CompletionMode.ARCHIVE -> {
                 copyToArchive(identifier, completionDate)
-                table.deleteWhere { table.id eq identifier.toKotlinUuid() }
+                table.deleteWhere { table.id eq identifier }
             }
 
-            CompletionMode.UPDATE -> table.update({
-                (table.id eq identifier.toKotlinUuid()) and table.completionDate.isNull()
+            CompletionMode.UPDATE  -> table.update({
+                (table.id eq identifier) and table.completionDate.isNull()
             }) { row ->
-                row[table.status] = Status.COMPLETED.name
+                row[table.status] = Status.COMPLETED
                 row[table.completionDate] = completionDate
             }
         }
@@ -136,9 +133,9 @@ class ExposedEventPublicationRepository(
 
     override fun markResubmitted(identifier: UUID, resubmissionDate: Instant): Boolean {
         val updated = table.update({
-            (table.id eq identifier.toKotlinUuid()) and (table.status neq Status.RESUBMITTED.name)
+            (table.id eq identifier) and (table.status neq Status.RESUBMITTED)
         }) { row ->
-            row[table.status] = Status.RESUBMITTED.name
+            row[table.status] = Status.RESUBMITTED
             row[table.completionAttempts] = table.completionAttempts + 1
             row[table.lastResubmissionDate] = resubmissionDate
         }
@@ -149,7 +146,7 @@ class ExposedEventPublicationRepository(
     @Transactional(transactionManager = "springTransactionManager", readOnly = true)
     override fun findIncompletePublications(): List<TargetEventPublication> =
         table.selectAll()
-            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED.name) }
+            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED) }
             .orderBy(table.publicationDate, SortOrder.ASC)
             .toPublications()
 
@@ -157,7 +154,7 @@ class ExposedEventPublicationRepository(
     override fun findIncompletePublicationsPublishedBefore(instant: Instant): List<TargetEventPublication> =
         table.selectAll()
             .where {
-                (table.completionDate.isNull() or (table.status eq Status.PROCESSING.name)) and
+                (table.completionDate.isNull() or (table.status eq Status.PROCESSING)) and
                         (table.publicationDate less instant)
             }
             .orderBy(table.publicationDate, SortOrder.ASC)
@@ -172,7 +169,7 @@ class ExposedEventPublicationRepository(
             .where {
                 (table.serializedEvent eq serialize(event)) and
                         (table.listenerId eq targetIdentifier.value) and
-                        (table.completionDate.isNull() or (table.status eq Status.FAILED.name))
+                        (table.completionDate.isNull() or (table.status eq Status.FAILED))
             }
             .orderBy(table.publicationDate, SortOrder.ASC)
             .firstOrNull()
@@ -185,20 +182,20 @@ class ExposedEventPublicationRepository(
     override fun findCompletedPublications(): List<TargetEventPublication> {
         val source = if (completionMode == CompletionMode.ARCHIVE) archiveTable else table
         return source.selectAll()
-            .where { source.completionDate.isNotNull() or (source.status eq Status.COMPLETED.name) }
+            .where { source.completionDate.isNotNull() or (source.status eq Status.COMPLETED) }
             .orderBy(source.publicationDate, SortOrder.ASC)
             .toPublications(source)
     }
 
     override fun deletePublications(identifiers: List<UUID>) {
         if (identifiers.isEmpty()) return
-        table.deleteWhere { table.id inList identifiers.map { it.toKotlinUuid() } }
+        table.deleteWhere { table.id inList identifiers }
     }
 
     override fun deleteCompletedPublications() {
         val source = if (completionMode == CompletionMode.ARCHIVE) archiveTable else table
         source.deleteWhere {
-            source.completionDate.isNotNull() or (source.status eq Status.COMPLETED.name)
+            source.completionDate.isNotNull() or (source.status eq Status.COMPLETED)
         }
     }
 
@@ -206,7 +203,7 @@ class ExposedEventPublicationRepository(
         val source = if (completionMode == CompletionMode.ARCHIVE) archiveTable else table
         source.deleteWhere {
             (source.completionDate less instant) and
-                    ((source.status eq Status.COMPLETED.name) or source.status.isNull())
+                    ((source.status eq Status.COMPLETED) or source.status.isNull())
         }
     }
 
@@ -214,7 +211,7 @@ class ExposedEventPublicationRepository(
     override fun findFailedPublications(criteria: EventPublicationRepository.FailedCriteria): List<TargetEventPublication> {
         val query = table.selectAll()
             .where {
-                (table.status eq Status.FAILED.name) or
+                (table.status eq Status.FAILED) or
                         (table.status.isNull() and table.completionDate.isNull())
             }
             .orderBy(table.publicationDate, SortOrder.ASC)
@@ -240,7 +237,7 @@ class ExposedEventPublicationRepository(
     override fun findByStatus(status: Status): List<TargetEventPublication> {
         val source = if (status == Status.COMPLETED && completionMode == CompletionMode.ARCHIVE) archiveTable else table
         return source.selectAll()
-            .where { source.status eq status.name }
+            .where { source.status eq status }
             .orderBy(source.publicationDate, SortOrder.ASC)
             .toPublications(source)
     }
@@ -249,7 +246,7 @@ class ExposedEventPublicationRepository(
     override fun countByStatus(status: Status): Int {
         val source = if (status == Status.COMPLETED && completionMode == CompletionMode.ARCHIVE) archiveTable else table
         return source.selectAll()
-            .where { source.status eq status.name }
+            .where { source.status eq status }
             .count()
             .toInt()
     }
@@ -258,7 +255,7 @@ class ExposedEventPublicationRepository(
     @Transactional(transactionManager = "springTransactionManager", readOnly = true)
     fun countIncompletePublications(): Int =
         table.selectAll()
-            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED.name) }
+            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED) }
             .count()
             .toInt()
 
@@ -267,7 +264,7 @@ class ExposedEventPublicationRepository(
     fun countCompletedPublications(): Int {
         val source = if (completionMode == CompletionMode.ARCHIVE) archiveTable else table
         return source.selectAll()
-            .where { source.completionDate.isNotNull() or (source.status eq Status.COMPLETED.name) }
+            .where { source.completionDate.isNotNull() or (source.status eq Status.COMPLETED) }
             .count()
             .toInt()
     }
@@ -277,7 +274,7 @@ class ExposedEventPublicationRepository(
     fun countFailedPublications(): Int =
         table.selectAll()
             .where {
-                (table.status eq Status.FAILED.name) or
+                (table.status eq Status.FAILED) or
                         (table.status.isNull() and table.completionDate.isNull())
             }
             .count()
@@ -287,7 +284,7 @@ class ExposedEventPublicationRepository(
     @Transactional(transactionManager = "springTransactionManager", readOnly = true)
     fun countUnloadablePublications(): Int =
         table.select(table.eventType)
-            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED.name) }
+            .where { table.completionDate.isNull() or (table.status neq Status.COMPLETED) }
             .count { row -> !isEventTypeLoadable(row[table.eventType]) }
 
     /**
@@ -303,15 +300,15 @@ class ExposedEventPublicationRepository(
 
     private fun updateStatus(identifier: UUID, status: Status) {
         table.update({
-            (table.id eq identifier.toKotlinUuid()) and (table.status neq status.name)
+            (table.id eq identifier) and (table.status neq status)
         }) { row ->
-            row[table.status] = status.name
+            row[table.status] = status
         }
     }
 
     private fun copyToArchive(identifier: UUID, completionDate: Instant) {
         table.selectAll()
-            .where { table.id eq identifier.toKotlinUuid() }
+            .where { table.id eq identifier }
             .firstOrNull()
             ?.let { row -> insertArchive(row, completionDate) }
     }
@@ -339,7 +336,7 @@ class ExposedEventPublicationRepository(
                 archive[archiveTable.eventType] = row[table.eventType]
                 archive[archiveTable.serializedEvent] = row[table.serializedEvent]
                 archive[archiveTable.publicationDate] = row[table.publicationDate]
-                archive[archiveTable.status] = Status.COMPLETED.name
+                archive[archiveTable.status] = Status.COMPLETED
                 archive[archiveTable.completionDate] = completionDate
                 archive[archiveTable.completionAttempts] = row[table.completionAttempts]
                 archive[archiveTable.lastResubmissionDate] = row[table.lastResubmissionDate]
@@ -363,7 +360,7 @@ class ExposedEventPublicationRepository(
         row: ResultRow,
         publicationTable: ExposedEventPublicationTable = table,
     ): TargetEventPublication {
-        val id = row[publicationTable.id].toJavaUuid()
+        val id = row[publicationTable.id]
         val listenerId = row[publicationTable.listenerId]
         val eventType = row[publicationTable.eventType]
         val serializedEvent = row[publicationTable.serializedEvent]
@@ -375,7 +372,7 @@ class ExposedEventPublicationRepository(
             listenerId = listenerId,
             eventSupplier = eventSupplier,
             completionDate = row[publicationTable.completionDate],
-            status = row[publicationTable.status]?.let(Status::valueOf),
+            status = row[publicationTable.status],
             lastResubmissionDate = row[publicationTable.lastResubmissionDate],
             completionAttempts = row[publicationTable.completionAttempts],
         )

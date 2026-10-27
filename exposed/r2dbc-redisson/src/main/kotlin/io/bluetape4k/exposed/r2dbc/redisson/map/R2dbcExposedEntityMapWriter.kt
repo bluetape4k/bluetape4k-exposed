@@ -88,14 +88,13 @@ open class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
             updateBody: IdTable<K>.(UpdateStatement, V) -> Unit,
             batchInsertBody: BatchInsertStatement.(V) -> Unit,
         ) {
-            log.debug { "캐시 변경 사항을 DB에 반영합니다... entries=${map.size}" }
+            log.debug { "캐시 변경 사항을 DB에 반영합니다... entry size=${map.size}" }
 
-            val existIds =
-                entityTable
-                    .select(entityTable.id)
-                    .where { entityTable.id inList map.keys }
-                    .map { it[entityTable.id].value }
-                    .toList()
+            val existIds = entityTable
+                .select(entityTable.id)
+                .where { entityTable.id inList map.keys }
+                .map { it[entityTable.id].value }
+                .toList()
 
             val entriesToUpdate = map.entries.filter { it.key in existIds }
             entriesToUpdate.forEach { (id, entity) ->
@@ -126,9 +125,7 @@ open class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
         ) {
             // Write Behind 시에는 캐시에 남길 일이 없으므로, 자동증가 ID인 경우에도 batchInsert 를 수행합니다.
             val entitiesToInsert = map.values
-            entitiesToInsert
-                .chunked(batchSize)
-                .asFlow()
+            entitiesToInsert.chunked(batchSize).asFlow()
                 .collect { chunk ->
                     log.debug { "캐시 변경 사항을 DB에 반영합니다... chunk size=${chunk.size}" }
                     entityTable.batchInsert(chunk, shouldReturnGeneratedValues = false) {
@@ -145,7 +142,7 @@ open class R2dbcExposedEntityMapWriter<ID: Any, E: Any>(
         // 중요 설정 변경 시 경고 로그
         if (deleteFromDBOnInvalidate) {
             log.warn {
-                "⚠️ 주의! deleteFromDBOnInvalidate=true로 설정되었습니다. " +
+                "⚠️ 주의! `deleteFromDBOnInvalidate=true`로 설정되었습니다. " +
                         "캐시에서 항목 삭제 시 DB에서도 함께 삭제됩니다. 프로덕션 환경에서는 신중히 사용하세요."
             }
         }

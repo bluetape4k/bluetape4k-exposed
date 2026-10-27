@@ -7,6 +7,7 @@ import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -36,6 +37,8 @@ class InetPostgresTest: AbstractExposedTest() {
 
             val row = PgNetworkTable.selectAll().single()
             val result = row[PgNetworkTable.ip]
+
+            log.debug { "result=$result" }
             result.shouldNotBeNull()
             result.hostAddress shouldBeEqualTo "192.168.1.100"
         }
@@ -52,6 +55,8 @@ class InetPostgresTest: AbstractExposedTest() {
 
             val row = PgNetworkTable.selectAll().single()
             val result = row[PgNetworkTable.ip]
+
+            log.debug { "result=$result" }
             result.shouldNotBeNull()
             result shouldBeEqualTo addr
         }
@@ -67,6 +72,8 @@ class InetPostgresTest: AbstractExposedTest() {
 
             val row = PgNetworkTable.selectAll().single()
             val result = row[PgNetworkTable.network]
+
+            log.debug { "result=$result" }
             result shouldBeEqualTo "10.0.0.0/8"
         }
     }
@@ -86,9 +93,10 @@ class InetPostgresTest: AbstractExposedTest() {
             val rows = PgNetworkTable.selectAll()
                 .where { PgNetworkTable.ip.isContainedBy(PgNetworkTable.network) }
                 .toList()
+                .onEach { log.debug { "row=$it" } }
 
             rows shouldHaveSize 1
-            rows.first()[PgNetworkTable.ip].hostAddress shouldBeEqualTo "192.168.1.50"
+            rows.single()[PgNetworkTable.ip].hostAddress shouldBeEqualTo "192.168.1.50"
         }
     }
 }

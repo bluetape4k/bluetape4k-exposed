@@ -27,7 +27,7 @@ class R2dbcLettuceRepositoryCodecSafetyTest: AbstractR2dbcLettuceTest() {
         assertFailsWith<IllegalArgumentException> {
             object: AbstractR2dbcLettuceRepository<Long, UserRecord>(
                 client = mockk<RedisClient>(),
-                config = LettuceCacheConfig.READ_WRITE_THROUGH
+                config = LettuceCacheConfig.READ_WRITE_THROUGH,
             ) {
                 override val table: IdTable<Long> = UserTable
                 override suspend fun ResultRow.toEntity(): UserRecord = error("not used")

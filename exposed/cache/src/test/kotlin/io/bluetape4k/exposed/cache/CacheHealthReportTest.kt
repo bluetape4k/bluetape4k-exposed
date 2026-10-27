@@ -4,10 +4,11 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.io.lookup
 import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
-import java.io.ObjectStreamClass
 import kotlin.reflect.full.memberProperties
 
 class CacheHealthReportTest {
@@ -38,6 +39,7 @@ class CacheHealthReportTest {
 
             val restored = serializeRoundTrip(report)
 
+            log.debug { "restored=$restored" }
             restored.mode shouldBeEqualTo report.mode
             restored.queueDepth shouldBeEqualTo report.queueDepth
             restored.workerState shouldBeEqualTo workerState
@@ -59,13 +61,12 @@ class CacheHealthReportTest {
 
     @Test
     fun `health report declares the new serial version UID`() {
-        ObjectStreamClass.lookup(CacheHealthReport::class.java).serialVersionUID shouldBeEqualTo
-                -1428853048381429257L
+        CacheHealthReport::class.lookup().serialVersionUID shouldBeEqualTo -1428853048381429257L
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T: Any> serializeRoundTrip(value: T): T {
-        val bytes = BinarySerializers.FastFory.serialize(value)
-        return BinarySerializers.FastFory.deserialize<T>(bytes).shouldNotBeNull()
+        val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
+        return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
     }
 }

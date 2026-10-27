@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.cockroachdb
 
+import io.bluetape4k.apache.startsWithIgnoreCase
+import io.bluetape4k.support.checkNull
+import io.bluetape4k.support.requireGe
 import io.bluetape4k.support.requirePositiveNumber
 import io.bluetape4k.support.requireZeroOrPositiveNumber
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -42,9 +45,9 @@ data class CockroachTransactionRetryOptions(
         maxAttempts.requirePositiveNumber("maxAttempts")
         minRetryDelayMillis.requireZeroOrPositiveNumber("minRetryDelayMillis")
         maxRetryDelayMillis.requireZeroOrPositiveNumber("maxRetryDelayMillis")
-        require(maxRetryDelayMillis >= minRetryDelayMillis) {
+        maxRetryDelayMillis.requireGe(minRetryDelayMillis) {
             "maxRetryDelayMillis[$maxRetryDelayMillis] must be greater than or equal to " +
-                "minRetryDelayMillis[$minRetryDelayMillis]."
+                    "minRetryDelayMillis[$minRetryDelayMillis]."
         }
         queryTimeoutSeconds?.requirePositiveNumber("queryTimeoutSeconds")
         require(transactionIsolation in JDBC_TRANSACTION_ISOLATION_LEVELS) {
@@ -98,7 +101,7 @@ data class CockroachTransactionRetryOptions(
 fun Throwable.isCockroachRetryableTransactionError(): Boolean =
     causeSequence().filterIsInstance<SQLException>().any { e ->
         e.sqlState == COCKROACH_RETRY_SQLSTATE &&
-                e.message?.startsWith(COCKROACH_RETRY_MESSAGE_PREFIX, ignoreCase = true) == true
+                e.message?.startsWithIgnoreCase(COCKROACH_RETRY_MESSAGE_PREFIX) == true
     }
 
 /**
@@ -127,7 +130,7 @@ inline fun <T> withCockroachTransaction(
     readOnly: Boolean? = null,
     crossinline statement: JdbcTransaction.() -> T,
 ): T {
-    check(TransactionManager.currentOrNull() == null) {
+    TransactionManager.currentOrNull().checkNull {
         "withCockroachTransaction must be called outside an existing Exposed transaction."
     }
 
@@ -148,6 +151,7 @@ inline fun <T> withCockroachTransaction(
 internal object CockroachTransactionRetry {
 
     @PublishedApi
+    @Suppress("ThrowsCount")
     internal fun <T> execute(
         options: CockroachTransactionRetryOptions,
         block: () -> T,

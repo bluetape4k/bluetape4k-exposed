@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
 @State(Scope.Benchmark)
 class PostgreSqlJdbcBatchBenchmark {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     /**
      * PostgreSQL 시드 시나리오 전용 JMH State.
@@ -49,9 +49,9 @@ class PostgreSqlJdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class SeedState : AbstractJdbcSeedState() {
+    class SeedState: AbstractJdbcSeedState() {
 
-        companion object : KLogging()
+        companion object: KLogging()
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.POSTGRESQL
 
@@ -108,9 +108,9 @@ class PostgreSqlJdbcBatchBenchmark {
      * 완전히 분리됩니다.
      */
     @State(Scope.Benchmark)
-    class JobState : AbstractJdbcJobState() {
+    class JobState: AbstractJdbcJobState() {
 
-        companion object : KLogging()
+        companion object: KLogging()
 
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.POSTGRESQL
 

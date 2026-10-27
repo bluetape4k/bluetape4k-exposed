@@ -15,6 +15,11 @@ import io.bluetape4k.codec.Base58
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import org.awaitility.kotlin.atMost
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
+import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.spring7.transaction.SpringTransactionManager
@@ -42,10 +47,11 @@ import java.io.Serializable
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.sql.DataSource
-import kotlin.uuid.Uuid
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import io.bluetape4k.idgenerators.uuid.Uuid as BluetapeUuid
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -61,13 +67,13 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
 
         private const val REPLAY_EVENT_SEPARATOR = "\u001F"
 
-        private val republishedEvents = CopyOnWriteArrayList<String>()
+        private val republishedEvents = ConcurrentLinkedQueue<String>()
 
-        private val replayDeliveryIds = CopyOnWriteArrayList<String>()
+        private val replayDeliveryIds = ConcurrentLinkedQueue<String>()
 
         private val replayDeduplicationKeys = ConcurrentHashMap.newKeySet<String>()
 
-        private val replayAppliedSideEffectIds = CopyOnWriteArrayList<String>()
+        private val replayAppliedSideEffectIds = ConcurrentLinkedQueue<String>()
 
         private val failReplayAfterSideEffect = AtomicBoolean()
 
@@ -75,10 +81,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
         fun enabledDialects(): Set<TestDB> = TestDB.enabledDialects()
 
         @JvmStatic
-        fun dialectCompletionModes(): List<Arguments> =
-            enabledDialects().flatMap { testDB ->
-                CompletionMode.entries.map { completionMode -> Arguments.of(testDB, completionMode) }
-            }
+        fun dialectCompletionModes(): List<Arguments> = enabledDialects().flatMap { testDB ->
+            CompletionMode.entries.map { completionMode -> Arguments.of(testDB, completionMode) }
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -97,6 +102,7 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
             repository.create(created)
 
             val stored = repository.findIncompletePublications().single()
+            log.debug { "stored=$stored" }
             stored.identifier shouldBeEqualTo created.identifier
             stored.event shouldBeEqualTo created.event
             stored.status shouldBeEqualTo Status.PUBLISHED
@@ -130,6 +136,7 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
                 EventPublicationRepository.FailedCriteria.ALL
                     .withPublicationsPublishedBefore(Instant.parse("2026-05-16T00:30:00Z"))
             )
+                .onEach { log.debug { "failed=$it" } }
 
             failed.map { it.identifier } shouldBeEqualTo listOf(oldFailed.identifier)
         }
@@ -184,6 +191,7 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
             Instant.parse("2026-05-16T00:00:00Z"),
         )
 
+        log.debug { "targetIdentifier=$targetIdentifier" }
         targetIdentifier.value shouldBeEqualTo "listener.kotlin"
         publication.event shouldBeEqualTo TestEvent("kotlin-factory")
         publication.targetIdentifier shouldBeEqualTo targetIdentifier
@@ -264,7 +272,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
                 CompletionMode.ARCHIVE,
                 CompletionMode.UPDATE,
                     -> {
-                    val completed = repository.findCompletedPublications().single()
+                    val completed = repository.findCompletedPublications()
+                        .onEach { log.debug { "completed=$it" } }
+                        .single()
                     completed.identifier shouldBeEqualTo publication.identifier
                     completed.status shouldBeEqualTo Status.COMPLETED
                     completed.completionDate.orElseThrow() shouldBeEqualTo firstCompletionDate
@@ -312,6 +322,8 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
                 CompletionMode.UPDATE,
                     -> {
                     val completed = repository.findCompletedPublications()
+                        .onEach { log.debug { "completed=$it" } }
+
                     completed shouldHaveSize 2
                     completed.map { it.identifier }.toSet() shouldBeEqualTo setOf(first.identifier, second.identifier)
                     completed.map { it.status }.toSet() shouldBeEqualTo setOf(Status.COMPLETED)
@@ -343,7 +355,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
             repository.markResubmitted(publication.identifier, firstResubmissionDate).shouldBeTrue()
             repository.markResubmitted(publication.identifier, duplicateResubmissionDate).shouldBeFalse()
 
-            val resubmitted = repository.findByStatus(Status.RESUBMITTED).single()
+            val resubmitted = repository.findByStatus(Status.RESUBMITTED)
+                .onEach { log.debug { "resubmitted=$it" } }
+                .single()
             resubmitted.identifier shouldBeEqualTo publication.identifier
             resubmitted.completionAttempts shouldBeEqualTo 2
             resubmitted.lastResubmissionDate shouldBeEqualTo firstResubmissionDate
@@ -373,7 +387,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
             repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:05:00Z")).shouldBeTrue()
             repository.markResubmitted(publication.identifier, Instant.parse("2026-05-16T00:06:00Z")).shouldBeFalse()
 
-            val resubmitted = repository.findByStatus(Status.RESUBMITTED).single()
+            val resubmitted = repository.findByStatus(Status.RESUBMITTED)
+                .onEach { log.debug { "resubmitted=$it" } }
+                .single()
             resubmitted.completionAttempts shouldBeEqualTo 2
             resubmitted.lastResubmissionDate shouldBeEqualTo Instant.parse("2026-05-16T00:05:00Z")
 
@@ -419,9 +435,9 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
         ) { context ->
             val repository = context.getBean<EventPublicationRepository>()
 
-            awaitCondition { republishedEvents == listOf(outstandingEvent.value) }
-            republishedEvents shouldBeEqualTo listOf(outstandingEvent.value)
-            republishedEvents shouldNotContain completedEvent.value
+            awaitCondition { republishedEvents.toList() == listOf(outstandingEvent.value) }
+            republishedEvents.toList() shouldBeEqualTo listOf(outstandingEvent.value)
+            republishedEvents.toList() shouldNotContain completedEvent.value
             awaitCondition { repository.findIncompletePublications().isEmpty() }
             repository.findIncompletePublications().shouldBeEmpty()
         }
@@ -452,15 +468,15 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
                 context.publishEvent(event)
             }
 
-            awaitCondition { replayDeliveryIds == listOf(event.eventId) }
+            awaitCondition { replayDeliveryIds.toList() == listOf(event.eventId) }
             awaitCondition {
                 repository.findIncompletePublications().single().status == Status.FAILED
             }
             val failed = repository.findIncompletePublications().single()
             failed.event shouldBeEqualTo event
             failed.status shouldBeEqualTo Status.FAILED
-            replayDeliveryIds shouldBeEqualTo listOf(event.eventId)
-            replayAppliedSideEffectIds shouldBeEqualTo listOf(event.eventId)
+            replayDeliveryIds.toList() shouldBeEqualTo listOf(event.eventId)
+            replayAppliedSideEffectIds.toList() shouldBeEqualTo listOf(event.eventId)
         }
 
         withApplicationContext(
@@ -474,8 +490,8 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
             awaitCondition { replayDeliveryIds.size == 2 }
             awaitCondition { repository.findIncompletePublications().isEmpty() }
 
-            replayDeliveryIds shouldBeEqualTo listOf(event.eventId, event.eventId)
-            replayAppliedSideEffectIds shouldBeEqualTo listOf(event.eventId)
+            replayDeliveryIds.toList() shouldBeEqualTo listOf(event.eventId, event.eventId)
+            replayAppliedSideEffectIds.toList() shouldBeEqualTo listOf(event.eventId)
 
             when (completionMode) {
                 CompletionMode.DELETE ->
@@ -567,9 +583,8 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
         "EVENT_PUBLICATION_${Base58.randomString(8)}"
 
     private fun awaitCondition(predicate: () -> Boolean) {
-        repeat(100) {
-            if (predicate()) return
-            Thread.sleep(10)
+        await atMost 5.seconds withPollInterval 100.milliseconds until {
+            predicate()
         }
         predicate().shouldBeTrue()
     }
@@ -589,7 +604,7 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
                 driverClassName = environment.getRequiredProperty("spring.datasource.driver-class-name")
                 username = environment.getRequiredProperty("spring.datasource.username")
                 password = environment.getRequiredProperty("spring.datasource.password")
-                maximumPoolSize = 4
+                maximumPoolSize = 8
             }
             return HikariDataSource(config)
         }
@@ -649,21 +664,22 @@ class ExposedEventPublicationRepositoryTest: AbstractExposedTest() {
         status: Status,
     ) {
         val publicationDate = Instant.parse("2026-05-16T00:00:00Z")
+        val table = this@insertUnknownPublication
+
         insert { row ->
-            row[this@insertUnknownPublication.id] = Uuid.parse(id.toString())
-            row[this@insertUnknownPublication.eventType] = eventType
-            row[this@insertUnknownPublication.listenerId] = listenerId
-            row[serializedEvent] = """{"value":"legacy"}"""
-            row[this@insertUnknownPublication.publicationDate] = publicationDate
-            row[completionDate] = null
-            row[this@insertUnknownPublication.status] = status.name
-            row[completionAttempts] = 1
-            row[lastResubmissionDate] = publicationDate
+            row[table.id] = id
+            row[table.eventType] = eventType
+            row[table.listenerId] = listenerId
+            row[table.serializedEvent] = """{"value":"legacy"}"""
+            row[table.publicationDate] = publicationDate
+            row[table.completionDate] = null
+            row[table.status] = status
+            row[table.completionAttempts] = 1
+            row[table.lastResubmissionDate] = publicationDate
         }
     }
 
-    private fun nextJavaUuid(): UUID =
-        BluetapeUuid.V7.nextId()
+    private fun nextJavaUuid(): UUID = BluetapeUuid.V7.nextId()
 
     class TestEventSerializer: EventSerializer {
         override fun serialize(event: Any): Any =

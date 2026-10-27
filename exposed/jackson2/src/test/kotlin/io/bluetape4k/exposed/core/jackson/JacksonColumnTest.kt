@@ -15,6 +15,7 @@ import io.bluetape4k.exposed.tests.expectException
 import io.bluetape4k.exposed.tests.withDb
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.core.Op
@@ -122,20 +123,20 @@ class JacksonColumnTest: AbstractExposedTest() {
             // SQLServer & Oracle return null if extracted JSON is not scalar
             val requiresScala = currentDialectTest is SQLServerDialect || currentDialectTest is OracleDialect
             val isActive = tester.jacksonColumn.extract<Boolean>("${pathPrefix}active", toScalar = requiresScala)
-            val row = tester.select(isActive).singleOrNull()
-            row?.get(isActive) shouldBeEqualTo data1.active
+            val row = tester.select(isActive).single()
+            row[isActive] shouldBeEqualTo data1.active
 
             val storedUser = tester.jacksonColumn.extract<User>("${pathPrefix}user", toScalar = false)
-            val row2 = tester.select(storedUser).singleOrNull()
-            row2?.get(storedUser) shouldBeEqualTo user1
+            val row2 = tester.select(storedUser).single()
+            row2[storedUser] shouldBeEqualTo user1
 
             val path = when (currentDialectTest) {
                 is PostgreSQLDialect -> arrayOf("user", "name")
                 else -> arrayOf(".user.name")
             }
             val username = tester.jacksonColumn.extract<String>(*path)
-            val row3 = tester.select(username).singleOrNull()
-            row3?.get(username) shouldBeEqualTo user1.name
+            val row3 = tester.select(username).single()
+            row3[username] shouldBeEqualTo user1.name
         }
     }
 
@@ -169,8 +170,8 @@ class JacksonColumnTest: AbstractExposedTest() {
             }
             val tooManyLogins = logins greaterEq 1000
 
-            val row = tester.select(tester.id).where { tooManyLogins }.singleOrNull()
-            row?.get(tester.id) shouldBeEqualTo newId
+            val row = tester.select(tester.id).where { tooManyLogins }.single()
+            row[tester.id] shouldBeEqualTo newId
         }
     }
 
@@ -504,7 +505,7 @@ class JacksonColumnTest: AbstractExposedTest() {
 
         fun selectIdWhere(condition: () -> Op<Boolean>): List<EntityID<Int>> {
             val query = iterables.select(iterables.id).where(condition())
-            return query.map { it[iterables.id] }
+            return query.map { it[iterables.id] }.onEach { log.debug { "id=${it.value}" } }
         }
 
         withTables(testDB, iterables) {
@@ -568,6 +569,8 @@ class JacksonColumnTest: AbstractExposedTest() {
                 defaultTester.insert { }
 
                 defaultTester.selectAll().single().also {
+                    log.debug { "row=$it" }
+
                     it[defaultTester.user1].name shouldBeEqualTo defaultUser.name
                     it[defaultTester.user1].team shouldBeEqualTo defaultUser.team
 
@@ -706,7 +709,7 @@ class JacksonColumnTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `jackson column with databaseGenerated`(testDB: TestDB) {
 
-        val defaultUser = User("name", "team")
+        val defaultUser = User("debop", "team A")
 
         val tester = object: IntIdTable("jackson_default") {
             val value = jackson<User>("value").default(defaultUser)
@@ -718,11 +721,13 @@ class JacksonColumnTest: AbstractExposedTest() {
 
         // MySQL versions prior to 8.0.13 do not accept default values on JSON columns
         Assumptions.assumeTrue { testDB != TestDB.MYSQL_V5 }
+
         withTables(testDB, tester) {
             testerDatabaseGenerated.insert { }
 
-            val value = testerDatabaseGenerated.selectAll().single()[tester.value]
-            value shouldBeEqualTo defaultUser
+            val user = testerDatabaseGenerated.selectAll().single()[tester.value]
+            log.debug { "user=$user" }
+            user shouldBeEqualTo defaultUser
         }
     }
 }

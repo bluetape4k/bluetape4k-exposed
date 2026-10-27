@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.core.serializable
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.dao.idEquals
 import io.bluetape4k.exposed.dao.idHashCode
 import io.bluetape4k.exposed.tests.AbstractExposedTest
@@ -28,23 +29,41 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
     companion object: KLogging()
 
     private object T1: IntIdTable() {
-        val zstdFory = binarySerializedBlob<Embeddable>("zstd_fury", BinarySerializers.ZstdFory).nullable()
-        val zstdKryo = binarySerializedBlob<Embeddable>("zstd_kryo", BinarySerializers.ZstdKryo).nullable()
-        val snappyFory = binarySerializedBlob<Embeddable>("snappy_fory", BinarySerializers.SnappyFory).nullable()
-        val snappyKryo = binarySerializedBlob<Embeddable>("snappy_kryo", BinarySerializers.SnappyKryo).nullable()
-        val lz4Fory = binarySerializedBlob<Embeddable2>("lz4_fury", BinarySerializers.LZ4Fory).nullable()
-        val lz4Kryo = binarySerializedBlob<Embeddable2>("lz4_kryo", BinarySerializers.LZ4Kryo).nullable()
+        val zstdFory =
+            binarySerializedBinary<Embeddable>("zstd_fory", 4000, BinarySerializers.ZstdFory).nullable()
+        val zstdFastFory =
+            binarySerializedBinary<Embeddable>("zstd_fastfory", 4000, BinarySerializers.ZstdFastFory).nullable()
+        val zstdKryo =
+            binarySerializedBinary<Embeddable>("zstd_kryo", 4000, BinarySerializers.ZstdKryo).nullable()
+
+        val snappyFory =
+            binarySerializedBinary<Embeddable>("snappy_fory", 4000, BinarySerializers.SnappyFory).nullable()
+        val snappyFastFory =
+            binarySerializedBinary<Embeddable>("snappy_fastfory", 4000, BinarySerializers.SnappyFastFory).nullable()
+        val snappyKryo =
+            binarySerializedBinary<Embeddable>("snappy_kryo", 4000, BinarySerializers.SnappyKryo).nullable()
+
+        val lz4Fory =
+            binarySerializedBinary<Embeddable2>("lz4_fory", 4000, BinarySerializers.LZ4Fory).nullable()
+        val lz4FastFory =
+            binarySerializedBinary<Embeddable2>("lz4_fastfory", 4000, BinarySerializers.LZ4FastFory).nullable()
+        val lz4Kryo =
+            binarySerializedBinary<Embeddable2>("lz4_kryo", 4000, BinarySerializers.LZ4Kryo).nullable()
     }
 
     class E1(id: EntityID<Int>): IntEntity(id) {
         companion object: EntityClass<Int, E1>(T1)
 
         var zstdFory by T1.zstdFory
+        var zstdFastFory by T1.zstdFastFory
         var zstdKryo by T1.zstdKryo
+
         var snappyFory by T1.snappyFory
+        var snappyFastFory by T1.snappyFastFory
         var snappyKryo by T1.snappyKryo
 
         var lz4Fory by T1.lz4Fory
+        var lz4FastFory by T1.lz4FastFory
         var lz4Kryo by T1.lz4Kryo
 
         override fun equals(other: Any?): Boolean = idEquals(other)
@@ -57,7 +76,11 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
         val age: Int,
         val address: String,
     ): Serializable {
-        var bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
+        val bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
     }
 
     data class Embeddable2(
@@ -66,8 +89,12 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
         val address: String,
         val zipcode: String,
     ): Serializable {
-        var bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
-        var bytes2: ByteArray = Fakers.faker.image().base64PNG().toUtf8Bytes()
+        companion object {
+            private const val serialVersionUID: Long = 1L
+        }
+
+        val bytes: ByteArray = Fakers.faker.image().base64JPEG().toUtf8Bytes()
+        val bytes2: ByteArray = Fakers.faker.image().base64PNG().toUtf8Bytes()
     }
 
     @ParameterizedTest
@@ -75,15 +102,19 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
     fun `DSL 방식으로 Serializable Object 를 DB에 저장하고 로드한다`(testDB: TestDB) {
         withTables(testDB, T1) {
             val embedded = Embeddable("Alice", 20, "Seoul")
-            val embedded2 = Embeddable2("Alice", 20, "Seoul", "12914")
+            val embedded2 = Embeddable2("Bob", 38, "Busan", "12914")
 
             val id1 = T1.insertAndGetId {
                 it[zstdFory] = embedded
+                it[zstdFastFory] = embedded
                 it[zstdKryo] = embedded
+
                 it[snappyFory] = embedded
+                it[snappyFastFory] = embedded
                 it[snappyKryo] = embedded
 
                 it[lz4Fory] = embedded2
+                it[lz4FastFory] = embedded2
                 it[lz4Kryo] = embedded2
             }
             flushCache()
@@ -92,13 +123,17 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
 
             row[T1.id] shouldBeEqualTo id1
 
-            row[T1.zstdKryo] shouldBeEqualTo embedded
             row[T1.zstdFory] shouldBeEqualTo embedded
-            row[T1.snappyKryo] shouldBeEqualTo embedded
-            row[T1.snappyFory] shouldBeEqualTo embedded
+            row[T1.zstdFastFory] shouldBeEqualTo embedded
+            row[T1.zstdKryo] shouldBeEqualTo embedded
 
-            row[T1.lz4Kryo] shouldBeEqualTo embedded2
+            row[T1.snappyFory] shouldBeEqualTo embedded
+            row[T1.snappyFastFory] shouldBeEqualTo embedded
+            row[T1.snappyKryo] shouldBeEqualTo embedded
+
             row[T1.lz4Fory] shouldBeEqualTo embedded2
+            row[T1.lz4FastFory] shouldBeEqualTo embedded2
+            row[T1.lz4Kryo] shouldBeEqualTo embedded2
         }
     }
 
@@ -107,29 +142,37 @@ class BinarySerializedBlobColumTypeTest: AbstractExposedTest() {
     fun `DAO 방식으로 Serializable Object 를 DB에 저장하고 로드한다`(testDB: TestDB) {
         withTables(testDB, T1) {
             val embedded = Embeddable("Alice", 20, "Seoul")
-            val embedded2 = Embeddable2("Alice", 20, "Seoul", "12914")
+            val embedded2 = Embeddable2("Bob", 38, "Busan", "12914")
             val e1 = E1.new {
                 zstdFory = embedded
+                zstdFastFory = embedded
                 zstdKryo = embedded
+
                 snappyFory = embedded
+                snappyFastFory = embedded
                 snappyKryo = embedded
 
                 lz4Fory = embedded2
+                lz4FastFory = embedded2
                 lz4Kryo = embedded2
             }
             entityCache.clear()
 
-            val loaded = E1.findById(e1.id)!!
+            val loaded = E1.findById(e1.id).shouldNotBeNull()
 
             loaded shouldBeEqualTo e1
 
-            loaded.zstdKryo shouldBeEqualTo embedded
             loaded.zstdFory shouldBeEqualTo embedded
-            loaded.snappyKryo shouldBeEqualTo embedded
-            loaded.snappyFory shouldBeEqualTo embedded
+            loaded.zstdFastFory shouldBeEqualTo embedded
+            loaded.zstdKryo shouldBeEqualTo embedded
 
-            loaded.lz4Kryo shouldBeEqualTo embedded2
+            loaded.snappyFory shouldBeEqualTo embedded
+            loaded.snappyFastFory shouldBeEqualTo embedded
+            loaded.snappyKryo shouldBeEqualTo embedded
+
             loaded.lz4Fory shouldBeEqualTo embedded2
+            loaded.lz4FastFory shouldBeEqualTo embedded2
+            loaded.lz4Kryo shouldBeEqualTo embedded2
         }
     }
 }

@@ -6,6 +6,9 @@ import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
 import org.junit.jupiter.api.Test
+import java.io.Serializable
+import java.math.BigDecimal
+import java.math.BigInteger
 import java.util.*
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
@@ -24,32 +27,47 @@ class ExposedColumnSupportsTest {
 
     @Test
     fun `convertToLanguageType 는 기본 타입 변환을 지원한다`() {
-        convertToLanguageType("12", Int::class) shouldBeEqualTo 12
-        convertToLanguageType("123456789", Long::class) shouldBeEqualTo 123456789L
-        convertToLanguageType(123, String::class) shouldBeEqualTo "123"
+        convertToLanguageType<Int>("12") shouldBeEqualTo 12
+        convertToLanguageType<Long>("123456789") shouldBeEqualTo 123456789L
+        convertToLanguageType<String>(123) shouldBeEqualTo "123"
+
+        convertToLanguageType<Boolean>("true") shouldBeEqualTo true
+        convertToLanguageType<Boolean>("false") shouldBeEqualTo false
+        convertToLanguageType<Boolean>('Y') shouldBeEqualTo true
+        convertToLanguageType<Boolean>('N') shouldBeEqualTo false
 
         val uuid = BluetapeUuid.V7.nextId()
-        convertToLanguageType(uuid, UUID::class) shouldBeEqualTo uuid
+        convertToLanguageType<UUID>(uuid) shouldBeEqualTo uuid
 
         val bytes = Random.nextBytes(16)
-        convertToLanguageType(bytes, ByteArray::class) shouldBeEqualTo bytes
+        convertToLanguageType<ByteArray>(bytes) shouldBeEqualTo bytes
+
+
+        val bigInt = Random.nextLong().toBigInteger()
+        convertToLanguageType<BigInteger>(bigInt.toString()) shouldBeEqualTo bigInt
+
+        val bigDecimal = 1234.56.toBigDecimal()
+        convertToLanguageType<BigDecimal>("1234.56") shouldBeEqualTo bigDecimal
     }
 
     @Test
     fun `convertToLanguageType for kotlin Uuid type`() {
         val kotlinUuid = Uuid.generateV7()
-        convertToLanguageType(kotlinUuid, Uuid::class) shouldBeEqualTo kotlinUuid
+        convertToLanguageType<kotlin.uuid.Uuid>(kotlinUuid) shouldBeEqualTo kotlinUuid
     }
 
     @Test
     fun `convertToLanguageType 는 지원하지 않는 타입에 대해 null 을 반환한다`() {
-        convertToLanguageType("true", Boolean::class).shouldBeNull()
+        convertToLanguageType<Serializable>("serializable").shouldBeNull()
+    }
+
+    @Test
+    fun `mapToLanguageType 은 컬럼의 language type 으로 변환합니다 - 변환 실패 시는 무시합니다`() {
+        listOf("1", "2", "oops", "4").mapToLanguageType(TypedTable.intCol) shouldBeEqualTo listOf(1, 2, 4)
     }
 
     @Test
     fun `mapToLanguageType 는 컬럼의 language type 을 사용해 변환하고 실패 항목은 제외한다`() {
-        listOf("1", "2", "oops").mapToLanguageType(TypedTable.intCol) shouldBeEqualTo listOf(1, 2)
-
         val uuid = BluetapeUuid.V7.nextId()
         listOf(uuid.toString(), "not-uuid").mapToLanguageType(TypedTable.uuidCol) shouldBeEqualTo listOf(uuid)
     }

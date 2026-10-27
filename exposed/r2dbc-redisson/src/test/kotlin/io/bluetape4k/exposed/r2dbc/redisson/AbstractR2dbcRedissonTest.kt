@@ -37,7 +37,7 @@ abstract class AbstractR2dbcRedissonTest: AbstractExposedR2dbcTest() {
 
         @JvmStatic
         protected fun randomString(): String =
-            Fakers.randomString(256, 512)
+            Fakers.randomString(128, 255)
 
         @JvmStatic
         protected fun randomName(): String = "$LibraryName:${Base58.randomString(8)}"
@@ -50,7 +50,7 @@ abstract class AbstractR2dbcRedissonTest: AbstractExposedR2dbcTest() {
 
     protected val redisson: RedissonClient get() = redissonClient
 
-    protected val redisScope = CoroutineScope(CoroutineName("redisson") + Dispatchers.IO)
+    protected val redisScope = CoroutineScope(CoroutineName("Redisson") + Dispatchers.IO)
 
     protected val exceptionHandler = CoroutineExceptionHandler { _, exception ->
         log.error(exception) {

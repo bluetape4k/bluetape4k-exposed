@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -42,18 +43,21 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
                 User(name = "Alice", email = "ignored", age = 0),
                 ExampleMatcher.matching().withIgnorePaths("id", "email", "age"),
             )
-            val flow = userRepository.findAll(example)
-            val alice = userRepository.findOne(example)
 
+            val flow = userRepository.findAll(example).log("Example")
+            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
+            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
+
+            val alice = userRepository.findOne(example)
             alice.shouldNotBeNull().name shouldBeEqualTo "Alice"
-            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
-            flow.toList().map { it.name } shouldBeEqualTo listOf("Alice")
+
             userRepository.count(example) shouldBeEqualTo 1L
             userRepository.exists(example).shouldBeTrue()
         }
     }
 
     @Test
+    @Suppress("LongMethod") // projection/page/slice 계약을 하나의 실제 repository 흐름으로 검증합니다.
     fun `fluent query uses immutable plan, projection, page and slice`() = runSuspendIO {
         withTables(TestDB.H2, Users) {
             insertUser("Alice", "alice@example.com", 30)
@@ -64,51 +68,81 @@ class R2dbcFluentQueryIntegrationTest: AbstractExposedR2dbcRepositoryTest() {
                 User(name = "ignored", email = "ignored", age = 0),
                 ExampleMatcher.matching().withIgnorePaths("id", "name", "email", "age"),
             )
-            val names = userRepository.findBy(example) { query ->
-                query
-                    .asType(NameView::class)
-                    .project("name")
-                    .sortBy(Sort.by(Sort.Direction.DESC, "age"))
-                    .all()
-            }
+            val names = userRepository
+                .findBy(example) { query ->
+                    query
+                        .asType(NameView::class)
+                        .project("name")
+                        .sortBy(Sort.by(Sort.Direction.DESC, "age"))
+                        .all()
+                }
+                .log("NameView")
 
             names.toList().map { it.name } shouldBeEqualTo listOf("Carol", "Alice", "Bob")
 
-            val autoProjectedNames = userRepository.findBy(example) { query ->
-                query.asType(NameView::class).all()
-            }
+            val autoProjectedNames = userRepository
+                .findBy(example) { query ->
+                    query
+                        .asType(NameView::class)
+                        .all()
+                }
+                .log("NameView")
             autoProjectedNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
-            val dataClassNames = userRepository.findBy(example) { query ->
-                query.asType(NameDto::class).project("name").all()
-            }
+            val dataClassNames = userRepository
+                .findBy(example) { query ->
+                    query
+                        .asType(NameDto::class)
+                        .project("name")
+                        .all()
+                }
+                .log("NameDto")
             dataClassNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
-            val recordNames = userRepository.findBy(example) { query ->
-                query.asType(UserNameRecord::class).project("name").all()
-            }
+            val recordNames = userRepository
+                .findBy(example) { query ->
+                    query
+                        .asType(UserNameRecord::class)
+                        .project("name")
+                        .all()
+                }
+                .log("UserNameRecord")
             recordNames.toList().map { it.name } shouldBeEqualTo listOf("Alice", "Bob", "Carol")
 
             assertFailsWith<InvalidDataAccessApiUsageException> {
                 userRepository.findBy(example) { query ->
-                    query.asType(NameView::class).project("email").all()
+                    query
+                        .asType(NameView::class)
+                        .project("email")
+                        .all()
                 }
             }
 
             val page = userRepository.findBy(example) { query ->
-                query.asType(NameView::class).project("name").page(PageRequest.of(0, 2))
+                query
+                    .asType(NameView::class)
+                    .project("name")
+                    .page(PageRequest.of(0, 2))
             }
+
             page.content.size shouldBeEqualTo 2
             page.totalElements shouldBeEqualTo 3
 
             val unpagedWithLimit = userRepository.findBy(example) { query ->
-                query.asType(NameView::class).project("name").limit(1).page(Pageable.unpaged())
+                query
+                    .asType(NameView::class)
+                    .project("name")
+                    .limit(1)
+                    .page(Pageable.unpaged())
             }
             unpagedWithLimit.content.size shouldBeEqualTo 1
             unpagedWithLimit.totalElements shouldBeEqualTo 3
 
             val slice = userRepository.findBy(example) { query ->
-                query.asType(NameView::class).project("name").slice(PageRequest.of(0, 2))
+                query
+                    .asType(NameView::class)
+                    .project("name")
+                    .slice(PageRequest.of(0, 2))
             }
             slice.hasNext().shouldBeTrue()
         }

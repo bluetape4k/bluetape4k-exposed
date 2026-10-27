@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
 import io.bluetape4k.assertions.shouldBeSameInstanceAs
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CompletableDeferred
@@ -19,6 +20,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.exists
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CancellationException
 
 class JdbcFixtureCleanupTest {
 
@@ -30,7 +32,10 @@ class JdbcFixtureCleanupTest {
         check(it in setOf(TestDB.H2, TestDB.POSTGRESQL, TestDB.MYSQL_V8))
     }
 
-    private val fixture = jdbcTestDbFixture(selected, { configure -> selected.connect(configure) })
+    private val fixture = jdbcTestDbFixture(
+        selected,
+        { configure -> selected.connect(configure) }
+    )
 
     private val table = object: Table("jdbc_fixture_cleanup") {
         val id = integer("id")
@@ -78,7 +83,7 @@ class JdbcFixtureCleanupTest {
     @Test
     fun `cleanup 취소와 자기 자신인 예외가 본문 실패를 덮지 않는다`() {
         val primary = BodyFailure(9)
-        val cancellation = java.util.concurrent.CancellationException("cleanup")
+        val cancellation = CancellationException("cleanup")
 
         retainJdbcFailure(primary, primary) shouldBeSameInstanceAs primary
 
@@ -185,7 +190,7 @@ class JdbcFixtureCleanupTest {
                     throw failure
                 }
             } shouldBeSameInstanceAs failure
-            cleanup.size shouldBeEqualTo 2
+            cleanup shouldHaveSize 2
             failure.suppressed.toList() shouldBeEqualTo cleanup
         } finally {
             failDrop = false

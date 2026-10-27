@@ -123,7 +123,7 @@ class AssertionsTest: AbstractExposedR2dbcTest() {
                     throw cleanup
                 },
             )
-        }.shouldThrow(IllegalStateException::class)
+        } shouldThrow IllegalStateException::class
 
         thrown shouldBeSameInstanceAs primary
         val suppressed = thrown.suppressed.single()
@@ -144,7 +144,7 @@ class AssertionsTest: AbstractExposedR2dbcTest() {
                     cleaned = true
                 },
             )
-        }.shouldThrow(CancellationException::class)
+        } shouldThrow CancellationException::class
 
         thrown shouldBeSameInstanceAs cancellation
         cleaned.shouldBeTrue()

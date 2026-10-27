@@ -19,7 +19,7 @@ internal data class BatchLeaseTiming(
     val safeMarginMillis: Long,
     val heartbeatIntervalMillis: Long,
     val latencyAlertThresholdMillis: Long,
-) : Serializable {
+): Serializable {
     companion object {
         private const val serialVersionUID: Long = 1L
     }
@@ -33,11 +33,9 @@ internal object BatchLeaseCalculator {
         val leaseMillis = try {
             executionLease.toMillis()
         } catch (cause: ArithmeticException) {
-            throw IllegalArgumentException(
-                "Invalid batch execution lease duration: overflow",
-                cause,
-            )
+            throw IllegalArgumentException("Invalid batch execution lease duration: overflow", cause)
         }
+
         val repositoryTimeoutMillis = min(leaseMillis / 6L, MAX_REPOSITORY_TIMEOUT_MILLIS)
         val safeMarginMillis = max(
             leaseMillis / 3L,

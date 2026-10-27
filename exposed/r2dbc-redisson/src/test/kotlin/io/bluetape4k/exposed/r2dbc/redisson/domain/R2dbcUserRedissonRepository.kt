@@ -35,7 +35,7 @@ class R2dbcUserRedissonRepository(
     }
 
     override fun BatchInsertStatement.insertEntity(entity: UserSchema.UserRecord) {
-        // NOTE: MapWriter 가 AutoIncremented ID 를 가진 테이블에 대해 INSERT 를 수행하지 않습니다.
+        // HINT: MapWriter 가 AutoIncremented ID 를 가진 테이블에 대해 INSERT 를 수행하지 않습니다.
         if (UserSchema.UserTable.id.autoIncColumnType == null) {
             this[UserSchema.UserTable.id] = entity.id
         }

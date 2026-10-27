@@ -142,13 +142,12 @@ class ExposedAggregateEventPublisherTest {
         val aggregate = TestAggregate(TestId(4L)).apply { record(1) }
 
         TransactionSynchronizationManager.initSynchronization()
-        try {
-            assertFailsWith<IllegalStateException> {
-                publisher.publishAfterSave(aggregate)
-            }
-        } finally {
-            TransactionSynchronizationManager.clearSynchronization()
+
+        assertFailsWith<IllegalStateException> {
+            publisher.publishAfterSave(aggregate)
         }
+
+        TransactionSynchronizationManager.clearSynchronization()
 
         aggregate.domainEvents() shouldHaveSize 1
     }

@@ -4,16 +4,15 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.io.lookup
+import io.bluetape4k.io.serializer.BinarySerializers
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.dao.Entity
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
-import java.io.ObjectStreamClass
 import java.io.Serializable
 import java.lang.reflect.Modifier
 
@@ -24,8 +23,9 @@ class CacheSnapshotTest {
     @Test
     fun `snapshot envelope exposes final value and revision references`() {
         val snapshot = CacheSnapshot(value = Payload("detached"))
-
+        log.debug { "snapshot=$snapshot" }
         snapshot.revision.shouldBeNull()
+
         Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("value").modifiers).shouldBeTrue()
         Modifier.isFinal(CacheSnapshot::class.java.getDeclaredField("revision").modifiers).shouldBeTrue()
         snapshot.copy(revision = "r-1") shouldBeEqualTo CacheSnapshot(Payload("detached"), "r-1")
@@ -33,13 +33,13 @@ class CacheSnapshotTest {
 
     @Test
     fun `snapshot declares stable serial version UID`() {
-        ObjectStreamClass.lookup(CacheSnapshot::class.java).serialVersionUID shouldBeEqualTo 1L
+        CacheSnapshot::class.lookup().serialVersionUID shouldBeEqualTo 1L
     }
 
     @Test
     fun `snapshot preserves value and revision through Java serialization`() {
         val snapshot = CacheSnapshot(Payload("detached"), "r-1")
-
+        log.debug { "snapshot=$snapshot" }
         serializeRoundTrip(snapshot) shouldBeEqualTo snapshot
     }
 
@@ -49,7 +49,8 @@ class CacheSnapshotTest {
             CacheSnapshot(Payload(source.name), source.revision)
         }
 
-        mapper.toSnapshot(Source("detached", "r-2")) shouldBeEqualTo CacheSnapshot(Payload("detached"), "r-2")
+        val expected = CacheSnapshot(Payload("detached"), "r-2")
+        mapper.toSnapshot(Source("detached", "r-2")) shouldBeEqualTo expected
     }
 
     @Test
@@ -126,13 +127,8 @@ class CacheSnapshotTest {
 
     @Suppress("UNCHECKED_CAST")
     private fun <T: Serializable> serializeRoundTrip(value: T): T {
-        val bytes = ByteArrayOutputStream().use { output ->
-            ObjectOutputStream(output).use { it.writeObject(value) }
-            output.toByteArray()
-        }
-        return ByteArrayInputStream(bytes).use { input ->
-            ObjectInputStream(input).use { it.readObject() as T }
-        }
+        val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
+        return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
     }
 
     private data class Source(

@@ -7,21 +7,25 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCacheTestScenario<ID, E> {
 
-    companion object: KLoggingChannel()
+    companion object: KLoggingChannel() {
+        private const val ENTITY_SIZE = 1_000
+    }
 
     suspend fun createNewEntity(): E
 
-    suspend fun createNewEntities(count: Int): List<E> = List(count) { createNewEntity() }
+    suspend fun createNewEntities(count: Int = ENTITY_SIZE): List<E> = List(count) { createNewEntity() }
 
     suspend fun getAllCountFromDB(): Long = suspendTransaction {
         repository.table.selectAll().count()
@@ -31,16 +35,16 @@ interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `Write Behind 로 대량의 데이터를 추가합니다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
-            val entities = createNewEntities(1000)
+            val entities = createNewEntities(ENTITY_SIZE)
             repository.putAll(entities.associateBy { repository.extractId(it) })
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofSeconds(1))
-                .untilSuspending { getAllCountFromDB() >= entities.size.toLong() }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                getAllCountFromDB() > entities.size.toLong()
+            }
 
             // DB에서 조회한 값
             val dbCount = getAllCountFromDB()
+            log.debug { "dbCount=$dbCount" }
             dbCount shouldBeGreaterThan entities.size.toLong()
         }
     }
@@ -49,17 +53,18 @@ interface R2dbcWriteBehindScenario<ID: Any, E: java.io.Serializable>: R2dbcCache
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `put 단건 캐시 저장 후 Write-Behind로 DB에 비동기 반영된다`(testDB: TestDB) = runSuspendIO {
         withR2dbcEntityTable(testDB) {
+            val originCount = repository.countFromDb()
             val entity = createNewEntity()
             repository.put(repository.extractId(entity), entity)
 
             // Write-Behind는 비동기이므로 잠시 대기 후 DB에서 확인
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofSeconds(1))
-                .untilSuspending { getAllCountFromDB() >= 1L }
+            await atMost 30.seconds withPollInterval 1.seconds untilSuspending {
+                getAllCountFromDB() > originCount
+            }
 
             val dbCount = getAllCountFromDB()
-            dbCount shouldBeGreaterThan 0L
+            log.debug { "dbCount=$dbCount" }
+            dbCount shouldBeGreaterThan originCount 
         }
     }
 

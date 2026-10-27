@@ -1,14 +1,14 @@
 package io.bluetape4k.exposed.core.dao.id
 
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
-import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -47,13 +47,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `KsuidTable 은 27자 KSUID를 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, KsuidItems) {
-            val id = KsuidItems.insert {
+            val id = KsuidItems.insertAndGetId {
                 it[name] = "ksuid-item"
-            }[KsuidItems.id]
+            }
 
-            id.shouldNotBeNull()
+            id.value.shouldNotBeNull()
             id.value.length shouldBeEqualTo 27
-            KsuidItems.selectAll().toList() shouldHaveSize 1
+            KsuidItems.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -61,13 +61,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `KsuidTable 은 서로 다른 레코드에 고유한 ID를 생성한다`(testDB: TestDB) {
         withTables(testDB, KsuidItems) {
-            val id1 = KsuidItems.insert { it[name] = "item1" }[KsuidItems.id]
-            val id2 = KsuidItems.insert { it[name] = "item2" }[KsuidItems.id]
+            val id1 = KsuidItems.insertAndGetId { it[name] = "item1" }
+            val id2 = KsuidItems.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
             id1.value shouldNotBeEqualTo id2.value
-            KsuidItems.selectAll().toList() shouldHaveSize 2
+            KsuidItems.selectAll().count() shouldBeEqualTo 2
         }
     }
 
@@ -75,13 +75,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `KsuidMillisTable 은 27자 KsuidMillis를 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, KsuidMillisItems) {
-            val id = KsuidMillisItems.insert {
+            val id = KsuidMillisItems.insertAndGetId {
                 it[name] = "ksuid-millis-item"
-            }[KsuidMillisItems.id]
+            }
 
             id.shouldNotBeNull()
             id.value.length shouldBeEqualTo 27
-            KsuidMillisItems.selectAll().toList() shouldHaveSize 1
+            KsuidMillisItems.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -89,11 +89,11 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `KsuidMillisTable 은 서로 다른 레코드에 고유한 ID를 생성한다`(testDB: TestDB) {
         withTables(testDB, KsuidMillisItems) {
-            val id1 = KsuidMillisItems.insert { it[name] = "item1" }[KsuidMillisItems.id]
-            val id2 = KsuidMillisItems.insert { it[name] = "item2" }[KsuidMillisItems.id]
+            val id1 = KsuidMillisItems.insertAndGetId { it[name] = "item1" }
+            val id2 = KsuidMillisItems.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
             id1.value shouldNotBeEqualTo id2.value
         }
     }
@@ -102,13 +102,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `UlidTable 은 26자 ULID를 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, UlidItems) {
-            val id = UlidItems.insert {
+            val id = UlidItems.insertAndGetId {
                 it[name] = "ulid-item"
-            }[UlidItems.id]
+            }
 
             id.shouldNotBeNull()
             id.value.length shouldBeEqualTo 26
-            UlidItems.selectAll().toList() shouldHaveSize 1
+            UlidItems.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -116,12 +116,12 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `UlidTable 은 서로 다른 레코드에 고유한 ID를 생성한다`(testDB: TestDB) {
         withTables(testDB, UlidItems) {
-            val id1 = UlidItems.insert { it[name] = "item1" }[UlidItems.id]
-            val id2 = UlidItems.insert { it[name] = "item2" }[UlidItems.id]
+            val id1 = UlidItems.insertAndGetId { it[name] = "item1" }
+            val id2 = UlidItems.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
-            id1.value shouldNotBeEqualTo id2.value
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
+            id1.value shouldBeLessThan id2.value
         }
     }
 
@@ -129,13 +129,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `SnowflakeIdTable 은 Long Snowflake ID를 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, SnowflakeItems) {
-            val id = SnowflakeItems.insert {
+            val id = SnowflakeItems.insertAndGetId {
                 it[name] = "snowflake-item"
-            }[SnowflakeItems.id]
+            }
 
             id.shouldNotBeNull()
-            (id.value > 0L).shouldBeTrue()
-            SnowflakeItems.selectAll().toList() shouldHaveSize 1
+            id.value shouldBeGreaterThan 0L
+            SnowflakeItems.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -143,12 +143,12 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `SnowflakeIdTable 은 서로 다른 레코드에 고유한 ID를 생성한다`(testDB: TestDB) {
         withTables(testDB, SnowflakeItems) {
-            val id1 = SnowflakeItems.insert { it[name] = "item1" }[SnowflakeItems.id]
-            val id2 = SnowflakeItems.insert { it[name] = "item2" }[SnowflakeItems.id]
+            val id1 = SnowflakeItems.insertAndGetId { it[name] = "item1" }
+            val id2 = SnowflakeItems.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
-            id1.value shouldNotBeEqualTo id2.value
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
+            id1.value shouldBeLessThan id2.value
         }
     }
 
@@ -156,13 +156,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TimebasedUUIDTable 은 UUID를 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, TimebasedItems) {
-            val id = TimebasedItems.insert {
+            val id = TimebasedItems.insertAndGetId {
                 it[name] = "timebased-item"
-            }[TimebasedItems.id]
+            }
 
             id.shouldNotBeNull()
             id.value.shouldNotBeNull()
-            TimebasedItems.selectAll().toList() shouldHaveSize 1
+            TimebasedItems.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -170,12 +170,12 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TimebasedUUIDTable 은 서로 다른 레코드에 고유한 UUID를 생성한다`(testDB: TestDB) {
         withTables(testDB, TimebasedItems) {
-            val id1 = TimebasedItems.insert { it[name] = "item1" }[TimebasedItems.id]
-            val id2 = TimebasedItems.insert { it[name] = "item2" }[TimebasedItems.id]
+            val id1 = TimebasedItems.insertAndGetId { it[name] = "item1" }
+            val id2 = TimebasedItems.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
-            id1.value shouldNotBeEqualTo id2.value
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
+            id1.value shouldBeLessThan id2.value
         }
     }
 
@@ -183,13 +183,13 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TimebasedUUIDBase62Table 은 24자 Base62 문자열을 기본키로 자동 생성한다`(testDB: TestDB) {
         withTables(testDB, TimebasedBase62Items) {
-            val id = TimebasedBase62Items.insert {
+            val id = TimebasedBase62Items.insertAndGetId {
                 it[name] = "base62-item"
-            }[TimebasedBase62Items.id]
+            }
 
-            id.shouldNotBeNull()
-            (id.value.length in 1..24).shouldBeTrue()
-            TimebasedBase62Items.selectAll().toList() shouldHaveSize 1
+            id.value.shouldNotBeNull()
+            id.value.length shouldBeEqualTo 21
+            TimebasedBase62Items.selectAll().count() shouldBeEqualTo 1
         }
     }
 
@@ -197,12 +197,12 @@ class CustomIdTablesTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `TimebasedUUIDBase62Table 은 서로 다른 레코드에 고유한 ID를 생성한다`(testDB: TestDB) {
         withTables(testDB, TimebasedBase62Items) {
-            val id1 = TimebasedBase62Items.insert { it[name] = "item1" }[TimebasedBase62Items.id]
-            val id2 = TimebasedBase62Items.insert { it[name] = "item2" }[TimebasedBase62Items.id]
+            val id1 = TimebasedBase62Items.insertAndGetId { it[name] = "item1" }
+            val id2 = TimebasedBase62Items.insertAndGetId { it[name] = "item2" }
 
-            id1.shouldNotBeNull()
-            id2.shouldNotBeNull()
-            id1.value shouldNotBeEqualTo id2.value
+            id1.value.shouldNotBeNull()
+            id2.value.shouldNotBeNull()
+            id1.value shouldBeLessThan id2.value
         }
     }
 }

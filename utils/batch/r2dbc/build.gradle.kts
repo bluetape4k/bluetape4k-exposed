@@ -36,7 +36,6 @@ dependencies {
     testImplementation(bt4k.bluetape4k.junit5)
     testImplementation(bt4k.bluetape4k.assertions)
     testImplementation(bt4k.bluetape4k.testcontainers)
-    testImplementation(bt4k.bluetape4k.jackson3)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)

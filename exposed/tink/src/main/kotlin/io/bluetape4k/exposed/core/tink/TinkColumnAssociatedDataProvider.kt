@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.core.tink
 
+import io.bluetape4k.support.toUtf8Bytes
 import org.jetbrains.exposed.v1.core.Table
 
 internal val EMPTY_TINK_ASSOCIATED_DATA: ByteArray = ByteArray(0)
@@ -31,7 +32,7 @@ fun interface TinkColumnAssociatedDataProvider {
          */
         val TableAndColumn: TinkColumnAssociatedDataProvider =
             TinkColumnAssociatedDataProvider { tableName, columnName ->
-                "bluetape4k-exposed-tink:v1:$tableName:$columnName".toByteArray(Charsets.UTF_8)
+                "bluetape4k-exposed-tink:v1:$tableName:$columnName".toUtf8Bytes()
             }
     }
 }

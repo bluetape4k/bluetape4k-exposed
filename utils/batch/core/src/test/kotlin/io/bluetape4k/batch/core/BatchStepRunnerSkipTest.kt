@@ -1,5 +1,7 @@
 package io.bluetape4k.batch.core
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchProcessor
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
@@ -10,9 +12,6 @@ import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
@@ -111,7 +110,7 @@ class BatchStepRunnerSkipTest {
      */
     @Test
     fun `maxSkips(n) 초과 시 step status 는 FAILED`() = runSuspendIO {
-        val items = (1..SKIP_TEST_ITEM_COUNT).map { "item-$it" }
+        val items = List(SKIP_TEST_ITEM_COUNT) { "item-${it + 1}" }
         val reader = CountingListReader(items)
         val writer = AlwaysFailWriter<String>()
 
@@ -127,7 +126,7 @@ class BatchStepRunnerSkipTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.skipCount shouldBeEqualTo MAX_SKIP_COUNT_FOR_FAILURE
         report.error.shouldNotBeNull()
     }
@@ -147,7 +146,7 @@ class BatchStepRunnerSkipTest {
      */
     @Test
     fun `skip 카운트가 step report 에 누적된다`() = runSuspendIO {
-        val items = (1..ACCUMULATE_TEST_ITEM_COUNT).map { "row-$it" }
+        val items = List(ACCUMULATE_TEST_ITEM_COUNT) { "row-${it + 1}" }
         val reader = CountingListReader(items)
         val writer = AlwaysFailWriter<String>()
 
@@ -163,7 +162,7 @@ class BatchStepRunnerSkipTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo ACCUMULATE_TEST_ITEM_COUNT.toLong()
         report.writeCount shouldBeEqualTo 0L
         report.readCount shouldBeEqualTo ACCUMULATE_TEST_ITEM_COUNT.toLong()
@@ -182,7 +181,7 @@ class BatchStepRunnerSkipTest {
      */
     @Test
     fun `processor 예외 시 reader 는 영향받지 않음`() = runSuspendIO {
-        val items = (1..PROCESSOR_TEST_ITEM_COUNT).map { "src-$it" }
+        val items = List(PROCESSOR_TEST_ITEM_COUNT) { "src-${it + 1}" }
         val reader = CountingListReader(items)
         val writer = CollectingWriter<String>()
 
@@ -211,7 +210,7 @@ class BatchStepRunnerSkipTest {
         report.readCount shouldBeEqualTo PROCESSOR_TEST_ITEM_COUNT.toLong()
 
         // 1개 skip → 3개 write
-        report.status shouldBe BatchStatus.COMPLETED_WITH_SKIPS
+        report.status shouldBeEqualTo BatchStatus.COMPLETED_WITH_SKIPS
         report.skipCount shouldBeEqualTo 1L
         report.writeCount shouldBeEqualTo (PROCESSOR_TEST_ITEM_COUNT - 1).toLong()
 

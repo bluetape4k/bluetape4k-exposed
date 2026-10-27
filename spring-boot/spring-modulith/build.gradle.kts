@@ -1,5 +1,6 @@
 plugins {
     kotlin("plugin.spring")
+    kotlin("kapt")
 }
 
 configurations {
@@ -11,6 +12,7 @@ dependencies {
     api(platform(bt4k.spring.modulith.bom))
     api(platform(bt4k.kotlinx.coroutines.bom))
 
+    api(bt4k.bluetape4k.exposed.core)
     api(bt4k.exposed.core)
     api(bt4k.exposed.jdbc)
     api(bt4k.exposed.java.time)

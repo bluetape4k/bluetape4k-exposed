@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 class MySqlR2dbcBatchBenchmark {
 
     @State(Scope.Benchmark)
-    class SeedState : AbstractR2dbcSeedState() {
+    class SeedState: AbstractR2dbcSeedState() {
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.MYSQL
         override fun connectionUrl(): String {
             if (TestDBConfig.useTestcontainers) {
@@ -48,7 +48,7 @@ class MySqlR2dbcBatchBenchmark {
     }
 
     @State(Scope.Benchmark)
-    class JobState : AbstractR2dbcJobState() {
+    class JobState: AbstractR2dbcJobState() {
         override val database: BenchmarkDatabase get() = BenchmarkDatabase.MYSQL
         override fun connectionUrl(): String {
             if (TestDBConfig.useTestcontainers) {

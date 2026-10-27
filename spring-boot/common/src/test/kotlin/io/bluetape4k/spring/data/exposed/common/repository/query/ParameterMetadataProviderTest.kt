@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.common.repository.query
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.UserEntity
 import org.junit.jupiter.api.Test
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory
@@ -23,12 +24,13 @@ class ParameterMetadataProviderTest {
             String::class.java,
             Int::class.javaPrimitiveType,
         )
-        val queryMethod = QueryMethod(method, metadata, projectionFactory)
-        val provider = ParameterMetadataProvider.of(
+        val queryMethod = QueryMethod(method, metadata, projectionFactory, null)
+        val provider = ParameterMetadataProvider(
             queryMethod.parameters,
             arrayOf("Alice", 30),
         )
 
+        log.debug { "provider accessor=${provider.accessor}" }
         provider.accessor.getBindableValue(0) shouldBeEqualTo "Alice"
         provider.accessor.getBindableValue(1) shouldBeEqualTo 30
     }

@@ -1,12 +1,13 @@
 package io.bluetape4k.exposed.core.dao.id
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -46,14 +47,14 @@ class KotlinUuidTableTest: AbstractExposedTest() {
     fun `KotlinUuidTable은 V7을 선택하면 시간 순서와 고유성을 보장한다`(testDB: TestDB) {
         withTables(testDB, V7Items) {
             val ids = listOf("first", "second").map { name ->
-                V7Items.insert {
+                V7Items.insertAndGetId {
                     it[V7Items.name] = name
-                }[V7Items.id].value
+                }
             }
 
-            ids.forEach { it.uuidVersion() shouldBeEqualTo 7 }
+            ids.forEach { it.value.uuidVersion() shouldBeEqualTo 7 }
             ids.zipWithNext().forEach { (previous, current) ->
-                previous.v7Timestamp() shouldNotBeEqualTo current.v7Timestamp()
+                previous.value.v7Timestamp() shouldBeLessThan current.value.v7Timestamp()
             }
             ids.toSet() shouldHaveSize 2
             val rows = V7Items.selectAll().toList()

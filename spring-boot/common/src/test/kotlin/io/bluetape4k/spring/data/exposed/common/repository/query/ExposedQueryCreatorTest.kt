@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.common.repository.query
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.common.mapping.UserEntity
 import io.bluetape4k.spring.data.exposed.common.mapping.Users
 import org.junit.jupiter.api.Test
@@ -28,12 +29,12 @@ class ExposedQueryCreatorTest {
     @Test
     fun `PartTree containing query creates an Exposed predicate`() {
         val method = PartTreeQueryRepository::class.java.getMethod("findByNameContaining", String::class.java)
-        val queryMethod = QueryMethod(method, metadata, projectionFactory)
+        val queryMethod = QueryMethod(method, metadata, projectionFactory, null)
         val provider = ParameterMetadataProvider.of(queryMethod.parameters, arrayOf("Ali"))
         val tree = PartTree("findByNameContaining", UserEntity::class.java)
 
         val predicate = ExposedQueryCreator(tree, provider.accessor, Users).createQuery()
-
+        log.debug { "predicate=$predicate" }
         predicate.shouldNotBeNull()
     }
 }

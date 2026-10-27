@@ -13,6 +13,7 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.api.Test
+import org.testcontainers.utility.Base58
 
 class ExposedKtorR2dbcMetricFailureTest {
 
@@ -20,7 +21,7 @@ class ExposedKtorR2dbcMetricFailureTest {
     fun `success metric failure does not change committed r2dbc result`() = runSuspendIO {
         val database = R2dbcDatabase.connect(
             databaseConfig = R2dbcDatabaseConfig {
-                setUrl("r2dbc:h2:mem:///ktor-r2dbc-metric-${System.nanoTime()};DB_CLOSE_DELAY=-1;")
+                setUrl("r2dbc:h2:mem:///ktor-r2dbc-metric-${Base58.randomString(8)};DB_CLOSE_DELAY=-1;")
             },
         )
         val registry = failingRegistry()
@@ -52,7 +53,7 @@ class ExposedKtorR2dbcMetricFailureTest {
         config()
             .meterFilter(
                 object: MeterFilter {
-                    override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+                    override fun map(id: Meter.Id): Meter.Id = error("metric recording failed")
                 }
             )
     }

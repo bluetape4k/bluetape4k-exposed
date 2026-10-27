@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cockroachdb
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.support.requireInRange
 import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requireStartsWith
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.Database
 import java.sql.DriverManager
@@ -29,6 +30,8 @@ import javax.sql.DataSource
 object CockroachDatabase: KLogging() {
 
     /** CockroachDB의 PostgreSQL wire protocol에 사용하는 PostgreSQL JDBC driver입니다. */
+    // 기존 JVM getter ABI를 보존하므로 const로 바꾸지 않습니다.
+    @Suppress("MayBeConstant")
     val DRIVER: String = "org.postgresql.Driver"
 
     /** Host, SQL port, database, credential을 사용해 CockroachDB에 연결합니다. */
@@ -62,7 +65,7 @@ object CockroachDatabase: KLogging() {
         databaseConfig: DatabaseConfig? = null,
     ): Database {
         jdbcUrl.requireNotBlank("jdbcUrl")
-        require(jdbcUrl.startsWith(COCKROACH_JDBC_PREFIX)) {
+        jdbcUrl.requireStartsWith(COCKROACH_JDBC_PREFIX) {
             "jdbcUrl must start with '$COCKROACH_JDBC_PREFIX': $jdbcUrl"
         }
         user.requireNotBlank("user")
@@ -90,6 +93,7 @@ object CockroachDatabase: KLogging() {
         host.requireNotBlank("host")
         port.requireInRange(1, 65535, "port")
         database.requireNotBlank("database")
+
         return "$COCKROACH_JDBC_PREFIX$host:$port/$database"
     }
 

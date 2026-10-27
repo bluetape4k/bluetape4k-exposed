@@ -1,5 +1,8 @@
 package io.bluetape4k.exposed.clickhouse
 
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.requireNotBlank
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
@@ -18,10 +21,13 @@ class ClickHouseRowBinaryExecutor(
     private val options: ClickHouseRowBinaryOptions,
 ) {
 
+    private companion object: KLogging()
+
     private var unusable = false
 
     /** 작업 중 terminal failure가 발생한 executor는 재사용할 수 없습니다. */
     fun executeBatch(sql: String, rows: Iterable<ClickHouseRowBinaryRow>): ClickHouseRowBinaryResult {
+        sql.requireNotBlank("sql")
         checkUsable()
         val iterator = rows.iterator()
         if (!iterator.hasNext()) return emptyResult()
@@ -218,9 +224,12 @@ class ClickHouseRowBinaryExecutor(
     }
 
     private fun recordFallback(reasonCode: String) {
-        (provider as? ClickHouseRowBinaryFallbackRecorder)?.record(
-            ClickHouseRowBinaryFallbackEvent(reasonCode = reasonCode, beforeFirstByte = true),
-        )
+        log.debug { "record fallback. reasonCode=$reasonCode" }
+
+        (provider as? ClickHouseRowBinaryFallbackRecorder)
+            ?.record(
+                ClickHouseRowBinaryFallbackEvent(reasonCode = reasonCode, beforeFirstByte = true),
+            )
     }
 
     private fun emptyResult(): ClickHouseRowBinaryResult = ClickHouseRowBinaryResult(
@@ -241,8 +250,8 @@ class ClickHouseRowBinaryExecutor(
 
     private fun isUnsupported(failure: Throwable): Boolean =
         failure is SQLFeatureNotSupportedException ||
-            failure is UnsupportedOperationException ||
-            (failure is SQLException && failure.sqlState == "0A000")
+                failure is UnsupportedOperationException ||
+                (failure is SQLException && failure.sqlState == "0A000")
 
     private fun iterableFrom(iterator: Iterator<ClickHouseRowBinaryRow>): Iterable<ClickHouseRowBinaryRow> =
         Iterable { iterator }
@@ -266,7 +275,7 @@ class ClickHouseRowBinaryExecutor(
         val reasonCode: String,
         cause: Throwable,
         val replayRows: Iterable<ClickHouseRowBinaryRow>,
-    ) : RuntimeException(cause)
+    ): RuntimeException(cause)
 
     private class BatchAggregate {
         val counts = ArrayList<Int>()
@@ -294,7 +303,7 @@ class ClickHouseRowBinaryExecutor(
     class UnsupportedConfiguration(
         val reasonCode: String,
         message: String,
-    ) : IllegalStateException(message)
+    ): IllegalStateException(message)
 }
 
 /** JDBC PreparedStatement에 한 행의 값을 바인딩하는 함수형 계약입니다. */

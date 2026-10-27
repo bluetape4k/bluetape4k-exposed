@@ -3,6 +3,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
@@ -48,9 +49,17 @@ class R2dbcFluentQueryMultiDbTest: AbstractExposedR2dbcRepositoryTest() {
             userRepository.count(example) shouldBeEqualTo 1L
             userRepository.exists(example).shouldBeTrue()
 
-            val projectedNames = userRepository.findBy(example) { query ->
-                query.asType(NameView::class).project("name").all()
-            }.toList().map { it.name }
+            val projectedNames = userRepository
+                .findBy(example) { query ->
+                    query
+                        .asType(NameView::class)
+                        .project("name")
+                        .all()
+                }
+                .log("NameView")
+                .toList()
+                .map { it.name }
+
             projectedNames shouldBeEqualTo listOf("Alice")
         }
     }

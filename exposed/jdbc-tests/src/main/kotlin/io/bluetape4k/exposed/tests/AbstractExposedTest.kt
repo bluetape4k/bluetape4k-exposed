@@ -50,6 +50,7 @@ abstract class AbstractExposedTest {
     @BeforeAll
     fun initTestContainers() {
         if (!TestDBConfig.useTestcontainers) return
+
         val dialects = enableDialects()
         if (TestDB.POSTGRESQL in dialects) Containers.Postgres
         if (TestDB.MYSQL_V8 in dialects) Containers.MySQL8

@@ -9,6 +9,7 @@ import io.bluetape4k.exposed.r2dbc.lettuce.repository.scenarios.R2DbcLettuceJCac
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -21,6 +22,7 @@ import java.io.Serializable
  * - invalidate 시 Redis에서만 삭제 (Read-only 모드에서 DB 영향 없음)
  */
 interface R2dbcLettuceReadThroughScenario<ID: Any, E: Serializable>: R2DbcLettuceJCacheTestScenario<ID, E> {
+
     companion object: KLoggingChannel()
 
     /**
@@ -31,74 +33,71 @@ interface R2dbcLettuceReadThroughScenario<ID: Any, E: Serializable>: R2DbcLettuc
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findById - 캐시 미스 시 DB에서 Read-through로 값을 로드한다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                val id = getExistingId()
-                val fromDb = repository.findByIdFromDb(id).shouldNotBeNull()
+    fun `findById - 캐시 미스 시 DB에서 Read-through로 값을 로드한다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            val id = getExistingId()
+            val fromDb = repository.findByIdFromDb(id).shouldNotBeNull()
 
-                repository.clear()
-                val fromCache = repository.get(id).shouldNotBeNull()
-                fromCache shouldBeEqualTo fromDb
-            }
+            repository.clear()
+            val fromCache = repository.get(id).shouldNotBeNull()
+            fromCache shouldBeEqualTo fromDb
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `findById - DB에 없는 ID는 null을 반환한다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                repository.get(getNonExistentId()).shouldBeNull()
-            }
+    fun `findById - DB에 없는 ID는 null을 반환한다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            repository.get(getNonExistentId()).shouldBeNull()
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `getAll - 여러 ID 일괄 조회 시 캐시 미스 키를 DB에서 Read-through한다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                val ids = getExistingIds()
-                val result = repository.getAll(ids)
-                result shouldHaveSize ids.size
-            }
+    fun `getAll - 여러 ID 일괄 조회 시 캐시 미스 키를 DB에서 Read-through한다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            val ids = getExistingIds()
+            val result = repository.getAll(ids).onEach { log.debug { "entity=$it" } }
+            result shouldHaveSize ids.size
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `getAll - 존재하지 않는 ID는 결과에 포함되지 않는다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                val ids = getExistingIds() + listOf(getNonExistentId())
-                val result = repository.getAll(ids)
-                result shouldHaveSize getExistingIds().size
-            }
+    fun `getAll - 존재하지 않는 ID는 결과에 포함되지 않는다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            val ids = getExistingIds() + listOf(getNonExistentId())
+            val result = repository.getAll(ids).onEach { log.debug { "entity=$it" } }
+            result shouldHaveSize getExistingIds().size
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `clear - 캐시를 비운 후 재조회하면 DB에서 다시 Read-through한다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                val id = getExistingId()
-                repository.get(id)
-                repository.clear()
+    fun `clear - 캐시를 비운 후 재조회하면 DB에서 다시 Read-through한다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            val id = getExistingId()
+            repository.get(id).shouldNotBeNull()
+            repository.clear()
 
-                repository.get(id).shouldNotBeNull()
-            }
+            repository.get(id).shouldNotBeNull()
         }
+    }
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
-    fun `invalidate - READ_ONLY 캐시 엔트리를 제거하면 get은 null을 반환한다`(testDB: TestDB) =
-        runSuspendIO {
-            withR2dbcEntityTable(testDB) {
-                assumeTrue(repository.cacheWriteMode == CacheWriteMode.READ_ONLY)
+    fun `invalidate - READ_ONLY 캐시 엔트리를 제거하면 get은 null을 반환한다`(testDB: TestDB) = runSuspendIO {
+        withR2dbcEntityTable(testDB) {
+            assumeTrue(repository.cacheWriteMode == CacheWriteMode.READ_ONLY)
 
-                val id = getNonExistentId()
-                repository.put(id, buildEntityForId(id))
-                repository.invalidate(id)
+            val id = getNonExistentId()
+            log.debug { "put entity. id=$id" }
+            repository.put(id, buildEntityForId(id))
 
-                repository.get(id).shouldBeNull()
-            }
+            log.debug { "invalidate. id=$id" }
+            repository.invalidate(id)
+
+            repository.get(id).shouldBeNull()
         }
+    }
 }

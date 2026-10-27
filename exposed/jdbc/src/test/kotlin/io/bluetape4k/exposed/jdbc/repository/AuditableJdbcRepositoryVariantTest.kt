@@ -12,6 +12,7 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -150,6 +151,7 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
             }
 
             val record = findIntById(id)
+            log.debug { "record=$record" }
             record.updatedAt.shouldNotBeNull()
             record.updatedBy.shouldNotBeNull()
             record.updatedBy shouldBeEqualTo "int-editor"
@@ -167,7 +169,8 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `IntAuditableJdbcRepository 구현체의 auditedUpdateAll 이 여러 행 갱신`(testDB: TestDB) {
         withTables(testDB, IntAuditableTable) {
-            repeat(3) { i ->
+            val recordCount = 5
+            repeat(recordCount) { i ->
                 IntAuditableTable.insertAndGetId {
                     it[name] = "Item-$i"
                     it[category] = "batch-int"
@@ -181,8 +184,8 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
                     it[IntAuditableTable.name] = "BatchUpdated"
                 }
             }
-
-            updatedCount shouldBeGreaterOrEqualTo 1
+            log.debug { "updatedCount=$updatedCount" }
+            updatedCount shouldBeEqualTo recordCount
         }
     }
 
@@ -209,6 +212,7 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
             }
 
             val record = findUUIDById(id)
+            log.debug { "record=$record" }
             record.updatedAt.shouldNotBeNull()
             record.updatedBy.shouldNotBeNull()
             record.updatedBy shouldBeEqualTo "uuid-editor"
@@ -226,7 +230,8 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `UUIDAuditableJdbcRepository 구현체의 auditedUpdateAll 이 여러 행 갱신`(testDB: TestDB) {
         withTables(testDB, UUIDAuditableTable) {
-            repeat(3) { i ->
+            val recordSize = 5
+            repeat(recordSize) { i ->
                 UUIDAuditableTable.insertAndGetId {
                     it[name] = "UUIDItem-$i"
                     it[category] = "batch-uuid"
@@ -240,8 +245,8 @@ class AuditableJdbcRepositoryVariantTest: AbstractExposedTest() {
                     it[UUIDAuditableTable.name] = "UUIDBatchUpdated"
                 }
             }
-
-            updatedCount shouldBeGreaterOrEqualTo 1
+            log.debug { "updatedCount=$updatedCount" }
+            updatedCount shouldBeGreaterOrEqualTo recordSize
         }
     }
 }

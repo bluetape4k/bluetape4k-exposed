@@ -3,10 +3,13 @@ package io.bluetape4k.exposed.bigquery.query
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.exposed.bigquery.AbstractBigQueryTest
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.asBigDecimal
+import io.bluetape4k.support.asLong
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 
 class SelectTest: AbstractBigQueryTest() {
 
@@ -38,6 +41,7 @@ class SelectTest: AbstractBigQueryTest() {
             val response = runRawQuery("SELECT * FROM events")
             response.rows.shouldNotBeEmpty()
             response.rows shouldHaveSize 5
+            response.rows.forEach { log.debug { "row=$it" } }
         }
     }
 
@@ -47,7 +51,7 @@ class SelectTest: AbstractBigQueryTest() {
             insertFixtures()
 
             val response = runRawQuery("SELECT COUNT(*) as cnt FROM events WHERE region = 'kr'")
-            val count = response.rows.first().f.first().v.toString().toLong()
+            val count = response.rows.first().f.first().v.asLong()
             count shouldBeEqualTo 2L
         }
     }
@@ -58,7 +62,7 @@ class SelectTest: AbstractBigQueryTest() {
             insertFixtures()
 
             val response = runRawQuery("SELECT user_id FROM events ORDER BY user_id DESC LIMIT 1")
-            val userId = response.rows.first().f.first().v.toString().toLong()
+            val userId = response.rows.first().f.first().v.asLong()
             userId shouldBeEqualTo 300L
         }
     }
@@ -72,9 +76,11 @@ class SelectTest: AbstractBigQueryTest() {
                 "SELECT region, COUNT(*) as cnt FROM events GROUP BY region ORDER BY region"
             )
             response.rows.shouldNotBeEmpty()
+            response.rows.forEach { log.debug { "row=$it" } }
 
-            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }!!
-            krRow.f[1].v.toString().toLong() shouldBeEqualTo 2L
+            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }.shouldNotBeNull()
+            log.debug { "krRow=$krRow" }
+            krRow.f[1].v.asLong() shouldBeEqualTo 2L
         }
     }
 
@@ -88,8 +94,9 @@ class SelectTest: AbstractBigQueryTest() {
             )
             response.rows.shouldNotBeEmpty()
 
-            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }!!
-            BigDecimal(krRow.f[1].v.toString()).compareTo(BigDecimal("20.00")) shouldBeEqualTo 0
+            val krRow = response.rows.find { it.f[0].v.toString() == "kr" }.shouldNotBeNull()
+            log.debug { "krRow=$krRow" }
+            krRow.f[1].v.asBigDecimal() shouldBeEqualTo 20.00.toBigDecimal()
         }
     }
 }

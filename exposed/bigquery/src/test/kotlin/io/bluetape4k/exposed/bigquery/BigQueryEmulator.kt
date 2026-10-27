@@ -1,9 +1,12 @@
 package io.bluetape4k.exposed.bigquery
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
+import io.bluetape4k.support.checkNotBlank
 import io.bluetape4k.utils.ShutdownQueue
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import java.net.Socket
 
 /**
  * BigQuery 에뮬레이터 컨테이너 (goccy/bigquery-emulator)
@@ -25,7 +28,7 @@ object BigQueryEmulator: KLogging() {
 
     /** brew install goccy/bigquery-emulator/bigquery-emulator 로 설치된 로컬 에뮬레이터 확인 */
     private fun isLocalRunning(): Boolean = runCatching {
-        java.net.Socket("localhost", HTTP_PORT).use { true }
+        Socket("localhost", HTTP_PORT).use { true }
     }.getOrDefault(false)
 
     internal fun shouldReuseContainer(environment: Map<String, String> = System.getenv()): Boolean =
@@ -64,10 +67,10 @@ object BigQueryEmulator: KLogging() {
     object Launcher: KLogging() {
         val endpoint: Endpoint by lazy {
             if (isLocalRunning()) {
-                log.info("로컬 BigQuery 에뮬레이터 사용 (localhost:{})", HTTP_PORT)
+                log.info { "로컬 BigQuery 에뮬레이터 사용 (localhost:$HTTP_PORT)" }
                 Endpoint(PROJECT_ID, DATASET, "localhost", HTTP_PORT, local = true)
             } else {
-                log.info("Testcontainers BigQuery 에뮬레이터 시작")
+                log.info { "Testcontainers BigQuery 에뮬레이터 시작" }
                 val container = createContainer()
                     .also {
                         it.start()
@@ -75,7 +78,7 @@ object BigQueryEmulator: KLogging() {
                     }
 
                 val mappedPort = container.getMappedPort(HTTP_PORT)
-                check(container.host.isNotBlank()) { "BigQuery emulator host must not be blank." }
+                container.host.checkNotBlank { "BigQuery emulator host must not be blank." }
                 check(mappedPort > 0) { "BigQuery emulator HTTP port must be mapped." }
                 Endpoint(PROJECT_ID, DATASET, container.host, mappedPort, local = false)
             }

@@ -4,7 +4,6 @@ import io.bluetape4k.exposed.r2dbc.caffeine.repository.R2dbcCaffeineRepository
 import io.bluetape4k.idgenerators.uuid.Uuid
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.request.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -12,14 +11,14 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 @Serializable
 data class OrderResponse(
     val orderId: String,
     val status: String,
     val updatedAt: String,
-) : java.io.Serializable {
+): java.io.Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -32,7 +31,7 @@ data class OrderConfirmationResponse(
     val status: String,
     val updatedAt: String,
     val eventPublished: Boolean,
-) : java.io.Serializable {
+): java.io.Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -44,7 +43,7 @@ data class DemoErrorResponse(
     val code: String,
     val message: String,
     val correlationId: String? = null,
-) : java.io.Serializable {
+): java.io.Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L
@@ -58,7 +57,7 @@ data class DemoDiagnostic(
     val operation: String? = null,
     val phase: String? = null,
     val outcome: String,
-) : java.io.Serializable {
+): java.io.Serializable {
 
     companion object {
         private const val serialVersionUID: Long = 1L

@@ -77,7 +77,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
                 toEntity = { toLoaderEntity() },
             )
 
-            val ids = loader.loadAllKeys()!!.toList()
+            val ids = loader.loadAllKeys().shouldNotBeNull().toList()
             ids shouldHaveSize 3
             ids shouldBeEqualTo ids.sorted()
         }
@@ -85,10 +85,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
 
     @Test
     fun `loadAllKeys - 표준 scalar PK는 offset 없이 keyset page를 사용한다`() {
-        withTables(
-            TestDB.H2,
-            LoaderTable,
-        ) {
+        withTables(TestDB.H2, LoaderTable) {
             repeat(5) { index ->
                 LoaderTable.insert { it[name] = "user-$index" }
             }
@@ -121,10 +118,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
 
     @Test
     fun `loadAllKeys - 큰 fixture의 page cardinality와 query 수를 bounded하게 유지한다`() {
-        withTables(
-            TestDB.H2,
-            LoaderTable,
-        ) {
+        withTables(TestDB.H2, LoaderTable) {
             repeat(101) { index ->
                 LoaderTable.insert { it[name] = "large-user-$index" }
             }

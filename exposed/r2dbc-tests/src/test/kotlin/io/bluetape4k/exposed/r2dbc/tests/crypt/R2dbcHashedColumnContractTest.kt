@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -69,7 +70,7 @@ class R2dbcHashedColumnContractTest {
                 it[secret] = table.secret.hash(plainText)
                 it[optional] = null
             }
-            val row = table.selectAll().single()
+            val row = table.selectAll().log("table").single()
             row[table.optional].shouldBeNull()
 
             val loaded = row[table.secret]
@@ -77,7 +78,7 @@ class R2dbcHashedColumnContractTest {
             loaded.matches("wrong-input").shouldBeFalse()
             loaded.toString() shouldBeEqualTo "Hashed(***)"
 
-            val encoded = RawSecrets.selectAll().single()[RawSecrets.secret]
+            val encoded = RawSecrets.selectAll().log("RowSecrets").single()[RawSecrets.secret]
             encoded shouldNotBeEqualTo plainText
             encoded shouldNotContain plainText
             encoded shouldBeEqualTo loaded.encodedValue
@@ -86,14 +87,18 @@ class R2dbcHashedColumnContractTest {
                 it[secret] = loaded
                 it[optional] = table.optional.hash(plainText)
             }
-            RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
-            table.selectAll().single()[table.optional]?.matches(plainText).shouldBeTrue()
+            RawSecrets.selectAll().log("RowSecrets")
+                .single()[RawSecrets.secret] shouldBeEqualTo encoded
+
+            table.selectAll().log("table")
+                .single()[table.optional]?.matches(plainText).shouldBeTrue()
 
             table.update {
                 it[secret] = Hashed(hasher, encoded)
                 it[optional] = null
             }
-            RawSecrets.selectAll().single()[RawSecrets.secret] shouldBeEqualTo encoded
+            RawSecrets.selectAll().log("RowSecrets")
+                .single()[RawSecrets.secret] shouldBeEqualTo encoded
         }
     }
 

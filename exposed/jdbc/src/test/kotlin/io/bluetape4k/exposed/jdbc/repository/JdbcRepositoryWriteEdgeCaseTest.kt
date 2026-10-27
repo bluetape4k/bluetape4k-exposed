@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeGreaterThan
+import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
@@ -56,6 +57,7 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
                 this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
             }
+                .onEach { log.debug { "record=$it" } }
 
             result shouldHaveSize 2
             result.all { it.id > 0L }.shouldBeTrue()
@@ -88,7 +90,7 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
                 this[EdgeCaseTable.name] = rec.name
                 this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
-            }
+            }.onEach { log.debug { "record=$it" } }
 
             result shouldHaveSize 1
             EdgeCaseRepository.count() shouldBeEqualTo 1L
@@ -125,7 +127,7 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
                 this[EdgeCaseTable.name] = rec.name
                 this[EdgeCaseTable.age] = rec.age
                 this[EdgeCaseTable.isActive] = rec.isActive
-            }
+            }.onEach { log.debug { "record=$it" } }
 
             result shouldHaveSize 2
             EdgeCaseRepository.count() shouldBeEqualTo 2L
@@ -164,8 +166,11 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
             }
 
             val found = EdgeCaseRepository.findAll { EdgeCaseTable.name eq "OnUpdate-Test" }
+                .onEach { log.debug { "record=$it" } }
+
             found shouldHaveSize 1
             found.single().age shouldBeEqualTo 99
+
             // isActive 는 onUpdate 에 포함되지 않았으므로 기존 값(true) 유지
             found.single().isActive.shouldBeTrue()
         }
@@ -265,6 +270,8 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Del-B", age = 20, isActive = true))
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Del-C", age = 30, isActive = false))
 
+            EdgeCaseRepository.count() shouldBeEqualTo 3L
+
             val deleted = EdgeCaseRepository.deleteAll { EdgeCaseTable.isActive eq false }
 
             deleted shouldBeEqualTo 1
@@ -283,12 +290,16 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
             val r1 = EdgeCaseRepository.save(EdgeCaseRecord(name = "Ids-A", age = 1))
             val r2 = EdgeCaseRepository.save(EdgeCaseRecord(name = "Ids-B", age = 2))
             val r3 = EdgeCaseRepository.save(EdgeCaseRecord(name = "Ids-C", age = 3))
+            EdgeCaseRepository.count() shouldBeEqualTo 3L
 
             val deleted = EdgeCaseRepository.deleteAllByIds(listOf(r1.id, r2.id))
 
             deleted shouldBeEqualTo 2
             EdgeCaseRepository.count() shouldBeEqualTo 1L
-            EdgeCaseRepository.findById(r3.id).shouldNotBeNull()
+
+            EdgeCaseRepository.findByIdOrNull(r1.id).shouldBeNull()
+            EdgeCaseRepository.findByIdOrNull(r2.id).shouldBeNull()
+            EdgeCaseRepository.findByIdOrNull(r3.id).shouldNotBeNull()
         }
     }
 
@@ -307,6 +318,7 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
         withEdgeCaseTable(testDB) {
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Ignore-A", age = 10, isActive = true))
             EdgeCaseRepository.save(EdgeCaseRecord(name = "Ignore-B", age = 20, isActive = false))
+            EdgeCaseRepository.count() shouldBeEqualTo 2L
 
             val deleted = EdgeCaseRepository.deleteAllIgnore { EdgeCaseTable.isActive eq true }
 
@@ -349,7 +361,7 @@ class JdbcRepositoryWriteEdgeCaseTest: AbstractExposedTest() {
     fun `batchInsert(Sequence) 는 lazy 평가로 처리`(testDB: TestDB) {
         withEdgeCaseTable(testDB) {
             val batchCount = 10
-            val records = (1..batchCount).asSequence().map { i ->
+            val records = List(batchCount) { i ->
                 EdgeCaseRecord(name = "Seq-$i", age = i * 10, isActive = i % 2 == 0)
             }
 

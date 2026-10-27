@@ -6,10 +6,15 @@ import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.exposed.duckdb.AbstractDuckDBTest
 import io.bluetape4k.exposed.duckdb.domain.Events
+import io.bluetape4k.exposed.duckdb.suspendTransaction
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -45,15 +50,17 @@ class InsertTest: AbstractDuckDBTest() {
     }
 
     private fun insertFixtures() {
-        transaction(db) {
-            fixtures.forEach { f ->
-                Events.insert {
-                    it[eventId] = f.eventId
-                    it[userId] = f.userId
-                    it[eventType] = f.eventType
-                    it[region] = f.region
-                    it[amount] = f.amount
-                    it[occurredAt] = f.occurredAt
+        runSuspendIO {
+            suspendTransaction(db, Dispatchers.IO) {
+                fixtures.forEach { f ->
+                    Events.insert {
+                        it[eventId] = f.eventId
+                        it[userId] = f.userId
+                        it[eventType] = f.eventType
+                        it[region] = f.region
+                        it[amount] = f.amount
+                        it[occurredAt] = f.occurredAt
+                    }
                 }
             }
         }
@@ -70,19 +77,32 @@ class InsertTest: AbstractDuckDBTest() {
         rows shouldHaveSize fixtures.size
     }
 
+    @Suppress("DEPRECATION")
+    @Test
+    fun `suspended insert - 이벤트 대량 적재`() = runSuspendIO {
+        insertFixtures()
+
+        val rows = suspendedTransactionAsync(Dispatchers.IO, db) {
+            Events.selectAll().toList()
+        }.await()
+
+        rows shouldHaveSize fixtures.size
+    }
+
     @Test
     fun `insert - 리전별 집계 검증`() {
         insertFixtures()
 
         val krRows = transaction(db) {
             Events.selectAll().where { Events.region eq "kr" }.toList()
-        }
+        }.onEach { log.debug { "kr row=$it" } }
+        
         krRows shouldHaveSize 2
         krRows.all { it[Events.region] == "kr" }.shouldBeTrue()
 
         val purchaseRows = transaction(db) {
             Events.selectAll().where { Events.eventType eq "PURCHASE" }.toList()
-        }
+        }.onEach { log.debug { "PURCHASE row=$it" } }
         purchaseRows shouldHaveSize 3
     }
 
@@ -93,8 +113,9 @@ class InsertTest: AbstractDuckDBTest() {
         val allRows = transaction(db) {
             Events.selectAll().toList()
         }
-        val nullAmountRows = allRows.filter { it[Events.amount] == null }
+        allRows shouldHaveSize 5
 
+        val nullAmountRows = allRows.filter { it[Events.amount] == null }.onEach { log.debug { "row=$it" } }
         nullAmountRows.shouldNotBeEmpty()
         nullAmountRows shouldHaveSize 2
     }
@@ -106,7 +127,7 @@ class InsertTest: AbstractDuckDBTest() {
         val row = transaction(db) {
             Events.selectAll().where { Events.eventId eq 1L }.single()
         }
-
+        log.debug { "row=$row" }
         row[Events.userId] shouldBeEqualTo 100L
         row[Events.eventType] shouldBeEqualTo "PURCHASE"
         row[Events.region] shouldBeEqualTo "kr"

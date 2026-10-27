@@ -10,7 +10,9 @@ import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.awaitility.untilSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
 import kotlinx.coroutines.delay
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.autoIncColumnType
@@ -18,8 +20,8 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: SuspendedCacheTestScenario<ID, E> {
 
@@ -78,10 +80,9 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
             val ids = getExistingIds()
             delay(10.milliseconds)
 
-            await
-                .atMost(Duration.ofSeconds(30))
-                .withPollInterval(Duration.ofMillis(5))
-                .untilSuspending { getExistingIds().size == 3 }
+            await atMost 30.seconds withPollInterval 5.milliseconds untilSuspending {
+                getExistingIds().size == 3
+            }
 
             // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
             if (cacheConfig.isReadWrite) {
@@ -95,7 +96,8 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
 
             // 캐시에 갱신된 값 저장 -> DB에도 저장
             val updatedEntities = entitiesMap.values.map { updateEntityEmail(it) }
-            repository.putAll(updatedEntities.associateBy { repository.extractId(it) })
+            val updatedMap = updatedEntities.associateBy { repository.extractId(it) }
+            repository.putAll(updatedMap)
 
             // 캐시에서 조회한 값
             val entitiesFromCacheMap = repository.getAll(ids)
@@ -103,10 +105,9 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
             entitiesFromCacheMap.values.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    updatedEntities
-                        .find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }.shouldNotBeNull()
+                    updatedEntities.find {
+                        repository.extractId(it) == repository.extractId(entity)
+                    }.shouldNotBeNull()
                 )
             }
 
@@ -116,16 +117,15 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
             }
 
             // DB에서 조회한 값
-            val entitiesFromDB = repository.findAllFromDb(ids)
+            val entitiesFromDB = repository.findAllFromDb(ids).onEach { log.debug { it } }
             entitiesFromDB.shouldNotBeEmpty() shouldHaveSize ids.size
 
             entitiesFromDB.forEach { entity ->
                 assertSameEntityWithoutAudit(
                     entity,
-                    entitiesFromCacheMap.values
-                        .find {
-                            repository.extractId(it) == repository.extractId(entity)
-                        }.shouldNotBeNull()
+                    entitiesFromCacheMap.values.find {
+                        repository.extractId(it) == repository.extractId(entity)
+                    }.shouldNotBeNull()
                 )
             }
         }
@@ -142,10 +142,9 @@ interface SuspendedWriteThroughScenario<ID: Any, E: java.io.Serializable>: Suspe
                 val ids = getExistingIds()
                 delay(10.milliseconds)
 
-                await
-                    .atMost(Duration.ofSeconds(30))
-                    .withPollInterval(Duration.ofMillis(5))
-                    .untilSuspending { getExistingIds().size >= 3 }
+                await atMost 30.seconds withPollInterval 5.milliseconds untilSuspending {
+                    getExistingIds().size >= 3
+                }
 
                 // @ParameterizedTest 때문에 testDB 들이 꼬인다... 대기 시간을 둬서, 다른 DB와의 영항을 미치지 않게 한다
                 if (cacheConfig.isReadWrite) {

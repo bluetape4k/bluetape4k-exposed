@@ -37,7 +37,7 @@ internal class ClickHouseQueryObservation(
         queryId.isBlank() -> unavailable("EMPTY_QUERY_ID")
         timeout.isZero || timeout.isNegative ->
             ClickHouseQueryObservationResult(QueryObservationOutcome.TIMEOUT, "DEADLINE_EXPIRED")
-        else -> null
+        else              -> null
     }
 
     private fun timeoutNanos(timeout: Duration): Long? = runCatching { timeout.toNanos() }.getOrNull()
@@ -80,7 +80,7 @@ internal class ClickHouseQueryObservation(
             when {
                 !result.next() -> Presence.EMPTY
                 result.getLong(1) > 0 -> Presence.PRESENT
-                else -> Presence.ABSENT
+                else           -> Presence.ABSENT
             }
         }
 
@@ -89,11 +89,11 @@ internal class ClickHouseQueryObservation(
         seen: Boolean,
         deadline: Long,
     ): ClickHouseQueryObservationResult? = when {
-        presence == Presence.EMPTY -> unavailable("EMPTY_OBSERVATION")
+        presence == Presence.EMPTY        -> unavailable("EMPTY_OBSERVATION")
         presence == Presence.ABSENT && seen ->
             ClickHouseQueryObservationResult(QueryObservationOutcome.DISAPPEARED, "PROCESS_ROW_ABSENT")
         deadline - System.nanoTime() <= 0 -> deadlineOutcome(seen)
-        else -> null
+        else                              -> null
     }
 
     private fun sleepUntil(deadline: Long, seen: Boolean): ClickHouseQueryObservationResult? {

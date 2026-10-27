@@ -1,6 +1,8 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserRedissonRepository
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.UserRecord
@@ -10,6 +12,8 @@ import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
+import io.bluetape4k.redis.redisson.codec.RedissonCodecs
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -25,11 +29,15 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
     companion object: KLoggingChannel()
 
     private val cacheConfig = RedissonCacheConfig.READ_ONLY
+        .copy(
+            name = "r2dbc:invalidate-all:test:users",
+            codec = RedissonCodecs.FastForyComposite
+        )
 
     private val repository: R2dbcRedissonRepository<Long, UserRecord> by lazy {
         R2dbcUserRedissonRepository(
             redissonClient,
-            config = cacheConfig.copy(name = "r2dbc:invalidate-all:test:users")
+            config = cacheConfig
         )
     }
 
@@ -37,12 +45,13 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `invalidateAll - 여러 ID를 한 번에 캐시에서 제거한다`(testDB: TestDB) = runSuspendIO {
         withUserTable(testDB, context = coroutineContext) {
-            // 먼저 캐시에 로드
             val ids = UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
+                .log("ID")
                 .toList()
 
+            // 먼저 캐시에 로드
             ids.forEach { id -> repository.get(id) }  // 캐시에 채움
             ids.all { repository.containsKey(it) }.shouldBeTrue()
 
@@ -70,11 +79,12 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
             val id = UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
-                .toList()
+                .log("ID")
                 .first()
 
             // 캐시에 로드
             val fromCache = repository.get(id)
+            fromCache.shouldNotBeNull()
             repository.containsKey(id).shouldBeTrue()
 
             // 단건 무효화
@@ -93,7 +103,9 @@ class R2dbcRepositoryInvalidateAllTest: AbstractR2dbcRedissonTest() {
             val ids = UserTable
                 .select(UserTable.id)
                 .map { it[UserTable.id].value }
+                .log("ID")
                 .toList()
+
             ids.forEach { id -> repository.get(id) }
 
             repository.clear()

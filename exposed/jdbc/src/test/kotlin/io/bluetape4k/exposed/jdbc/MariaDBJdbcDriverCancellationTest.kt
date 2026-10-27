@@ -1,14 +1,15 @@
 package io.bluetape4k.exposed.jdbc
 
-import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.Containers
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.TestDBConfig
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.testcontainers.database.getDataSource
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 import java.io.PrintWriter
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * MariaDB Connector/J의 driver-specific query cancellation과 pool lease recovery를 고정합니다.
@@ -51,17 +53,13 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
         check(jdbcUrl.startsWith(mariaDb.jdbcUrl)) {
             "MariaDB fixture must use the Testcontainers URL: $jdbcUrl"
         }
-        val hikari = HikariDataSource(HikariConfig().apply {
-            this.jdbcUrl = jdbcUrl
-            username = mariaDb.username
-            password = mariaDb.password
-            driverClassName = MARIADB_DRIVER
+        val dataSource = mariaDb.getDataSource {
             maximumPoolSize = 2
             minimumIdle = 0
             connectionTimeout = HIKARI_TIMEOUT_MS
             poolName = "issue-707-mariadb-cancel"
-        })
-        val tracker = TrackingDataSource(hikari)
+        }
+        val tracker = TrackingDataSource(dataSource)
         val target = tracker.connection
         val observer = tracker.connection
         val executor = Executors.newVirtualThreadPerTaskExecutor()
@@ -97,7 +95,7 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
             try {
                 awaitMariaDbSleep(observer, connectionId)
                 invokeMariaDbConnectionMethod(target, "cancelCurrentQuery")
-                future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                future.get(LATCH_TIMEOUT_SECONDS.seconds)
 
                 check(elapsedNanos.get() < TimeUnit.SECONDS.toNanos(LATCH_TIMEOUT_SECONDS)) {
                     "cancelCurrentQuery did not finish the MariaDB query promptly"
@@ -120,7 +118,7 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
                 runCatching { invokeMariaDbConnectionMethod(target, "cancelCurrentQuery") }
                 runCatching { target.close() }
                 runCatching { observer.close() }
-                runCatching { future.get(LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS) }
+                runCatching { future.get(LATCH_TIMEOUT_SECONDS.seconds) }
             }
         } finally {
             runCatching { statement.close() }
@@ -202,7 +200,7 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
 
         override fun getParentLogger() = delegate.parentLogger
 
-        override fun <T: Any?> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
+        override fun <T> unwrap(iface: Class<T>?): T = delegate.unwrap(iface)
 
         override fun isWrapperFor(iface: Class<*>?): Boolean = delegate.isWrapperFor(iface)
 
@@ -231,6 +229,4 @@ class MariaDBJdbcDriverCancellationTest: AbstractExposedTest() {
             ) as Connection
         }
     }
-
-
 }

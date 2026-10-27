@@ -1,8 +1,8 @@
 package io.bluetape4k.batch.api
 
-import io.bluetape4k.logging.KLogging
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
 /**
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
  */
 class SkipPolicyEdgeCaseTest {
 
-    companion object : KLogging()
+    companion object: KLogging()
 
     // ─── maxSkips(Long.MAX_VALUE) ──────────────────────────────────────────────
 

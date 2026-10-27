@@ -64,7 +64,7 @@ enum class TestDB(
      * R2DBC 연결 문자열: `r2dbc:h2:mem:///mysql;DB_CLOSE_DELAY=-1;MODE=MySQL;`
      */
     H2_MYSQL(
-        connection = { "r2dbc:h2:mem:///mysql;DB_CLOSE_DELAY=-1;MODE=MySQL;" },
+        connection = { "r2dbc:h2:mem:///mysql;MODE=MySQL;DB_CLOSE_DELAY=-1;" },
         driver = "org.h2.Driver",
         beforeConnection = {
             Mode::class.declaredMemberProperties

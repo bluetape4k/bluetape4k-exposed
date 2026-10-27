@@ -10,8 +10,8 @@ data class BenchmarkSourceRecord(
     val id: Long,
     val name: String,
     val value: Int,
-) : Serializable {
-    companion object : KLogging() {
+): Serializable {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
     }
 }
@@ -22,8 +22,8 @@ data class BenchmarkSourceRecord(
 data class BenchmarkTargetRecord(
     val sourceName: String,
     val transformedValue: Int,
-) : Serializable {
-    companion object : KLogging() {
+): Serializable {
+    companion object: KLogging() {
         private const val serialVersionUID = 1L
     }
 }

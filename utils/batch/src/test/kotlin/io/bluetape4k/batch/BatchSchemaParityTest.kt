@@ -2,19 +2,19 @@ package io.bluetape4k.batch
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEqualTo
-import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable as JdbcJobExecutionTable
-import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable as JdbcStepExecutionTable
-import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable as R2dbcJobExecutionTable
-import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable as R2dbcStepExecutionTable
 import org.jetbrains.exposed.v1.core.AutoIncColumnType
 import org.jetbrains.exposed.v1.core.DecimalColumnType
 import org.jetbrains.exposed.v1.core.EntityIDColumnType
 import org.jetbrains.exposed.v1.core.EnumerationNameColumnType
 import org.jetbrains.exposed.v1.core.IColumnType
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.VarCharColumnType
-import org.jetbrains.exposed.v1.core.Table
 import org.junit.jupiter.api.Test
+import io.bluetape4k.batch.jdbc.tables.BatchJobExecutionTable as JdbcJobExecutionTable
+import io.bluetape4k.batch.jdbc.tables.BatchStepExecutionTable as JdbcStepExecutionTable
+import io.bluetape4k.batch.r2dbc.tables.BatchJobExecutionTable as R2dbcJobExecutionTable
+import io.bluetape4k.batch.r2dbc.tables.BatchStepExecutionTable as R2dbcStepExecutionTable
 
 /** JDBC와 R2DBC adapter가 같은 영속 schema 계약을 소유하는지 확인한다. */
 class BatchSchemaParityTest {
@@ -87,18 +87,18 @@ class BatchSchemaParityTest {
 
     @Test
     fun `Decimal column descriptor는 precision과 scale drift를 구분한다`() {
-        DecimalColumnType(10, 2).schemaTypeDescriptor() shouldNotBeEqualTo DecimalColumnType(10, 3)
-            .schemaTypeDescriptor()
-        DecimalColumnType(10, 2).schemaTypeDescriptor() shouldNotBeEqualTo DecimalColumnType(11, 2)
-            .schemaTypeDescriptor()
+        DecimalColumnType(10, 2)
+            .schemaTypeDescriptor() shouldNotBeEqualTo DecimalColumnType(10, 3).schemaTypeDescriptor()
+        DecimalColumnType(10, 2)
+            .schemaTypeDescriptor() shouldNotBeEqualTo DecimalColumnType(11, 2).schemaTypeDescriptor()
     }
 
     @Test
     fun `storage codec와 hash contract drift를 구분한다`() {
         val descriptor = JdbcJobExecutionTable.schemaSignature()
         descriptor.columns.single { it.name == "params" }.storageContract shouldBeEqualTo CHECKPOINT_STORAGE_CONTRACT
-        descriptor.columns.single { it.name == "params_hash" }.storageContract shouldBeEqualTo
-            PARAMS_HASH_STORAGE_CONTRACT
+        descriptor.columns.single { it.name == "params_hash" }
+            .storageContract shouldBeEqualTo PARAMS_HASH_STORAGE_CONTRACT
 
         val checkpointContractChanged = descriptor.copy(
             columns = descriptor.columns.map { column ->
@@ -204,19 +204,19 @@ class BatchSchemaParityTest {
     )
 
     private fun IColumnType<*>.schemaTypeDescriptor(): String = when (this) {
-        is AutoIncColumnType<*> -> "auto-inc(delegate=${delegate.schemaTypeDescriptor()})"
+        is AutoIncColumnType<*>  -> "auto-inc(delegate=${delegate.schemaTypeDescriptor()})"
         is EntityIDColumnType<*> -> "entity-id(delegate=${idColumn.columnType.schemaTypeDescriptor()})"
-        is DecimalColumnType -> "decimal(precision=$precision,scale=$scale)"
-        is VarCharColumnType -> "varchar(length=$colLength,collate=$collate)"
+        is DecimalColumnType     -> "decimal(precision=$precision,scale=$scale)"
+        is VarCharColumnType     -> "varchar(length=$colLength,collate=$collate)"
         is EnumerationNameColumnType<*> -> "enum-name(class=${klass.qualifiedName},length=$colLength)"
-        is TextColumnType -> "text(collate=$collate,eagerLoading=$eagerLoading)"
-        else -> this::class.qualifiedName.orEmpty()
+        is TextColumnType        -> "text(collate=$collate,eagerLoading=$eagerLoading)"
+        else                     -> this::class.qualifiedName.orEmpty()
     }
 
     private fun org.jetbrains.exposed.v1.core.Column<*>.storageContract(): String? = when (name) {
-        "status" -> "enum-name-status:v1:BatchStatus,length=20"
+        "status"      -> "enum-name-status:v1:BatchStatus,length=20"
         "params_hash" -> PARAMS_HASH_STORAGE_CONTRACT
         "params", "checkpoint" -> CHECKPOINT_STORAGE_CONTRACT
-        else -> null
+        else          -> null
     }
 }

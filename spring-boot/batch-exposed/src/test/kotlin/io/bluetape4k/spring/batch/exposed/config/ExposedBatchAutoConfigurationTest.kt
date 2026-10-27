@@ -3,6 +3,7 @@ package io.bluetape4k.spring.batch.exposed.config
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.getBean
@@ -15,8 +16,8 @@ import org.springframework.core.task.SyncTaskExecutor
 import org.springframework.core.task.TaskExecutor
 import org.springframework.test.util.ReflectionTestUtils
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedBatchAutoConfigurationTest {
 
@@ -46,7 +47,7 @@ class ExposedBatchAutoConfigurationTest {
                     latch.countDown()
                 }
 
-                latch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                latch.await(5.seconds).shouldBeTrue()
                 ranOnVirtualThread.get().shouldBeFalse()
             }
     }

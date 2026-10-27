@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.cache
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /**
@@ -18,6 +19,7 @@ class CacheModeTest {
     @Test
     fun `CacheMode 열거형은 정확히 3개의 값을 가진다`() {
         CacheMode.entries shouldHaveSize 3
+        CacheMode.entries.forEach { log.debug { "entry=$it" } }
     }
 
     @Test

@@ -36,6 +36,8 @@ public final class io/bluetape4k/exposed/clickhouse/ClickHouseExtensionsKt {
 	public static synthetic fun queryList$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun suspendTransaction (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun suspendTransaction$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun withSuspendTransaction (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun withSuspendTransaction$default (Lorg/jetbrains/exposed/v1/jdbc/Database;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/ClickHouseRowBinaryExecutor {
@@ -245,6 +247,7 @@ public final class io/bluetape4k/exposed/clickhouse/dialect/ClickHouseDialect : 
 	public fun getSupportsSetDefaultReferenceOption ()Z
 	public fun getSupportsTernaryAffectedRowValues ()Z
 	public fun modifyColumn (Lorg/jetbrains/exposed/v1/core/Column;Lorg/jetbrains/exposed/v1/core/ColumnDiff;)Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/bluetape4k/exposed/clickhouse/dialect/ClickHouseDialect$Companion : io/bluetape4k/logging/KLogging {

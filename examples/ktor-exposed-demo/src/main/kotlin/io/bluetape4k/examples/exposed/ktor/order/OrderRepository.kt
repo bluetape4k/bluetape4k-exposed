@@ -10,9 +10,9 @@ import org.jetbrains.exposed.v1.core.statements.BatchInsertStatement
 import org.jetbrains.exposed.v1.core.statements.UpdateStatement
 import org.jetbrains.exposed.v1.javatime.timestamp
 import java.time.Duration
-import java.util.UUID
+import java.util.*
 
-object DemoOrders : TimebasedUUIDTable("ktor_demo_orders") {
+object DemoOrders: TimebasedUUIDTable("ktor_demo_orders") {
     val status = enumerationByName("status", 16, OrderStatus::class)
     val updatedAt = timestamp("updated_at")
 }
@@ -24,7 +24,7 @@ class OrderR2dbcCaffeineRepository(
         expireAfterWrite = Duration.ofMinutes(ORDER_CACHE_EXPIRE_AFTER_WRITE_MINUTES),
         writeMode = CacheWriteMode.WRITE_THROUGH,
     ),
-) : AbstractR2dbcCaffeineRepository<UUID, OrderRecord>(config) {
+): AbstractR2dbcCaffeineRepository<UUID, OrderRecord>(config) {
 
     override val table: IdTable<UUID> = DemoOrders
 

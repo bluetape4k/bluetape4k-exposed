@@ -1,7 +1,9 @@
 package io.bluetape4k.exposed.starrocks
 
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.equalsIgnoreCase
 import org.junit.jupiter.api.Test
 import java.sql.DriverManager
 
@@ -19,7 +21,7 @@ class StarRocksMetadataTest: AbstractStarRocksTest() {
 
             val tableFound = metaData.getTables("default_catalog", databaseName, "events", arrayOf("TABLE")).use { rs ->
                 generateSequence { if (rs.next()) rs.getString("TABLE_NAME") else null }
-                    .any { it.equals("events", ignoreCase = true) }
+                    .any { it.equalsIgnoreCase("events") }
             }
 
             val columns = metaData.getColumns("default_catalog", databaseName, "events", "%").use { rs ->
@@ -31,9 +33,9 @@ class StarRocksMetadataTest: AbstractStarRocksTest() {
             }
 
             tableFound.shouldBeTrue()
-            columns.contains("event_id").shouldBeTrue()
-            columns.contains("event_name").shouldBeTrue()
-            columns.contains("region").shouldBeTrue()
+            columns shouldContain "event_id"
+            columns shouldContain "event_name"
+            columns shouldContain "region"
         }
     }
 }

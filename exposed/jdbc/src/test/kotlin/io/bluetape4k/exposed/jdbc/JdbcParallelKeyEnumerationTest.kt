@@ -7,10 +7,14 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.join
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.core.eq
@@ -29,6 +33,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 
 class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
 
@@ -86,11 +91,9 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             preparedStatement: PreparedStatementApi,
                         ) {
                             observed.set(
-                                handle.currentConnection(handle.generation) != null &&
-                                        (
-                                                handle.currentStatement(handle.generation) ===
-                                                        preparedStatement as? JdbcPreparedStatementApi
-                                                ),
+                                        handle.currentConnection(handle.generation) != null &&
+                                                (handle.currentStatement(handle.generation) ===
+                                                        preparedStatement as? JdbcPreparedStatementApi),
                             )
                         }
 
@@ -113,7 +116,8 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             }
 
             observed.get().shouldBeTrue()
-            val handle = requireNotNull(handleRef.get())
+
+            val handle = handleRef.get().shouldNotBeNull()
             handle.currentConnection(handle.generation).shouldBeNull()
             handle.currentStatement(handle.generation).shouldBeNull()
         }
@@ -134,7 +138,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     JdbcKeyRange(lowerInclusive = 5L),
                 ),
                 options = JdbcParallelKeyEnumerationOptions(maxConcurrency = 2),
-            ) shouldBeEqualTo (1L..8L).toList()
+            ) shouldBeEqualTo List(8) { it + 1L }
         }
     }
 
@@ -147,14 +151,13 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             EnumerationTable.deleteWhere { EnumerationTable.id eq 2L }
             commit()
 
-            val ids =
-                parallelJdbcKeyEnumeration(
-                    table = EnumerationTable,
-                    ranges = listOf(
-                        JdbcKeyRange(upperExclusive = 4L),
-                        JdbcKeyRange(lowerInclusive = 4L),
-                    ),
-                )
+            val ids = parallelJdbcKeyEnumeration(
+                table = EnumerationTable,
+                ranges = listOf(
+                    JdbcKeyRange(upperExclusive = 4L),
+                    JdbcKeyRange(lowerInclusive = 4L),
+                ),
+            )
 
             ids shouldBeEqualTo listOf(1L, 3L, 4L, 5L, 6L)
             ids.size shouldBeEqualTo ids.distinct().size
@@ -215,24 +218,25 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             val maximum = AtomicInteger(0)
             val executor = Executors.newVirtualThreadPerTaskExecutor()
             try {
-                val ids =
-                    parallelJdbcKeyEnumeration(
-                        table = EnumerationTable,
-                        ranges = List(6) { index -> JdbcKeyRange(index.toLong(), (index + 1).toLong()) },
-                        options = JdbcParallelKeyEnumerationOptions(
-                            maxConcurrency = 2,
-                            executor = executor,
-                        ),
-                    ) { _, range ->
-                        val current = active.incrementAndGet()
-                        maximum.updateAndGet { previous -> maxOf(previous, current) }
-                        try {
-                            Thread.sleep(20)
-                            listOf(requireNotNull(range.lowerInclusive))
-                        } finally {
-                            active.decrementAndGet()
-                        }
+                val ids = parallelJdbcKeyEnumeration(
+                    table = EnumerationTable,
+                    ranges = List(6) { index ->
+                        JdbcKeyRange(index.toLong(), (index + 1).toLong())
+                    },
+                    options = JdbcParallelKeyEnumerationOptions(
+                        maxConcurrency = 2,
+                        executor = executor,
+                    ),
+                ) { _, range ->
+                    val current = active.incrementAndGet()
+                    maximum.updateAndGet { previous -> maxOf(previous, current) }
+                    try {
+                        Thread.sleep(20)
+                        listOf(requireNotNull(range.lowerInclusive))
+                    } finally {
+                        active.decrementAndGet()
                     }
+                }
 
                 ids shouldBeEqualTo (0L..5L).toList()
                 maximum.get() shouldBeEqualTo 2
@@ -266,7 +270,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         ) { _, range ->
                             started.countDown()
                             if (range.upperExclusive == 1L) {
-                                check(started.await(2, TimeUnit.SECONDS))
+                                check(started.await(2.seconds))
                                 throw expected
                             }
                             try {
@@ -279,6 +283,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                         }
                     }.exceptionOrNull()
 
+                log.debug { "failure=$failure" }
                 failure shouldBeEqualTo expected
                 interrupted.get().shouldBeTrue()
             } finally {
@@ -317,7 +322,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                             started.countDown()
                             try {
                                 if (range.upperExclusive == 1L) {
-                                    check(started.await(2, TimeUnit.SECONDS))
+                                    check(started.await(2.seconds))
                                     throw expected
                                 }
 
@@ -339,14 +344,14 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                     }.exceptionOrNull()
 
                 failure shouldBeEqualTo expected
-                check(interruptObserved.await(2, TimeUnit.SECONDS)) {
+                check(interruptObserved.await(2.seconds)) {
                     "the sibling must observe the cancellation interrupt"
                 }
                 activeChildren.get() shouldBeEqualTo 0
                 allFinished.count shouldBeEqualTo 0
-                executor.isShutdown shouldBeEqualTo false
+                executor.isShutdown.shouldBeFalse()
             } finally {
-                check(allFinished.await(2, TimeUnit.SECONDS)) {
+                check(allFinished.await(2.seconds)) {
                     "interrupt-ignoring siblings must eventually finish"
                 }
                 executor.close()
@@ -411,14 +416,14 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             }
 
             try {
-                check(started.await(2, TimeUnit.SECONDS)) {
+                check(started.await(2.seconds)) {
                     "two child transactions must start before interrupting the caller"
                 }
                 caller.interrupt()
-                check(callerFinished.await(2, TimeUnit.SECONDS)) {
+                check(callerFinished.await(2.seconds)) {
                     "caller must finish after child cleanup"
                 }
-                check(interruptObserved.await(2, TimeUnit.SECONDS)) {
+                check(interruptObserved.await(2.seconds)) {
                     "children must observe the caller cancellation interrupt"
                 }
                 (callerFailure.get() is InterruptedException).shouldBeTrue()
@@ -427,8 +432,8 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
                 allFinished.count shouldBeEqualTo 0
             } finally {
                 caller.interrupt()
-                caller.join(TimeUnit.SECONDS.toMillis(2))
-                check(allFinished.await(2, TimeUnit.SECONDS)) {
+                caller.join(2.seconds)
+                check(allFinished.await(2.seconds)) {
                     "interrupt-ignoring children must eventually finish"
                 }
                 childExecutor.close()
@@ -443,7 +448,7 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
             val executor = Executors.newVirtualThreadPerTaskExecutor()
             executor.close()
 
-            assertFailsWith<IllegalArgumentException> {
+            assertFailsWith<IllegalStateException> {
                 parallelJdbcKeyEnumeration(
                     table = EnumerationTable,
                     ranges = listOf(JdbcKeyRange(upperExclusive = 1L)),
@@ -457,11 +462,15 @@ class JdbcParallelKeyEnumerationTest: AbstractExposedTest() {
         Proxy.newProxyInstance(
             Connection::class.java.classLoader,
             arrayOf(Connection::class.java),
-        ) { _, _, _ -> error("unused JDBC connection proxy method") } as Connection
+        ) { _, _, _ ->
+            error("unused JDBC connection proxy method")
+        } as Connection
 
     private fun unusedPreparedStatement(): JdbcPreparedStatementApi =
         Proxy.newProxyInstance(
             JdbcPreparedStatementApi::class.java.classLoader,
             arrayOf(JdbcPreparedStatementApi::class.java),
-        ) { _, _, _ -> error("unused JDBC prepared statement proxy method") } as JdbcPreparedStatementApi
+        ) { _, _, _ ->
+            error("unused JDBC prepared statement proxy method")
+        } as JdbcPreparedStatementApi
 }

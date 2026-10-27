@@ -5,11 +5,17 @@ import com.zaxxer.hikari.HikariDataSource
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.CacheWriteMode
 import io.bluetape4k.exposed.cache.LocalCacheConfig
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
+import org.awaitility.kotlin.atMost
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
+import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -38,12 +44,14 @@ import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.modulith.events.core.EventSerializer
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
+import org.testcontainers.utility.Base58
 import java.io.Serializable
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import javax.sql.DataSource
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
@@ -62,7 +70,13 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
             val txManager = context.getBean<PlatformTransactionManager>("springTransactionManager")
 
             val actor = repository.findAllFromDb(emptyList()).let {
-                transaction { repository.table.selectAll().first().let { row -> with(repository) { row.toEntity() } } }
+                transaction {
+                    repository.table.selectAll()
+                        .first()
+                        .let { row ->
+                            with(repository) { row.toEntity() }
+                        }
+                }
             }
             val updated = actor.copy(name = "event-write-through")
 
@@ -70,7 +84,7 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
                 repository.put(actor.id, updated)
             }
 
-            listenerState.receivedLatch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            listenerState.receivedLatch.await(5.seconds).shouldBeTrue()
             listenerState.events shouldHaveSize 1
             listenerState.events.single().actorId shouldBeEqualTo actor.id
         }
@@ -84,13 +98,17 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
             val listenerState = context.getBean<CacheActorListenerState>()
 
             val actor = transaction {
-                repository.table.selectAll().first().let { row -> with(repository) { row.toEntity() } }
+                repository.table.selectAll()
+                    .first().let { row ->
+                        with(repository) { row.toEntity() }
+                    }
             }
+            log.debug { "actor=$actor" }
             val updated = actor.copy(name = "event-write-behind")
 
             repository.put(actor.id, updated)
 
-            listenerState.receivedLatch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            listenerState.receivedLatch.await(5.seconds).shouldBeTrue()
 
             awaitCondition { repository.validateConsistency().queueDepth == 0 }
             listenerState.events shouldHaveSize 1
@@ -114,7 +132,7 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
                     "spring.datasource.driver-class-name" to testDB.driver,
                     "spring.datasource.username" to testDB.user,
                     "spring.datasource.password" to testDB.pass,
-                    "bluetape4k.spring.modulith.exposed.table-name" to "EVENT_PUBLICATION_${System.nanoTime()}",
+                    "bluetape4k.spring.modulith.exposed.table-name" to "EVENT_PUBLICATION_${Base58.randomString(8)}",
                     "bluetape4k.spring.modulith.exposed.initialize-schema" to "true",
                     "test.cache.actor.table-name" to tableName,
                     "test.cache.actor.write-mode" to writeMode.name,
@@ -277,9 +295,8 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
     }
 
     private fun awaitCondition(predicate: () -> Boolean) {
-        repeat(100) {
-            if (predicate()) return
-            Thread.sleep(10)
+        await atMost 5.seconds withPollInterval 100.milliseconds until {
+            predicate()
         }
         predicate().shouldBeTrue()
     }

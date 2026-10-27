@@ -7,10 +7,10 @@ import ch.qos.logback.classic.spi.IThrowableProxy
 import ch.qos.logback.core.read.ListAppender
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldContain
-import io.bluetape4k.assertions.shouldNotContain
-import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.examples.modulith.orders.AcceptOrderCommand
 import io.bluetape4k.exposed.examples.modulith.orders.OrderApplicationService
 import io.bluetape4k.exposed.examples.modulith.orders.OrderHandoffFailedException
@@ -18,9 +18,12 @@ import io.bluetape4k.exposed.examples.modulith.orders.OrderId
 import io.bluetape4k.exposed.examples.modulith.orders.events.OrderAcceptedEvent
 import io.bluetape4k.exposed.examples.modulith.orders.internal.OrderRepository
 import io.bluetape4k.exposed.examples.modulith.shipping.internal.ShippingReservationRepository
-import io.bluetape4k.spring.modulith.exposed.ExposedEventPublicationTable
+import io.bluetape4k.exposed.examples.modulithinvalid.InvalidBoundaryApplication
 import io.bluetape4k.spring.data.exposed.jdbc.ddd.ExposedAggregateEventPublisher
+import io.bluetape4k.spring.modulith.exposed.ExposedEventPublicationTable
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -28,20 +31,22 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.modulith.core.ApplicationModules
 import org.springframework.modulith.core.Violations
+import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.modulith.events.EventPublication.Status
 import org.springframework.modulith.events.core.EventPublicationRepository
-import org.springframework.modulith.events.ApplicationModuleListener
 import org.springframework.transaction.support.TransactionTemplate
 import java.io.Serializable
 import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration.Companion.seconds
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DddSpringModulithDemoApplicationTest {
@@ -54,32 +59,31 @@ class DddSpringModulithDemoApplicationTest {
     @Test
     fun `boundary verifier rejects shipping dependency on order internals`() {
         val modules = ApplicationModules.of(
-            io.bluetape4k.exposed.examples.modulithinvalid.InvalidBoundaryApplication::class.java,
+            InvalidBoundaryApplication::class.java,
         )
 
         val violations = assertFailsWith<Violations> {
             modules.verify()
         }
 
-        violations.message.shouldNotBeNull() shouldContain "orders"
-        violations.message.shouldNotBeNull() shouldContain "internal"
+        violations.message shouldContain "orders"
+        violations.message shouldContain "internal"
     }
 
     @Test
     fun `application context exposes Exposed backed publication repository`() {
-        withApplicationContext() { context ->
-            context.getBean(EventPublicationRepository::class.java)
-                .shouldNotBeNull()
+        withApplicationContext { context ->
+            context.getBean<EventPublicationRepository>().shouldNotBeNull()
         }
     }
 
     @Test
     fun `accepting an order persists reservation through Modulith publication`() {
-        withApplicationContext() { context ->
-            val orders = context.getBean(OrderRepository::class.java)
-            val reservations = context.getBean(ShippingReservationRepository::class.java)
-            val service = context.getBean(OrderApplicationService::class.java)
-            val publications = context.getBean(EventPublicationRepository::class.java)
+        withApplicationContext { context ->
+            val orders = context.getBean<OrderRepository>()
+            val reservations = context.getBean<ShippingReservationRepository>()
+            val service = context.getBean<OrderApplicationService>()
+            val publications = context.getBean<EventPublicationRepository>()
 
             val accepted = service.accept(
                 AcceptOrderCommand(
@@ -102,16 +106,16 @@ class DddSpringModulithDemoApplicationTest {
 
     @Test
     fun `publication row stores only opaque event data`() {
-        withApplicationContext() { context ->
-            val service = context.getBean(OrderApplicationService::class.java)
-            val publicationTable = context.getBean("eventPublicationTable", ExposedEventPublicationTable::class.java)
+        withApplicationContext { context ->
+            val service = context.getBean<OrderApplicationService>()
+            val publicationTable = context.getBean<ExposedEventPublicationTable>("eventPublicationTable")
             val orderKey = "ORDER-KEY-SHOULD-NOT-LEAK"
             val customerId = "CUSTOMER-SHOULD-NOT-LEAK"
             val secret = "SECRET-SHOULD-NOT-LEAK"
 
             service.accept(AcceptOrderCommand(orderKey = orderKey, customerId = customerId, note = secret))
 
-            await.atMost(Duration.ofSeconds(5)).untilAsserted {
+            await atMost 5.seconds untilAsserted {
                 val serialized = serializedEvents(publicationTable).single()
                 serialized shouldNotContain orderKey
                 serialized shouldNotContain customerId
@@ -129,8 +133,8 @@ class DddSpringModulithDemoApplicationTest {
 
     @Test
     fun `duplicate order accepted events keep shipping reservation idempotent`() {
-        withApplicationContext() { context ->
-            val reservations = context.getBean(ShippingReservationRepository::class.java)
+        withApplicationContext { context ->
+            val reservations = context.getBean<ShippingReservationRepository>()
             val event = OrderAcceptedEvent(
                 aggregateId = OrderId("order-duplicate"),
                 eventId = "event-duplicate",
@@ -148,9 +152,9 @@ class DddSpringModulithDemoApplicationTest {
     fun `restart republishes incomplete order event without duplicate reservation`() {
         val databaseName = "ddd_modulith_restart_${System.nanoTime()}"
         val orderId = withApplicationContext(databaseName) { first ->
-            val service = first.getBean(OrderApplicationService::class.java)
-            val reservations = first.getBean(ShippingReservationRepository::class.java)
-            val publicationTable = first.getBean("eventPublicationTable", ExposedEventPublicationTable::class.java)
+            val service = first.getBean<OrderApplicationService>()
+            val reservations = first.getBean<ShippingReservationRepository>()
+            val publicationTable = first.getBean<ExposedEventPublicationTable>("eventPublicationTable")
 
             val accepted = service.accept(AcceptOrderCommand(orderKey = "restart", customerId = "customer"))
 
@@ -165,8 +169,8 @@ class DddSpringModulithDemoApplicationTest {
             databaseName = databaseName,
             extraProperties = mapOf("spring.modulith.events.republish-outstanding-events-on-restart" to "true"),
         ) { second ->
-            val reservations = second.getBean(ShippingReservationRepository::class.java)
-            val publications = second.getBean(EventPublicationRepository::class.java)
+            val reservations = second.getBean<ShippingReservationRepository>()
+            val publications = second.getBean<EventPublicationRepository>()
 
             await.atMost(Duration.ofSeconds(5)).untilAsserted {
                 reservations.existsByOrderId(orderId) shouldBeEqualTo true
@@ -178,11 +182,11 @@ class DddSpringModulithDemoApplicationTest {
 
     @Test
     fun `failed command transaction leaves no order reservation or publication row`() {
-        withApplicationContext() { context ->
-            val service = context.getBean(OrderApplicationService::class.java)
-            val orders = context.getBean(OrderRepository::class.java)
-            val reservations = context.getBean(ShippingReservationRepository::class.java)
-            val publications = context.getBean(EventPublicationRepository::class.java)
+        withApplicationContext { context ->
+            val service = context.getBean<OrderApplicationService>()
+            val orders = context.getBean<OrderRepository>()
+            val reservations = context.getBean<ShippingReservationRepository>()
+            val publications = context.getBean<EventPublicationRepository>()
 
             val failedOrder = assertFailsWith<OrderHandoffFailedException> {
                 service.accept(
@@ -202,19 +206,17 @@ class DddSpringModulithDemoApplicationTest {
 
     @Test
     fun `failed handoff keeps aggregate domain events recorded`() {
-        withApplicationContext() { context ->
+        withApplicationContext { context ->
             val service = OrderApplicationService(
-                orderRepository = context.getBean(OrderRepository::class.java),
-                aggregateEventPublisher = ExposedAggregateEventPublisher(
-                    org.springframework.context.ApplicationEventPublisher {
-                        throw IllegalStateException("Synthetic publication handoff failure")
-                    }
-                ),
-                transactionTemplate = context.getBean(TransactionTemplate::class.java),
+                orderRepository = context.getBean<OrderRepository>(),
+                aggregateEventPublisher = ExposedAggregateEventPublisher {
+                    throw IllegalStateException("Synthetic publication handoff failure")
+                },
+                transactionTemplate = context.getBean<TransactionTemplate>(),
             )
-            val orders = context.getBean(OrderRepository::class.java)
-            val reservations = context.getBean(ShippingReservationRepository::class.java)
-            val publications = context.getBean(EventPublicationRepository::class.java)
+            val orders = context.getBean<OrderRepository>()
+            val reservations = context.getBean<ShippingReservationRepository>()
+            val publications = context.getBean<EventPublicationRepository>()
 
             val order = assertFailsWith<OrderHandoffFailedException> {
                 service.accept(
@@ -236,8 +238,8 @@ class DddSpringModulithDemoApplicationTest {
         ) { context ->
             val secret = "UNSUPPORTED-SECRET-MUST-NOT-LEAK"
             val logCapture = attachRootAndNonAdditiveLoggers()
-            val transactionTemplate = context.getBean(TransactionTemplate::class.java)
-            val publicationRepository = context.getBean(EventPublicationRepository::class.java)
+            val transactionTemplate = context.getBean<TransactionTemplate>()
+            val publicationRepository = context.getBean<EventPublicationRepository>()
 
             try {
                 val error = assertFailsWith<IllegalArgumentException> {
@@ -269,7 +271,7 @@ class DddSpringModulithDemoApplicationTest {
                 mapOf(
                     "spring.application.name" to "ddd-spring-modulith-demo-test",
                     "spring.datasource.url" to
-                        "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL",
+                            "jdbc:h2:mem:$databaseName;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL",
                     "spring.datasource.driver-class-name" to "org.h2.Driver",
                     "spring.datasource.username" to "sa",
                     "spring.datasource.password" to "",
@@ -289,7 +291,7 @@ class DddSpringModulithDemoApplicationTest {
         transaction {
             publicationTable.update({ publicationTable.serializedEvent like "%${orderId.value}%" }) {
                 it[publicationTable.completionDate] = null
-                it[publicationTable.status] = Status.PUBLISHED.name
+                it[publicationTable.status] = Status.PUBLISHED
             }
         }
     }
@@ -320,13 +322,13 @@ class DddSpringModulithDemoApplicationTest {
     }
 
     private fun ILoggingEvent.assertNoSecretInAnyField(secret: String) {
-        message.orEmpty() shouldNotContain secret
-        formattedMessage.orEmpty() shouldNotContain secret
+        message shouldNotContain secret
+        formattedMessage shouldNotContain secret
         mdcPropertyMap.toString() shouldNotContain secret
-        argumentArray?.contentDeepToString().orEmpty() shouldNotContain secret
-        keyValuePairs?.toString().orEmpty() shouldNotContain secret
-        markerList?.toString().orEmpty() shouldNotContain secret
-        throwableProxy.flatten().shouldNotContain(secret)
+        argumentArray?.contentDeepToString() shouldNotContain secret
+        keyValuePairs?.toString() shouldNotContain secret
+        markerList?.toString() shouldNotContain secret
+        throwableProxy.flatten() shouldNotContain secret
     }
 
     private fun IThrowableProxy?.flatten(): String {
@@ -359,7 +361,7 @@ class DddSpringModulithDemoApplicationTest {
         }
     }
 
-    data class UnsupportedEvent(val secret: String) : Serializable {
+    data class UnsupportedEvent(val secret: String): Serializable {
         companion object {
             private const val serialVersionUID: Long = 1L
         }

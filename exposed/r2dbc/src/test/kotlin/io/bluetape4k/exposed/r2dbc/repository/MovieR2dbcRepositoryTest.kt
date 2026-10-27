@@ -1,9 +1,11 @@
 package io.bluetape4k.exposed.r2dbc.repository
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.domain.model.MovieRecord
 import io.bluetape4k.exposed.r2dbc.domain.model.MovieSchema.withMovieAndActors
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
@@ -22,7 +24,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
             id = 0L,
             name = faker.book().title(),
             producerName = faker.name().fullName(),
-            releaseDate = faker.timeAndDate().birthday(20, 80).toString()
+            releaseDate = faker.timeAndDate().birthday(10, 90).toString()
         )
     }
 
@@ -46,10 +48,7 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
         withMovieAndActors(testDB) {
             val params = mapOf("producerName" to "Johnny")
 
-            val movies = repository.searchMovies(params).toList()
-            movies.forEach {
-                log.debug { "movie: $it" }
-            }
+            val movies = repository.searchMovies(params).log("MOVIE").toList()
             movies shouldHaveSize 2
         }
     }
@@ -58,12 +57,11 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `create movie`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
+            val currentCount = repository.count() shouldBeGreaterThan 0L
+
             val movie = newMovieRecord()
-
-            val currentCount = repository.count()
-
             val savedMovie = repository.save(movie)
-            savedMovie shouldBeEqualTo movie.copy(id = savedMovie.id)
+            savedMovie shouldBeEqualTo movie.withId(id = savedMovie.id)
 
             val newCount = repository.count()
             newCount shouldBeEqualTo currentCount + 1
@@ -86,12 +84,11 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get all movies and actors`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
-            val movieWithActors = repository.getAllMoviesWithActors().toList()
+            val movieWithActors = repository.getAllMoviesWithActors()
+                .log("Movie With Actors")
+                .toList()
 
             movieWithActors.shouldNotBeEmpty()
-            movieWithActors.forEach { movie ->
-                log.debug { "movie: ${movie.name}" }
-            }
         }
     }
 
@@ -114,12 +111,8 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `get movie and actor count`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
-            val movieWithActors = repository.getMovieActorsCount().toList()
-
-            movieWithActors.shouldNotBeEmpty()
-            movieWithActors.forEach {
-                log.debug { "movie=${it.movieName}, actor count=${it.actorCount}" }
-            }
+            val movieWithActors = repository.getMovieActorsCount().log("Movie").toList()
+            movieWithActors.shouldNotBeEmpty() shouldHaveSize 4
         }
     }
 
@@ -127,12 +120,8 @@ class MovieR2dbcRepositoryTest: AbstractExposedR2dbcTest() {
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `find movies with acting producers`(testDB: TestDB) = runSuspendIO {
         withMovieAndActors(testDB) {
-            val results = repository.findMoviesWithActingProducers().toList()
-
+            val results = repository.findMoviesWithActingProducers().log("Movie").toList()
             results shouldHaveSize 1
-            results.forEach {
-                log.debug { "movie=${it.movieName}, actor=${it.producerActorName}" }
-            }
         }
     }
 }

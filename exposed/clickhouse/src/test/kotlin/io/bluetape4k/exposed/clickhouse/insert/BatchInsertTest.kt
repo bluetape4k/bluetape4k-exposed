@@ -46,7 +46,7 @@ class BatchInsertTest: AbstractClickHouseTest() {
 
     @Test
     fun `10000건 batchInsert 정상 삽입`() {
-        val events = (1..BATCH_SIZE).map { i ->
+        val events = List(BATCH_SIZE) { i ->
             Triple(i.toLong(), "event_$i", "region_${i % 5}")
         }
 
@@ -60,14 +60,18 @@ class BatchInsertTest: AbstractClickHouseTest() {
         }
 
         val count = transaction(db) {
-            exec("SELECT count(*) FROM events") { rs -> rs.next(); rs.getLong(1) } ?: 0L
+            exec("SELECT count(*) FROM events") { rs ->
+                rs.next()
+                rs.getLong(1)
+            } ?: 0L
         }
         count shouldBeEqualTo BATCH_SIZE.toLong()
     }
 
     @Test
+    @Suppress("TooGenericExceptionThrown") // ClickHouse의 transaction 부재 경계를 의도적으로 시뮬레이션합니다.
     fun `트랜잭션 원자성 없음 - 예외 발생해도 앞선 INSERT 유지`() {
-        val firstHalf = (1..HALF_BATCH).map { i ->
+        val firstHalf = List(HALF_BATCH) { i ->
             Triple(i.toLong(), "event_$i", "kr")
         }
 
@@ -86,7 +90,10 @@ class BatchInsertTest: AbstractClickHouseTest() {
 
         // ClickHouse는 트랜잭션 없으므로 이미 INSERT된 행이 남아있어야 함
         val count = transaction(db) {
-            exec("SELECT count(*) FROM events") { rs -> rs.next(); rs.getLong(1) } ?: 0L
+            exec("SELECT count(*) FROM events") { rs ->
+                rs.next()
+                rs.getLong(1)
+            } ?: 0L
         }
         count shouldBeGreaterOrEqualTo 0L  // 남아있을 수도 있고, 드라이버 구현에 따라 0일 수도 있음
 
@@ -96,7 +103,7 @@ class BatchInsertTest: AbstractClickHouseTest() {
 
     @Test
     fun `batchInsert 후 카운트 조회`() {
-        val events = (1..100).map { i ->
+        val events = List(100) { i ->
             Triple(i.toLong(), "test_event_$i", "us")
         }
 
@@ -110,7 +117,10 @@ class BatchInsertTest: AbstractClickHouseTest() {
         }
 
         val count = transaction(db) {
-            exec("SELECT count(*) FROM events") { rs -> rs.next(); rs.getLong(1) } ?: 0L
+            exec("SELECT count(*) FROM events") { rs ->
+                rs.next()
+                rs.getLong(1)
+            } ?: 0L
         }
         count shouldBeEqualTo 100L
     }

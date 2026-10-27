@@ -2,8 +2,11 @@ package io.bluetape4k.exposed.ktor.tenant.jdbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.ktor.core.ExposedKtorTransactionException
 import io.bluetape4k.ktor.tenant.KtorTenantContext
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.tenant.MissingTenantContextException
 import io.bluetape4k.tenant.TenantId
 import io.ktor.client.request.get
@@ -16,6 +19,7 @@ import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -23,7 +27,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.withTimeout
 import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -32,13 +35,20 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedTenantJdbcTransactionTest {
+
+    private companion object: KLogging() {
+        val DATABASE_ID = AtomicLong()
+        val THREAD_ID = AtomicLong()
+    }
 
     @Test
     fun `tenant transaction keeps committed result when success metric fails`() = testApplication {
@@ -226,6 +236,7 @@ class ExposedTenantJdbcTransactionTest {
             }
 
             client.get("/tenant/a").bodyAsText().also { response ->
+                log.debug { "response=$response" }
                 response.substringBefore('@') shouldBeEqualTo "tenant-a"
                 response.substringAfter('@').contains("tenant-jdbc-worker").shouldBeTrue()
             }
@@ -251,7 +262,7 @@ class ExposedTenantJdbcTransactionTest {
     fun `cancelled request does not contaminate later tenant routing`() = testApplication {
         val dispatcher = newDispatcher()
         val meterRegistry = SimpleMeterRegistry()
-        val resolverInputs = CopyOnWriteArrayList<TenantId>()
+        val resolverInputs = ConcurrentLinkedQueue<TenantId>()
         val databaseResolver = recordingDatabaseResolver(resolverInputs)
         val transactionStarted = CompletableDeferred<Unit>()
         val transactionCompleted = CompletableDeferred<Unit>()
@@ -291,17 +302,17 @@ class ExposedTenantJdbcTransactionTest {
 
             coroutineScope {
                 val request = async { client.get("/cancel/a") }
-                withTimeout(timeMillis = 5_000) { transactionStarted.await() }
-                val serverRequest = withTimeout(timeMillis = 5_000) { requestJob.await() }
+                transactionStarted.awaitUntil(5.seconds)
+                val serverRequest = requestJob.awaitUntil(5.seconds)
                 serverRequest.cancelAndJoin()
                 serverRequest.isCancelled.shouldBeTrue()
-                withTimeout(timeMillis = 5_000) { transactionCompleted.await() }
+                transactionCompleted.awaitUntil(5.seconds)
                 request.cancelAndJoin()
             }
 
             client.get("/tenant/b").bodyAsText() shouldBeEqualTo "tenant-b"
             client.get("/tenant/a").bodyAsText() shouldBeEqualTo "tenant-a"
-            resolverInputs shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
+            resolverInputs.toList() shouldBeEqualTo listOf(TenantId("a"), TenantId("b"), TenantId("a"))
             assertTransactionMetrics(meterRegistry)
         } finally {
             dispatcher.close()
@@ -322,7 +333,7 @@ class ExposedTenantJdbcTransactionTest {
             .count() shouldBeEqualTo 2L
     }
 
-    private fun recordingDatabaseResolver(resolverInputs: MutableList<TenantId>): (TenantId) -> Database {
+    private fun recordingDatabaseResolver(resolverInputs: Queue<TenantId>): (TenantId) -> Database {
         val databases = mapOf(
             TenantId("a") to tenantDatabase("tenant-a"),
             TenantId("b") to tenantDatabase("tenant-b"),
@@ -348,7 +359,7 @@ class ExposedTenantJdbcTransactionTest {
         return database
     }
 
-    private fun newDispatcher(prefix: String = "tenant-jdbc"): kotlinx.coroutines.ExecutorCoroutineDispatcher =
+    private fun newDispatcher(prefix: String = "tenant-jdbc"): ExecutorCoroutineDispatcher =
         Executors.newFixedThreadPool(2) { runnable ->
             Thread(runnable, "$prefix-${THREAD_ID.incrementAndGet()}")
         }.asCoroutineDispatcher()
@@ -356,17 +367,12 @@ class ExposedTenantJdbcTransactionTest {
     private fun failingMeterRegistry(): SimpleMeterRegistry = SimpleMeterRegistry().apply {
         config().meterFilter(
             object: MeterFilter {
-                override fun map(id: Meter.Id): Meter.Id = throw IllegalStateException("metric recording failed")
+                override fun map(id: Meter.Id): Meter.Id = error("metric recording failed")
             }
         )
     }
 
     private object TenantMarkers: Table("tenant_markers") {
         val marker = varchar("marker", 64)
-    }
-
-    private companion object {
-        val DATABASE_ID = AtomicLong()
-        val THREAD_ID = AtomicLong()
     }
 }

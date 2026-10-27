@@ -2,6 +2,7 @@ package io.bluetape4k.spring.data.exposed.r2dbc.repository.support
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.User
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.UserNameRecord
 import io.bluetape4k.spring.data.exposed.r2dbc.domain.Users
@@ -10,6 +11,7 @@ import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedCoroutineQueryB
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcQueryByExampleRepository
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.ExposedR2dbcRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -25,6 +27,8 @@ import java.lang.reflect.Modifier
  * Java-only `Class<R>` overloads are not part of this compatibility surface.
  */
 class ExposedR2dbcRepositoryAbiCompatibilityTest {
+
+    companion object: KLogging()
 
     @Test
     fun `coroutine QBE consumer fixture is loadable`() {
@@ -120,8 +124,8 @@ private suspend fun compileCoroutineQbeConsumer(
     example: Example<User>,
 ): List<NameProjection> {
     repository.findOne(example)
-    repository.findAll(example)
-    repository.findAll(example, Sort.by("name"))
+    repository.findAll(example).collect()
+    repository.findAll(example, Sort.by("name")).collect()
     repository.count(example)
     repository.exists(example)
 

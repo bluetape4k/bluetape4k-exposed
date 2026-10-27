@@ -1,11 +1,13 @@
 package io.bluetape4k.exposed.starrocks
 
+import io.bluetape4k.javatimes.minutes
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.info
 import io.bluetape4k.utils.ShutdownQueue
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.utility.Base58
 import org.testcontainers.utility.DockerImageName
-import java.time.Duration
 import java.util.*
 
 /**
@@ -32,12 +34,12 @@ class StarRocksTestServer private constructor(private val container: GenericCont
                     .withReuse(shouldReuseContainer(environment))
                     .waitingFor(
                         Wait.forListeningPort()
-                            .withStartupTimeout(Duration.ofMinutes(4))
+                            .withStartupTimeout(5.minutes())
                     )
             )
     }
 
-    val databaseName: String = "bt4k_starrocks_${System.currentTimeMillis().toString(36)}"
+    val databaseName: String = "bt4k_starrocks_${Base58.randomString(8).lowercase()}"
 
     internal val reusable: Boolean
         get() = container.isShouldBeReused
@@ -88,12 +90,11 @@ class StarRocksTestServer private constructor(private val container: GenericCont
 
     object Launcher: KLogging() {
         val starRocks: StarRocksTestServer by lazy {
-            StarRocksTestServer.create()
-                .also {
-                    it.start()
-                    it.verifyHostPortMapping()
-                    log.info("StarRocks Testcontainer started at {}:{}", it.host, it.port)
-                }
+            StarRocksTestServer.create().also {
+                it.start()
+                it.verifyHostPortMapping()
+                log.info { "StarRocks Testcontainer started at ${it.host}:${it.port}, jdbcUrl='${it.jdbcUrl}'" }
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.completableFutureOf
 import io.bluetape4k.logging.KLogging
 import org.jetbrains.exposed.v1.core.DatabaseApi
 import org.jetbrains.exposed.v1.core.Transaction
@@ -857,7 +858,7 @@ class SnapshotTransactionCoordinatorTest {
             immediateFailure?.let { throw it }
             submittedInvalidations += batch
             return completion
-                ?: CompletableFuture.completedFuture(successReport(SnapshotCacheOperation.INVALIDATE, batch.size))
+                ?: completableFutureOf(successReport(SnapshotCacheOperation.INVALIDATE, batch.size))
         }
     }
 

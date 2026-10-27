@@ -16,13 +16,15 @@ private val snakeCaseBoundary = Regex("_([a-zA-Z])")
 fun Sort.toExposedOrderBy(table: Table): Array<Pair<Expression<*>, SortOrder>> {
     val result = mutableListOf<Pair<Expression<*>, SortOrder>>()
     for (order in this) {
-        val column: Column<*> = table.columns.firstOrNull { candidate ->
-            candidate.name.equals(order.property, ignoreCase = true) ||
-                    candidate.name.equals(toSnakeCase(order.property), ignoreCase = true)
-        } ?: run {
-            log.warn { "Sort property '${order.property}' not found in table '${table.tableName}', skipped." }
-            continue
-        }
+        val column: Column<*> = table.columns
+            .firstOrNull { candidate ->
+                candidate.name.equals(order.property, ignoreCase = true) ||
+                        candidate.name.equals(order.property.snakeCase(), ignoreCase = true)
+            }
+            ?: run {
+                log.warn { "Sort property '${order.property}' not found in table '${table.tableName}', skipped." }
+                continue
+            }
 
         val sortOrder = if (order.isAscending) SortOrder.ASC else SortOrder.DESC
         result.add(column to sortOrder)
@@ -34,8 +36,16 @@ fun Sort.toExposedOrderBy(table: Table): Array<Pair<Expression<*>, SortOrder>> {
 internal fun toSnakeCase(camelCase: String): String =
     camelCase.replace(camelCaseBoundary, "$1_$2").lowercase()
 
+/** camelCase 프로퍼티 이름을 snake_case 컬럼 이름으로 변환합니다. */
+internal fun String.snakeCase(): String =
+    replace(camelCaseBoundary, "$1_$2").lowercase()
+
 /** snake_case 컬럼 이름을 camelCase 프로퍼티 이름으로 변환합니다. */
 internal fun toCamelCase(snakeCase: String): String =
     snakeCase.replace(snakeCaseBoundary) { match ->
         match.groupValues[1].uppercase()
     }
+
+/** snake_case 컬럼 이름을 camelCase 프로퍼티 이름으로 변환합니다. */
+internal fun String.camelCase(): String =
+    replace(snakeCaseBoundary) { match -> match.groupValues[1].lowercase() }

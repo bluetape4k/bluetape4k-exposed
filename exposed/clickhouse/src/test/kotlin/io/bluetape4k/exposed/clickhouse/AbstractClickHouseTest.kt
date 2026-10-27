@@ -1,13 +1,19 @@
 package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.warn
 import io.bluetape4k.testcontainers.database.ClickHouseServer
+import org.awaitility.kotlin.atMost
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
+import org.awaitility.kotlin.withPollInterval
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.junit.jupiter.api.parallel.ResourceLock
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * ClickHouse 컨테이너를 공유하는 통합 테스트의 기반 클래스.
@@ -32,32 +38,22 @@ abstract class AbstractClickHouseTest {
                 password = clickhouse.password ?: "test",
             )
         }
+    }
 
-        @JvmStatic
-        @BeforeAll
-        fun waitForClickHouseReady() {
-            val maxAttempts = 10
-            val backoffMillis = 500L
-
-            repeat(maxAttempts) { attempt ->
-                runCatching {
-                    transaction(db) { exec("SELECT 1") { rs -> rs.next(); rs.getInt(1) } }
-                }.onSuccess {
-                    return
-                }.onFailure { e ->
-                    if (attempt < maxAttempts - 1) {
-                        log.warn(
-                            "ClickHouse not ready (attempt {}/{}), waiting {}ms...",
-                            attempt + 1,
-                            maxAttempts,
-                            backoffMillis
-                        )
-                        Thread.sleep(backoffMillis)
-                    } else {
-                        throw e
+    @BeforeAll
+    fun waitForClickHouseReady() {
+        var attempts = 0
+        await atMost 10.seconds withPollInterval 1.seconds until {
+            runCatching {
+                transaction(db) {
+                    exec("SELECT 1") { rs ->
+                        rs.next();
+                        rs.getInt(1)
                     }
                 }
-            }
+            }.onFailure {
+                log.warn { "ClickHouse not ready attempt=${attempts++}" }
+            }.isSuccess
         }
     }
 }

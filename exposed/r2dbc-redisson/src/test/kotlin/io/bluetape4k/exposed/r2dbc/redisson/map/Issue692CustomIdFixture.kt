@@ -12,9 +12,7 @@ object Issue692CustomIdTable: IdTable<Issue692CustomId>("issue_692_r2dbc_redisso
     private val rawId = varchar("id", 32)
 
     override val id: Column<EntityID<Issue692CustomId>> =
-        rawId
-            .transform(::Issue692CustomId, Issue692CustomId::value)
-            .entityId()
+        rawId.transform(::Issue692CustomId, Issue692CustomId::value).entityId()
 
     val name = varchar("name", 64)
 

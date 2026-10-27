@@ -166,15 +166,15 @@ internal class R2dbcPersistentPropertyResolver(
         property: R2dbcResolvedProperty,
         matcher: ExampleMatcher.StringMatcher,
     ) {
-        val message = when {
-            matcher == ExampleMatcher.StringMatcher.REGEX                            ->
+        val message = when (matcher) {
+            ExampleMatcher.StringMatcher.REGEX                               ->
                 "Regex QBE matching is not supported for property " +
                         "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
-            matcher !in SUPPORTED_STRING_MATCHERS                                    -> "Unsupported QBE string matcher"
-            matcher !in EXACT_STRING_MATCHERS && property.valueType != String::class ->
+            !in SUPPORTED_STRING_MATCHERS                                    -> "Unsupported QBE string matcher"
+            !in EXACT_STRING_MATCHERS if property.valueType != String::class ->
                 "String QBE matcher requires a String property " +
                         "'${R2dbcDiagnosticSanitizer.propertyToken(property.logicalName)}'."
-            else                                                                     -> null
+            else                                                             -> null
         }
         if (message != null) throw UnsupportedOperationException(message)
     }

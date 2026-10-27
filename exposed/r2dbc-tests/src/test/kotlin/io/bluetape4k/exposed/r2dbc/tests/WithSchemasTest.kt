@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.tests
 
+import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import org.jetbrains.exposed.v1.core.Schema
@@ -32,22 +33,11 @@ class WithSchemasTest: AbstractExposedR2dbcTest() {
     @ParameterizedTest
     @MethodSource(SCHEMA_DIALECTS_METHOD)
     fun `withSchemas 는 지원 방언에서 statement 예외를 전파한다`(testDB: TestDB) = runSuspendIO {
-        var thrown = false
 
-        val failure = runCatching {
+        assertFailsWith<IllegalStateException> {
             withSchemas(testDB, Schema("schema_${System.nanoTime()}")) {
                 throw IllegalStateException("boom")
             }
-        }.exceptionOrNull()
-
-        if (failure is IllegalStateException) {
-            thrown = true
-        } else if (failure != null) {
-            throw failure
-        }
-
-        withDb(testDB) {
-            thrown shouldBeEqualTo currentDialectTest.supportsCreateSchema
         }
     }
 }

@@ -3,7 +3,6 @@ package io.bluetape4k.exposed.r2dbc.shared.dml
 import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
-import io.bluetape4k.idgenerators.uuid.Uuid
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -13,6 +12,7 @@ import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.insert
 import java.math.BigDecimal
+import kotlin.uuid.ExperimentalUuidApi
 
 object DMLTestData {
     /**
@@ -24,11 +24,8 @@ object DMLTestData {
      * )
      * ```
      */
-    object Cities: Table() {
-        val id = integer("city_id").autoIncrement()
+    object Cities: IntIdTable() {
         val name = varchar("name", 50)
-
-        override val primaryKey = PrimaryKey(id)
     }
 
     /**
@@ -350,12 +347,9 @@ object DMLTestData {
      * ALTER TABLE orgs ADD CONSTRAINT orgs_uid_unique UNIQUE (uid)
      * ```
      */
+    @OptIn(ExperimentalUuidApi::class)
     object Orgs: IntIdTable() {
-        val uid =
-            varchar("uid", 36)
-                .clientDefault { Uuid.V7.nextIdAsString() }
-                .uniqueIndex()
-
+        val uid = uuid("uuid").clientDefault { kotlin.uuid.Uuid.generateV7() }.uniqueIndex()
         val name = varchar("name", 255)
     }
 

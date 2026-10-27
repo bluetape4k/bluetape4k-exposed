@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.logging.KLogging
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -19,6 +20,8 @@ import java.sql.Statement
  * 동작이 명세대로 동작하는지 확인합니다.
  */
 class ClickHouseConnectionWrapperTest {
+
+    companion object: KLogging()
 
     private val mockConn = mockk<Connection>(relaxed = true)
     private val mockStmt = mockk<PreparedStatement>()
@@ -38,7 +41,7 @@ class ClickHouseConnectionWrapperTest {
     @Test
     fun `setAutoCommit false is ignored`() {
         val wrapper = ClickHouseConnectionWrapper(mockConn)
-        wrapper.setAutoCommit(false)
+        wrapper.autoCommit = false
         wrapper.autoCommit.shouldBeTrue()
     }
 

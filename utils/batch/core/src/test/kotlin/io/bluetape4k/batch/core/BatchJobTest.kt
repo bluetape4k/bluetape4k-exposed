@@ -1,6 +1,12 @@
 package io.bluetape4k.batch.core
 
-import io.bluetape4k.batch.api.BatchProcessor
+import io.bluetape4k.assertions.shouldBeEmpty
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeInstanceOf
+import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchInfrastructureFailureException
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.BatchReader
@@ -12,12 +18,6 @@ import io.bluetape4k.batch.core.BatchStepRunnerTest.ListBatchReader
 import io.bluetape4k.batch.core.dsl.batchJob
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.workflow.api.WorkContext
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeInstanceOf
-import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldNotBeNull
-import io.bluetape4k.assertions.shouldHaveSize
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.runTest
@@ -57,8 +57,8 @@ class BatchJobTest {
         batchJob(name) { addStep(step) }
 
     private fun failingReader(message: String = "실패"): BatchReader<String> =
-        object : BatchReader<String> {
-            override suspend fun read(): String? = throw RuntimeException(message)
+        object: BatchReader<String> {
+            override suspend fun read(): String = throw RuntimeException(message)
         }
 
     private fun failStep(
@@ -80,9 +80,9 @@ class BatchJobTest {
 
         val report = runSingleStepJob("testJob", step)
 
-        report shouldBeInstanceOf BatchReport.Success::class
+        report.shouldBeInstanceOf<BatchReport.Success>()
         report.stepReports shouldHaveSize 1
-        report.stepReports[0].status shouldBe BatchStatus.COMPLETED
+        report.stepReports[0].status shouldBeEqualTo BatchStatus.COMPLETED
         report.stepReports[0].writeCount shouldBeEqualTo 3L
         writer.collected shouldBeEqualTo listOf("a", "b", "c")
     }
@@ -103,7 +103,7 @@ class BatchJobTest {
 
         val report = job.run()
 
-        report shouldBeInstanceOf BatchReport.Success::class
+        report.shouldBeInstanceOf<BatchReport.Success>()
         report.stepReports shouldHaveSize 2
         report.stepReports[0].stepName shouldBeEqualTo "step1"
         report.stepReports[1].stepName shouldBeEqualTo "step2"
@@ -114,7 +114,7 @@ class BatchJobTest {
     @Test
     fun `Job claim 실패는 raw cause 없이 category를 보존한 Failure로 매핑`() = runSuspendIO {
         val delegate = InMemoryBatchJobRepository()
-        val repository = object : BatchJobRepository by delegate {
+        val repository = object: BatchJobRepository by delegate {
             override suspend fun claimJobExecution(
                 execution: io.bluetape4k.batch.api.JobExecution,
                 ownerId: String,
@@ -132,17 +132,17 @@ class BatchJobTest {
 
         val report = job.run()
 
-        report shouldBeInstanceOf BatchReport.Failure::class
-        val failure = report as BatchReport.Failure
-        failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
-        val diagnostic = failure.error as BatchInfrastructureFailureException
+        report.shouldBeInstanceOf<BatchReport.Failure>()
+
+        report.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+        val diagnostic = report.error as BatchInfrastructureFailureException
         diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.REPOSITORY_FAILURE
-        diagnostic.cause shouldBe null
+        diagnostic.cause.shouldBeNull()
         diagnostic.suppressed shouldHaveSize 0
         diagnostic.correlationId.length shouldBeEqualTo 16
-        failure.jobExecution.params shouldBeEqualTo emptyMap()
-        failure.jobExecution.ownerId shouldBe null
-        failure.jobExecution.leaseUntil shouldBe null
+        report.jobExecution.params.shouldBeEmpty()
+        report.jobExecution.ownerId.shouldBeNull()
+        report.jobExecution.leaseUntil.shouldBeNull()
         writer.collected.isEmpty().shouldBeTrue()
     }
 
@@ -150,7 +150,7 @@ class BatchJobTest {
     fun `lease renewal 미지원 repository는 첫 persistence 전에 Failure로 종료`() = runSuspendIO {
         val delegate = InMemoryBatchJobRepository()
         var findCalls = 0
-        val repository = object : BatchJobRepository by delegate {
+        val repository = object: BatchJobRepository by delegate {
             override val supportsLeaseRenewal: Boolean = false
 
             override suspend fun findOrCreateJobExecution(
@@ -168,11 +168,12 @@ class BatchJobTest {
             repository = repository,
         ).run()
 
-        report shouldBeInstanceOf BatchReport.Failure::class
-        val failure = report as BatchReport.Failure
-        failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
-        failure.jobExecution.id shouldBeEqualTo 0L
-        failure.jobExecution.params shouldBeEqualTo emptyMap()
+        report.shouldBeInstanceOf<BatchReport.Failure>()
+
+        report.error.shouldBeInstanceOf<BatchInfrastructureFailureException>()
+        report.jobExecution.id shouldBeEqualTo 0L
+        report.jobExecution.params.shouldBeEmpty()
+
         findCalls shouldBeEqualTo 0
     }
 
@@ -191,11 +192,11 @@ class BatchJobTest {
 
         val report = job.run()
 
-        report shouldBeInstanceOf BatchReport.Failure::class
-        val failure = report as BatchReport.Failure
-        failure.error.shouldNotBeNull()
-        failure.stepReports shouldHaveSize 1  // step2 미실행
-        failure.stepReports[0].stepName shouldBeEqualTo "failStep"
+        report.shouldBeInstanceOf<BatchReport.Failure>()
+        report.error.shouldNotBeNull()
+        report.stepReports shouldHaveSize 1  // step2 미실행
+        report.stepReports[0].stepName shouldBeEqualTo "failStep"
+
         writer2.collected.isEmpty().shouldBeTrue()  // step2 미실행
     }
 
@@ -208,7 +209,7 @@ class BatchJobTest {
             name = "skipStep",
             chunkSize = 5,
             reader = ListBatchReader(listOf("ok", "bad", "ok2")),
-            processor = BatchProcessor<String, String> { item ->
+            processor = { item ->
                 if (item == "bad") throw IllegalArgumentException("skip me") else item
             },
             writer = writer,
@@ -217,7 +218,7 @@ class BatchJobTest {
 
         val report = runSingleStepJob("skipJob", step)
 
-        report shouldBeInstanceOf BatchReport.PartiallyCompleted::class
+        report.shouldBeInstanceOf<BatchReport.PartiallyCompleted>()
         report.stepReports[0].skipCount shouldBeEqualTo 1L
     }
 
@@ -225,7 +226,7 @@ class BatchJobTest {
 
     @Test
     fun `CancellationException - STOPPED 영속화 후 재던짐`() = runSuspendIO {
-        val cancellingReader = object : BatchReader<String> {
+        val cancellingReader = object: BatchReader<String> {
             override suspend fun read(): String = throw kotlinx.coroutines.CancellationException("외부 취소")
         }
         val step = BatchStep(
@@ -253,7 +254,7 @@ class BatchJobTest {
         val pauseStarted = CompletableDeferred<Unit>()
         val releasePause = CompletableDeferred<Unit>()
         var read = false
-        val reader = object : BatchReader<String> {
+        val reader = object: BatchReader<String> {
             override suspend fun read(): String? {
                 if (read) return null
                 pauseStarted.await()
@@ -286,15 +287,15 @@ class BatchJobTest {
         try {
             val report = job.run()
 
-            report shouldBeInstanceOf BatchReport.Failure::class
-            val failure = report as BatchReport.Failure
-            failure.error shouldBeInstanceOf BatchInfrastructureFailureException::class
-            val diagnostic = failure.error as BatchInfrastructureFailureException
+            report.shouldBeInstanceOf<BatchReport.Failure>()
+
+            report.error shouldBeInstanceOf BatchInfrastructureFailureException::class
+            val diagnostic = report.error as BatchInfrastructureFailureException
             diagnostic.category shouldBeEqualTo BatchInfrastructureFailureException.LEASE_LOST
-            diagnostic.cause shouldBe null
-            failure.jobExecution.params shouldBeEqualTo emptyMap()
-            failure.jobExecution.ownerId shouldBe null
-            failure.jobExecution.leaseUntil shouldBe null
+            diagnostic.cause.shouldBeNull()
+            report.jobExecution.params.shouldBeEmpty()
+            report.jobExecution.ownerId.shouldBeNull()
+            report.jobExecution.leaseUntil.shouldBeNull()
         } finally {
             releasePause.complete(Unit)
         }
@@ -314,7 +315,7 @@ class BatchJobTest {
             addStep(failStep("step2", "step2 강제 실패"))
         }
         val report1 = job1.run()
-        report1 shouldBeInstanceOf BatchReport.Failure::class
+        report1.shouldBeInstanceOf<BatchReport.Failure>()
         writer1.collected shouldBeEqualTo listOf("a", "b")  // step1은 성공
 
         // 2차 실행: FAILED JobExecution 재사용 → step1 COMPLETED(skip), step2 재실행
@@ -326,7 +327,7 @@ class BatchJobTest {
         }
         val report2 = job2.run()
 
-        report2 shouldBeInstanceOf BatchReport.Success::class
+        report2.shouldBeInstanceOf<BatchReport.Success>()
         writer1.collected shouldBeEqualTo listOf("a", "b")  // step1 재실행 안 됨 (skip)
         writer2b.collected shouldBeEqualTo listOf("c", "d")  // step2 정상 실행
     }
@@ -339,7 +340,7 @@ class BatchJobTest {
         val job = singleStepJob("workJob", step)
 
         val context = WorkContext()
-        job.execute(context).status shouldBe io.bluetape4k.workflow.api.WorkStatus.COMPLETED
+        job.execute(context).status shouldBeEqualTo io.bluetape4k.workflow.api.WorkStatus.COMPLETED
         context.contains("batch.workJob.report").shouldBeTrue()
     }
 
@@ -350,7 +351,7 @@ class BatchJobTest {
         val job = singleStepJob("failWorkJob", failingStep)
 
         val context = WorkContext()
-        job.execute(context).status shouldBe io.bluetape4k.workflow.api.WorkStatus.FAILED
+        job.execute(context).status shouldBeEqualTo io.bluetape4k.workflow.api.WorkStatus.FAILED
     }
 
     @Test
@@ -359,7 +360,7 @@ class BatchJobTest {
             name = "step1",
             chunkSize = 5,
             reader = ListBatchReader(listOf("ok", "bad")),
-            processor = BatchProcessor<String, String> { item ->
+            processor = { item ->
                 if (item == "bad") throw IllegalArgumentException() else item
             },
             writer = CollectingWriter(),
@@ -369,7 +370,7 @@ class BatchJobTest {
         val job = singleStepJob("partialJob", step)
 
         val context = WorkContext()
-        job.execute(context).status shouldBe io.bluetape4k.workflow.api.WorkStatus.COMPLETED
+        job.execute(context).status shouldBeEqualTo io.bluetape4k.workflow.api.WorkStatus.COMPLETED
         context.get<Long>("batch.partialJob.skipCount") shouldBeEqualTo 1L
     }
 }

@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 
 /**
@@ -22,12 +23,14 @@ class ExposedPageTest {
 
     @Test
     fun `pageSize가 0이면 totalPages는 0이다`() {
-        ExposedPage(emptyList<Int>(), totalCount = 100L, pageNumber = 0, pageSize = 0).totalPages shouldBeEqualTo 0
+        ExposedPage(emptyList<Int>(), totalCount = 100L, pageNumber = 0, pageSize = 0)
+            .totalPages shouldBeEqualTo 0
     }
 
     @Test
     fun `totalCount가 0이면 totalPages는 0이다`() {
-        ExposedPage(emptyList<Int>(), totalCount = 0L, pageNumber = 0, pageSize = 10).totalPages shouldBeEqualTo 0
+        ExposedPage(emptyList<Int>(), totalCount = 0L, pageNumber = 0, pageSize = 10)
+            .totalPages shouldBeEqualTo 0
     }
 
     @Test
@@ -57,6 +60,7 @@ class ExposedPageTest {
     @Test
     fun `단일 페이지면 isFirst, isLast 모두 true다`() {
         val page = ExposedPage(listOf(1, 2), totalCount = 2L, pageNumber = 0, pageSize = 10)
+        log.debug { "page=$page" }
         page.isFirst.shouldBeTrue()
         page.isLast.shouldBeTrue()
         page.hasNext.shouldBeFalse()
@@ -67,12 +71,14 @@ class ExposedPageTest {
     fun `content는 주어진 리스트를 그대로 보관한다`() {
         val data = listOf("a", "b", "c")
         val page = ExposedPage(data, totalCount = 3L, pageNumber = 0, pageSize = 10)
+        log.debug { "page=$page" }
         page.content shouldBeEqualTo data
     }
 
     @Test
     fun `totalCount가 0이고 pageNumber가 0이면 isFirst와 isLast 모두 true다`() {
         val page = ExposedPage(emptyList<Int>(), totalCount = 0L, pageNumber = 0, pageSize = 10)
+        log.debug { "page=$page" }
         page.isFirst.shouldBeTrue()
         page.isLast.shouldBeTrue()
         page.hasNext.shouldBeFalse()
@@ -81,11 +87,13 @@ class ExposedPageTest {
 
     @Test
     fun `pageSize가 1이면 totalPages는 totalCount와 같다`() {
-        ExposedPage(listOf(1), totalCount = 5L, pageNumber = 0, pageSize = 1).totalPages shouldBeEqualTo 5
+        ExposedPage(listOf(1), totalCount = 5L, pageNumber = 0, pageSize = 1)
+            .totalPages shouldBeEqualTo 5
     }
 
     @Test
     fun `totalCount가 pageSize의 정확한 배수이면 나머지 없이 계산된다`() {
-        ExposedPage(listOf(1), totalCount = 6L, pageNumber = 0, pageSize = 3).totalPages shouldBeEqualTo 2
+        ExposedPage(listOf(1), totalCount = 6L, pageNumber = 0, pageSize = 3)
+            .totalPages shouldBeEqualTo 2
     }
 }

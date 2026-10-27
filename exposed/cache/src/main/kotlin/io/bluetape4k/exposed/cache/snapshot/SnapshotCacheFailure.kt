@@ -4,6 +4,10 @@ package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.warn
+import io.bluetape4k.support.requireLe
+import io.bluetape4k.support.requireNotBlank
+import io.bluetape4k.support.requirePositiveNumber
+import io.bluetape4k.support.requireZeroOrPositiveNumber
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.atomic.AtomicLong
 
@@ -60,10 +64,10 @@ data class SnapshotCacheDrainResult(
     val observerExceptionType: String? = null,
 ) {
     init {
-        require(deliveredCount >= 0) { "deliveredCount[$deliveredCount] must not be negative." }
-        require(observerFailedCount >= 0) { "observerFailedCount[$observerFailedCount] must not be negative." }
-        require(remainingCount >= 0) { "remainingCount[$remainingCount] must not be negative." }
-        require(observerFailedCount <= 1) {
+        deliveredCount.requireZeroOrPositiveNumber("deliveredCount")
+        observerFailedCount.requireZeroOrPositiveNumber("observerFailedCount")
+        remainingCount.requireZeroOrPositiveNumber("remainingCount")
+        observerFailedCount.requireLe(1) {
             "observerFailedCount[$observerFailedCount] must not exceed one drain stop."
         }
         observerExceptionType?.validateExceptionType()
@@ -72,7 +76,7 @@ data class SnapshotCacheDrainResult(
 
 /** Creates a library-owned bounded failure buffer with non-blocking admission. */
 fun snapshotCacheFailureBuffer(capacity: Int = 1_024): SnapshotCacheFailureBuffer {
-    require(capacity > 0) { "capacity[$capacity] must be positive." }
+    capacity.requirePositiveNumber("capacity")
     return BoundedSnapshotCacheFailureBuffer(capacity)
 }
 
@@ -114,7 +118,7 @@ data class SnapshotCacheFailure(
     val exceptionType: String? = null,
 ) {
     init {
-        require(affectedCount >= 0) { "affectedCount[$affectedCount] must not be negative." }
+        affectedCount.requireZeroOrPositiveNumber("affectedCount")
         exceptionType?.validateExceptionType()
     }
 }
@@ -185,7 +189,7 @@ private class BoundedSnapshotCacheFailureBuffer(
         observer: SnapshotCacheFailureObserver,
         maxElements: Int,
     ): SnapshotCacheDrainResult {
-        require(maxElements >= 0) { "maxElements[$maxElements] must not be negative." }
+        maxElements.requireZeroOrPositiveNumber("maxElements")
         var delivered = 0
         repeat(maxElements) {
             val failure = failures.poll() ?: return SnapshotCacheDrainResult(delivered, 0, size)
@@ -209,8 +213,8 @@ private class BoundedSnapshotCacheFailureBuffer(
 private object SnapshotCacheFailureLogging: KLogging()
 
 private fun String.validateExceptionType() {
-    require(isNotBlank()) { "exceptionType must not be blank when set." }
-    require(length <= MAX_EXCEPTION_TYPE_LENGTH) {
+    requireNotBlank { "exceptionType must not be blank when set." }
+    length.requireLe(MAX_EXCEPTION_TYPE_LENGTH) {
         "exceptionType length[$length] must not exceed $MAX_EXCEPTION_TYPE_LENGTH."
     }
     require(isJvmClassName()) {

@@ -10,12 +10,13 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import kotlin.coroutines.cancellation.CancellationException
 
 abstract class AbstractMySqlGisTest: AbstractExposedTest() {
 
     companion object: KLogging() {
         @JvmStatic
-        val mysqlContainer: MySQL8Server = MySQL8Server.Launcher.mysql
+        val mysqlContainer: MySQL8Server by lazy { MySQL8Server.Launcher.mysql }
 
         @JvmStatic
         val db: Database by lazy {
@@ -36,11 +37,12 @@ abstract class AbstractMySqlGisTest: AbstractExposedTest() {
      */
     protected fun withGeoTables(vararg tables: Table, statement: JdbcTransaction.() -> Unit) {
         transaction(db) {
-            runCatching { SchemaUtils.drop(*tables) }
-                .onFailure { e ->
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    log.debug(e) { "테이블 사전 삭제 실패 (무시됨): ${e.message}" }
-                }
+            runCatching {
+                SchemaUtils.drop(*tables)
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                log.debug(e) { "테이블 사전 삭제 실패 (무시됨): ${e.message}" }
+            }
             SchemaUtils.create(*tables)
         }
         try {
@@ -49,11 +51,12 @@ abstract class AbstractMySqlGisTest: AbstractExposedTest() {
             }
         } finally {
             transaction(db) {
-                runCatching { SchemaUtils.drop(*tables) }
-                    .onFailure { e ->
-                        if (e is kotlinx.coroutines.CancellationException) throw e
-                        log.warn(e) { "테이블 정리 실패: ${e.message}" }
-                    }
+                runCatching {
+                    SchemaUtils.drop(*tables)
+                }.onFailure { e ->
+                    if (e is CancellationException) throw e
+                    log.warn(e) { "테이블 정리 실패: ${e.message}" }
+                }
             }
         }
     }

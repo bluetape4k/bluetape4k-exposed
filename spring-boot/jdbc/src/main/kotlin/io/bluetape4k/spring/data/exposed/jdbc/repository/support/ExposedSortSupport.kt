@@ -15,5 +15,13 @@ internal fun toSnakeCase(camelCase: String): String =
     camelCase.replace(Regex("([a-z])([A-Z])"), "$1_$2").lowercase()
 
 /** 기존 JDBC 내부 callers를 위한 이름 변환 호환 함수입니다. */
+internal fun String.snakeCase(): String =
+    replace(Regex("([a-z])([A-Z])"), "$1_$2").lowercase()
+
+/** 기존 JDBC 내부 callers를 위한 이름 변환 호환 함수입니다. */
 internal fun toCamelCase(snakeCase: String): String =
     snakeCase.replace(Regex("_([a-zA-Z])")) { match -> match.groupValues[1].uppercase() }
+
+/** 기존 JDBC 내부 callers를 위한 이름 변환 호환 함수입니다. */
+internal fun String.camelCase(): String =
+    replace(Regex("_([a-zA-Z])")) { match -> match.groupValues[1].uppercase() }

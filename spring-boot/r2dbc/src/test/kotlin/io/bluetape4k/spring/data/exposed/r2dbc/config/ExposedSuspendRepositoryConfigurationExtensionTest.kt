@@ -2,6 +2,8 @@ package io.bluetape4k.spring.data.exposed.r2dbc.config
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.EnableExposedR2dbcRepositories
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.ExposedR2dbcRepositoriesRegistrar
 import io.bluetape4k.spring.data.exposed.r2dbc.repository.config.ExposedSuspendRepositoryConfigurationExtension
@@ -17,6 +19,8 @@ import org.springframework.data.repository.config.AnnotationRepositoryConfigurat
 
 class ExposedSuspendRepositoryConfigurationExtensionTest {
 
+    companion object: KLogging()
+
     @Test
     @Suppress("DEPRECATION")
     fun `registrar rejects custom transactionManagerRef before factory registration`() {
@@ -27,6 +31,7 @@ class ExposedSuspendRepositoryConfigurationExtensionTest {
                 setEnvironment(context.environment)
             }
 
+            log.debug { "registrar=$registrar" }
             assertFailsWith<IllegalArgumentException> {
                 registrar.registerBeanDefinitions(
                     AnnotationMetadata.introspect(CustomManagerRegistrarConfig::class.java),
@@ -48,25 +53,25 @@ class ExposedSuspendRepositoryConfigurationExtensionTest {
 
     @Test
     fun `default transactionManagerRef remains accepted for ABI compatibility`() {
-        val source = configurationSource(DefaultManagerConfig::class.java)
+        val source = configurationSource<DefaultManagerConfig>()
         val builder = BeanDefinitionBuilder.genericBeanDefinition(Any::class.java)
 
-        ExposedSuspendRepositoryConfigurationExtension().postProcess(builder, source)
+        ExposedSuspendRepositoryConfigurationExtension.Default.postProcess(builder, source)
     }
 
     @Test
     fun `custom transactionManagerRef is rejected because R2DBC selects database explicitly`() {
-        val source = configurationSource(CustomManagerConfig::class.java)
+        val source = configurationSource<CustomManagerConfig>()
         val builder = BeanDefinitionBuilder.genericBeanDefinition(Any::class.java)
 
         assertFailsWith<IllegalArgumentException> {
-            ExposedSuspendRepositoryConfigurationExtension().postProcess(builder, source)
+            ExposedSuspendRepositoryConfigurationExtension.Default.postProcess(builder, source)
         }
     }
 
-    private fun configurationSource(configurationClass: Class<*>): AnnotationRepositoryConfigurationSource =
+    private inline fun <reified T: Any> configurationSource(): AnnotationRepositoryConfigurationSource =
         AnnotationRepositoryConfigurationSource(
-            AnnotationMetadata.introspect(configurationClass),
+            AnnotationMetadata.introspect(T::class.java),
             EnableExposedR2dbcRepositories::class.java,
             DefaultResourceLoader(),
             StandardEnvironment(),

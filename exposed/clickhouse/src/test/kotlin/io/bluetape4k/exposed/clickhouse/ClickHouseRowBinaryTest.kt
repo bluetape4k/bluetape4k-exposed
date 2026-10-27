@@ -2,7 +2,11 @@ package io.bluetape4k.exposed.clickhouse
 
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeFalse
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.exposed.clickhouse.support.RowBinaryConnectionProviderFixture
+import io.bluetape4k.logging.KLogging
+import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
 import java.sql.SQLFeatureNotSupportedException
@@ -16,9 +20,11 @@ import java.sql.Statement
  */
 class ClickHouseRowBinaryTest {
 
+    companion object: KLogging()
+
     @Test
     fun `options default to disabled and reject invalid flush bounds`() {
-        ClickHouseRowBinaryOptions().enabled shouldBeEqualTo false
+        ClickHouseRowBinaryOptions().enabled.shouldBeFalse()
         ClickHouseRowBinaryOptions(maxRowsPerFlush = 1).maxRowsPerFlush shouldBeEqualTo 1
 
         assertFailsWith<IllegalArgumentException> { ClickHouseRowBinaryOptions(maxRowsPerFlush = 0) }
@@ -32,8 +38,8 @@ class ClickHouseRowBinaryTest {
         val rowBinary = fixture.open(rowBinaryEnabled = true)
         val jdbc = fixture.open(rowBinaryEnabled = false)
 
-        fixture.profileOf(rowBinary) shouldBeEqualTo true
-        fixture.profileOf(jdbc) shouldBeEqualTo false
+        fixture.profileOf(rowBinary).shouldBeTrue()
+        fixture.profileOf(jdbc).shouldBeFalse()
         fixture.openedProfiles shouldBeEqualTo listOf(true, false)
         fixture.distinctConnections()
 
@@ -50,9 +56,14 @@ class ClickHouseRowBinaryTest {
         )
 
         val error = assertFailsWith<ClickHouseRowBinaryExecutor.UnsupportedConfiguration> {
-            executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+            executor.executeBatch(
+                "INSERT INTO events VALUES (?)",
+                listOf(
+                    Row { it.setInt(1, 1) }
+                )
+            )
         }
-
+        log.debug { "error=$error" }
         error.reasonCode shouldBeEqualTo "PROVIDER_ABSENT"
     }
 
@@ -72,10 +83,11 @@ class ClickHouseRowBinaryTest {
             ),
         )
 
+        log.debug { "result=$result" }
         result.path shouldBeEqualTo ClickHouseBatchPath.ROW_BINARY
         result.updateCounts shouldBeEqualTo listOf(1, 1)
         result.acceptedCount shouldBeEqualTo 2
-        result.acceptedCountMayBeIncomplete shouldBeEqualTo false
+        result.acceptedCountMayBeIncomplete.shouldBeFalse()
         fixture.openedProfiles shouldBeEqualTo listOf(true)
         fixture.assertClosedExactlyOnce()
     }
@@ -93,9 +105,10 @@ class ClickHouseRowBinaryTest {
             listOf(Row { it.setInt(1, 1) }),
         )
 
+        log.debug { "result=$result" }
         result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
         fixture.openedProfiles shouldBeEqualTo listOf(false)
-        fixture.fallbackEvents.single().beforeFirstByte shouldBeEqualTo true
+        fixture.fallbackEvents.single().beforeFirstByte.shouldBeTrue()
         fixture.fallbackEvents.single().reasonCode shouldBeEqualTo "INSERT_SELECT"
     }
 
@@ -108,10 +121,13 @@ class ClickHouseRowBinaryTest {
             "INSERT INTO events (id) VALUES (?), (?)",
             listOf(Row { it.setInt(1, 1) }),
         )
+        log.debug { "multiple=$multiple" }
+
         val function = executor.executeBatch(
             "INSERT INTO events (created_at) VALUES (toDate(?))",
             listOf(Row { it.setString(1, "2026-01-01") }),
         )
+        log.debug { "function=$function" }
 
         multiple.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
         function.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
@@ -127,7 +143,13 @@ class ClickHouseRowBinaryTest {
         )
         val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
 
-        val result = executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+        val result = executor.executeBatch(
+            "INSERT INTO events VALUES (?)",
+            listOf(
+                Row { it.setInt(1, 1) }
+            )
+        )
+        log.debug { "result=$result" }
 
         result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
         result.updateCounts shouldBeEqualTo listOf(1)
@@ -144,7 +166,13 @@ class ClickHouseRowBinaryTest {
         )
         val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
 
-        val result = executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+        val result = executor.executeBatch(
+            "INSERT INTO events VALUES (?)",
+            listOf(
+                Row { it.setInt(1, 1) }
+            )
+        )
+        log.debug { "result=$result" }
 
         result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
         fixture.openedProfiles shouldBeEqualTo listOf(true, false)
@@ -164,8 +192,11 @@ class ClickHouseRowBinaryTest {
 
         val result = executor.executeBatch(
             "INSERT INTO events VALUES (?)",
-            (1..3).map { id -> Row { it.setInt(1, id) } },
+            List(3) { id ->
+                Row { it.setInt(1, id + 1) }
+            },
         )
+        log.debug { "result=$result" }
 
         result.updateCounts shouldBeEqualTo listOf(1, 1, 1)
         fixture.openedProfiles shouldBeEqualTo listOf(true)
@@ -179,15 +210,26 @@ class ClickHouseRowBinaryTest {
         val executor = ClickHouseRowBinaryExecutor(fixture, ClickHouseRowBinaryOptions(enabled = true))
 
         val thrown = assertFailsWith<SQLException> {
-            executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 1) }))
+            executor.executeBatch(
+                "INSERT INTO events VALUES (?)",
+                listOf(
+                    Row { it.setInt(1, 1) }
+                )
+            )
         }
 
         thrown shouldBeEqualTo original
         fixture.openedProfiles shouldBeEqualTo listOf(true)
         fixture.fallbackEvents shouldBeEqualTo emptyList()
         fixture.assertClosedExactlyOnce()
+
         assertFailsWith<ClickHouseRowBinaryExecutor.UnsupportedConfiguration> {
-            executor.executeBatch("INSERT INTO events VALUES (?)", listOf(Row { it.setInt(1, 2) }))
+            executor.executeBatch(
+                "INSERT INTO events VALUES (?)",
+                listOf(
+                    Row { it.setInt(1, 2) }
+                )
+            )
         }
     }
 
@@ -203,6 +245,7 @@ class ClickHouseRowBinaryTest {
             "INSERT INTO events (id) VALUES (?)",
             listOf(Row { it.setInt(1, 1) }),
         )
+        log.debug { "result=$result" }
 
         result.path shouldBeEqualTo ClickHouseBatchPath.JDBC_FALLBACK
         fixture.openedProfiles shouldBeEqualTo listOf(false)
@@ -251,11 +294,12 @@ class ClickHouseRowBinaryTest {
                 Row { it.setInt(1, 3) },
             ),
         )
+        log.debug { "result=$result" }
 
         result.path shouldBeEqualTo ClickHouseBatchPath.ROW_BINARY
         result.updateCounts shouldBeEqualTo listOf(1, Statement.SUCCESS_NO_INFO, Statement.EXECUTE_FAILED)
         result.acceptedCount shouldBeEqualTo 1
-        result.acceptedCountMayBeIncomplete shouldBeEqualTo true
+        result.acceptedCountMayBeIncomplete.shouldBeTrue()
     }
 
     @Test
@@ -266,7 +310,11 @@ class ClickHouseRowBinaryTest {
             options = ClickHouseRowBinaryOptions(enabled = true),
         )
 
-        val result = executor.executeBatch("INSERT INTO events VALUES (?)", emptyList())
+        val result = executor.executeBatch(
+            "INSERT INTO events VALUES (?)",
+            emptyList()
+        )
+        log.debug { "result=$result" }
 
         result.updateCounts shouldBeEqualTo emptyList()
         result.acceptedCount shouldBeEqualTo 0

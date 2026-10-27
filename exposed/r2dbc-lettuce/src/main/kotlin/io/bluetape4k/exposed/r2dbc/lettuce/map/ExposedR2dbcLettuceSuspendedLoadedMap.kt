@@ -7,6 +7,8 @@ import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
 import io.bluetape4k.redis.lettuce.map.SuspendedMapLoader
 import io.bluetape4k.redis.lettuce.map.SuspendedMapWriter
 import io.bluetape4k.redis.lettuce.map.WriteMode
+import io.bluetape4k.redis.lettuce.sequence
+import io.bluetape4k.support.closeSafe
 import io.bluetape4k.support.requirePositiveNumber
 import io.lettuce.core.RedisClient
 import io.lettuce.core.ScanArgs
@@ -32,9 +34,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.Closeable
+import kotlin.time.toKotlinDuration
 
 class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
     private val client: RedisClient,
@@ -42,7 +44,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
     private val writer: SuspendedMapWriter<K, V>? = null,
     private val config: LettuceCacheConfig = LettuceCacheConfig.READ_WRITE_THROUGH,
     private val keySerializer: (K) -> String = { it.toString() },
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     valueCodec: RedisCodec<String, V>,
 ): Closeable {
 
@@ -146,9 +148,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         entries.forEach { (key, value) ->
             val result = channel.trySend(Triple(key, value, 0))
             if (result.isFailure) {
-                throw IllegalStateException(
-                    "Write-behind channel is full (capacity=${config.writeBehindQueueCapacity})"
-                )
+                error("Write-behind channel is full (capacity=${config.writeBehindQueueCapacity})")
             }
         }
     }
@@ -164,7 +164,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
                     bulkCommands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
                 }
                 bulk.flushCommands()
-                futures.forEach { it.await() }
+                futures.sequence().await()
             } finally {
                 bulk.setAutoFlushCommands(true)
             }
@@ -307,30 +307,33 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
     }
 
     override fun close() {
-        writeBehindChannel?.close()
-        try {
-            writeBehindJob?.let { job ->
-                runBlocking(Dispatchers.IO) {
-                    withTimeout(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
-                        job.join()
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            log.warn(e) { "Write-behind job drain timed out or failed during close()" }
-        } finally {
-            ownedJob.cancel()
-            if (lazyStrConnection.isInitialized()) lazyStrConnection.value.close()
-            if (bulkConnection.isInitialized()) bulkConnection.value.close()
-            connection.close()
+        runBlocking {
+            suspendClose()
         }
+//        writeBehindChannel?.close()
+//        try {
+//            writeBehindJob?.let { job ->
+//                runBlocking(Dispatchers.IO) {
+//                    withTimeout(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
+//                        job.join()
+//                    }
+//                }
+//            }
+//        } catch (e: Exception) {
+//            log.warn(e) { "Write-behind job drain timed out or failed during close()" }
+//        } finally {
+//            ownedJob.cancel()
+//            if (lazyStrConnection.isInitialized()) lazyStrConnection.value.closeSafe()
+//            if (bulkConnection.isInitialized()) bulkConnection.value.closeSafe()
+//            connection.closeSafe()
+//        }
     }
 
     suspend fun suspendClose() {
         writeBehindChannel?.close()
         try {
             writeBehindJob?.let { job ->
-                val drained = withTimeoutOrNull(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
+                val drained = withTimeoutOrNull(config.writeBehindShutdownTimeout.toKotlinDuration()) {
                     job.join()
                     true
                 } ?: false
@@ -343,9 +346,9 @@ class ExposedR2dbcLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } finally {
             withContext(NonCancellable) {
                 ownedJob.cancel()
-                if (lazyStrConnection.isInitialized()) lazyStrConnection.value.close()
-                if (bulkConnection.isInitialized()) bulkConnection.value.close()
-                connection.close()
+                if (lazyStrConnection.isInitialized()) lazyStrConnection.value.closeSafe()
+                if (bulkConnection.isInitialized()) bulkConnection.value.closeSafe()
+                connection.closeSafe()
             }
         }
     }

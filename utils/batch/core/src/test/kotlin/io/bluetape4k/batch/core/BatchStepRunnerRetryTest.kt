@@ -1,5 +1,8 @@
 package io.bluetape4k.batch.core
 
+import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.batch.api.BatchReader
 import io.bluetape4k.batch.api.BatchStatus
 import io.bluetape4k.batch.api.BatchWriter
@@ -9,10 +12,6 @@ import io.bluetape4k.batch.api.StepReport
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.workflow.api.RetryPolicy
 import kotlinx.coroutines.test.runTest
-import io.bluetape4k.assertions.shouldBe
-import io.bluetape4k.assertions.shouldBeEqualTo
-import io.bluetape4k.assertions.shouldBeGreaterOrEqualTo
-import io.bluetape4k.assertions.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
@@ -96,7 +95,7 @@ class BatchStepRunnerRetryTest {
     fun `retry policy 가 maxAttempts 도달까지 재시도한다`() = runTest(timeout = 30.seconds) {
         val reader = ListBatchReader(listOf("a", "b"))
         val writer = AlwaysFailWriter<String>()
-        val step = BatchStep<String, String>(
+        val step = BatchStep(
             name = "retryMaxAttempts",
             chunkSize = 2,
             reader = reader,
@@ -110,7 +109,7 @@ class BatchStepRunnerRetryTest {
 
         // writer.write() 가 정확히 maxAttempts(=3) 번 호출되어야 한다.
         writer.callCount.get() shouldBeEqualTo 3
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
     }
 
     // ─── 2. exponential backoff 가 적용된다 ───────────────────────────────────
@@ -128,7 +127,7 @@ class BatchStepRunnerRetryTest {
     fun `retry policy 의 exponential backoff 가 적용된다`() = runTest(timeout = 30.seconds) {
         val reader = ListBatchReader(listOf("a"))
         val writer = AlwaysFailWriter<String>()
-        val step = BatchStep<String, String>(
+        val step = BatchStep(
             name = "retryBackoff",
             chunkSize = 1,
             reader = reader,
@@ -161,7 +160,7 @@ class BatchStepRunnerRetryTest {
     fun `retry 후 최종 실패 시 step status 는 FAILED`() = runTest(timeout = 30.seconds) {
         val reader = ListBatchReader(listOf("a", "b"))
         val writer = AlwaysFailWriter<String>()
-        val step = BatchStep<String, String>(
+        val step = BatchStep(
             name = "retryFailed",
             chunkSize = 2,
             reader = reader,
@@ -173,7 +172,7 @@ class BatchStepRunnerRetryTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.FAILED
+        report.status shouldBeEqualTo BatchStatus.FAILED
         report.error.shouldNotBeNull()
         report.writeCount shouldBeEqualTo 0L
     }
@@ -192,7 +191,7 @@ class BatchStepRunnerRetryTest {
         val items = listOf("a", "b", "c")
         val reader = ListBatchReader(items)
         val writer = FailThenSucceedWriter<String>(failCount = 2)
-        val step = BatchStep<String, String>(
+        val step = BatchStep(
             name = "retrySuccess",
             chunkSize = 3,
             reader = reader,
@@ -204,7 +203,7 @@ class BatchStepRunnerRetryTest {
 
         val report = runStep(step)
 
-        report.status shouldBe BatchStatus.COMPLETED
+        report.status shouldBeEqualTo BatchStatus.COMPLETED
         report.writeCount shouldBeEqualTo items.size.toLong()
         writer.callCount.get() shouldBeEqualTo 3 // 2 failures + 1 success
         writer.collected shouldBeEqualTo items

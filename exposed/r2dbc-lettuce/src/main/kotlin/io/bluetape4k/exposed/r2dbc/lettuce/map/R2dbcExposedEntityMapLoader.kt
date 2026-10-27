@@ -71,28 +71,28 @@ class R2dbcExposedEntityMapLoader<ID: Any, E: Any>(
     /**
      * 테이블의 모든 PK를 [batchSize] 단위로 페이징하여 반환한다.
      */
-    override suspend fun loadAllIds(): List<ID> =
-        buildList {
-            val sourceTable = table
-            var offset = 0L
-            var lastId: ID? = null
-            var keysetSupported: Boolean? = null
-            while (true) {
-                val batch = loadR2dbcPage(sourceTable, batchSize, lastId, offset, keysetSupported)
-                addAll(batch)
-                if (batch.size < batchSize) break
+    override suspend fun loadAllIds(): List<ID> = buildList {
+        val sourceTable = table
+        var offset = 0L
+        var lastId: ID? = null
+        var keysetSupported: Boolean? = null
 
-                val currentLastId = batch.last()
-                if (keysetSupported == null) {
-                    keysetSupported = currentLastId.isKeysetScalar()
-                }
-                if (keysetSupported == true) {
-                    lastId = currentLastId
-                } else {
-                    offset += batch.size.toLong()
-                }
+        while (true) {
+            val batch = loadR2dbcPage(sourceTable, batchSize, lastId, offset, keysetSupported)
+            addAll(batch)
+            if (batch.size < batchSize) break
+
+            val currentLastId = batch.last()
+            if (keysetSupported == null) {
+                keysetSupported = currentLastId.isKeysetScalar()
+            }
+            if (keysetSupported == true) {
+                lastId = currentLastId
+            } else {
+                offset += batch.size.toLong()
             }
         }
+    }
 
     /**
      * 전체 PK를 page 단위 transaction으로 emit한다.
@@ -172,10 +172,10 @@ internal fun Any.isKeysetScalar(): Boolean =
                 is Byte, is Short, is Int, is Long, is Float, is Double,
                 is UByte, is UShort, is UInt, is ULong,
                 is java.math.BigDecimal, is java.math.BigInteger,
-                is String, is Char, is java.util.UUID,
+                is String, is Char, is java.util.UUID, is kotlin.uuid.Uuid,
                 is java.sql.Date, is java.sql.Time, is java.sql.Timestamp,
                      -> true
-                else -> javaClass.name.startsWith("java.time.")
+                else -> javaClass.name.startsWith("java.time.") || javaClass.name.startsWith("kotlin.time.")
             }
 
 @Suppress("UNCHECKED_CAST")

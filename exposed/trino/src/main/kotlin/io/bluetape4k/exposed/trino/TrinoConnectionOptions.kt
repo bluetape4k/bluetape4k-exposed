@@ -64,8 +64,8 @@ data class TrinoConnectionOptions(
 
 private fun validatePairs(name: String, values: Map<String, String>) {
     values.forEach { (key, value) ->
-        require(key.isNotBlank()) { "$name key must not be blank." }
-        require(value.isNotBlank()) { "$name value must not be blank for key '$key'." }
+        key.requireNotBlank { "$name key must not be blank." }
+        value.requireNotBlank { "$name value must not be blank for key '$key'." }
     }
 }
 

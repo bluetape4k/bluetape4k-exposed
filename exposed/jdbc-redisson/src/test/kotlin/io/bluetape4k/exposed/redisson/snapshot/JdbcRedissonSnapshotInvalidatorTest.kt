@@ -22,7 +22,9 @@ import io.bluetape4k.exposed.cache.snapshot.SnapshotStoreId
 import io.bluetape4k.exposed.cache.snapshot.snapshotCacheFailureBuffer
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
-import org.awaitility.Awaitility.await
+import org.awaitility.kotlin.atMost
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
 import org.junit.jupiter.api.Test
 import org.redisson.api.RFuture
 import org.redisson.api.RLocalCachedMap
@@ -38,7 +40,6 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.security.MessageDigest
-import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -50,6 +51,7 @@ import kotlin.collections.ArrayDeque
 import kotlin.reflect.KClass
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.time.Duration.Companion.seconds
 
 class JdbcRedissonSnapshotInvalidatorTest {
 
@@ -769,6 +771,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
     }
 
     @Test
+    @Suppress("ExplicitGarbageCollectionCall") // weak-reference retention 계약을 검증하려면 GC 힌트가 필요합니다.
     fun `never completing future retains no measured invalidation payload`() {
         val never = CompletableFuture<Long>()
         val map = RecordingLocalMap<Long>(retainSubmittedIds = false).thenReturn(rFuture(never))
@@ -782,7 +785,8 @@ class JdbcRedissonSnapshotInvalidatorTest {
 
         probe.completion.toCompletableFuture().isDone.shouldBeFalse()
         invalidator.quotaHealth() shouldBeEqualTo SnapshotInvalidationQuotaHealth(1, 1, 8, 8, 0, true)
-        await().atMost(Duration.ofSeconds(5)).until {
+
+        await atMost 5.seconds until {
             System.gc()
             probe.batch.get() == null && probe.measured.get() == null
         }

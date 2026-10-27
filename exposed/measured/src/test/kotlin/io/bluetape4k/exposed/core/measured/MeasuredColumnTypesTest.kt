@@ -18,6 +18,7 @@ import io.bluetape4k.measured.kiloWattHours
 import io.bluetape4k.measured.kilometers2
 import io.bluetape4k.measured.meters
 import io.bluetape4k.measured.watts
+import io.bluetape4k.support.asDouble
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -72,7 +73,7 @@ class MeasuredColumnTypesTest {
     @org.junit.jupiter.api.Test
     fun `MeasureColumnType 는 base unit 값으로 직렬화한다`() {
         val columnType = MeasureColumnType(Length.meters) { Measure(it, Length.meters) }
-        val encoded = columnType.notNullValueToDB(1.5.meters()) as Double
+        val encoded = columnType.notNullValueToDB(1.5.meters()).asDouble()
         encoded.shouldBeNear(1.5, 1e-10)
     }
 
@@ -86,7 +87,7 @@ class MeasuredColumnTypesTest {
     @org.junit.jupiter.api.Test
     fun `TemperatureColumnType 는 Kelvin 기준으로 변환한다`() {
         val columnType = TemperatureColumnType()
-        val encoded = columnType.notNullValueToDB(25.celsius()) as Double
+        val encoded = columnType.notNullValueToDB(25.celsius()).asDouble()
         encoded.shouldBeNear(298.15, 1e-10)
 
         val decoded = columnType.valueFromDB(encoded).shouldNotBeNull()
@@ -96,7 +97,7 @@ class MeasuredColumnTypesTest {
     @org.junit.jupiter.api.Test
     fun `TemperatureDeltaColumnType 는 Kelvin delta 기준으로 변환한다`() {
         val columnType = TemperatureDeltaColumnType()
-        val encoded = columnType.notNullValueToDB(10.celsiusDelta()) as Double
+        val encoded = columnType.notNullValueToDB(10.celsiusDelta()).asDouble()
         encoded.shouldBeNear(10.0, 1e-10)
 
         val decoded = columnType.valueFromDB(encoded).shouldNotBeNull()

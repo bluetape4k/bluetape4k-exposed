@@ -4,6 +4,8 @@ import io.bluetape4k.batch.api.BatchExecutionLeaseSnapshot
 import io.bluetape4k.batch.api.BatchJobRepository
 import io.bluetape4k.batch.api.JobExecution
 import io.bluetape4k.batch.api.StepExecution
+import io.bluetape4k.support.checkNotNull
+import io.bluetape4k.support.requireNotBlank
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -16,11 +18,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 
 /** lease를 잃은 뒤 write를 시작하지 않게 하는 runner 내부 예외. */
 internal class LeaseLostException(
     cause: Throwable? = null,
-) : RuntimeException("Batch execution lease was lost", cause)
+): RuntimeException("Batch execution lease was lost", cause)
 
 /** 테스트와 production에서 같은 monotonic deadline 계산을 사용하기 위한 clock seam. */
 internal fun interface BatchMonotonicClock {
@@ -45,7 +48,7 @@ internal class BatchLeaseGuard(
     initialJobExecution: JobExecution,
     initialStepExecution: StepExecution?,
     private val monotonicClock: BatchMonotonicClock = SYSTEM_BATCH_MONOTONIC_CLOCK,
-    private val pause: suspend (Long) -> Unit = { delay(it) },
+    private val pause: suspend (Long) -> Unit = { delay(it.milliseconds) },
     initialClaimStartedNanos: Long? = null,
 ) {
     private val timing = BatchLeaseCalculator.calculate(executionLease)
@@ -53,11 +56,13 @@ internal class BatchLeaseGuard(
     private val leaseNanos = timing.leaseMillis * NANOS_PER_MILLISECOND
     private var latestJobExecution = initialJobExecution
     private var latestStepExecution = initialStepExecution
+
     @Volatile
     private var diagnosticSnapshot = BatchExecutionLeaseSnapshot(initialJobExecution, initialStepExecution)
     private var jobDeadlineNanos = deadlineFrom(initialClaimStartedNanos ?: monotonicClock.nowNanos())
     private var stepDeadlineNanos = latestStepExecution?.let { jobDeadlineNanos }
     private val leaseLost = AtomicReference<LeaseLostException?>()
+
     @Volatile
     private var heartbeatCleanupTimedOut: Boolean = false
     private var heartbeatJob: Job? = null
@@ -70,7 +75,7 @@ internal class BatchLeaseGuard(
         check(repository.supportsLeaseRenewal) {
             "Batch lease guard requires a repository with lease renewal support"
         }
-        require(ownerId.isNotBlank()) { "ownerId must not be blank" }
+        ownerId.requireNotBlank { "ownerId must not be blank" }
     }
 
     /** write/checkpoint 직전의 현재 snapshot을 확인하고 필요하면 atomic renewal을 수행한다. */
@@ -106,17 +111,15 @@ internal class BatchLeaseGuard(
         if (remainingNanos(minDeadlineNanos()) <= timing.safeMarginMillis * NANOS_PER_MILLISECOND) {
             renewLocked()
         }
-        val current = checkNotNull(latestStepExecution) {
-            "Checkpoint save requires an active Step lease"
-        }
+        val current = latestStepExecution.checkNotNull { "Checkpoint save requires an active Step lease" }
         val updated = boundedRepositoryCall {
             repository.saveCheckpointAndReturn(current, checkpoint)
         }
         check(
             updated.id == current.id &&
-                updated.jobExecutionId == latestJobExecution.id &&
-                updated.ownerId == ownerId &&
-                updated.version > current.version,
+                    updated.jobExecutionId == latestJobExecution.id &&
+                    updated.ownerId == ownerId &&
+                    updated.version > current.version,
         ) {
             "Checkpoint update does not belong to the current lease"
         }
@@ -146,10 +149,11 @@ internal class BatchLeaseGuard(
         if (heartbeatCleanupTimedOut) return
         withContext(kotlinx.coroutines.NonCancellable) {
             if (heartbeatCleanupTimedOut) return@withContext
-            val stopped = withTimeoutOrNull(timing.repositoryTimeoutMillis) {
+            val stopped = withTimeoutOrNull(timeMillis = timing.repositoryTimeoutMillis) {
                 stopHeartbeatInCurrentContext()
                 true
             } ?: false
+
             if (!stopped) {
                 heartbeatCleanupTimedOut = true
                 failLease()
@@ -193,11 +197,12 @@ internal class BatchLeaseGuard(
     ) = mutex.withLock {
         ensureLeaseAvailable()
         val current = latestStepExecution
-        check(current == null ||
-            (updated.id == current.id &&
-                updated.jobExecutionId == latestJobExecution.id &&
-                updated.ownerId == ownerId &&
-                updated.version >= current.version)
+        check(
+            current == null ||
+                    (updated.id == current.id &&
+                            updated.jobExecutionId == latestJobExecution.id &&
+                            updated.ownerId == ownerId &&
+                            updated.version >= current.version)
         ) {
             "StepExecution update does not belong to the current lease"
         }
@@ -211,12 +216,12 @@ internal class BatchLeaseGuard(
         complete: suspend (StepExecution) -> Unit,
     ) = mutex.withLock {
         ensureLeaseAvailable()
-        val execution = checkNotNull(latestStepExecution) {
-            "Step completion requires an active Step lease"
-        }
+        val execution = latestStepExecution.checkNotNull { "Step completion requires an active Step lease" }
+
         boundedRepositoryCall {
             complete(execution)
         }
+
         latestStepExecution = null
         stepDeadlineNanos = null
         refreshDiagnosticSnapshot()
@@ -235,8 +240,8 @@ internal class BatchLeaseGuard(
         ensureLeaseAvailable()
         check(
             updated.id == latestJobExecution.id &&
-                updated.ownerId == ownerId &&
-                updated.version >= latestJobExecution.version,
+                    updated.ownerId == ownerId &&
+                    updated.version >= latestJobExecution.version,
         ) {
             "JobExecution update does not belong to the current lease"
         }
@@ -261,7 +266,7 @@ internal class BatchLeaseGuard(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> boundedRepositoryCall(block: suspend () -> T): T {
         val result = try {
-            withTimeoutOrNull(timing.repositoryTimeoutMillis) {
+            withTimeoutOrNull(timeMillis = timing.repositoryTimeoutMillis) {
                 CompletedRepositoryCall(block())
             } ?: failLease()
         } catch (cancellation: CancellationException) {
@@ -278,7 +283,7 @@ internal class BatchLeaseGuard(
     private suspend fun renewLocked() {
         val callStartedNanos = monotonicClock.nowNanos()
         val renewed = try {
-            withTimeoutOrNull(timing.repositoryTimeoutMillis) {
+            withTimeoutOrNull(timeMillis = timing.repositoryTimeoutMillis) {
                 repository.renewExecutionLeases(
                     latestJobExecution,
                     latestStepExecution,
@@ -293,13 +298,13 @@ internal class BatchLeaseGuard(
 
         if (renewed == null) failLease()
         if (renewed.jobExecution.ownerId != ownerId ||
-            renewed.stepExecution?.ownerId?.let { it != ownerId } == true
-        ) {
+            renewed.stepExecution?.ownerId?.let { it != ownerId } == true) {
             failLease()
         }
         latestJobExecution = renewed.jobExecution
         latestStepExecution = renewed.stepExecution
         refreshDiagnosticSnapshot()
+
         val deadline = deadlineFrom(callStartedNanos)
         jobDeadlineNanos = deadline
         stepDeadlineNanos = latestStepExecution?.let { deadline }

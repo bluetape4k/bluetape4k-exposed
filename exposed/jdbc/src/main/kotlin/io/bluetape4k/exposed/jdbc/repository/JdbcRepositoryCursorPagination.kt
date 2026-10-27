@@ -30,8 +30,9 @@ fun <ID: Comparable<ID>, E: Any> JdbcRepository<ID, E>.findCursorPage(
 
     pageSize.requireInRange(1, MAX_CURSOR_PAGE_SIZE, "pageSize")
 
-    val basePredicate = predicate()
-    val wherePredicate = cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
+    val basePredicate: Op<Boolean> = predicate()
+    val wherePredicate: Op<Boolean> =
+        cursor?.let { basePredicate and table.cursorBoundary(it, sortOrder) } ?: basePredicate
 
     val rows = table
         .selectAll()

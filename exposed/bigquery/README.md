@@ -11,9 +11,8 @@ A module that generates SQL using JetBrains Exposed DSL and executes it via the 
 
 -
 
-**BigQueryContext**: Converts Exposed DSL to SQL through an internal H2 PostgreSQL-mode database, then executes the SQL through BigQuery `jobs.query`.
-    - Supports SELECT, INSERT, UPDATE, DELETE, and CREATE TABLE DDL.
-    - Provides synchronous, suspend, and Flow result-consumption APIs.
+**BigQueryContext**: Converts Exposed DSL to SQL through an internal H2 PostgreSQL-mode database, then executes the SQL through BigQuery `jobs.query`. - Supports SELECT, INSERT, UPDATE, DELETE, and CREATE TABLE DDL. - Provides synchronous, suspend, and Flow result-consumption APIs.
+
 - **BigQueryQueryExecutor**: Wraps Exposed `Query` objects and follows BigQuery `pageToken` pagination.
 - **BigQueryResultRow**: Reads REST response rows through Exposed column references.
     - Column lookup is case-insensitive.

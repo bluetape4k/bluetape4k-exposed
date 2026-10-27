@@ -4,10 +4,14 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
 import io.bluetape4k.logging.KLogging
+import io.bluetape4k.support.requireNotNull
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -20,17 +24,13 @@ import org.jetbrains.exposed.v1.jdbc.update
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
 
     companion object: KLogging() {
-        private const val FINGERPRINT_A =
-            "sha256:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
-
-        private const val FINGERPRINT_B =
-            "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
-
+        private const val FINGERPRINT_A = "sha256:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+        private const val FINGERPRINT_B = "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
         private const val STATE_IN_FLIGHT = "IN_FLIGHT"
         private const val STATE_COMPLETED = "COMPLETED"
     }
@@ -47,7 +47,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
                 val outcomes = listOf("owner-a", "owner-b")
                     .map { owner ->
                         executor.submit<IdempotencyAcquireResult> {
-                            barrier.await(10, TimeUnit.SECONDS)
+                            barrier.await(10.seconds)
                             fixture.acquire(
                                 scope = "order-command",
                                 key = "idem-concurrent",
@@ -58,14 +58,14 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
                         }
                     }
                     .map { future ->
-                        future.get(20, TimeUnit.SECONDS)
+                        future.get(20.seconds)
                     }
 
                 outcomes.count { it is IdempotencyAcquireResult.Acquired } shouldBeEqualTo 1
                 outcomes.count { it is IdempotencyAcquireResult.InFlight } shouldBeEqualTo 1
             } finally {
                 executor.shutdownNow()
-                executor.awaitTermination(10, TimeUnit.SECONDS)
+                executor.awaitTermination(10.seconds)
             }
         }
     }
@@ -75,11 +75,21 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
         withTables(TestDB.POSTGRESQL, IdempotencyRecords) {
             val fixture = JdbcIdempotencyFixture(db)
 
-            fixture.acquire("order-command", "idem-conflict", FINGERPRINT_A, "owner-a", 1_000L)
-                .shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
+            fixture.acquire(
+                "order-command",
+                "idem-conflict",
+                FINGERPRINT_A,
+                "owner-a",
+                1_000L
+            ).shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
 
-            fixture.acquire("order-command", "idem-conflict", FINGERPRINT_B, "owner-b", 1_001L)
-                .shouldBeInstanceOf<IdempotencyAcquireResult.FingerprintConflict>()
+            fixture.acquire(
+                "order-command",
+                "idem-conflict",
+                FINGERPRINT_B,
+                "owner-b",
+                1_001L
+            ).shouldBeInstanceOf<IdempotencyAcquireResult.FingerprintConflict>()
         }
     }
 
@@ -88,27 +98,61 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
         withTables(TestDB.POSTGRESQL, IdempotencyRecords) {
             val fixture = JdbcIdempotencyFixture(db)
 
-            fixture.acquire("order-command", "idem-finalize", FINGERPRINT_A, "owner-a", 1_000L)
-                .shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
-            fixture.finalize("order-command", "idem-finalize", "owner-b", "result-201", 1_100L)
-                .shouldBeFalse()
-            fixture.finalize("order-command", "idem-finalize", "owner-a", "result-201", 1_100L)
-                .shouldBeTrue()
-            fixture.finalize("order-command", "idem-finalize", "owner-a", "result-overwrite", 1_150L)
-                .shouldBeFalse()
+            fixture.acquire(
+                "order-command",
+                "idem-finalize",
+                FINGERPRINT_A,
+                "owner-a",
+                1_000L
+            ).shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
 
-            fixture.acquire("order-command", "idem-finalize", FINGERPRINT_A, "owner-c", 1_200L)
-                .shouldBeEqualTo(IdempotencyAcquireResult.Completed("result-201"))
+            fixture.finalize(
+                "order-command",
+                "idem-finalize",
+                "owner-b",
+                "result-201",
+                1_100L
+            ).shouldBeFalse()
+
+            fixture.finalize(
+                "order-command",
+                "idem-finalize",
+                "owner-a",
+                "result-201",
+                1_100L
+            ).shouldBeTrue()
+
+            fixture.finalize(
+                "order-command",
+                "idem-finalize",
+                "owner-a",
+                "result-overwrite",
+                1_150L
+            ).shouldBeFalse()
+
+            fixture.acquire(
+                "order-command",
+                "idem-finalize",
+                FINGERPRINT_A,
+                "owner-c",
+                1_200L
+            ).shouldBeEqualTo(IdempotencyAcquireResult.Completed("result-201"))
         }
     }
 
     @Test
+    @Suppress("LongMethod") // interrupted-owner 재진입 정책의 전체 상태 전이를 한 시나리오로 고정합니다.
     fun `interrupted owner is diagnosed and replaced only by stale-record policy`() {
         withTables(TestDB.POSTGRESQL, IdempotencyRecords) {
             val fixture = JdbcIdempotencyFixture(db)
 
-            fixture.acquire("order-command", "idem-retry", FINGERPRINT_A, "owner-a", 1_000L)
-                .shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
+            fixture.acquire(
+                "order-command",
+                "idem-retry",
+                FINGERPRINT_A,
+                "owner-a",
+                1_000L
+            ).shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
 
             fixture.diagnose(
                 scope = "order-command",
@@ -126,8 +170,13 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
                 nowEpochMillis = 1_499L,
             ).shouldBeInstanceOf<IdempotencyAcquireResult.InFlight>()
 
-            fixture.finalize("order-command", "idem-retry", "owner-b", "premature-result", 1_499L)
-                .shouldBeFalse()
+            fixture.finalize(
+                "order-command",
+                "idem-retry",
+                "owner-b",
+                "premature-result",
+                1_499L
+            ).shouldBeFalse()
 
             val interrupted = fixture.diagnose(
                 scope = "order-command",
@@ -136,6 +185,7 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
                 staleAfterMillis = 500L,
             )
             interrupted.shouldBeInstanceOf<IdempotencyDiagnosis.Interrupted>()
+
             interrupted.metricLabels() shouldBeEqualTo mapOf(
                 "state" to "in_flight",
                 "policy" to "retry_after_timeout",
@@ -159,16 +209,25 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
                 nowEpochMillis = 1_500L,
             ).shouldBeInstanceOf<IdempotencyAcquireResult.Acquired>()
 
-            fixture.finalize("order-command", "idem-retry", "owner-a", "stale-result", 2_100L)
-                .shouldBeFalse()
-            fixture.finalize("order-command", "idem-retry", "owner-b", "result-202", 2_100L)
-                .shouldBeTrue()
+            fixture.finalize(
+                "order-command",
+                "idem-retry",
+                "owner-a",
+                "stale-result",
+                2_100L
+            ).shouldBeFalse()
+
+            fixture.finalize(
+                "order-command",
+                "idem-retry",
+                "owner-b",
+                "result-202",
+                2_100L
+            ).shouldBeTrue()
         }
     }
 
-    private class JdbcIdempotencyFixture(
-        private val database: Database,
-    ) {
+    private class JdbcIdempotencyFixture(private val database: Database) {
 
         fun acquire(
             scope: String,
@@ -202,22 +261,21 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
             ownerToken: String,
             resultReference: String,
             nowEpochMillis: Long,
-        ): Boolean =
-            transaction(database) {
-                maxAttempts = 1
-                IdempotencyRecords.update(
-                    where = {
-                        (IdempotencyRecords.scope eq scope) and
-                                (IdempotencyRecords.key eq key) and
-                                (IdempotencyRecords.ownerToken eq ownerToken) and
-                                (IdempotencyRecords.state eq STATE_IN_FLIGHT)
-                    }
-                ) { row ->
-                    row[IdempotencyRecords.state] = STATE_COMPLETED
-                    row[IdempotencyRecords.resultReference] = resultReference
-                    row[updatedAtEpochMillis] = nowEpochMillis
-                } == 1
-            }
+        ): Boolean = transaction(database) {
+            maxAttempts = 1
+            IdempotencyRecords.update(
+                where = {
+                    (IdempotencyRecords.scope eq scope) and
+                            (IdempotencyRecords.key eq key) and
+                            (IdempotencyRecords.ownerToken eq ownerToken) and
+                            (IdempotencyRecords.state eq STATE_IN_FLIGHT)
+                }
+            ) { row ->
+                row[IdempotencyRecords.state] = STATE_COMPLETED
+                row[IdempotencyRecords.resultReference] = resultReference
+                row[updatedAtEpochMillis] = nowEpochMillis
+            } == 1
+        }
 
         fun diagnose(
             scope: String,
@@ -241,13 +299,14 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
             staleBeforeEpochMillis: Long,
             nowEpochMillis: Long,
         ): IdempotencyAcquireResult {
-            val before = load(scope, key) ?: return acquire(
-                scope,
-                key,
-                fingerprint,
-                newOwnerToken,
-                nowEpochMillis,
-            )
+            val before = load(scope, key)
+                ?: return acquire(
+                    scope,
+                    key,
+                    fingerprint,
+                    newOwnerToken,
+                    nowEpochMillis,
+                )
             if (before.fingerprint != fingerprint) {
                 return IdempotencyAcquireResult.FingerprintConflict
             }
@@ -274,36 +333,37 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
             }
         }
 
-        private fun load(scope: String, key: String): IdempotencySnapshot? =
-            transaction(database) {
-                maxAttempts = 1
-                IdempotencyRecords.selectAll()
-                    .where {
-                        (IdempotencyRecords.scope eq scope) and
-                                (IdempotencyRecords.key eq key)
-                    }
-                    .singleOrNull()
-                    ?.let { row ->
-                        IdempotencySnapshot(
-                            fingerprint = row[IdempotencyRecords.fingerprint],
-                            state = row[IdempotencyRecords.state],
-                            resultReference = row[IdempotencyRecords.resultReference],
-                            updatedAtEpochMillis = row[IdempotencyRecords.updatedAtEpochMillis],
-                        )
-                    }
-            }
+        private fun load(
+            scope: String,
+            key: String,
+        ): IdempotencySnapshot? = transaction(database) {
+            maxAttempts = 1
+            IdempotencyRecords.selectAll()
+                .where {
+                    (IdempotencyRecords.scope eq scope) and
+                            (IdempotencyRecords.key eq key)
+                }
+                .singleOrNull()
+                ?.let { row ->
+                    IdempotencySnapshot(
+                        fingerprint = row[IdempotencyRecords.fingerprint],
+                        state = row[IdempotencyRecords.state],
+                        resultReference = row[IdempotencyRecords.resultReference],
+                        updatedAtEpochMillis = row[IdempotencyRecords.updatedAtEpochMillis],
+                    )
+                }
+        }
 
         private fun classify(
             snapshot: IdempotencySnapshot,
             fingerprint: String,
-        ): IdempotencyAcquireResult =
-            when {
-                snapshot.fingerprint != fingerprint -> IdempotencyAcquireResult.FingerprintConflict
-                snapshot.state == STATE_COMPLETED ->
-                    IdempotencyAcquireResult.Completed(requireNotNull(snapshot.resultReference))
+        ): IdempotencyAcquireResult = when {
+            snapshot.fingerprint != fingerprint -> IdempotencyAcquireResult.FingerprintConflict
+            snapshot.state == STATE_COMPLETED   ->
+                IdempotencyAcquireResult.Completed(snapshot.resultReference.requireNotNull("snapshot.resultReference"))
 
-                else                              -> IdempotencyAcquireResult.InFlight
-            }
+            else                                -> IdempotencyAcquireResult.InFlight
+        }
     }
 
     private sealed interface IdempotencyAcquireResult {
@@ -327,17 +387,12 @@ class ApplicationOwnedIdempotencyRecordJdbcTest: AbstractExposedTest() {
         val updatedAtEpochMillis: Long,
     )
 
-    private fun IdempotencyDiagnosis.metricLabels(): Map<String, String> =
-        when (this) {
-            IdempotencyDiagnosis.Interrupted -> mapOf(
-                "state" to "in_flight",
-                "policy" to "retry_after_timeout",
-            )
-
-            IdempotencyDiagnosis.Active    -> mapOf("state" to "in_flight", "policy" to "wait")
-            IdempotencyDiagnosis.Completed -> mapOf("state" to "completed", "policy" to "replay_result")
-            IdempotencyDiagnosis.Missing   -> mapOf("state" to "missing", "policy" to "acquire")
-        }
+    private fun IdempotencyDiagnosis.metricLabels(): Map<String, String> = when (this) {
+        IdempotencyDiagnosis.Interrupted -> mapOf("state" to "in_flight", "policy" to "retry_after_timeout")
+        IdempotencyDiagnosis.Active      -> mapOf("state" to "in_flight", "policy" to "wait")
+        IdempotencyDiagnosis.Completed   -> mapOf("state" to "completed", "policy" to "replay_result")
+        IdempotencyDiagnosis.Missing     -> mapOf("state" to "missing", "policy" to "acquire")
+    }
 
     private object IdempotencyRecords: Table("app_idempotency_record_jdbc") {
         val scope = varchar("scope", 80)

@@ -1,6 +1,8 @@
 package io.bluetape4k.spring.data.exposed.jdbc.repository.support
 
+import io.bluetape4k.logging.KLogging
 import io.bluetape4k.spring.data.exposed.common.mapping.ExposedPersistentEntity
+import io.bluetape4k.support.toOptional
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
@@ -31,14 +33,16 @@ internal class JdbcFluentQueryExecutor<E: Entity<ID>, ID: Any>(
     private val creationMode: JdbcRepositoryCreationMode,
 ) {
 
+    companion object: KLogging()
+
     fun <R: Any> first(plan: JdbcFluentQueryPlan<E>): Optional<R> =
-        Optional.ofNullable(firstValue(plan))
+        firstValue<R>(plan).toOptional()
 
     fun <R: Any> firstValue(plan: JdbcFluentQueryPlan<E>): R? =
         rows<R>(plan, terminalLimit = 1).firstOrNull()
 
     fun <R: Any> one(plan: JdbcFluentQueryPlan<E>): Optional<R> =
-        Optional.ofNullable(oneValue(plan))
+        oneValue<R>(plan).toOptional()
 
     fun <R: Any> oneValue(plan: JdbcFluentQueryPlan<E>): R? {
         val rows = rows<R>(plan.withLimit(0), terminalLimit = 2)

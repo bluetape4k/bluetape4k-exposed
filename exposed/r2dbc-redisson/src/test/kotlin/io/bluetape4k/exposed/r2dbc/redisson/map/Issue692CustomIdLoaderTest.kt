@@ -1,13 +1,21 @@
 package io.bluetape4k.exposed.r2dbc.redisson.map
 
+import io.bluetape4k.apache.containsIgnoreCase
+import io.bluetape4k.apache.startsWithIgnoreCase
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
-import io.bluetape4k.exposed.r2dbc.tests.AbstractExposedR2dbcTest
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.support.joinUntil
+import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
+import io.bluetape4k.logging.debug
+import io.bluetape4k.support.checkBeTrue
+import io.bluetape4k.support.checkNotNull
 import io.r2dbc.spi.R2dbcTransientResourceException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +24,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.eq
@@ -32,13 +39,17 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
+class Issue692CustomIdLoaderTest: AbstractR2dbcRedissonTest() {
+
+    companion object: KLoggingChannel()
+
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `custom ID fallback emits ordered bounded pages`(testDB: TestDB) = runSuspendIO {
@@ -64,7 +75,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
             sqlStatements.clear()
 
             withDefaultDatabase(testDB) {
-                val loader = R2dbcExposedEntityMapLoader<Issue692CustomId, String>(
+                val loader = R2dbcExposedEntityMapLoader(
                     entityTable = Issue692CustomIdTable,
                     batchSize = 2,
                     toEntity = { this[Issue692CustomIdTable.id].value.value },
@@ -82,10 +93,12 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                 ids shouldHaveSize 5
                 ids.distinct() shouldBeEqualTo ids
 
-                val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+                val selects = sqlStatements.filter { it.trimStart().startsWithIgnoreCase("SELECT") }
+                    .onEach { log.debug { "selects=$it" } }
+
                 selects.size shouldBeEqualTo 3
-                selects.all { it.contains("LIMIT", ignoreCase = true) }.shouldBeTrue()
-                selects.drop(1).all { it.contains("OFFSET", ignoreCase = true) }.shouldBeTrue()
+                selects.all { it.containsIgnoreCase("LIMIT") }.shouldBeTrue()
+                selects.drop(1).all { it.containsIgnoreCase("OFFSET") }.shouldBeTrue()
                 selects.none { it.contains(">") }.shouldBeTrue()
             }
         }
@@ -119,7 +132,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                                 firstSelect.compareAndSet(false, true)
                             ) {
                                 firstSelectObserved.countDown()
-                                check(writerDone.await(5, TimeUnit.SECONDS)) {
+                                check(writerDone.await(5.seconds)) {
                                     "writer did not commit before the next page"
                                 }
                             }
@@ -139,10 +152,9 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
 
                 writerExecutor.submit {
                     try {
-                        check(firstSelectObserved.await(5, TimeUnit.SECONDS)) {
-                            "loader did not reach the first page"
-                        }
-                        val database = checkNotNull(testDB.db) { "test database is not initialized" }
+                        firstSelectObserved.await(5.seconds).checkBeTrue { "loader did not reach the first page" }
+                        val database = testDB.db.checkNotNull { "test database is not initialized" }
+
                         runBlocking(Dispatchers.IO) {
                             suspendTransaction(db = database) {
                                 maxAttempts = 1
@@ -163,7 +175,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                 }
 
                 withDefaultDatabase(testDB) {
-                    val loader = R2dbcExposedEntityMapLoader<Issue692CustomId, String>(
+                    val loader = R2dbcExposedEntityMapLoader(
                         entityTable = Issue692CustomIdTable,
                         batchSize = 2,
                         toEntity = { this[Issue692CustomIdTable.id].value.value },
@@ -177,7 +189,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                         }
                     }
 
-                    check(writerDone.await(5, TimeUnit.SECONDS)) { "writer did not finish" }
+                    writerDone.await(5.seconds).shouldBeTrue()
                     writerFailure.get()?.let { throw it }
                     ids.map(Issue692CustomId::value) shouldBeEqualTo listOf("a01", "a02", "a04", "a05", "a99")
                     ids.distinct() shouldBeEqualTo ids
@@ -220,7 +232,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                 val callerJob = Job()
                 val scope = CoroutineScope(callerJob + Dispatchers.IO)
                 try {
-                    val loader = R2dbcExposedEntityMapLoader<Issue692CustomId, String>(
+                    val loader = R2dbcExposedEntityMapLoader(
                         entityTable = Issue692CustomIdTable,
                         scope = scope,
                         batchSize = 2,
@@ -232,14 +244,17 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                         iterator.next().await().value shouldBeEqualTo "a01"
 
                         callerJob.cancel()
-                        withTimeout(5_000) { callerJob.join() }
+                        callerJob.joinUntil(5.seconds)
                     }
 
-                    val selects = sqlStatements.filter { it.trimStart().startsWith("SELECT", ignoreCase = true) }
+                    val selects = sqlStatements
+                        .filter { it.trimStart().startsWithIgnoreCase("SELECT") }
+                        .onEach { log.debug { "select=$it" } }
+
                     selects.size shouldBeEqualTo 1
                 } finally {
                     callerJob.cancel()
-                    withTimeout(5_000) { callerJob.join() }
+                    callerJob.joinUntil(5.seconds)
                 }
             }
         }
@@ -253,6 +268,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
             val emitted = mutableListOf<Issue692CustomId>()
             val expectedId = Issue692CustomId("a01")
             val expectedFailure = R2dbcTransientResourceException("issue-692 producer fault")
+
             withDefaultDatabase(testDB) {
                 val loader = R2dbcEntityMapLoader<Issue692CustomId, String>(
                     loadByIdFromDB = { _ -> null },
@@ -266,8 +282,9 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
 
                 loader.useLoader {
                     val iterator = loader.loadAllKeys()
-                    iterator.hasNext().await() shouldBeEqualTo true
+                    iterator.hasNext().await().shouldBeTrue()
                     iterator.next().await() shouldBeEqualTo expectedId
+
                     assertFailsWith<R2dbcTransientResourceException> {
                         iterator.hasNext().await()
                     }
@@ -335,7 +352,8 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
                 val loader = R2dbcEntityMapLoader<Issue692CustomId, String>(
                     loadByIdFromDB = { _ -> null },
                     loadAllIdsFromDB = {
-                        delay(60_500)
+                        delay(60.seconds)
+                        delay(500.milliseconds)
                     },
                 )
 
@@ -349,9 +367,10 @@ class Issue692CustomIdLoaderTest: AbstractExposedR2dbcTest() {
         }
     }
 
-    private suspend fun <T> withDefaultDatabase(testDB: TestDB, block: suspend () -> T): T {
+    private suspend inline fun <T> withDefaultDatabase(testDB: TestDB, block: suspend () -> T): T {
         val previousDefault = TransactionManager.defaultDatabase
-        TransactionManager.defaultDatabase = checkNotNull(testDB.db) { "testDB.db must be initialized" }
+        TransactionManager.defaultDatabase = testDB.db.checkNotNull { "testDB.db must be initialized" }
+
         return try {
             block()
         } finally {

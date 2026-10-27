@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Instant
+import kotlin.system.measureTimeMillis
 
 /**
  * ClickHouse BatchInsert 성능 측정 벤치마크.
@@ -47,26 +48,26 @@ class BatchInsertBenchmarkTest: AbstractClickHouseTest() {
 
     @Test
     fun `100000건 batchInsert 성능 측정`() {
-        val events = (1..TOTAL_ROWS).map { i ->
+        val events = List(TOTAL_ROWS) { i ->
             Triple(i.toLong(), "event_$i", "region_${i % 10}")
         }
 
-        val durations = (1..ROUNDS).map { round ->
+        val durations = List(ROUNDS) { round ->
             // 테이블 초기화
             transaction(db) {
                 runCatching { SchemaUtils.drop(Events) }
                 SchemaUtils.create(Events)
             }
-            val start = System.currentTimeMillis()
-            transaction(db) {
-                Events.batchInsert(events) { (id, name, region) ->
-                    this[Events.eventId] = id
-                    this[Events.eventName] = name
-                    this[Events.region] = region
-                    this[Events.createdAt] = Instant.now()
+            val elapsed = measureTimeMillis {
+                transaction(db) {
+                    Events.batchInsert(events) { (id, name, region) ->
+                        this[Events.eventId] = id
+                        this[Events.eventName] = name
+                        this[Events.region] = region
+                        this[Events.createdAt] = Instant.now()
+                    }
                 }
             }
-            val elapsed = System.currentTimeMillis() - start
             log.info { "Round $round: ${elapsed}ms for $TOTAL_ROWS rows" }
             elapsed
         }

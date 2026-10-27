@@ -1,12 +1,17 @@
 package io.bluetape4k.batch.r2dbc
 
+import io.bluetape4k.apache.startsWithIgnoreCase
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.coroutines.support.awaitUntil
+import io.bluetape4k.coroutines.support.joinUntil
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.coroutines.KLoggingChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +25,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -32,17 +36,18 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 /** [ExposedR2dbcBatchWriter]의 Exposed 1.5.0 multi-row VALUES 선택 동작을 검증한다. */
-class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
+class R2dbcBatchWriterMultiRowValuesTest: AbstractBatchR2dbcTest() {
 
-    companion object {
+    companion object: KLoggingChannel() {
         /** 승인된 H2/PostgreSQL 계약만 검증한다. 다른 방언의 생성 키 계약은 미검증이다. */
         @JvmStatic
         fun multiRowDialects() = TestDB.enabledDialects().filter { it == TestDB.H2 || it == TestDB.POSTGRESQL }
     }
 
-    private object WriterTable : LongIdTable("r2dbc_batch_writer_multi_rows") {
+    private object WriterTable: LongIdTable("r2dbc_batch_writer_multi_rows") {
         val sourceName = varchar("source_name", 80).uniqueIndex()
         val transformedValue = integer("transformed_value")
         val note = varchar("note", 80).nullable()
@@ -76,8 +81,9 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
             inserts.single().argumentCount shouldBeEqualTo 6
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(inserts.single().sql).shouldBeTrue()
             WriterTable.selectAll().count() shouldBeEqualTo 2L
-            WriterTable.selectAll().map { it[WriterTable.note] }.toList()
-                .shouldBeEqualTo(listOf(null, "note"))
+            WriterTable.selectAll()
+                .map { it[WriterTable.note] }
+                .toList() shouldBeEqualTo listOf(null, "note")
         }
     }
 
@@ -94,7 +100,10 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
             inserts shouldHaveSize 1
             inserts.single().argumentCount shouldBeEqualTo 3
             Regex("\\)\\s*,\\s*\\(").containsMatchIn(inserts.single().sql).not().shouldBeTrue()
-            WriterTable.selectAll().map { it[WriterTable.note] }.single() shouldBeEqualTo "note"
+
+            WriterTable
+                .selectAll()
+                .map { it[WriterTable.note] }.single() shouldBeEqualTo "note"
         }
     }
 
@@ -115,6 +124,7 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
             val inserts = observer.entries.filter { it.sql.isInsert() }
             inserts shouldHaveSize 2
             inserts.map(InsertLog.Entry::argumentCount) shouldBeEqualTo listOf(3, 3)
+
             WriterTable.selectAll().count() shouldBeEqualTo 2L
         }
     }
@@ -139,7 +149,8 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
             writer.write(emptyList())
 
             bound shouldBeEqualTo 0
-            observer.entries.filter { it.sql.isInsert() } shouldHaveSize 0
+            observer.entries.filter { it.sql.isInsert() }.shouldBeEmpty()
+
             WriterTable.selectAll().count() shouldBeEqualTo 0L
         }
     }
@@ -173,6 +184,7 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
             oversizedBound shouldBeEqualTo 0
             failure.message.orEmpty().contains("secret-payload").not().shouldBeTrue()
             observer.entries.filter { it.sql.isInsert() } shouldHaveSize 1
+
             WriterTable.selectAll().count() shouldBeEqualTo maxRows.toLong()
         }
     }
@@ -198,6 +210,7 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
                 .filterIsInstance<io.r2dbc.spi.R2dbcException>()
                 .any { it.sqlState == "23505" }.shouldBeTrue()
             WriterTable.selectAll().count() shouldBeEqualTo 1L
+
             val names = WriterTable.selectAll().map { it[WriterTable.sourceName] }.toList()
             names shouldBeEqualTo listOf("prior")
         }
@@ -234,12 +247,14 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
                     writer.write(listOf(TargetRecord("cancelled", 1)))
                 }
                 request.start()
-                withTimeout(10_000) { entered.await() }
+                entered.awaitUntil(10.seconds)
                 request.cancel()
                 release.countDown()
 
-                assertFailsWith<CancellationException> { request.await() }
-                withTimeout(10_000) { request.join() }
+                assertFailsWith<CancellationException> {
+                    request.await()
+                }
+                request.joinUntil(10.seconds)
                 bindCount shouldBeEqualTo 1
                 WriterTable.selectAll().count() shouldBeEqualTo 0L
             }
@@ -292,18 +307,18 @@ class R2dbcBatchWriterMultiRowValuesTest : AbstractBatchR2dbcTest() {
         )
     }
 
-    private class InsertLog : SqlLogger {
+    private class InsertLog: SqlLogger {
         val entries = mutableListOf<Entry>()
 
         class Entry(val sql: String, val argumentCount: Int)
 
         override fun log(context: StatementContext, transaction: Transaction) {
             val sql = context.sql(transaction)
-            if (sql.trimStart().startsWith("INSERT", ignoreCase = true)) {
+            if (sql.trimStart().startsWithIgnoreCase("INSERT")) {
                 entries += Entry(sql, context.args.count())
             }
         }
     }
 
-    private fun String.isInsert(): Boolean = trimStart().startsWith("INSERT", ignoreCase = true)
+    private fun String.isInsert(): Boolean = trimStart().startsWithIgnoreCase("INSERT")
 }

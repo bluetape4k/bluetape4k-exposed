@@ -56,15 +56,13 @@ class R2dbcLettuceWriteThroughCacheTest {
             statement: suspend R2dbcTransaction.() -> Unit,
         ) = withUserTable(testDB, statement)
 
-        override suspend fun getExistingId(): Long =
-            suspendTransaction {
-                UserTable.select(UserTable.id).first()[UserTable.id].value
-            }
+        override suspend fun getExistingId(): Long = suspendTransaction {
+            UserTable.select(UserTable.id).first()[UserTable.id].value
+        }
 
-        override suspend fun getExistingIds(): List<Long> =
-            suspendTransaction {
-                UserTable.select(UserTable.id).map { it[UserTable.id].value }.toList()
-            }
+        override suspend fun getExistingIds(): List<Long> = suspendTransaction {
+            UserTable.select(UserTable.id).map { it[UserTable.id].value }.toList()
+        }
 
         override fun getNonExistentId(): Long = Long.MIN_VALUE
 
@@ -83,8 +81,8 @@ class R2dbcLettuceWriteThroughCacheTest {
      */
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughRemoteCache: R2dbcAutoIncIdReadWriteThrough() {
-        override val config =
-            LettuceCacheConfig.READ_WRITE_THROUGH.copy(keyPrefix = "r2dbc:write-through:remote:users")
+        override val config = LettuceCacheConfig.READ_WRITE_THROUGH
+            .copy(keyPrefix = "r2dbc:write-through:remote:users")
         override val repository by lazy { R2dbcUserLettuceRepository(redisClient, config) }
     }
 
@@ -93,10 +91,8 @@ class R2dbcLettuceWriteThroughCacheTest {
      */
     @Nested
     inner class R2dbcAutoIncIdReadWriteThroughNearCache: R2dbcAutoIncIdReadWriteThrough() {
-        override val config =
-            LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(
-                nearCacheName = "r2dbc-lettuce-users-write-near"
-            )
+        override val config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(nearCacheName = "r2dbc-lettuce-users-write-near")
         override val repository by lazy { R2dbcUserLettuceRepository(redisClient, config) }
     }
 
@@ -153,8 +149,8 @@ class R2dbcLettuceWriteThroughCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdReadWriteThroughRemoteCache: R2dbcClientGeneratedIdReadWriteThrough() {
-        override val config =
-            LettuceCacheConfig.READ_WRITE_THROUGH.copy(keyPrefix = "r2dbc:write-through:remote:user-credentials")
+        override val config = LettuceCacheConfig.READ_WRITE_THROUGH
+            .copy(keyPrefix = "r2dbc:write-through:remote:user-credentials")
         override val repository by lazy { R2dbcUserCredentialLettuceRepository(redisClient, config) }
     }
 
@@ -163,10 +159,8 @@ class R2dbcLettuceWriteThroughCacheTest {
      */
     @Nested
     inner class R2dbcClientGeneratedIdReadWriteThroughNearCache: R2dbcClientGeneratedIdReadWriteThrough() {
-        override val config =
-            LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE.copy(
-                nearCacheName = "r2dbc-lettuce-cred-write-near"
-            )
+        override val config = LettuceCacheConfig.READ_WRITE_THROUGH_WITH_NEAR_CACHE
+            .copy(nearCacheName = "r2dbc-lettuce-cred-write-near")
         override val repository by lazy { R2dbcUserCredentialLettuceRepository(redisClient, config) }
     }
 }
