@@ -4,6 +4,8 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.javatimes.millis
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import io.ktor.server.application.Application
 import io.ktor.server.routing.Route
@@ -16,7 +18,7 @@ import java.io.IOException
 import java.lang.invoke.MethodType
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
+import java.time.Duration
 
 class ExposedKtorAbiCompatibilityTest {
 
@@ -87,8 +89,7 @@ class ExposedKtorAbiCompatibilityTest {
 
         val execution = executeProcess(
             command = listOf(shell.toString(), "-c", "printf 'timeout-probe\\n'; while :; do :; done"),
-            timeout = 100,
-            timeoutUnit = TimeUnit.MILLISECONDS,
+            timeout = 100.millis()
         )
 
         execution.timedOut.shouldBeTrue()
@@ -115,7 +116,7 @@ class ExposedKtorAbiCompatibilityTest {
             productionLocation.toString(),
             owner,
         )
-        val execution = executeProcess(command, 30, TimeUnit.SECONDS)
+        val execution = executeProcess(command, 30.seconds())
         if (execution.timedOut) {
             return inspectWithReflection(
                 owner,
@@ -143,8 +144,7 @@ class ExposedKtorAbiCompatibilityTest {
 
     private fun executeProcess(
         command: List<String>,
-        timeout: Long,
-        timeoutUnit: TimeUnit,
+        timeout: Duration,
     ): ProcessExecution {
         val outputFile = Files.createTempFile("exposed-ktor-abi-", ".log")
         return try {
@@ -152,10 +152,10 @@ class ExposedKtorAbiCompatibilityTest {
                 .redirectErrorStream(true)
                 .redirectOutput(outputFile.toFile())
                 .start()
-            val completed = process.waitFor(timeout, timeoutUnit)
+            val completed = process.waitFor(timeout)
             if (!completed) {
                 process.destroyForcibly()
-                check(process.waitFor(10, TimeUnit.SECONDS)) {
+                check(process.waitFor(10.seconds())) {
                     "Timed out process did not terminate after destroyForcibly: ${command.joinToString(" ")}"
                 }
             }

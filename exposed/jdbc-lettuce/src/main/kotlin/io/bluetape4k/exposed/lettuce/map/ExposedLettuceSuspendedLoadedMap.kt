@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.lettuce.map
 
+import io.bluetape4k.coroutines.support.joinUntil
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.logging.debug
 import io.bluetape4k.logging.error
@@ -34,9 +35,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.time.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.Closeable
+import kotlin.time.toKotlinDuration
 
 class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
     private val client: RedisClient,
@@ -352,9 +353,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         try {
             writeBehindJob?.let { job ->
                 runBlocking(Dispatchers.IO) {
-                    withTimeout(timeMillis = config.writeBehindShutdownTimeout.toMillis()) {
-                        job.join()
-                    }
+                    job.joinUntil(config.writeBehindShutdownTimeout.toKotlinDuration())
                 }
             }
         } catch (e: Exception) {

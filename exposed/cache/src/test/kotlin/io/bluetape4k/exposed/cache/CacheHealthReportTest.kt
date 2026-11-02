@@ -64,7 +64,7 @@ class CacheHealthReportTest {
         CacheHealthReport::class.lookup().serialVersionUID shouldBeEqualTo -1428853048381429257L
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
     private fun <T: Any> serializeRoundTrip(value: T): T {
         val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
         return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()

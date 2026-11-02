@@ -53,7 +53,7 @@ import java.io.Serializable
 import java.lang.ref.WeakReference
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -374,7 +374,7 @@ class R2dbcSnapshotTransactionTest {
 
                 ready.await(5.seconds).shouldBeTrue()
                 start.countDown()
-                withTimeout(timeMillis = 5_000) {
+                withTimeout(5.seconds) {
                     newerInvalidation.await()
                     olderFill.await()
                 }
@@ -822,7 +822,7 @@ class R2dbcSnapshotTransactionTest {
     }
 
     private class CommitProbe {
-        private val events = CopyOnWriteArrayList<CommitEvent>()
+        private val events = ConcurrentLinkedQueue<CommitEvent>()
         private val afterCommits = AtomicInteger()
         private val rollbacks = AtomicInteger()
 
@@ -846,6 +846,4 @@ class R2dbcSnapshotTransactionTest {
         PHYSICAL_COMMIT_STARTED,
         AFTER_COMMIT
     }
-
-
 }

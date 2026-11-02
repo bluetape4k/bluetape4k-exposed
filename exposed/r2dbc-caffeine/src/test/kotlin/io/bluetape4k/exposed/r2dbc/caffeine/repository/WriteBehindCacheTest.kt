@@ -1268,7 +1268,7 @@ class WriteBehindCacheTest {
     private suspend fun awaitThreadState(thread: Thread, expected: Thread.State): Boolean {
         repeat(100) {
             if (thread.state == expected) return true
-            delay(10)
+            delay(10.milliseconds)
         }
         return thread.state == expected
     }

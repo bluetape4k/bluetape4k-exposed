@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.time.Duration.Companion.seconds
 
 /** 실제 연결과 제어 가능한 Publisher로 취소 시 구독 해제와 정리 완료를 확인한다. */
 class R2dbcTransactionCancellationLifecycleTest {
@@ -116,7 +117,7 @@ class R2dbcTransactionCancellationLifecycleTest {
         })
         try {
             // 단계별 구독 barrier가 필요하므로 stress tester 대신 실제 자식 Job을 취소한다.
-            withTimeout(timeMillis = 15_000) {
+            withTimeout(15.seconds) {
                 coroutineScope {
                     val observed = CompletableDeferred<Throwable>()
                     val job = launch {

@@ -207,9 +207,9 @@ class JdbcDriverKeyEnumerationBenchmark {
             if (executor == null) return
             executor.shutdown()
             try {
-                if (executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) return
+                if (executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS.seconds)) return
                 executor.shutdownNow()
-                if (executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) return
+                if (executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS.seconds)) return
                 val cause = IllegalStateException("benchmark executor did not terminate")
                 if (primary == null) throw cause else primary.addSuppressed(cause)
             } catch (interrupted: InterruptedException) {

@@ -33,6 +33,7 @@ class ReadableExtensionsTest {
 
     companion object: KLoggingChannel()
 
+    @Suppress("UNCHECKED_CAST")
     private class FakeReadable(
         private val valuesByIndex: Map<Int, Any?> = emptyMap(),
         private val valuesByName: Map<String, Any?> = emptyMap(),

@@ -215,7 +215,7 @@ class SnapshotCacheConfigTest {
         config.maxStagedWeight shouldBeEqualTo 200L
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
     private fun <T: Any> jdkRoundTrip(value: T): T {
         val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
         return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()

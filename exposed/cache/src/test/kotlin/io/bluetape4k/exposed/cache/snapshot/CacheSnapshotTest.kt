@@ -125,7 +125,7 @@ class CacheSnapshotTest {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
     private fun <T: Serializable> serializeRoundTrip(value: T): T {
         val bytes = BinarySerializers.JdkUnfiltered.serialize(value)
         return BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()

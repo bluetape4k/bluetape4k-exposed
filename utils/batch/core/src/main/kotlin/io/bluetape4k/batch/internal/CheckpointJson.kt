@@ -15,6 +15,7 @@ interface CheckpointJson: io.bluetape4k.batch.CheckpointJson {
 
     override fun read(json: String): Any
 
+    @Suppress("DEPRECATION")
     companion object {
         fun jackson3(): CheckpointJson =
             LegacyCheckpointJson(io.bluetape4k.batch.CheckpointJson.jackson3())
@@ -27,6 +28,7 @@ interface CheckpointJson: io.bluetape4k.batch.CheckpointJson {
     }
 }
 
+@Suppress("DEPRECATION")
 private class LegacyCheckpointJson(
     private val delegate: io.bluetape4k.batch.CheckpointJson,
 ): CheckpointJson {

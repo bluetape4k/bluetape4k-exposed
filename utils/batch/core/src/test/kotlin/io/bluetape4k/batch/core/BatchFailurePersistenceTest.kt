@@ -51,6 +51,7 @@ import io.bluetape4k.exposed.tests.withTables as withJdbcTables
  * cause가 제거된 진단 예외를 원인 예외에 suppressed로 연결하고 error 로그를 남기며, 재시도·알림은 호출자와
  * 저장소 운영 정책이 결정한다.
  */
+@Suppress("DEPRECATION")
 class BatchFailurePersistenceTest {
 
     companion object: KLogging()
@@ -622,7 +623,7 @@ class BatchFailurePersistenceTest {
     private class FailingReader(
         private val failure: Throwable,
     ): BatchReader<String> {
-        override suspend fun read(): String? = throw failure
+        override suspend fun read(): String = throw failure
     }
 
     private class CheckpointFailingReader(

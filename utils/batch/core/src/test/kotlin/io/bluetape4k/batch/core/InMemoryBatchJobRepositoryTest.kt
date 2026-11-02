@@ -26,6 +26,7 @@ import java.time.Instant
  * - findOrCreateStepExecution: 4-case 계약(COMPLETED skip, FAILED/STOPPED/RUNNING 재시작, 신규 생성)
  * - checkpoint: save → load round-trip
  */
+@Suppress("DEPRECATION")
 class InMemoryBatchJobRepositoryTest {
 
     companion object: KLogging()

@@ -1,10 +1,11 @@
 package io.bluetape4k.exposed.benchmark.clickhouse
 
+import io.bluetape4k.concurrent.awaitTermination
 import io.bluetape4k.exposed.clickhouse.queryFlow
 import io.bluetape4k.exposed.clickhouse.queryList
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.testcontainers.database.ClickHouseServer
 import jdk.jfr.Recording
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import java.io.File
@@ -14,6 +15,7 @@ import java.lang.ref.Reference
 import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 /** fresh JVM에서 warmup과 실측을 분리하고 원시 메모리 표본과 JFR을 보존합니다. */
 object ClickHouseStreamingProfile {
@@ -79,7 +81,7 @@ object ClickHouseStreamingProfile {
         val start = System.nanoTime()
         val sampler = scheduler.scheduleAtFixedRate({
             val process = ProcessBuilder("ps", "-o", "rss=", "-p", pid.toString()).start()
-            val exited = process.waitFor(1, TimeUnit.SECONDS)
+            val exited = process.waitFor(1.seconds())
             val rss = if (exited) process.inputStream.bufferedReader().use { it.readText().trim() } else "-1"
             if (!exited) process.destroyForcibly()
             samples.add("${System.nanoTime() - start},${memory.heapMemoryUsage.used},${direct()},${mapped()},$rss")
@@ -100,7 +102,7 @@ object ClickHouseStreamingProfile {
             scheduler.shutdown()
             var schedulerTerminated = false
             try {
-                schedulerTerminated = scheduler.awaitTermination(3, TimeUnit.SECONDS)
+                schedulerTerminated = scheduler.awaitTermination(3.seconds)
             } finally {
                 try {
                     recording.stop()

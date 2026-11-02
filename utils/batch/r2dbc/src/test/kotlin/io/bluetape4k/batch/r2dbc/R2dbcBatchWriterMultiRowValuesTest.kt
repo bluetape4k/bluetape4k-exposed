@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.coroutines.support.joinUntil
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
@@ -35,7 +36,6 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 /** [ExposedR2dbcBatchWriter]의 Exposed 1.5.0 multi-row VALUES 선택 동작을 검증한다. */
@@ -238,7 +238,7 @@ class R2dbcBatchWriterMultiRowValuesTest: AbstractBatchR2dbcTest() {
                     this[WriterTable.transformedValue] = item.transformedValue
                     this[WriterTable.note] = item.note
                     if (entered.complete(Unit)) {
-                        release.await(10, TimeUnit.SECONDS).shouldBeTrue()
+                        release.await(10.seconds).shouldBeTrue()
                         request.ensureActive()
                     }
                 }

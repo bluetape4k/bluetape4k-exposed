@@ -763,7 +763,7 @@ class JdbcCaffeineRepositoryExtraTest {
                     awaitThreadWaiting(follower).shouldBeTrue()
                     follower.interrupt()
                     Thread.sleep(50)
-                    followerCompleted.await(50, TimeUnit.MILLISECONDS).shouldBeFalse()
+                    followerCompleted.await(50.milliseconds).shouldBeFalse()
                     releaseFlush.countDown()
                     ownerCompleted.await(1.seconds).shouldBeTrue()
                     followerCompleted.await(1.seconds).shouldBeTrue()
@@ -959,7 +959,7 @@ class JdbcCaffeineRepositoryExtraTest {
 
                     releaseCachePuts.release(2)
                     cachePutsCompleted.tryAcquire(2, 5, TimeUnit.SECONDS).shouldBeTrue()
-                    closeCompleted.await(100, TimeUnit.MILLISECONDS).shouldBeFalse()
+                    closeCompleted.await(100.milliseconds).shouldBeFalse()
                     repository.validateConsistency().workerState shouldBeEqualTo CacheWorkerState.DRAINING
 
                     releaseCachePuts.release()

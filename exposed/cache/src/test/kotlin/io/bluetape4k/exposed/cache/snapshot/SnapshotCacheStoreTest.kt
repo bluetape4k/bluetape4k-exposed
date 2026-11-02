@@ -8,6 +8,8 @@ import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
@@ -20,9 +22,9 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(InternalSnapshotCacheApi::class)
 class SnapshotCacheStoreTest {
@@ -137,7 +139,7 @@ class SnapshotCacheStoreTest {
             }
 
             start.countDown()
-            val claimResults = claimAttempts.map { it.get(5, TimeUnit.SECONDS) }
+            val claimResults = claimAttempts.map { it.get(5.seconds) }
             claimResults.count { it.isSuccess } shouldBeEqualTo 1
             val claimFailures = claimResults.mapNotNull { it.exceptionOrNull() }
             claimFailures.size shouldBeEqualTo 1
@@ -168,7 +170,7 @@ class SnapshotCacheStoreTest {
             }
 
             start.countDown()
-            val prepareResults = prepareAttempts.map { it.get(5, TimeUnit.SECONDS) }
+            val prepareResults = prepareAttempts.map { it.get(5.seconds) }
             prepareResults.count { it.isSuccess } shouldBeEqualTo 1
             val prepareFailures = prepareResults.mapNotNull { it.exceptionOrNull() }
             prepareFailures.size shouldBeEqualTo 1
@@ -540,7 +542,7 @@ class SnapshotCacheStoreTest {
         override fun close() {
             futures.forEach { it.cancel(true) }
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
         }
     }
 }

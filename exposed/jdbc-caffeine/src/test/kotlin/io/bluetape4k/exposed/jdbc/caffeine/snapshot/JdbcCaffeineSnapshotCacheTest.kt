@@ -9,6 +9,9 @@ import io.bluetape4k.assertions.shouldBeLessOrEqualTo
 import io.bluetape4k.assertions.shouldBeNull
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.snapshot.CacheSnapshot
 import io.bluetape4k.exposed.cache.snapshot.CaffeineSnapshotCacheConfig
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -23,8 +26,8 @@ import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class JdbcCaffeineSnapshotCacheTest {
 
@@ -202,15 +205,15 @@ class JdbcCaffeineSnapshotCacheTest {
                 val futures = puts.map { put ->
                     executor.submit {
                         ready.countDown()
-                        start.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                        start.await(5.seconds).shouldBeTrue()
                         store.applySnapshots(listOf(put), NeverExpiredDeadline)
                     }
                 }
 
-                ready.await(5, TimeUnit.SECONDS).shouldBeTrue()
+                ready.await(5.seconds).shouldBeTrue()
                 start.countDown()
                 futures.forEach { future ->
-                    future.get(5, TimeUnit.SECONDS).results.map { it.outcome to it.affectedCount } shouldBeEqualTo
+                    future.get(5.seconds).results.map { it.outcome to it.affectedCount } shouldBeEqualTo
                             listOf(SnapshotCacheOutcome.SUCCESS to 1)
                 }
 
@@ -377,7 +380,7 @@ class JdbcCaffeineSnapshotCacheTest {
         override fun close() {
             futures.forEach { it.cancel(true) }
             executor.shutdownNow()
-            executor.awaitTermination(5, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(5.seconds).shouldBeTrue()
         }
     }
 

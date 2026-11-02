@@ -59,6 +59,7 @@ import kotlin.time.Duration.Companion.seconds
  * 4. StepExecution 4-case 계약 검증
  * 5. Checkpoint 저장 / 로드 round-trip
  */
+@Suppress("DEPRECATION")
 class ExposedR2dbcBatchJobRepositoryTest: AbstractBatchR2dbcTest() {
 
     companion object: KLoggingChannel()

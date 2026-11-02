@@ -2,7 +2,9 @@ package io.bluetape4k.exposed.lettuce.map
 
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
+import io.bluetape4k.javatimes.millis
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
@@ -12,11 +14,11 @@ import io.lettuce.core.codec.StringCodec
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Test
 import java.time.Duration
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
@@ -26,7 +28,7 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
     fun `write-behind mixed retry batch preserves each entry count for fresh-first order`() = runSuspendIO {
         val prefix = randomName()
         val attempts = AtomicInteger()
-        val attemptedBatches = CopyOnWriteArrayList<List<String>>()
+        val attemptedBatches = ConcurrentLinkedQueue<List<String>>()
         val firstAttemptStarted = CompletableDeferred<Unit>()
         val releaseFirstAttempt = CompletableDeferred<Unit>()
         val freshWritten = CompletableDeferred<Unit>()
@@ -52,18 +54,18 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
             prefix = prefix,
             writer = writer,
             writeBehindBatchSize = 2,
-            writeBehindDelay = Duration.ofMillis(20)
+            writeBehindDelay = 20.millis()
         )
 
         try {
             map.set("retried", "old")
-            withTimeout(timeMillis = 5_000) { firstAttemptStarted.await() }
+            firstAttemptStarted.awaitUntil(5.seconds)
 
             map.set("fresh", "new")
             releaseFirstAttempt.complete(Unit)
-            withTimeout(timeMillis = 5_000) { freshWritten.await() }
+            freshWritten.awaitUntil(5.seconds)
 
-            attemptedBatches shouldBeEqualTo listOf(
+            attemptedBatches.toList() shouldBeEqualTo listOf(
                 listOf("retried"),
                 listOf("fresh", "retried"),
                 listOf("fresh", "retried"),
@@ -81,7 +83,7 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
     fun `write-behind channel offer failure dead-letters only the rejected entry`() = runSuspendIO {
         val prefix = randomName()
         val attempts = AtomicInteger()
-        val attemptedBatches = CopyOnWriteArrayList<List<String>>()
+        val attemptedBatches = ConcurrentLinkedQueue<List<String>>()
         val firstAttemptStarted = CompletableDeferred<Unit>()
         val releaseFirstAttempt = CompletableDeferred<Unit>()
         val freshWritten = CompletableDeferred<Unit>()
@@ -110,13 +112,13 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
         try {
             map.set("retried", "old")
-            withTimeout(timeMillis = 5_000) { firstAttemptStarted.await() }
+            firstAttemptStarted.awaitUntil(5.seconds)
 
             map.set("fresh", "new")
             releaseFirstAttempt.complete(Unit)
-            withTimeout(timeMillis = 5_000) { freshWritten.await() }
+            freshWritten.awaitUntil(5.seconds)
 
-            attemptedBatches shouldBeEqualTo listOf(listOf("retried"), listOf("fresh"))
+            attemptedBatches.toList() shouldBeEqualTo listOf(listOf("retried"), listOf("fresh"))
             deadLetterKeys(prefix) shouldBeEqualTo listOf("retried")
         } finally {
             releaseFirstAttempt.complete(Unit)
@@ -143,13 +145,13 @@ class ExposedLettuceSuspendedLoadedMapRetryTest: AbstractJdbcLettuceTest() {
             prefix = prefix,
             writer = writer,
             writeBehindBatchSize = 1,
-            writeBehindDelay = Duration.ofMillis(20)
+            writeBehindDelay = 20.millis()
         )
 
         var closed = false
         try {
             map.set("cancelled", "value")
-            withTimeout(timeMillis = 5_000) { writerStarted.await() }
+            writerStarted.awaitUntil(5.seconds)
             map.suspendClose()
             closed = true
 

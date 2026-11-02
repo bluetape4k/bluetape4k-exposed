@@ -2,13 +2,13 @@ package io.bluetape4k.exposed.cache.snapshot
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldNotBeEmpty
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.logging.debug
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.Serializable
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 class CacheSnapshotDaoFreeClasspathTest {
 
@@ -33,10 +33,10 @@ class CacheSnapshotDaoFreeClasspathTest {
             .start()
 
         try {
-            val completed = process.waitFor(CHILD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            val completed = process.waitFor(CHILD_TIMEOUT_SECONDS.seconds())
             if (!completed) {
                 process.destroyForcibly()
-                val terminated = process.waitFor(CHILD_CLEANUP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                val terminated = process.waitFor(CHILD_CLEANUP_TIMEOUT_SECONDS.seconds())
                 val diagnostic = "DAO-free child timeout=${CHILD_TIMEOUT_SECONDS}s; terminatedAfterDestroy=$terminated."
                 throw AssertionError(diagnostic)
             }
@@ -47,7 +47,7 @@ class CacheSnapshotDaoFreeClasspathTest {
         } finally {
             if (process.isAlive) {
                 process.destroyForcibly()
-                process.waitFor(CHILD_CLEANUP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                process.waitFor(CHILD_CLEANUP_TIMEOUT_SECONDS.seconds())
             }
         }
     }
