@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.jdbc
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.KLogging
@@ -29,7 +30,7 @@ import java.sql.PreparedStatement
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 /** 실제 JDBC 자원을 유지한 채 acquisition·begin·statement 경계에서 Job을 취소한다. */
 class JdbcTransactionCancellationLifecycleTest {
@@ -66,7 +67,7 @@ class JdbcTransactionCancellationLifecycleTest {
         fun pause(at: Boundary) {
             if (boundary == at) {
                 reached.complete(Unit)
-                check(release.await(10, TimeUnit.SECONDS)) { "JDBC boundary was not released" }
+                check(release.await(10.seconds)) { "JDBC boundary was not released" }
             }
         }
 
@@ -74,7 +75,7 @@ class JdbcTransactionCancellationLifecycleTest {
         val database = instrumentedDatabase(testDB, boundary, events, beginFailure, ::pause)
 
         try {
-            withTimeout(timeMillis = 15_000) {
+            withTimeout(15.seconds) {
                 coroutineScope {
                     val observed = CompletableDeferred<Throwable>()
                     val job = launch {

@@ -22,7 +22,8 @@ import java.lang.reflect.Proxy
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /** Exposed `1.5.0` JDBC transaction cleanup 실패의 호출자 전달 계약을 검증한다. */
 class JdbcTransactionCleanupFailureTest {
@@ -50,7 +51,7 @@ class JdbcTransactionCleanupFailureTest {
         boundary: CleanupBoundary,
     ) = runSuspendIO {
         val previousDatabase = TransactionManager.defaultDatabase
-        val events = CopyOnWriteArrayList<String>()
+        val events = ConcurrentLinkedQueue<String>()
         val primary = PrimaryFailure(boundary)
         val cleanup = CleanupFailure(boundary)
 
@@ -78,7 +79,7 @@ class JdbcTransactionCleanupFailureTest {
     private fun instrumentedDatabase(
         testDB: TestDB,
         boundary: CleanupBoundary,
-        events: MutableList<String>,
+        events: Queue<String>,
         primary: Throwable,
         cleanup: Throwable,
     ): Database = Database.connect(

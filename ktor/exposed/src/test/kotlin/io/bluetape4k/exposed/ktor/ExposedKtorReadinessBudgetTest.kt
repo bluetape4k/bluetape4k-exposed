@@ -6,6 +6,9 @@ import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeLessThan
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailure
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheOperation
@@ -35,7 +38,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import org.h2.jdbcx.JdbcDataSource
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
@@ -244,19 +246,19 @@ class ExposedKtorReadinessBudgetTest {
                     aggregateExposedKtorReadiness(null, null, binding, 20.milliseconds)
                 }
 
-                entered.await(2, TimeUnit.SECONDS).shouldBeTrue()
-                timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MILLISECONDS)
-                deadlinePassed.await(2, TimeUnit.SECONDS).shouldBeTrue()
+                entered.await(2.seconds).shouldBeTrue()
+                timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MICROSECONDS)
+                deadlinePassed.await(2.seconds).shouldBeTrue()
                 attempt.isCompleted.shouldBeFalse()
 
                 release.countDown()
-                withTimeout(2.seconds) { attempt.await() }
+                attempt.awaitUntil(2.seconds)
             } finally {
                 release.countDown()
                 dispatcher.close()
                 timer.shutdownNow()
-                executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
-                timer.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+                executor.awaitTermination(2.seconds).shouldBeTrue()
+                timer.awaitTermination(2.seconds).shouldBeTrue()
             }
         }
 
@@ -287,7 +289,7 @@ class ExposedKtorReadinessBudgetTest {
                     meterRegistry = registry,
                 )
             }
-            connectionRequested.await(2, TimeUnit.SECONDS).shouldBeTrue()
+            connectionRequested.await(2.seconds).shouldBeTrue()
             attempt.cancel()
             connectionGate.countDown()
             statementGate.countDown()
@@ -302,7 +304,7 @@ class ExposedKtorReadinessBudgetTest {
             connectionGate.countDown()
             statementGate.countDown()
             dispatcher.close()
-            executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(2.seconds).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }
@@ -329,27 +331,27 @@ class ExposedKtorReadinessBudgetTest {
             coroutineScope {
                 val producer = async(dispatcher) {
                     repeat(rounds) {
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                         buffer.recordForTest()
                         buffer.recordForTest()
                         produced.release()
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                     }
                 }
                 val drainer = async(dispatcher) {
                     repeat(rounds) {
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                         produced.tryAcquire(5, TimeUnit.SECONDS).shouldBeTrue()
                         buffer.poll()?.affectedCount shouldBeEqualTo 1
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                     }
                 }
                 val sampler = async(dispatcher) {
                     repeat(rounds) {
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                         val details = aggregateExposedKtorReadiness(null, null, listOf(binding), 1.seconds)
                         details["cache.snapshot"] shouldBeEqualTo HealthResponse.UP
-                        roundBoundary.await(5, TimeUnit.SECONDS)
+                        roundBoundary.await(5.seconds)
                     }
                 }
                 producer.await()
@@ -385,7 +387,7 @@ class ExposedKtorReadinessBudgetTest {
             roundBoundary.reset()
             produced.release(rounds)
             dispatcher.close()
-            executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(2.seconds).shouldBeTrue()
         }
     }
 
@@ -440,13 +442,13 @@ class ExposedKtorReadinessBudgetTest {
                 val responseAttempt = async(Dispatchers.Default) {
                     bluetape4kJsonClient().get("/readyz/exposed")
                 }
-                connectionRequested.await(2, TimeUnit.SECONDS).shouldBeTrue()
+                connectionRequested.await(2.seconds).shouldBeTrue()
                 scheduler.schedule(
                     { connectionGate.countDown() },
                     connectionDelay.inWholeMilliseconds,
                     TimeUnit.MILLISECONDS,
                 )
-                statementStarted.await(2, TimeUnit.SECONDS).shouldBeTrue()
+                statementStarted.await(2.seconds).shouldBeTrue()
                 val statementHoldStarted = TimeSource.Monotonic.markNow()
                 scheduler.schedule(
                     { statementGate.countDown() },
@@ -483,8 +485,8 @@ class ExposedKtorReadinessBudgetTest {
             statementGate.countDown()
             jdbcDispatcher.close()
             scheduler.shutdownNow()
-            jdbcExecutor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
-            scheduler.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+            jdbcExecutor.awaitTermination(2.seconds).shouldBeTrue()
+            scheduler.awaitTermination(2.seconds).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }

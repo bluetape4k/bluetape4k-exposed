@@ -143,7 +143,7 @@ class ExposedKtorCoreContractTest {
         timeoutDetails["timeout"] shouldBeEqualTo ExposedKtorReadinessOutcome.DOWN.name
 
         assertFailsWith<TimeoutCancellationException> {
-            withTimeout(timeMillis = 10) {
+            withTimeout(10.milliseconds) {
                 evaluateExposedKtorReadiness(
                     probes = listOf(
                         RegisteredProbe(

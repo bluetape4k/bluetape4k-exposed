@@ -20,6 +20,7 @@ import io.bluetape4k.batch.jdbc.tables.toParamsHash
 import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
+import io.bluetape4k.javatimes.seconds
 import io.bluetape4k.junit5.concurrency.MultithreadingTester
 import io.bluetape4k.junit5.concurrency.StructuredTaskScopeTester
 import io.bluetape4k.junit5.coroutines.runSuspendIO
@@ -56,6 +57,7 @@ import kotlin.time.Duration.Companion.seconds
  * 4. StepExecution 4-case 계약 검증
  * 5. Checkpoint 저장 / 로드 round-trip
  */
+@Suppress("DEPRECATION")
 class ExposedJdbcBatchJobRepositoryTest: AbstractBatchJdbcTest() {
 
     private val batchTables = arrayOf(BatchJobExecutionTable, BatchStepExecutionTable)
@@ -178,7 +180,7 @@ class ExposedJdbcBatchJobRepositoryTest: AbstractBatchJdbcTest() {
             je2.id shouldBeEqualTo je1.id
             je2.status shouldBeEqualTo BatchStatus.FAILED
 
-            val claimed = claimJobExecution(je2, "owner-1", Instant.now().plusSeconds(60))
+            val claimed = claimJobExecution(je2, "owner-1", Instant.now() + 60.seconds())
             claimed.shouldNotBeNull()
             claimed.status shouldBeEqualTo BatchStatus.RUNNING
             claimed.ownerId shouldBeEqualTo "owner-1"

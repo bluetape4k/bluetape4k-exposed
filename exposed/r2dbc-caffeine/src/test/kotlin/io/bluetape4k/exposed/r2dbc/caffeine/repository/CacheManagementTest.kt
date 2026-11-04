@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.milliseconds
@@ -70,7 +70,7 @@ class CacheManagementTest: AbstractR2dbcCaffeineTest() {
     fun `get - concurrent cache misses run one async loader per key`() = runSuspendIO {
         val repository = CountingActorRepository("r2dbc:caffeine:atomic:get")
 
-        val results = CopyOnWriteArrayList<ActorRecord>()
+        val results = ConcurrentLinkedQueue<ActorRecord>()
 
         SuspendedJobTester()
             .workers(Runtimex.availableProcessors)

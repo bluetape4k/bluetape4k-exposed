@@ -27,7 +27,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 @Transactional
@@ -202,7 +202,7 @@ class SimpleExposedJdbcRepositoryTest: AbstractExposedJdbcRepositoryTest() {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun `findAll with paging - StructuredTaskScopeTester 병렬 조회에서도 totalElements 가 유지된다`() {
         repeat(6) { i -> createUser("Structured$i", "structured$i@example.com", 30 + i) }
-        val totals = CopyOnWriteArrayList<Long>()
+        val totals = ConcurrentLinkedQueue<Long>()
 
         StructuredTaskScopeTester()
             .rounds(4)

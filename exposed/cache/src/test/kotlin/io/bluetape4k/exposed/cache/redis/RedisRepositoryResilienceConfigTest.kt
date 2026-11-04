@@ -134,6 +134,7 @@ class RedisRepositoryResilienceConfigTest {
     // Serializable 직렬화 라운드트립
     // ----------------------------------------------------------------
 
+    @Suppress("DEPRECATION")
     @Test
     fun `Java 직렬화 라운드트립을 통해 원본과 동일한 객체가 복원된다`() {
         // 분산 캐시(Lettuce/Redisson)가 설정 객체를 직렬화할 때 데이터 유실이 없어야 한다.

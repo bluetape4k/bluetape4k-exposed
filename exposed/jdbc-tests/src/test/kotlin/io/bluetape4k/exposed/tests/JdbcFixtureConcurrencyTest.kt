@@ -20,12 +20,14 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.awaitility.kotlin.atMost
 import org.awaitility.kotlin.await
 import org.jetbrains.exposed.v1.core.DatabaseConfig
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
+import kotlin.time.Duration.Companion.seconds
 
 /** latch로 permit 인계 순서를 고정한다. 일반 stress tester는 이 취소 지점을 제어하지 못한다. */
 class JdbcFixtureConcurrencyTest {
@@ -46,7 +48,7 @@ class JdbcFixtureConcurrencyTest {
 
     @Test
     fun `blocking과 suspend 대기자는 FIFO로 진행하고 다른 fixture는 막지 않는다`() = runSuspendIO {
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             coroutineScope {
                 val fixture = fixture("jdbc_fifo")
                 val other = fixture("jdbc_fifo_other")
@@ -95,7 +97,7 @@ class JdbcFixtureConcurrencyTest {
         withDbSuspending(fixture) {
             inherited = currentCoroutineContext().minusKey(Job)
         }
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             withContext(inherited) {
                 withDbSuspending(fixture) {}
             }
@@ -136,7 +138,7 @@ class JdbcFixtureConcurrencyTest {
 
     @Test
     fun `suspend 대기 취소 뒤 permit을 후속 호출에 반환한다`() = runSuspendIO {
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             coroutineScope {
                 val fixture = fixture("jdbc_wait_cancel")
                 val entered = CompletableDeferred<Unit>()
@@ -157,7 +159,7 @@ class JdbcFixtureConcurrencyTest {
                     }
                 }
                 waitingStarted.await()
-                await untilSuspending { fixture.semaphore.hasQueuedThreads() }
+                await atMost 5.seconds untilSuspending { fixture.semaphore.hasQueuedThreads() }
 
                 waiting.cancelAndJoin()
                 first.cancelAndJoin()
@@ -182,7 +184,7 @@ class JdbcFixtureConcurrencyTest {
     @Test
     fun `suspend에서 blocking과 dispatcher 전환 중첩은 즉시 거부한다`() = runSuspendIO {
         val fixture = fixture("jdbc_nested")
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             withDbSuspending(fixture) {
                 assertFailsWith<IllegalStateException> {
                     withDb(fixture) {}

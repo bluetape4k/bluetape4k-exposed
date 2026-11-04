@@ -47,7 +47,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import org.testcontainers.utility.Base58
 import java.io.Serializable
 import java.time.Instant
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.milliseconds
@@ -268,7 +268,7 @@ class SpringModulithJdbcCaffeineRepositoryTest: AbstractExposedTest() {
 
     class CacheActorListenerState {
         val receivedLatch = CountDownLatch(1)
-        val events = CopyOnWriteArrayList<CacheActorUpdatedEvent>()
+        val events = ConcurrentLinkedQueue<CacheActorUpdatedEvent>()
     }
 
     open class CacheActorListener(

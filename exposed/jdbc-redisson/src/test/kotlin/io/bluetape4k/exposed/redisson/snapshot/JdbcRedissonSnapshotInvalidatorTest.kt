@@ -12,6 +12,7 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBe
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.snapshot.MeasuredInvalidation
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheApplyReport
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheConfig
@@ -44,7 +45,6 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.function.BiConsumer
 import kotlin.collections.ArrayDeque
@@ -745,7 +745,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
 
         val completion = invalidator.submitInvalidation(listOf(invalidator.measure(1L)))
         val thrown = assertFailsWith<ExecutionException> {
-            completion.toCompletableFuture().get(5, TimeUnit.SECONDS)
+            completion.toCompletableFuture().get(5.seconds)
         }
 
         (thrown.cause === fatal).shouldBeTrue()
@@ -881,7 +881,7 @@ class JdbcRedissonSnapshotInvalidatorTest {
     )
 
     private fun CompletionStage<SnapshotCacheApplyReport>.completedReport(): SnapshotCacheApplyReport =
-        toCompletableFuture().get(5, TimeUnit.SECONDS)
+        toCompletableFuture().get(5.seconds)
 
     private fun successResult(count: Int) = SnapshotCacheOperationResult(
         SnapshotCacheOperation.INVALIDATE,

@@ -22,7 +22,7 @@ object DruidJdbc: KLogging() {
 
     init {
         Class.forName(DRIVER)
-        log.debug("Druid Avatica JDBC driver registered: $DRIVER")
+        log.debug { "Druid Avatica JDBC driver registered: $DRIVER" }
     }
 
     /** Druid Router/Broker Avatica endpoint에 대한 새 JDBC [Connection]을 엽니다. */

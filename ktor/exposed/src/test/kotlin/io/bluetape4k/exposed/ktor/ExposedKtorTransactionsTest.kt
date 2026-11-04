@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.codec.Base58
+import io.bluetape4k.concurrent.awaitTermination
 import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.ktor.core.Bluetape4kKtorCoreConfig
 import io.bluetape4k.ktor.core.HealthResponse
@@ -39,7 +40,6 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.Statement
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.milliseconds
@@ -241,7 +241,7 @@ class ExposedKtorTransactionsTest {
             observedQueryTimeout.get() shouldBeEqualTo 1
         } finally {
             dispatcher.close()
-            executor.awaitTermination(2, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(2.seconds).shouldBeTrue()
             h2.connection.use { connection ->
                 connection.createStatement().use { it.execute("SHUTDOWN") }
             }

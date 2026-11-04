@@ -7,11 +7,11 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.Query
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 /**
@@ -29,10 +29,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
  * @param dispatcher 블로킹 JDBC 조회를 실행할 디스패처입니다.
  * @param block 트랜잭션 안에서 전체 수집할 조회 결과입니다.
  */
-suspend fun <T> queryList(
+suspend inline fun <T> queryList(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    block: JdbcTransaction.() -> Iterable<T>,
+    crossinline block: JdbcTransaction.() -> Iterable<T>,
 ): List<T> =
     withSuspendTransaction(db, dispatcher) {
         block().toList()
@@ -103,17 +103,20 @@ fun <T> queryFlow(
  * @param dispatcher 블로킹 JDBC 호출을 실행할 디스패처 (기본값: [Dispatchers.IO])
  * @param block 트랜잭션 블록
  */
-
-@Suppress("DEPRECATION")
-suspend fun <T> withSuspendTransaction(
+suspend inline fun <T> withSuspendTransaction(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    block: JdbcTransaction.() -> T,
+    crossinline block: JdbcTransaction.() -> T,
     // ClickHouse JDBC 호출은 블로킹 I/O이므로, 코루틴 기본 디스패처(Main/Default)를 점유하지 않도록
     // Dispatchers.IO(또는 Virtual Thread 전용 디스패처)로 컨텍스트를 전환합니다.
 ): T {
     return try {
-        suspendedTransactionAsync(dispatcher, db) { block() }.await()
+        withContext(dispatcher) {
+            suspendTransaction(db) {
+                block()
+            }
+        }
+        // suspendedTransactionAsync(dispatcher, db) { block() }.await()
     } catch (e: CancellationException) {
         // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
         throw e
@@ -161,22 +164,18 @@ suspend fun <T> suspendTransaction(
  * @param dispatcher 블로킹 JDBC 호출을 실행할 디스패처 (기본값: [Dispatchers.IO])
  * @param block 조회 결과를 반환하는 트랜잭션 블록. 반환된 [Iterable]은 트랜잭션 안에서 즉시 materialize 됩니다.
  */
-fun <T> queryFlow(
+inline fun <T> queryFlow(
     db: Database,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    block: JdbcTransaction.() -> Iterable<T>,
+    crossinline block: JdbcTransaction.() -> Iterable<T>,
 ): Flow<T> = flow {
     // ClickHouse JDBC 호출은 블로킹 I/O이므로 Dispatchers.IO로 전환하고,
     // ResultSet 수명(트랜잭션 경계 내)과 Flow emit 경계가 겹치지 않도록
     // 트랜잭션 내에서 List로 완전히 materialize한 뒤 방출합니다.
-    val items = try {
-        withSuspendTransaction(db, dispatcher) {
-            block().toList()
-        }
-    } catch (e: CancellationException) {
-        // 코루틴 취소는 반드시 재전파해야 합니다 — 삼키면 구조적 동시성이 깨집니다.
-        throw e
+    val items = withSuspendTransaction(db, dispatcher) {
+        block().toList()
     }
+
     for (item in items) {
         // forEach 대신 for+ensureActive()를 사용하는 이유:
         // forEach는 suspend 람다가 아니므로 코루틴 취소 신호를 emit 사이에서 확인하지 못한다.

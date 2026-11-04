@@ -145,7 +145,7 @@ class SnapshotSerializationTest {
     @Test
     fun `serializable snapshot models retain stable UIDs and valid Java streams`() {
         val result = SnapshotCacheOperationResult(SnapshotCacheOperation.PUT, SnapshotCacheOutcome.SUCCESS, 1)
-        val models = listOf<Serializable>(
+        val models = listOf(
             CacheSnapshot(Payload("cached"), "r-1"),
             SnapshotCacheConfig("orders:v1", "schema-v1"),
             CaffeineSnapshotCacheConfig(SnapshotCacheConfig("orders:v1", "schema-v1")),
@@ -253,6 +253,7 @@ class SnapshotSerializationTest {
         return serialize(value)
     }
 
+    @Suppress("DEPRECATION")
     private fun serialize(value: Serializable): ByteArray =
         BinarySerializers.JdkUnfiltered.serialize(value)
 
@@ -262,7 +263,7 @@ class SnapshotSerializationTest {
         Base64.getDecoder().decode(input.readBytes().decodeToString().trim())
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
     private fun <T: Any> deserialize(bytes: ByteArray): T =
         BinarySerializers.JdkUnfiltered.deserialize<T>(bytes).shouldNotBeNull()
 

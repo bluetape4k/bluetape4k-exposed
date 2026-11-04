@@ -39,6 +39,7 @@ fun ResultRow.toJobExecution(checkpointJson: CheckpointJson): JobExecution = Job
 )
 
 /** 이전 `internal.CheckpointJson` JVM descriptor를 위한 호환 브리지입니다. */
+@Suppress("DEPRECATION")
 @Deprecated(
     message = "Use io.bluetape4k.batch.CheckpointJson",
     replaceWith = ReplaceWith("io.bluetape4k.batch.CheckpointJson"),

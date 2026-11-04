@@ -39,6 +39,7 @@ import kotlin.time.Duration.Companion.seconds
  * - 외부 [CancellationException] (또는 [kotlinx.coroutines.TimeoutCancellationException])은
  *   runner가 STOPPED 상태를 저장한 뒤 즉시 재던진다.
  */
+@Suppress("DEPRECATION")
 class BatchStepRunnerTimeoutTest {
 
     companion object: KLogging() {

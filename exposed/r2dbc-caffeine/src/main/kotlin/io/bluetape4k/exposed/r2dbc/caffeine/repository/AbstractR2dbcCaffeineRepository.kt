@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.r2dbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.CacheHealthReport
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
@@ -56,12 +57,12 @@ import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Exposed R2DBC와 Caffeine 프로세스 내 로컬 캐시를 결합하는 추상 저장소입니다.
@@ -971,7 +972,7 @@ abstract class AbstractR2dbcCaffeineRepository<ID: Any, E: Serializable>(
             writeBehindJob.cancel()
             var restoreInterrupt = false
             try {
-                completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS, TimeUnit.MILLISECONDS)
+                completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS.milliseconds)
             } catch (_: InterruptedException) {
                 restoreInterrupt = true
             }

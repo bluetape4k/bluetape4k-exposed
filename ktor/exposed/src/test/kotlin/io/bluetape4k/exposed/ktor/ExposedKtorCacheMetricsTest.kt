@@ -11,6 +11,8 @@ import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.assertions.shouldNotContain
+import io.bluetape4k.concurrent.awaitTermination
+import io.bluetape4k.concurrent.get
 import io.bluetape4k.exposed.cache.snapshot.SnapshotCacheFailureBuffer
 import io.bluetape4k.logging.KLogging
 import io.micrometer.core.instrument.Gauge
@@ -27,9 +29,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.ToDoubleFunction
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedKtorCacheMetricsTest {
 
@@ -310,7 +312,7 @@ class ExposedKtorCacheMetricsTest {
                 }
             }
             start.countDown()
-            val results = attempts.map { it.get(10, TimeUnit.SECONDS) }
+            val results = attempts.map { it.get(10.seconds) }
 
             (results.count { it.isSuccess }) shouldBeEqualTo 1
             (results.count { it.isFailure }) shouldBeEqualTo 1
@@ -327,7 +329,7 @@ class ExposedKtorCacheMetricsTest {
             loser.cause.shouldBeNull()
         } finally {
             executor.shutdownNow()
-            executor.awaitTermination(10, TimeUnit.SECONDS).shouldBeTrue()
+            executor.awaitTermination(10.seconds).shouldBeTrue()
         }
     }
 

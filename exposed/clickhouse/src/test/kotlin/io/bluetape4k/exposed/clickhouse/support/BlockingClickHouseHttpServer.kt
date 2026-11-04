@@ -7,7 +7,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -16,9 +16,9 @@ import kotlin.concurrent.thread
 internal class BlockingClickHouseHttpServer: AutoCloseable {
 
     private val server = ServerSocket(0)
-    private val connections = CopyOnWriteArrayList<Socket>()
+    private val connections = ConcurrentLinkedQueue<Socket>()
     private val executor = Executors.newCachedThreadPool()
-    private val requests = CopyOnWriteArrayList<String>()
+    private val requests = ConcurrentLinkedQueue<String>()
     private val queryRequests = AtomicInteger()
     private val acceptor = thread(start = true, name = "clickhouse-blocking-fixture") { acceptRequests() }
 

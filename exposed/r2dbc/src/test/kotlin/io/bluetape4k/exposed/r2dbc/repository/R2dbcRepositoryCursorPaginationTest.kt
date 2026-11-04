@@ -44,6 +44,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.testcontainers.utility.Base58
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
 
 private object R2dbcCursorPaginationTable: IdTable<Long>("r2dbc_cursor_pagination_rows") {
     override val id: Column<EntityID<Long>> = long("id").entityId()
@@ -343,7 +344,7 @@ class R2dbcRepositoryCursorPaginationTest: AbstractExposedR2dbcTest() {
                 request.await()
             }
 
-            val idsAfterCancellation = withTimeout(timeMillis = 5_000L) {
+            val idsAfterCancellation = withTimeout(5.seconds) {
                 suspendTransaction(db = database) {
                     val ids = R2dbcCursorPaginationRepository.findCursorPage(pageSize = 100)
                         .content

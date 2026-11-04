@@ -3,14 +3,16 @@ package io.bluetape4k.exposed.lettuce.map
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTablesSuspending
 import io.bluetape4k.junit5.coroutines.runSuspendIO
+import io.bluetape4k.logging.KLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
 import org.jetbrains.exposed.v1.core.eq
@@ -22,19 +24,21 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.sql.Connection
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 
 class Issue692CustomIdLoaderTest: AbstractExposedTest() {
+
+    companion object: KLogging()
 
     @ParameterizedTest
     @MethodSource(ENABLE_DIALECTS_METHOD)
     fun `custom ID fallback emits ordered bounded pages`(testDB: TestDB) = runSuspendIO {
-        val sqlStatements = CopyOnWriteArrayList<String>()
+        val sqlStatements = ConcurrentLinkedQueue<String>()
 
         withTablesSuspending(
             testDB,
@@ -56,7 +60,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
             commit()
             sqlStatements.clear()
 
-            val loader = SuspendedExposedEntityMapLoader<Issue692CustomId, String>(
+            val loader = SuspendedExposedEntityMapLoader(
                 table = Issue692CustomIdTable,
                 batchSize = 2,
                 toEntity = { row -> row[Issue692CustomIdTable.id].value.value },
@@ -102,7 +106,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                                 firstSelect.compareAndSet(false, true)
                             ) {
                                 firstSelectObserved.countDown()
-                                check(writerDone.await(5, TimeUnit.SECONDS)) {
+                                check(writerDone.await(5.seconds)) {
                                     "writer did not commit before the next page"
                                 }
                             }
@@ -122,7 +126,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
 
                 writerExecutor.submit {
                     try {
-                        check(firstSelectObserved.await(5, TimeUnit.SECONDS)) {
+                        check(firstSelectObserved.await(5.seconds)) {
                             "loader did not reach the first page"
                         }
                         val database = checkNotNull(testDB.db) { "test database is not initialized" }
@@ -145,14 +149,14 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                     }
                 }
 
-                val loader = SuspendedExposedEntityMapLoader<Issue692CustomId, String>(
+                val loader = SuspendedExposedEntityMapLoader(
                     table = Issue692CustomIdTable,
                     batchSize = 2,
                     toEntity = { row -> row[Issue692CustomIdTable.id].value.value },
                 )
                 val ids = loader.loadAllKeys()
 
-                check(writerDone.await(5, TimeUnit.SECONDS)) { "writer did not finish" }
+                check(writerDone.await(5.seconds)) { "writer did not finish" }
                 writerFailure.get()?.let { throw it }
                 ids.map(Issue692CustomId::value) shouldBeEqualTo listOf("a01", "a02", "a04", "a05", "a99")
                 ids.distinct() shouldBeEqualTo ids
@@ -177,7 +181,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
                     !firstSelect.isCompleted
                 ) {
                     firstSelect.complete(Unit)
-                    releaseSelect.await(2, TimeUnit.SECONDS)
+                    releaseSelect.await(2.seconds)
                 }
             }
         }
@@ -202,7 +206,7 @@ class Issue692CustomIdLoaderTest: AbstractExposedTest() {
             )
             val loadJob = launch { loader.loadAllKeys() }
             try {
-                withTimeout(5_000) { firstSelect.await() }
+                firstSelect.awaitUntil(5.seconds)
                 loadJob.cancelAndJoin()
                 loadJob.isCancelled.shouldBeTrue()
             } finally {

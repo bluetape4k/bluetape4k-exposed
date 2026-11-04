@@ -32,7 +32,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -589,13 +588,13 @@ class R2dbcEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
 
                 loader.useLoader(TestDB.H2) {
                     val pending = loader.loadAllKeys().hasNext().toCompletableFuture()
-                    withTimeout(timeMillis = 5_000) { producerStarted.await() }
+                    producerStarted.awaitUntil(5.seconds)
 
                     pending.cancel(true)
 
                     // 소비자가 더 이상 iterator를 기다리지 않으면 producer transaction도 남아 있으면 안 됩니다.
-                    withTimeout(timeMillis = 5_000) { producerCancelled.await() }
-                    withTimeout(timeMillis = 5_000) { producerCompleted.await() }
+                    producerCancelled.awaitUntil(5.seconds)
+                    producerCompleted.awaitUntil(5.seconds)
                 }
             } finally {
                 scope.cancel()

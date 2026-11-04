@@ -2,6 +2,7 @@ package io.bluetape4k.exposed.jdbc.caffeine.repository
 
 import com.github.benmanes.caffeine.cache.Cache
 import io.bluetape4k.cache.caffeine.caffeine
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.cache.CacheMode
 import io.bluetape4k.exposed.cache.CacheWorkerState
 import io.bluetape4k.exposed.cache.CacheWriteMode
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Exposed JDBC + Caffeine 로컬 캐시를 결합한 suspend 추상 레포지토리.
@@ -737,7 +739,7 @@ abstract class AbstractSuspendedJdbcCaffeineRepository<ID: Any, E: Serializable>
         writeBehindJob.cancel()
         var restoreInterrupt = false
         try {
-            completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS, TimeUnit.MILLISECONDS)
+            completed.await(WRITE_BEHIND_CLOSE_JOIN_GRACE_MILLIS.milliseconds)
         } catch (_: InterruptedException) {
             restoreInterrupt = true
         }

@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.lettuce.map
 
 import io.bluetape4k.assertions.shouldBeEqualTo
+import io.bluetape4k.concurrent.await
 import io.bluetape4k.exposed.lettuce.AbstractJdbcLettuceTest
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.redis.lettuce.map.LettuceCacheConfig
@@ -9,10 +10,10 @@ import io.bluetape4k.redis.lettuce.map.WriteMode
 import io.lettuce.core.codec.StringCodec
 import org.junit.jupiter.api.Test
 import java.time.Duration
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
@@ -33,7 +34,7 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
                 when (attempts.incrementAndGet()) {
                     1    -> {
                         firstAttemptStarted.countDown()
-                        check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
+                        check(releaseFirstAttempt.await(5.seconds)) {
                             "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
                         }
                         error("planned first write failure")
@@ -55,13 +56,13 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
         try {
             map["retried"] = "old"
-            check(firstAttemptStarted.await(5, TimeUnit.SECONDS)) {
+            check(firstAttemptStarted.await(5.seconds)) {
                 "첫 번째 write-behind 시도가 시작되지 않았습니다."
             }
 
             map["fresh"] = "new"
             releaseFirstAttempt.countDown()
-            check(freshWritten.await(5, TimeUnit.SECONDS)) {
+            check(freshWritten.await(5.seconds)) {
                 "새 항목이 재시도 후 성공하지 않았습니다."
             }
 
@@ -83,7 +84,7 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
     fun `write-behind queue offer failure dead-letters only the rejected entry`() {
         val prefix = randomName()
         val attempts = AtomicInteger()
-        val attemptedBatches = CopyOnWriteArrayList<List<String>>()
+        val attemptedBatches = ConcurrentLinkedQueue<List<String>>()
         val firstAttemptStarted = CountDownLatch(1)
         val releaseFirstAttempt = CountDownLatch(1)
         val freshWritten = CountDownLatch(1)
@@ -93,7 +94,7 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
                 attemptedBatches += map.keys.toList()
                 if (attempts.incrementAndGet() == 1) {
                     firstAttemptStarted.countDown()
-                    check(releaseFirstAttempt.await(5, TimeUnit.SECONDS)) {
+                    check(releaseFirstAttempt.await(5.seconds)) {
                         "첫 번째 write-behind 시도 해제 대기 시간이 초과되었습니다."
                     }
                     error("planned queue saturation failure")
@@ -114,17 +115,17 @@ class ExposedLettuceLoadedMapRetryTest: AbstractJdbcLettuceTest() {
 
         try {
             map["retried"] = "old"
-            check(firstAttemptStarted.await(5, TimeUnit.SECONDS)) {
+            check(firstAttemptStarted.await(5.seconds)) {
                 "첫 번째 write-behind 시도가 시작되지 않았습니다."
             }
 
             map["fresh"] = "new"
             releaseFirstAttempt.countDown()
-            check(freshWritten.await(5, TimeUnit.SECONDS)) {
+            check(freshWritten.await(5.seconds)) {
                 "포화된 큐에 남은 새 항목이 write-behind에 반영되지 않았습니다."
             }
 
-            attemptedBatches shouldBeEqualTo listOf(listOf("retried"), listOf("fresh"))
+            attemptedBatches.toList() shouldBeEqualTo listOf(listOf("retried"), listOf("fresh"))
             deadLetterKeys(prefix) shouldBeEqualTo listOf("retried")
         } finally {
             releaseFirstAttempt.countDown()

@@ -20,6 +20,7 @@ import kotlinx.coroutines.withTimeout
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.junit.jupiter.api.Test
+import kotlin.time.Duration.Companion.seconds
 
 /** 결정적인 대기/취소 순서를 제어하므로 범용 stress tester 대신 deferred를 사용한다. */
 class R2dbcFixtureConcurrencyTest {
@@ -45,7 +46,7 @@ class R2dbcFixtureConcurrencyTest {
             inherited = currentCoroutineContext().minusKey(kotlinx.coroutines.Job)
         }
 
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             withContext(inherited) { withDb(fixture) {} }
         }
 
@@ -86,7 +87,7 @@ class R2dbcFixtureConcurrencyTest {
 
     @Test
     fun `대기자는 FIFO로 진행하고 다른 fixture는 막지 않는다`() = runSuspendIO {
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             coroutineScope {
                 val fixture = fixture("r2dbc_fifo")
                 val other = fixture("r2dbc_fifo_other")
@@ -120,7 +121,7 @@ class R2dbcFixtureConcurrencyTest {
 
     @Test
     fun `대기 취소 뒤 후속 호출이 실행된다`() = runSuspendIO {
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             coroutineScope {
                 val fixture = fixture("r2dbc_wait_cancel")
                 val entered = CompletableDeferred<Unit>()
@@ -152,7 +153,7 @@ class R2dbcFixtureConcurrencyTest {
     fun `dispatcher와 자식 coroutine에서 활성 중첩을 거부한다`() = runSuspendIO {
         val fixture = fixture("r2dbc_nested")
 
-        withTimeout(timeMillis = 5_000) {
+        withTimeout(5.seconds) {
             withDb(fixture) {
                 withContext(Dispatchers.Default) {
                     assertFailsWith<IllegalStateException> {

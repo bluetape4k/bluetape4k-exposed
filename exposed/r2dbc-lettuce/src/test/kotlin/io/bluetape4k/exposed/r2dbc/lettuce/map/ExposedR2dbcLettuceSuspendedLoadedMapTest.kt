@@ -20,7 +20,7 @@ import org.awaitility.kotlin.await
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
@@ -148,7 +148,7 @@ class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
     @Test
     fun `write-behind mixed retry batch keeps each entry retry count independent`() = runSuspendIO {
         val attempts = AtomicInteger()
-        val attemptedBatches = CopyOnWriteArrayList<Set<String>>()
+        val attemptedBatches = ConcurrentLinkedQueue<Set<String>>()
         val secondAttemptStarted = CompletableDeferred<Unit>()
         val freshEntryRetried = CompletableDeferred<Unit>()
 
@@ -192,9 +192,11 @@ class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
                 .untilSuspending { freshEntryRetried.isCompleted }
 
             attemptedBatches shouldHaveSize 4
-            attemptedBatches[2] shouldBeEqualTo setOf("retried", "fresh")
-            attemptedBatches[3] shouldBeEqualTo setOf("fresh")
-            attemptedBatches[3] shouldNotContain "retried"
+            attemptedBatches.toList().also {
+                it[2] shouldBeEqualTo setOf("retried", "fresh")
+                it[3] shouldBeEqualTo setOf("fresh")
+                it[3] shouldNotContain "retried"
+            }
         } finally {
             map.suspendClose()
         }

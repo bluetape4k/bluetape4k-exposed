@@ -15,6 +15,9 @@ import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldNotBeEmpty
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.concurrent.await
+import io.bluetape4k.coroutines.flow.extensions.log
+import io.bluetape4k.coroutines.support.joinUntil
 import io.bluetape4k.coroutines.support.log
 import io.bluetape4k.exposed.clickhouse.support.BlockingClickHouseHttpServer
 import io.bluetape4k.exposed.clickhouse.support.ClickHouseQueryObservation
@@ -64,7 +67,6 @@ import java.sql.SQLTimeoutException
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -451,7 +453,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
                         fixture.database,
                         query = { Numbers.select(sleepEachRow, Numbers.number).limit(3) },
                         mapper = { emitted.incrementAndGet(); it[Numbers.number] },
-                    ).toList()
+                    ).log("Query").toList()
                 }
             }
             ((System.nanoTime() - started) / 1_000_000) shouldBeLessThan 3_000L
@@ -719,7 +721,7 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
             val delivered = AtomicInteger()
             val gate = {
                 entered.countDown()
-                check(release.await(5, TimeUnit.SECONDS)) { "test gate timed out" }
+                check(release.await(5.seconds)) { "test gate timed out" }
             }
             if (boundary == "beforeNext") fixture.observed.beforeNext = gate
             if (boundary == "afterNext") fixture.observed.afterNext = gate
@@ -864,7 +866,7 @@ class ClickHouseV2BlockingCancellationTest: AbstractClickHouseTest() {
                     }
                     val started = System.nanoTime()
                     job.cancel()
-                    withTimeout(3.seconds) { job.join() }
+                    job.joinUntil(3.seconds)
                     ((System.nanoTime() - started) / 1_000_000) shouldBeLessThan 3_000L
                 } finally {
                     job.cancelAndJoin()

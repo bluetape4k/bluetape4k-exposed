@@ -26,7 +26,6 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
@@ -155,7 +154,7 @@ class VirtualThreadTransactionTest: AbstractExposedR2dbcTest() {
         withTables(testDB, VirtualThreadTable) {
             val executor = Executors.newSingleThreadExecutor()
             executor.shutdown()
-            executor.awaitTermination(1, TimeUnit.SECONDS)
+            executor.awaitTermination(1.seconds)
 
             assertFailsWith<IllegalArgumentException> {
                 virtualThreadTransactionAsync(executor = executor, db = this.db) {

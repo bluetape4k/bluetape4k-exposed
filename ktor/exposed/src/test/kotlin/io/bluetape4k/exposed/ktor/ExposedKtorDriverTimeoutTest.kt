@@ -6,6 +6,7 @@ import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.logging.KLogging
 import io.bluetape4k.testcontainers.database.CockroachServer
 import io.bluetape4k.testcontainers.database.JdbcServer
@@ -141,11 +142,11 @@ class ExposedKtorDriverTimeoutTest {
 
         coroutineScope {
             val request = async { client.get("/cancel") }
-            withTimeout(5.seconds) { statementStarted.await() }
+            statementStarted.awaitUntil(5.seconds)
             request.cancelAndJoin()
             request.isCancelled.shouldBeTrue()
             // 드라이버별 query 정리와 request finally 실행은 statement timeout과 별도 예산이 필요합니다.
-            withTimeout(10.seconds) { requestCompleted.await() }
+            requestCompleted.awaitUntil(10.seconds)
         }
 
         withTimeout(5.seconds) {
