@@ -262,6 +262,63 @@ class ClickHouseQueryLifecycleTest: AbstractClickHouseTest() {
     }
 
     @Test
+    fun `withSuspendTransaction은 외부 트랜잭션에 참여하고 연결을 닫지 않는다`() = runSuspendIO {
+        Fixture().use { fixture ->
+            inTopLevelSuspendTransaction(fixture.database, outerTransaction = null) {
+                val outer = connection.connection as java.sql.Connection
+                outer.setClientInfo("tenant-marker", "outer-only")
+
+                val result = withSuspendTransaction(fixture.database) {
+                    val inner = connection.connection as java.sql.Connection
+                    (inner === outer).shouldBeTrue()
+                    inner.getClientInfo("tenant-marker") shouldBeEqualTo "outer-only"
+                    exec("SELECT 1") { resultSet ->
+                        resultSet.next()
+                        resultSet.getInt(1)
+                    }
+                }
+
+                result shouldBeEqualTo 1
+                fixture.pool.hikariPoolMXBean.activeConnections shouldBeEqualTo 1
+                outer.isClosed.shouldBeFalse()
+                outer.getClientInfo("tenant-marker") shouldBeEqualTo "outer-only"
+            }
+            fixture.assertReleased()
+        }
+    }
+
+    @Test
+    fun `withSuspendTransaction 취소 후 연결과 statement를 정리하고 풀을 재사용한다`() = runSuspendIO {
+        Fixture().use { fixture ->
+            val entered = CompletableDeferred<Unit>()
+            val release = CountDownLatch(1)
+            val job = launch {
+                withSuspendTransaction(fixture.database) {
+                    entered.complete(Unit)
+                    release.await(5.seconds).shouldBeTrue()
+                    exec("SELECT 1") { resultSet ->
+                        resultSet.next()
+                        resultSet.getInt(1)
+                    }
+                }
+            }
+
+            try {
+                entered.await()
+                job.cancel()
+            } finally {
+                release.countDown()
+                job.cancelAndJoin()
+            }
+
+            job.isCancelled.shouldBeTrue()
+            fixture.assertReleased()
+            fixture.rows().take(1).toList() shouldBeEqualTo listOf(0L)
+            fixture.assertReleased()
+        }
+    }
+
+    @Test
     fun `풀 획득 timeout 후에도 호출자 풀을 닫지 않고 다음 조회가 성공한다`() = runSuspendIO {
         Fixture().use { fixture ->
             fixture.pool.connection.use {

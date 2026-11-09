@@ -242,17 +242,25 @@ class ExposedKtorReadinessBudgetTest {
                         ExposedKtorCacheStatus.UP
                     }
                 )
+                val readinessBudget = 20.milliseconds
                 val attempt = async(dispatcher) {
-                    aggregateExposedKtorReadiness(null, null, binding, 20.milliseconds)
+                    aggregateExposedKtorReadiness(null, null, binding, readinessBudget)
                 }
 
                 entered.await(2.seconds).shouldBeTrue()
-                timer.schedule({ deadlinePassed.countDown() }, 80, TimeUnit.MICROSECONDS)
+                val deadlineObservationDelay = 80.milliseconds
+                deadlineObservationDelay shouldBeGreaterThan readinessBudget
+                timer.schedule(
+                    { deadlinePassed.countDown() },
+                    deadlineObservationDelay.inWholeMilliseconds,
+                    TimeUnit.MILLISECONDS,
+                )
                 deadlinePassed.await(2.seconds).shouldBeTrue()
                 attempt.isCompleted.shouldBeFalse()
 
                 release.countDown()
                 attempt.awaitUntil(2.seconds)
+                Unit
             } finally {
                 release.countDown()
                 dispatcher.close()
@@ -300,6 +308,7 @@ class ExposedKtorReadinessBudgetTest {
             (databaseTimerCount(registry, JDBC_BACKEND, TIMEOUT_OUTCOME)) shouldBeEqualTo 0L
             (databaseTimerCount(registry, JDBC_BACKEND, SUCCESS_OUTCOME)) shouldBeEqualTo 0L
             (databaseTimerCount(registry, JDBC_BACKEND, ERROR_OUTCOME)) shouldBeEqualTo 0L
+            Unit
         } finally {
             connectionGate.countDown()
             statementGate.countDown()
