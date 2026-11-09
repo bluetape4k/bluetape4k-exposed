@@ -31,8 +31,10 @@ buildscript {
     val bouncycastleBcpkixVersion = centralLibraryVersion("bouncycastle-bcpkix")
     val bouncycastleBcprovVersion = centralLibraryVersion("bouncycastle-bcprov")
     val lz4Version = centralLibraryVersion("at-yawk-lz4-java")
+    val guavaVersion = centralLibraryVersion("guava")
     val centralSecurityVersions = mapOf(
         "at.yawk.lz4:lz4-java" to lz4Version,
+        "com.google.guava:guava" to guavaVersion,
         "com.fasterxml.jackson.core:jackson-annotations" to jacksonAnnotationsVersion,
         "com.fasterxml.jackson.core:jackson-core" to jackson2Version,
         "com.fasterxml.jackson.core:jackson-databind" to jackson2Version,
@@ -110,6 +112,7 @@ fun bt4kVersion(alias: String): String {
 
 val centralDependencySnapshotVersions = mapOf(
     "at.yawk.lz4:lz4-java" to bt4kLibrary("at-yawk-lz4-java").get().versionConstraint.requiredVersion,
+    "com.google.guava:guava" to bt4kLibrary("guava").get().versionConstraint.requiredVersion,
     "com.fasterxml.jackson.core:jackson-annotations" to bt4kLibrary("jackson-annotations").get().versionConstraint.requiredVersion,
     "com.fasterxml.jackson.core:jackson-core" to bt4kVersion("jackson2"),
     "com.fasterxml.jackson.core:jackson-databind" to bt4kVersion("jackson2"),
@@ -215,6 +218,7 @@ fun Project.configureCentralDependencySnapshotMetadata() {
     val bouncycastleBcpgVersion = bt4kLibrary("bouncycastle-bcpg").get().versionConstraint.requiredVersion
     val bouncycastleBcpkixVersion = bt4kLibrary("bouncycastle-bcpkix").get().versionConstraint.requiredVersion
     val bouncycastleBcprovVersion = bt4kLibrary("bouncycastle-bcprov").get().versionConstraint.requiredVersion
+    val guavaVersion = bt4kLibrary("guava").get().versionConstraint.requiredVersion
 
     dependencies {
         components {
@@ -291,6 +295,22 @@ fun Project.configureCentralDependencySnapshotMetadata() {
                     "com.clickhouse:$clickhouseModule",
                     setOf("at.yawk.lz4:lz4-java"),
                     listOf("at.yawk.lz4:lz4-java:$lz4Version"),
+                )
+            }
+            listOf(
+                "com.clickhouse:clickhouse-jdbc",
+                "com.clickhouse:jdbc-v2",
+                "com.google.api-client:google-api-client",
+                "com.google.auth:google-auth-library-oauth2-http",
+                "com.google.http-client:google-http-client",
+                "com.google.oauth-client:google-oauth-client",
+                "com.datastax.cassandra:cassandra-driver-core",
+                "io.opencensus:opencensus-contrib-http-util",
+            ).forEach { module ->
+                replaceDependencies(
+                    module,
+                    setOf("com.google.guava:guava"),
+                    listOf("com.google.guava:guava:$guavaVersion"),
                 )
             }
             replaceDependencies(
