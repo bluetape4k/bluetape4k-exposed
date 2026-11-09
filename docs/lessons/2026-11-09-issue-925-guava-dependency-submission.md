@@ -22,6 +22,8 @@ metadata의 전이 edge가 그대로 남습니다.
 Google, ClickHouse, Cassandra, OpenCensus parent module의 component metadata에서
 Guava dependency edge를 제거한 뒤 `33.7.2-jre`로 다시 추가합니다. 이 경계는
 project configuration과 detached Dependency Submission graph를 모두 고정합니다.
+현재 제출 그래프에서 Guava edge가 확인되지 않은 `com.clickhouse:jdbc-v2`는
+variant 범위를 불필요하게 넓히지 않도록 대상에서 제외합니다.
 
 ## 검증
 

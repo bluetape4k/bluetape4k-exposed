@@ -297,9 +297,9 @@ fun Project.configureCentralDependencySnapshotMetadata() {
                     listOf("at.yawk.lz4:lz4-java:$lz4Version"),
                 )
             }
+            // Dependabot 제출 그래프에서 확인된 parent edge만 중앙 Guava 버전으로 고정한다.
             listOf(
                 "com.clickhouse:clickhouse-jdbc",
-                "com.clickhouse:jdbc-v2",
                 "com.google.api-client:google-api-client",
                 "com.google.auth:google-auth-library-oauth2-http",
                 "com.google.http-client:google-http-client",
