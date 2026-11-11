@@ -52,7 +52,8 @@ abstract class AbstractClickHouseTest {
                     }
                 }
             }.onFailure {
-                log.warn { "ClickHouse not ready attempt=${attempts++}" }
+                attempts += 1
+                log.warn { "ClickHouse not ready attempt=$attempts" }
             }.isSuccess
         }
     }

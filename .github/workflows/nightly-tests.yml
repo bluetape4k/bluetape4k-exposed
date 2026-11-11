@@ -1683,13 +1683,29 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: true
-      - name: Test exposed-clickhouse
+      - name: Probe exposed-clickhouse readiness
         run: |
+          mkdir -p build/reports/clickhouse-readiness
           for attempt in 1 2 3 4 5 6 7 8; do
-            ./gradlew :bluetape4k-exposed-clickhouse:test -PclickhouseV2Integration=true --no-configuration-cache --no-daemon && break
-            echo "Attempt $attempt failed"
+            log_file="build/reports/clickhouse-readiness/attempt-${attempt}.log"
+            if ./gradlew :bluetape4k-exposed-clickhouse:test \
+              -PclickhouseV2Integration=true \
+              --tests 'io.bluetape4k.exposed.clickhouse.ClickHouseReadinessTest' \
+              --no-configuration-cache --no-daemon >"$log_file" 2>&1; then
+              cat "$log_file"
+              echo "readiness=passed attempt=$attempt" | tee -a "$log_file"
+              break
+            fi
+            cat "$log_file"
+            echo "readiness=failed attempt=$attempt" | tee -a "$log_file"
             [ $attempt -lt 8 ] && sleep 60 || exit 1
           done
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+      - name: Test exposed-clickhouse
+        run: ./gradlew :bluetape4k-exposed-clickhouse:test -PclickhouseV2Integration=true --no-configuration-cache --no-daemon
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
           TESTCONTAINERS_RYUK_DISABLED: "true"
@@ -1727,6 +1743,14 @@ jobs:
           name: test-results-clickhouse
           path: exposed/clickhouse/build/test-results/test/*.xml
           if-no-files-found: error
+          retention-days: 14
+      - name: Upload ClickHouse readiness diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: clickhouse-readiness-diagnostics
+          path: build/reports/clickhouse-readiness/
+          if-no-files-found: warn
           retention-days: 14
       - name: Upload coverage report
         if: always()
