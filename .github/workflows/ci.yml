@@ -400,6 +400,7 @@ jobs:
           ./gradlew -p buildSrc test \
             --tests CheckProductionAbiConfigurationCacheTest \
             --tests VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest \
+            --tests VerifyGuavaDependencySubmissionMetadataTest \
             --no-configuration-cache --no-daemon
           test -s buildSrc/build/test-results/test/TEST-CheckProductionAbiConfigurationCacheTest.xml
           grep -F 'checkProductionAbi stores and reuses configuration cache' \
@@ -409,6 +410,9 @@ jobs:
             buildSrc/build/test-results/test/TEST-VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest.xml
           grep -F 'metadata validator rejects outdated Jackson BOM versions in module and Maven metadata' \
             buildSrc/build/test-results/test/TEST-VerifyJacksonSecurityPublicationMetadataConfigurationCacheTest.xml
+          test -s buildSrc/build/test-results/test/TEST-VerifyGuavaDependencySubmissionMetadataTest.xml
+          grep -F 'detached dependency submission graphs use the central Guava coordinate' \
+            buildSrc/build/test-results/test/TEST-VerifyGuavaDependencySubmissionMetadataTest.xml
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 

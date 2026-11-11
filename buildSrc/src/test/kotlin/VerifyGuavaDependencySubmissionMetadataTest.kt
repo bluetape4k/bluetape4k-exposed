@@ -18,6 +18,11 @@ class VerifyGuavaDependencySubmissionMetadataTest {
             "io.opencensus:opencensus-contrib-http-util:0.31.1",
             "com.datastax.cassandra:cassandra-driver-core:3.10.0",
         )
+        assertEquals(
+            expectedParents.map(::moduleCoordinate).sorted(),
+            productionGuavaParentModules(repositoryRoot),
+            "The detached graph fixture must match the production Guava parent allowlist",
+        )
         val initScript = createTempFile("verify-guava-dependency-submission", ".gradle").toFile()
         initScript.writeText(
             """
@@ -92,4 +97,21 @@ class VerifyGuavaDependencySubmissionMetadataTest {
                     File(candidate, "buildSrc").isDirectory
             }
     }
+
+    private fun productionGuavaParentModules(repositoryRoot: File): List<String> {
+        val buildScript = File(repositoryRoot, "build.gradle.kts").readText()
+        val allowlistBody = Regex(
+            """// Dependabot 제출 그래프에서 확인된 parent edge만 중앙 Guava 버전으로 고정한다\.\s*listOf\((.*?)\)\.forEach \{ module ->""",
+            setOf(RegexOption.DOT_MATCHES_ALL),
+        ).find(buildScript)?.groupValues?.get(1)
+            ?: error("The production Guava parent allowlist was not found")
+
+        return Regex("""\"([^\"]+)\"""")
+            .findAll(allowlistBody)
+            .map { it.groupValues[1] }
+            .toList()
+            .sorted()
+    }
+
+    private fun moduleCoordinate(parent: String): String = parent.substringBeforeLast(':')
 }
