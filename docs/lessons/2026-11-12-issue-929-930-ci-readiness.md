@@ -43,4 +43,3 @@ startup/readiness 초기 실패를 최종 green 결과에 합쳤다.
    모든 readiness 시도의 로그와 시도 번호를 artifact로 보존한다.
 3. hosted exact-head CI가 새 회귀 단계를 실행하고 artifact를 업로드했는지 확인하기 전에는
    #929·#930을 완료로 닫지 않는다.
-
