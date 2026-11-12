@@ -25,9 +25,11 @@ startup/readiness 초기 실패를 최종 green 결과에 합쳤다.
 - `actionlint .github/workflows/ci.yml .github/workflows/nightly-tests.yml` 통과
 - `:bluetape4k-exposed-clickhouse:checkKotlinAbi checkProductionAbi` 통과
 - `git diff --check develop...HEAD` 통과
-
-현재 검증은 로컬 exact branch 기준이다. hosted GitHub Actions에서 새 workflow가 실행된
-증거와 첫 readiness 실패 artifact read-back은 아직 없다.
+- hosted exact-head CI run `43138584191`에서 `VerifyGuavaDependencySubmissionMetadataTest` JUnit
+  artifact가 1/1 pass로 생성됐다.
+- hosted `clickhouse-readiness-diagnostics` artifact에 attempt 1 timeout과 attempt 2
+  `readiness=passed`가 함께 보존됐고, readiness 통과 후 제품 suite가 성공했다.
+- 이 증거를 확인한 뒤에도 merge 전까지 #929·#930은 열린 상태로 유지한다.
 
 ## 놓친 점과 교정
 
