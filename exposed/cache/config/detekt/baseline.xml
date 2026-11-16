@@ -16,10 +16,6 @@
     <ID>MaxLineLength:JdbcRedisRepositoryTest.kt:JdbcRedisRepositoryTest.&lt;no name provided>$override fun findAll</ID>
     <ID>MaxLineLength:LocalCacheConfig.kt:LocalCacheConfig$"writeBehindQueueCapacity[$writeBehindQueueCapacity] must be >= writeBehindBatchSize[$writeBehindBatchSize]."</ID>
     <ID>MaxLineLength:R2dbcRedisRepositoryTest.kt:R2dbcRedisRepositoryTest.&lt;no name provided>$override suspend fun findAll</ID>
-    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest$add(PublicSnapshotDeclaration(match.groupValues[1], source.hasInternalApiAnnotationBefore(match.range.first)))</ID>
-    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|const|lateinit)\s+)*(?:val|var)\s+([A-Za-z_]\w*)"""</ID>
-    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|data|sealed|enum|annotation|value|fun|open|abstract)\s+)*(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)"""</ID>
-    <ID>MaxLineLength:SnapshotReadmeParityTest.kt:SnapshotReadmeParityTest.Companion$"""(?m)^(?!(?:internal|private|protected)\b)(?:(?:public|expect|actual|inline|suspend|operator|infix|tailrec|external)\s+)*fun\s+(?:&lt;[^>\n]+>\s+)?([^\n(]+)\("""</ID>
     <ID>MaxLineLength:SuspendJdbcRedisRepositoryTest.kt:SuspendJdbcRedisRepositoryTest$val</ID>
     <ID>MaxLineLength:SuspendJdbcRedisRepositoryTest.kt:SuspendJdbcRedisRepositoryTest.&lt;no name provided>$override suspend fun findAll</ID>
     <ID>ReturnCount:SnapshotCacheFailure.kt:BoundedSnapshotCacheFailureBuffer$override fun drainTo: SnapshotCacheDrainResult</ID>
