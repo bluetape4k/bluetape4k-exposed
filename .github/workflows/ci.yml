@@ -587,6 +587,18 @@ jobs:
             ruby -I "$TOOL_ROOT" "$TOOL_ROOT/export_manifest_test.rb"
           git diff --check
 
+  documentation-contract:
+    name: Documentation contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Run static documentation contract tests
+        run: python3 scripts/test_readme_documentation_contract.py -v
+
   # exposed-core + exposed-dao (H2)
   test-core:
     name: Test / exposed-core + exposed-dao (H2)
@@ -2140,6 +2152,7 @@ jobs:
       - test-benchmark
       - docs-only-validation
       - manual-manifest-validation
+      - documentation-contract
       - test-core
       - test-serialization
       - test-tink
