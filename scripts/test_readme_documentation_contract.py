@@ -132,7 +132,7 @@ BLUETAPE_VERSIONED_COORDINATE = re.compile(
 )
 PUBLIC_TOP_LEVEL_TYPE = re.compile(
     r"(?m)^(?!(?:internal|private|protected)\b)"
-    r"(?:(?:public|expect|actual|data|sealed|enum|annotation|value|fun)\s+)*"
+    r"(?:(?:public|expect|actual|data|sealed|enum|annotation|value|fun|open|abstract)\s+)*"
     r"(?:class|interface|object|typealias)\s+([A-Za-z_]\w*)"
 )
 PUBLIC_TOP_LEVEL_FUNCTION = re.compile(
@@ -380,6 +380,8 @@ class SnapshotReadmeDocumentationContractTest(unittest.TestCase):
             """
         data class PublicSnapshot(val id: Long)
         sealed interface PublicOutcome
+        open class PublicOpen
+        abstract class PublicAbstract
         @JvmInline
         value class PublicId(val value: Long)
         suspend fun <ID : Any> PublicSnapshot.load(id: ID): PublicSnapshot = this
@@ -394,6 +396,8 @@ class SnapshotReadmeDocumentationContractTest(unittest.TestCase):
             {
                 PublicSnapshotDeclaration("PublicSnapshot", internal_api=False),
                 PublicSnapshotDeclaration("PublicOutcome", internal_api=False),
+                PublicSnapshotDeclaration("PublicOpen", internal_api=False),
+                PublicSnapshotDeclaration("PublicAbstract", internal_api=False),
                 PublicSnapshotDeclaration("PublicId", internal_api=False),
                 PublicSnapshotDeclaration("load", internal_api=False),
                 PublicSnapshotDeclaration("PUBLIC_LIMIT", internal_api=False),
