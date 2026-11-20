@@ -23,7 +23,7 @@ buildscript {
 
     val jackson2Version = centralVersion("jackson2")
     val jackson3Version = centralVersion("jackson3")
-    val jacksonAnnotationsVersion = centralVersion("jackson-annotations")
+    val jacksonAnnotationsVersion = centralLibraryVersion("jackson-annotations")
     val freemarkerVersion = centralLibraryVersion("freemarker")
     val jsoupVersion = centralLibraryVersion("jsoup")
     val mariaDbVersion = centralLibraryVersion("mariadb-java-client")

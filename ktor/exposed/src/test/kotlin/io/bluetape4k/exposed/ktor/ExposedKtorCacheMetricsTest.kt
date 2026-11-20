@@ -395,7 +395,7 @@ class ExposedKtorCacheMetricsTest {
 
         override fun <T: Any> newGauge(
             id: Meter.Id,
-            obj: T?,
+            obj: T,
             valueFunction: ToDoubleFunction<T>,
         ): Gauge {
             failIfNeeded()
@@ -426,7 +426,7 @@ class ExposedKtorCacheMetricsTest {
 
         override fun <T: Any> newGauge(
             id: Meter.Id,
-            obj: T?,
+            obj: T,
             valueFunction: ToDoubleFunction<T>,
         ): Gauge {
             failIfNeeded()
@@ -465,7 +465,7 @@ class ExposedKtorCacheMetricsTest {
 
         override fun <T: Any> newGauge(
             id: Meter.Id,
-            obj: T?,
+            obj: T,
             valueFunction: ToDoubleFunction<T>,
         ): Gauge {
             failIfNeeded()
@@ -497,7 +497,7 @@ class ExposedKtorCacheMetricsTest {
 
         override fun <T: Any> newGauge(
             id: Meter.Id,
-            obj: T?,
+            obj: T,
             valueFunction: ToDoubleFunction<T>,
         ): Gauge {
             failIfNeeded()
@@ -533,7 +533,7 @@ class ExposedKtorCacheMetricsTest {
 
         override fun <T: Any> newGauge(
             id: Meter.Id,
-            obj: T?,
+            obj: T,
             valueFunction: ToDoubleFunction<T>,
         ): Gauge {
             if (cancel) {

@@ -81,7 +81,7 @@ class VerifyGuavaDependencySubmissionMetadataTest {
                 "The detached graph did not probe exactly the expected alert parent edges:\n${probeLines.joinToString("\n")}",
             )
             assertTrue(
-                probeLines.all { "requested=33.7.2-jre selected=33.7.2-jre" in it },
+                probeLines.all { "requested=33.8.0-jre selected=33.8.0-jre" in it },
                 "Detached dependency graph used a non-central Guava coordinate:\n${probeLines.joinToString("\n")}",
             )
         } finally {
