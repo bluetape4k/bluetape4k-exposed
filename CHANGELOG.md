@@ -47,6 +47,18 @@
 - 테이블·스키마 정리 실패가 본문 실패를 덮지 않도록 하고, JDBC 테스트 지원 artifact의
   불필요한 Spring Boot starter 전이 의존성을 제거했다. downstream 이전과 배포는 별도 작업이다.
 
+## [2.1.0] - 2026-11-21
+
+### 추가
+
+- tenant별 JDBC/R2DBC fixture와 `DataSource`/Exposed `Database` lifecycle을
+  소유하는 tenant registry를 추가했습니다.
+
+### 변경
+
+- Exposed 1.6.1 및 최신 catalog line에 맞춰 public API, Caffeine lifecycle,
+  ClickHouse DDL, publication POM/license 검증을 정렬했습니다.
+
 ## [2.0.0] - 2026-09-02
 
 ### 추가됨
