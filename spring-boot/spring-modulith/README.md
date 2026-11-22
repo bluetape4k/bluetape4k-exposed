@@ -11,8 +11,8 @@ The module intentionally uses the `exposed-spring-modulith` artifact shape inste
 
 ```kotlin
 dependencies {
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:2.0.0")
-    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:2.0.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-boot-jdbc:2.1.0")
+    implementation("io.github.bluetape4k.exposed:bluetape4k-exposed-spring-modulith:2.1.0")
 }
 ```
 
