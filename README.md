@@ -58,14 +58,13 @@ files remain concise entry points; detailed behavior belongs in `central manual`
 
 ## Release lines
 
-- **Latest stable:** `2.0.0` (2026-09-02). The release-pinned manual uses this ref.
-- **Current development:** `2.1.0-SNAPSHOT` on `develop`.
+- **Latest stable:** `2.1.0` (2026-11-21). The release-pinned manual uses this ref.
+- **Current development:** `2.2.0-SNAPSHOT` on `develop`.
 
 ## Modules
 
-The stable `2.0.0` BOM contains the released modules below. New changes on
-`develop` target the `2.1.0-SNAPSHOT` line; `exposed-tenant-jdbc` is
-develop-only until that line publishes it.
+The stable `2.1.0` BOM contains the released modules below. New changes on
+`develop` target the `2.2.0-SNAPSHOT` line.
 
 | Module | Description |
 |--------|-------------|
@@ -227,8 +226,8 @@ dependencies {
 }
 ```
 
-The TenantContext adapters are available in the stable `2.0.0` BOM. The
-snapshot repository below is needed only for changes on the `2.1.0-SNAPSHOT`
+The TenantContext adapters are available in the stable `2.1.0` BOM. The
+snapshot repository below is needed only for changes on the `2.2.0-SNAPSHOT`
 development line.
 
 ```kotlin
@@ -240,9 +239,8 @@ dependencies {
 }
 ```
 
-`bluetape4k-exposed-tenant-jdbc` is introduced on the `2.1.0-SNAPSHOT`
-development line and is not available from the stable `2.0.0` BOM until that
-line publishes it. The registry owns tenant-keyed `DataSource`/Exposed
+`bluetape4k-exposed-tenant-jdbc` is available from the stable `2.1.0` BOM. The
+`2.2.0-SNAPSHOT` line contains subsequent development changes. The registry owns tenant-keyed `DataSource`/Exposed
 `Database` creation and reverse-order cleanup; the application still performs
 authorization before lookup and drains active transactions before shutdown.
 
