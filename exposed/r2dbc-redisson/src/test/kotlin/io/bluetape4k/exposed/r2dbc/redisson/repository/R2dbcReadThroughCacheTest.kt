@@ -1,5 +1,6 @@
 package io.bluetape4k.exposed.r2dbc.redisson.repository
 
+import io.bluetape4k.assertions.shouldNotBeNull
 import io.bluetape4k.coroutines.flow.extensions.log
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.redisson.domain.R2dbcUserCredentialRedissonRepository
@@ -12,17 +13,22 @@ import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.withUserCredential
 import io.bluetape4k.exposed.r2dbc.redisson.domain.UserSchema.withUserTable
 import io.bluetape4k.exposed.r2dbc.redisson.repository.scenario.R2dbcReadThroughScenario
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
+import io.bluetape4k.exposed.r2dbc.tests.withTables
 import io.bluetape4k.idgenerators.uuid.Uuid
+import io.bluetape4k.junit5.coroutines.runSuspendIO
 import io.bluetape4k.logging.coroutines.KLoggingChannel
 import io.bluetape4k.redis.redisson.cache.RedissonCacheConfig
 import io.bluetape4k.redis.redisson.codec.RedissonCodecs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.inTopLevelSuspendTransaction
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
@@ -142,6 +148,38 @@ class R2dbcReadThroughCacheTest {
             )
         override val repository by lazy {
             R2dbcUserCredentialRedissonRepository(redissonClient, config = cacheConfig)
+        }
+    }
+
+    @Nested
+    inner class R2dbcRepositoryDefaultDatabaseIsolationTest: AbstractR2dbcRedissonTest() {
+        @Test
+        fun `detached repository loader uses the active fixture database`() = runSuspendIO {
+            val previousDefault = TransactionManager.defaultDatabase
+            try {
+                withTables(TestDB.H2_MYSQL) { }
+                TransactionManager.defaultDatabase =
+                    TestDB.H2_MYSQL.db ?: error("TestDB.H2_MYSQL database is not initialized")
+
+                val repository = R2dbcUserRedissonRepository(
+                    redissonClient,
+                    config = RedissonCacheConfig.READ_ONLY.copy(
+                        name = "r2dbc:read-through:fixture-isolation:${UUID.randomUUID()}",
+                        codec = RedissonCodecs.FastForyComposite,
+                    ),
+                )
+                try {
+                    withUserTable(TestDB.H2, Dispatchers.IO) {
+                        val id = UserTable.select(UserTable.id).first()[UserTable.id].value
+
+                        repository.get(id).shouldNotBeNull()
+                    }
+                } finally {
+                    repository.closeAndJoin()
+                }
+            } finally {
+                TransactionManager.defaultDatabase = previousDefault
+            }
         }
     }
 }
