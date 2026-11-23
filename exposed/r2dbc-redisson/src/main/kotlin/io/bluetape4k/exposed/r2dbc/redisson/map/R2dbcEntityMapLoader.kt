@@ -100,7 +100,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                         // 코루틴 취소는 반드시 재전파해야 한다 — 삼키면 구조적 동시성이 깨진다
                         throw e
                     } catch (e: Throwable) {
-                        log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. id=$id" }
+                        log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                         throw e
                     }
                 }
@@ -157,7 +157,7 @@ open class R2dbcEntityMapLoader<ID: Any, E: Any>(
                 channel.close(e)
                 throw e
             } catch (e: Exception) {
-                log.error(e) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                 channel.close(e)
             } finally {
                 // 정상 완료(오류 없음) 시 채널을 닫는다; 오류 경로에서는 이미 위에서 닫혔다

@@ -4,8 +4,8 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeFalse
 import io.bluetape4k.assertions.shouldBeTrue
-import io.bluetape4k.assertions.shouldContain
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.redisson.AbstractR2dbcRedissonTest
 import io.bluetape4k.exposed.r2dbc.tests.TestDB
 import io.bluetape4k.exposed.r2dbc.tests.withDb
@@ -44,7 +44,7 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
     private object MissingLoaderTable: LongIdTable("r2dbc_redisson_missing_log_table_credential_751")
 
     @Test
-    fun `loadAllKeys DB 오류 로그는 원시 예외를 첨부한다`() = runSuspendIO {
+    fun `loadAllKeys 오류 로그는 원시 예외를 첨부하지 않는다`() = runSuspendIO {
         withDb(TestDB.H2) { testDB ->
             val secret = "R2DBC_REDISSON_MISSING_LOG_TABLE_CREDENTIAL_751"
             val loader = R2dbcExposedEntityMapLoader(
@@ -65,7 +65,8 @@ class R2dbcExposedEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
                 }
                 errorEvents.size shouldBeEqualTo 2
                 errorEvents.any { it.formattedMessage.contains("errorType=") }.shouldBeTrue()
-                appender.rendered shouldContain secret
+                appender.rendered shouldNotContain secret
+                errorEvents.all { it.throwableProxy == null }.shouldBeTrue()
             }
         }
     }

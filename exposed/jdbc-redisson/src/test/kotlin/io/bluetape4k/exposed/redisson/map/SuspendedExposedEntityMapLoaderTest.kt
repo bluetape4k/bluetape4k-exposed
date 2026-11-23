@@ -7,6 +7,7 @@ import io.bluetape4k.assertions.shouldBeInstanceOf
 import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.coroutines.support.awaitUntil
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
@@ -329,6 +330,37 @@ class SuspendedExposedEntityMapLoaderTest: AbstractExposedTest() {
         }
 
         observedQueryTimeout shouldBeEqualTo 30
+    }
+
+    @Test
+    fun `load 로그는 caller ID와 예외 내용을 기록하지 않는다`() = runSuspendIO {
+        withTablesSuspending(TestDB.H2, LoaderTable) {
+            val sensitiveId = "email=redaction-sentinel@example.com"
+            val sensitiveMessage = "token=redaction-sentinel-value"
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            try {
+                val loader = SuspendedEntityMapLoader<String, String>(
+                    loadByIdFromDB = { throw IllegalStateException(sensitiveMessage) },
+                    loadAllIdsFromDB = { _ -> },
+                    scope = scope,
+                )
+
+                RecordingLogAppender().use { appender ->
+                    runCatching { loader.load(sensitiveId).toCompletableFuture().join() }
+                        .exceptionOrNull()
+                        .shouldNotBeNull()
+
+                    appender.rendered shouldNotContain sensitiveId
+                    appender.rendered shouldNotContain sensitiveMessage
+                    appender.events
+                        .filter { it.formattedMessage.contains("단건 엔티티 로드") }
+                        .all { it.throwableProxy == null }
+                        .shouldBeTrue()
+                }
+            } finally {
+                scope.cancel()
+            }
+        }
     }
 
     @Test

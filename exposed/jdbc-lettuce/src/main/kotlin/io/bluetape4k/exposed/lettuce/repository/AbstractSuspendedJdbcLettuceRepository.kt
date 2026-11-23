@@ -173,7 +173,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     override suspend fun containsKey(id: ID): Boolean = get(id) != null
 
     override suspend fun get(id: ID): E? {
-        log.debug { "get($id)" }
+        log.debug { "cache lookup: operation=get" }
 
         nearCache?.get(serializeKey(id))?.let { return it }
         val value = cache.get(id) ?: return null
@@ -182,7 +182,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     }
 
     override suspend fun getAll(ids: Collection<ID>): Map<ID, E> {
-        log.debug { "getAll($ids)" }
+        log.debug { "cache lookup: operation=getAll, idCount=${ids.size}" }
 
         val nc = nearCache ?: return cache.getAll(ids.toSet())
         val result = mutableMapOf<ID, E>()
@@ -229,8 +229,9 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) {
-                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
+            log.warn {
+                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, " +
+                    "cacheType=${cache::class.simpleName}, errorType=${e::class.simpleName}"
             }
         }
         return entities
@@ -249,7 +250,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun put(id: ID, entity: E) {
-        log.debug { "캐시에 엔티티 저장: operation=put, id=$id" }
+        log.debug { "캐시에 엔티티 저장: operation=put" }
         cache.set(id, entity)
         nearCache?.put(serializeKey(id), entity)
     }
@@ -266,20 +267,20 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
     // -------------------------------------------------------------------------
 
     override suspend fun invalidate(id: ID) {
-        log.debug { "캐시에서 엔티티 무효화: operation=invalidate, id=$id" }
+        log.debug { "캐시에서 엔티티 무효화: operation=invalidate" }
         cache.evict(id)
         nearCache?.remove(serializeKey(id))
     }
 
     override suspend fun invalidateAll(ids: Collection<ID>) {
-        log.debug { "캐시에서 엔티티 무효화: operation=invalidateAll, ids=${ids.joinToString(", ")}" }
+        log.debug { "캐시에서 엔티티 무효화: operation=invalidateAll, idCount=${ids.size}" }
         cache.evictAll(ids)
         nearCache?.removeAll(ids.map { serializeKey(it) }.toSet())
     }
 
     override suspend fun invalidateByPattern(patterns: String, count: Int): Long {
         count.requirePositiveNumber("count")
-        log.debug { "캐시에서 패턴에 해당하는 엔티티 무효화: operation=invalidateByPattern, patterns=$patterns, count=$count" }
+        log.debug { "캐시에서 패턴에 해당하는 엔티티 무효화: operation=invalidateByPattern, count=$count" }
 
         val deleted = cache.invalidateByPattern(patterns, count.toLong())
         nearCache?.clearAll()
@@ -324,7 +325,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "nearCache 종료 중 오류 발생." }
+            log.warn { "nearCache 종료 중 오류 발생. errorType=${e::class.simpleName}" }
         }
     }
 
@@ -332,7 +333,7 @@ abstract class AbstractSuspendedJdbcLettuceRepository<ID: Any, E: Serializable>(
         try {
             closeCacheResource()
         } catch (e: Exception) {
-            log.warn(e) { "cache 종료 중 오류 발생." }
+            log.warn { "cache 종료 중 오류 발생. errorType=${e::class.simpleName}" }
         }
     }
 }

@@ -38,7 +38,7 @@ open class EntityMapLoader<ID: Any, E: Any>(
 
     /** 단일 키를 DB에서 로드합니다. */
     override fun load(id: ID): E? = transaction {
-        log.debug { "DB에서 단건 엔티티 로드를 시작합니다. id=$id" }
+        log.debug { "DB에서 단건 엔티티 로드를 시작합니다. operation=load" }
 
         loadByIdFromDB(id).apply {
             log.debug { "DB에서 단건 엔티티 로드를 완료했습니다. found=${this != null}" }

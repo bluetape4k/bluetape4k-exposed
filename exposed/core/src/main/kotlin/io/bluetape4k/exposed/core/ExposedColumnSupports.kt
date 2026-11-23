@@ -46,7 +46,7 @@ fun <K: Any> Iterable<K>.mapToLanguageType(column: Column<*>): List<Any> {
  *
  * ## 동작/계약
  * - 지원 타입은 `Boolean/Short/Int/Long/String/UUID/Uuid/ByteArray/BigInteger/BigDecimal`입니다.
- * - 변환할 수 없는 값/타입이면 경고 로그를 남기고 `null`을 반환합니다.
+ * - 변환할 수 없는 값/타입이면 원본 식별자 값은 기록하지 않고 타입 정보만 경고 로그에 남긴 뒤 `null`을 반환합니다.
  * - 입력 객체 자체를 mutate 하지 않습니다.
  *
  * ```kotlin
@@ -69,7 +69,7 @@ fun <K: Any> convertToLanguageType(id: K, langType: KClass<*>): Any? {
         BigInteger::class -> id.asBigIntOrNull()
         BigDecimal::class -> id.asBigDecimalOrNull()
         else                    -> {
-            log.warn { "지원하지 않는 ID 타입입니다. id=$id, langType=$langType" }
+            log.warn { "지원하지 않는 ID 타입입니다. idType=${id::class.simpleName}, langType=$langType" }
             null
         }
     }

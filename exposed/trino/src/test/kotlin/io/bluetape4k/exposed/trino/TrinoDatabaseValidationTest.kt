@@ -1,6 +1,7 @@
 package io.bluetape4k.exposed.trino
 
 import io.bluetape4k.assertions.assertFailsWith
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
@@ -94,6 +95,19 @@ class TrinoDatabaseValidationTest {
     fun `jdbcUrl 이 trino 프로토콜로 시작하지 않으면 IllegalArgumentException 을 던진다`() {
         assertFailsWith<IllegalArgumentException> {
             TrinoDatabase.connect(jdbcUrl = "jdbc:postgresql://localhost/mydb")
+        }
+    }
+
+    @Test
+    fun `connect 로그는 credential 포함 JDBC URL을 노출하지 않는다`() {
+        val sensitiveValue = "trino-url-redaction-sentinel"
+        val jdbcUrl = "jdbc:trino://localhost:8080/memory/default?token=$sensitiveValue"
+
+        RecordingLogAppender().use { appender ->
+            TrinoDatabase.connect(jdbcUrl = jdbcUrl)
+
+            appender.rendered shouldNotContain sensitiveValue
+            appender.rendered shouldNotContain jdbcUrl
         }
     }
 }

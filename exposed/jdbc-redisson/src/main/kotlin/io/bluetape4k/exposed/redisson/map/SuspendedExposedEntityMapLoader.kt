@@ -111,7 +111,7 @@ open class SuspendedExposedEntityMapLoader<ID: Any, E: Any>(
         } catch (cause: CancellationException) {
             throw cause
         } catch (cause: Throwable) {
-            log.error(cause) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+            log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다. errorType=${cause::class.simpleName}" }
             throw cause
         }
     },

@@ -33,7 +33,8 @@ object DruidJdbc: KLogging() {
      * Read-only SQL query를 실행하고 [ResultSet]을 매핑합니다.
      *
      * 이 helper는 DDL, DML, repository, migration, Exposed dialect 동작을 의도적으로 노출하지
-     * 않습니다. SQL text와 결과 매핑의 책임은 호출자에게 있습니다.
+     * 않습니다. SQL text와 결과 매핑의 책임은 호출자에게 있습니다. SQL 원문은 운영 로그에
+     * 기록하지 않습니다.
      */
     fun <T> query(
         sql: String,
@@ -41,7 +42,7 @@ object DruidJdbc: KLogging() {
         mapper: (ResultSet) -> T,
     ): List<T> {
         requireQueryOnlySql(sql)
-        log.debug { "Executing query: $sql" }
+        log.debug { "Executing Druid query: operation=query" }
 
         return connection(options).use { conn ->
             conn.createStatement().use { statement ->

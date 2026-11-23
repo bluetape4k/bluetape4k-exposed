@@ -86,7 +86,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val cached = runCatching {
             commands.get(redisKey)
         }.onFailure { e ->
-            log.warn(e) { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
+            log.warn { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
         }.getOrNull()
 
         if (cached != null) return cached
@@ -96,7 +96,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         runCatching {
             commands.set(redisKey, value, SetArgs().ex(ttlSeconds))
         }.onFailure { e ->
-            log.warn(e) { "Redis SETEX failed. key=$key" }
+            log.warn { "Redis SETEX failed. errorType=${e::class.simpleName}" }
         }
         return value
     }
@@ -197,7 +197,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         val mgetResult = runCatching {
             commands.mget(*redisKeys)
         }.onFailure { e ->
-            log.warn(e) { "Redis MGET failed, loader fallback: requested=${keys.size}" }
+            log.warn { "Redis MGET failed, loader fallback: requested=${keys.size}, errorType=${e::class.simpleName}" }
         }.getOrNull()
 
         val result = mutableMapOf<K, V>()
@@ -222,7 +222,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
                 runCatching {
                     commands.set(redisKey(key), value, SetArgs().ex(ttlSeconds))
                 }.onFailure { e ->
-                    log.warn(e) { "Redis SETEX failed. key=$key" }
+                    log.warn { "Redis SETEX failed. errorType=${e::class.simpleName}" }
                 }
             }
         }
@@ -230,7 +230,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     }
 
     fun delete(key: K) {
-        log.debug { "delete: key=$key" }
+        log.debug { "delete: operation=delete" }
         if (config.writeMode != WriteMode.NONE) writer?.delete(listOf(key))
         commands.del(redisKey(key))
     }
@@ -238,20 +238,20 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
     fun deleteAll(keys: Collection<K>) {
         if (keys.isEmpty()) return
 
-        log.debug { "deleteAll: keys=$keys" }
+        log.debug { "deleteAll: keyCount=${keys.size}" }
         if (config.writeMode != WriteMode.NONE) writer?.delete(keys)
         commands.unlink(*keys.map { redisKey(it) }.toTypedArray())
     }
 
     fun evict(key: K) {
-        log.debug { "evict: key=$key" }
+        log.debug { "evict: operation=evict" }
         commands.del(redisKey(key))
     }
 
     fun evictAll(keys: Collection<K>) {
         if (keys.isEmpty()) return
 
-        log.debug { "evictAll: keys=$keys" }
+        log.debug { "evictAll: keyCount=${keys.size}" }
         commands.unlink(*keys.map { redisKey(it) }.toTypedArray())
     }
 
@@ -303,7 +303,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
         runCatching {
             writer?.write(batch)
         }.onFailure { e ->
-            log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
+            log.error { "Write-behind flush failed: entries=${batch.size}, errorType=${e::class.simpleName}" }
 
             val dropped = mutableListOf<Triple<K, V, Int>>()
 
@@ -334,7 +334,7 @@ class ExposedLettuceLoadedMap<K: Any, V: Any>(
             val serializedKeys = batch.keys.map { keySerializer(it) }
             strCommands.lpush(deadLetterKey, *serializedKeys.toTypedArray())
         }.onFailure { e ->
-            log.error(e) { "Dead letter write failed." }
+            log.error { "Dead letter write failed: errorType=${e::class.simpleName}" }
         }
     }
 

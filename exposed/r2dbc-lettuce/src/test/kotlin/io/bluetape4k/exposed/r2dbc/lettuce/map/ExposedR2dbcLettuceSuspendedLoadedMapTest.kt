@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.r2dbc.lettuce.map
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeGreaterThan
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldBeTrue
 import io.bluetape4k.assertions.shouldHaveSize
 import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.r2dbc.lettuce.AbstractR2dbcLettuceTest
@@ -26,6 +27,48 @@ import java.util.concurrent.atomic.AtomicInteger
 class ExposedR2dbcLettuceSuspendedLoadedMapTest: AbstractR2dbcLettuceTest() {
 
     companion object: KLoggingChannel()
+
+    @Test
+    fun `write-behind failure logs omit caller payload and exception message`() = runSuspendIO {
+        val sensitiveKey = "email=r2dbc-lettuce-redaction-sentinel@example.com"
+        val sensitiveValue = "credential=r2dbc-lettuce-redaction-sentinel"
+        val sensitiveMessage = "token=r2dbc-lettuce-redaction-error-sentinel"
+        val writer = object: SuspendedMapWriter<String, String> {
+            override suspend fun write(map: Map<String, String>) {
+                throw IllegalStateException("$sensitiveMessage:$map")
+            }
+
+            override suspend fun delete(keys: Collection<String>) = Unit
+        }
+        val map = newMap(
+            prefix = randomName(),
+            writer = writer,
+            writeMode = WriteMode.WRITE_BEHIND,
+            writeBehindBatchSize = 1,
+        )
+
+        RecordingLogAppender().use { appender ->
+            try {
+                map.set(sensitiveKey, sensitiveValue)
+                await
+                    .atMost(Duration.ofSeconds(5))
+                    .pollInterval(Duration.ofMillis(100))
+                    .untilSuspending {
+                        appender.events.count { it.formattedMessage.contains("Write-behind flush failed") } >= 3
+                    }
+
+                appender.rendered shouldNotContain sensitiveKey
+                appender.rendered shouldNotContain sensitiveValue
+                appender.rendered shouldNotContain sensitiveMessage
+                appender.events
+                    .filter { it.formattedMessage.contains("Write-behind flush failed") }
+                    .all { it.throwableProxy == null }
+                    .shouldBeTrue()
+            } finally {
+                map.suspendClose()
+            }
+        }
+    }
 
     @Test
     fun `get and getAll load cache misses and pattern invalidation removes cached values`() = runSuspendIO {

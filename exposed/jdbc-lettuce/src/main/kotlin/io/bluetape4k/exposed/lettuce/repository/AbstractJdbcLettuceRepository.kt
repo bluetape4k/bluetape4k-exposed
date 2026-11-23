@@ -158,7 +158,7 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
         sortOrder: SortOrder,
         where: () -> Op<Boolean>,
     ): List<E> {
-        log.debug { "findAll: limit=$limit, offset=$offset, sortBy=$sortBy, sortOrder=$sortOrder, where=$where" }
+        log.debug { "findAll: operation=findAll, limit=$limit, offset=$offset" }
 
         val entities = transaction {
             table
@@ -179,8 +179,9 @@ abstract class AbstractJdbcLettuceRepository<ID: Any, E: Serializable>(
         runCatching {
             cache.warmAll(entries, JdbcLettuceRepository.DEFAULT_BATCH_SIZE)
         }.onFailure { e ->
-            log.warn(e) {
-                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
+            log.warn {
+                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, " +
+                    "cacheType=${cache::class.simpleName}, errorType=${e::class.simpleName}"
             }
         }
         return entities

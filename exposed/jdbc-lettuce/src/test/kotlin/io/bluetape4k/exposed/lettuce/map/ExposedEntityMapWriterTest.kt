@@ -4,6 +4,7 @@ import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEmpty
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldHaveSize
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.exposed.tests.AbstractExposedTest
 import io.bluetape4k.exposed.tests.TestDB
 import io.bluetape4k.exposed.tests.withTables
@@ -62,6 +63,21 @@ class ExposedEntityMapWriterTest: AbstractExposedTest() {
                 stmt[WriterTable.name] = entity.name
             }
         )
+
+    @Test
+    fun `write logs omit caller ID and entity payload`() {
+        val sensitiveId = 987654321L
+        val sensitiveName = "credential=jdbc-lettuce-writer-sentinel"
+
+        withTables(TestDB.H2, WriterTable) {
+            RecordingLogAppender().use { appender ->
+                newWriter().write(mapOf(sensitiveId to WriterEntity(sensitiveId, sensitiveName)))
+
+                appender.rendered shouldNotContain sensitiveId.toString()
+                appender.rendered shouldNotContain sensitiveName
+            }
+        }
+    }
 
     @Test
     fun `write - 새 엔티티를 DB에 삽입한다`() {

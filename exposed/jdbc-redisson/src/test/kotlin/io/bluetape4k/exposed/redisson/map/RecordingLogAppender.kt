@@ -15,6 +15,9 @@ internal class RecordingLogAppender: AppenderBase<ILoggingEvent>(), AutoCloseabl
             listOfNotNull(event.formattedMessage, event.throwableProxy?.message).joinToString(" ")
         }
 
+    val events: List<ILoggingEvent>
+        get() = capturedEvents.toList()
+
     init {
         start()
         logger.addAppender(this)
