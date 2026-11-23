@@ -174,7 +174,7 @@ class R2dbcEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
     }
 
     @Test
-    fun `load 실패 로그는 원시 예외를 첨부한다`() = runSuspendIO {
+    fun `load 실패 로그는 원시 예외를 첨부하지 않고 예외를 재전파한다`() = runSuspendIO {
         withDb(TestDB.H2) { testDB ->
             val secret = "credential=r2dbc-loader-secret"
             val loader = R2dbcEntityMapLoader<Long, TestEntity>(
@@ -183,23 +183,26 @@ class R2dbcEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
             )
 
             RecordingLogAppender().use { appender ->
-                assertFailsWith<IllegalStateException> {
+                val thrown = assertFailsWith<IllegalStateException> {
                     loader.useLoader(testDB) {
                         loader.load(1L).await()
                     }
                 }
+                thrown.message shouldBeEqualTo secret
 
                 val errorEvent = appender.events.first { event ->
                     event.formattedMessage.contains("단건 엔티티 로드 중 오류")
                 }
-                errorEvent.formattedMessage shouldContain "B에서 단건 엔티티 로드 중 오류가 발생했습니다"
-                appender.rendered shouldContain secret
+                errorEvent.formattedMessage shouldContain "단건 엔티티 로드 중 오류가 발생했습니다"
+                errorEvent.formattedMessage shouldContain "errorType=IllegalStateException"
+                errorEvent.throwableProxy.shouldBeNull()
+                appender.rendered shouldNotContain secret
             }
         }
     }
 
     @Test
-    fun `loadAllKeys producer 실패 로그는 원시 예외를 첨부한다`() = runSuspendIO {
+    fun `loadAllKeys producer 실패 로그는 원시 예외를 첨부하지 않고 예외를 재전파한다`() = runSuspendIO {
         withDb(TestDB.H2) { testDB ->
             val secret = "token=r2dbc-producer-secret"
             val loader = R2dbcEntityMapLoader<Long, TestEntity>(
@@ -208,17 +211,20 @@ class R2dbcEntityMapLoaderTest: AbstractR2dbcRedissonTest() {
             )
 
             RecordingLogAppender().use { appender ->
-                assertFailsWith<IllegalStateException> {
+                val thrown = assertFailsWith<IllegalStateException> {
                     loader.useLoader(testDB) {
                         loader.loadAllKeys().hasNext().await()
                     }
                 }
+                thrown.message shouldBeEqualTo secret
 
                 val errorEvent = appender.events.first { event ->
                     event.formattedMessage.contains("DB에서 모든 ID 로딩 중 오류")
                 }
                 errorEvent.formattedMessage shouldContain "DB에서 모든 ID 로딩 중 오류"
-                appender.rendered shouldContain secret
+                errorEvent.formattedMessage shouldContain "errorType=IllegalStateException"
+                errorEvent.throwableProxy.shouldBeNull()
+                appender.rendered shouldNotContain secret
             }
         }
     }

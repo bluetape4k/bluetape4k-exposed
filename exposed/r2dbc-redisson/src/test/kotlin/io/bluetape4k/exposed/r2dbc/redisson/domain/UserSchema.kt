@@ -19,6 +19,7 @@ import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import java.io.Serializable
 import java.time.Instant
 import java.time.LocalDateTime
@@ -76,34 +77,36 @@ object UserSchema: KLoggingChannel() {
         context: CoroutineContext,
         statement: suspend R2dbcTransaction.() -> Unit,
     ) {
-        withTables(testDB, UserTable) {
-            insertUser(
-                UserRecord(
-                    id = 0L,
-                    firstName = "Sunghyouk",
-                    lastName = "Bae",
-                    email = faker.internet().safeEmailAddress()
+        withTables(testDB, UserTable) { fixtureDB ->
+            withFixtureDefaultDatabase(fixtureDB) {
+                insertUser(
+                    UserRecord(
+                        id = 0L,
+                        firstName = "Sunghyouk",
+                        lastName = "Bae",
+                        email = faker.internet().safeEmailAddress()
+                    )
                 )
-            )
-            insertUser(
-                UserRecord(
-                    id = 0L,
-                    firstName = "Midoogi",
-                    lastName = "Kwon",
-                    email = faker.internet().safeEmailAddress()
+                insertUser(
+                    UserRecord(
+                        id = 0L,
+                        firstName = "Midoogi",
+                        lastName = "Kwon",
+                        email = faker.internet().safeEmailAddress()
+                    )
                 )
-            )
-            insertUser(
-                UserRecord(
-                    id = 0L,
-                    firstName = "Jehyoung",
-                    lastName = "Bae",
-                    email = faker.internet().safeEmailAddress()
+                insertUser(
+                    UserRecord(
+                        id = 0L,
+                        firstName = "Jehyoung",
+                        lastName = "Bae",
+                        email = faker.internet().safeEmailAddress()
+                    )
                 )
-            )
-            commit()
+                commit()
 
-            statement()
+                statement()
+            }
         }
     }
 
@@ -160,13 +163,15 @@ object UserSchema: KLoggingChannel() {
         context: CoroutineContext,
         statement: suspend R2dbcTransaction.() -> Unit,
     ) {
-        withTables(testDB, UserCredentialsTable) {
-            insertUserCredentials("debop", 5L)
-            insertUserCredentials("midoogi", 100L)
-            insertUserCredentials(faker.credentials().username(), 200L)
-            commit()
+        withTables(testDB, UserCredentialsTable) { fixtureDB ->
+            withFixtureDefaultDatabase(fixtureDB) {
+                insertUserCredentials("debop", 5L)
+                insertUserCredentials("midoogi", 100L)
+                insertUserCredentials(faker.credentials().username(), 200L)
+                commit()
 
-            statement()
+                statement()
+            }
         }
     }
 
@@ -201,4 +206,20 @@ object UserSchema: KLoggingChannel() {
             .where { UserCredentialsTable.loginId eq loginId }
             .singleOrNull()
             ?.toUserCredentialsRecord()
+
+    /**
+     * 분리된 Redisson loader/writer가 현재 fixture DB를 선택하도록
+     * TransactionManager 기본 DB를 임시 설정합니다.
+     */
+    private suspend fun <T> withFixtureDefaultDatabase(testDB: TestDB, block: suspend () -> T): T {
+        val previousDefault = TransactionManager.defaultDatabase
+        TransactionManager.defaultDatabase = checkNotNull(testDB.db) {
+            "testDB.db must be initialized for $testDB"
+        }
+        return try {
+            block()
+        } finally {
+            TransactionManager.defaultDatabase = previousDefault
+        }
+    }
 }
