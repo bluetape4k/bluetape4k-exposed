@@ -82,7 +82,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
      * @return 엔티티를 담은 [CompletionStage]. 존재하지 않으면 null.
      */
     override fun load(id: ID): CompletionStage<E?> = scope.async {
-        log.debug { "DB에서 단건 엔티티 로드를 시작합니다. id=$id" }
+        log.debug { "DB에서 단건 엔티티 로드를 시작합니다. operation=load" }
 
         suspendTransactionWithIO {
             try {
@@ -94,7 +94,7 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파해야 합니다.
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다." }
+                log.error { "DB에서 단건 엔티티 로드 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                 throw e
             }
         }
@@ -132,13 +132,16 @@ open class SuspendedEntityMapLoader<ID: Any, E: Any>(
                 }
             } catch (e: CancellationException) {
                 if (e is TimeoutCancellationException) {
-                    log.warn(e) { "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec" }
+                    log.warn {
+                        "DB에서 모든 ID를 읽는 작업 중 Timeout 이 발생했습니다. " +
+                            "timeout=$DEFAULT_LOAD_ALL_IDS_TIMEOUT msec, errorType=${e::class.simpleName}"
+                    }
                 }
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
                 cause = e
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에서 모든 ID 로딩 중 오류가 발생했습니다." }
+                log.error { "DB에서 모든 ID 로딩 중 오류가 발생했습니다. errorType=${e::class.simpleName}" }
                 cause = e
                 // DB 오류는 channel cause로 consumer에 전달한다. 일반 예외를 이 child 밖으로
                 // 재전파하면 caller-owned 일반 Job까지 취소되어 다음 enumeration을 막는다.

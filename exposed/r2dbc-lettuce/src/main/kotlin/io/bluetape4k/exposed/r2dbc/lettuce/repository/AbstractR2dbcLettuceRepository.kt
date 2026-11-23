@@ -227,8 +227,9 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) {
-                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, cacheType=${cache::class.simpleName}"
+            log.warn {
+                "캐시 적재 실패: operation=findAll, entryCount=${entries.size}, " +
+                    "cacheType=${cache::class.simpleName}, errorType=${e::class.simpleName}"
             }
         }
         return entities
@@ -313,7 +314,7 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "nearCache 종료 중 오류 발생" }
+            log.warn { "nearCache 종료 중 오류 발생. errorType=${e::class.simpleName}" }
         }
     }
 
@@ -321,7 +322,7 @@ abstract class AbstractR2dbcLettuceRepository<ID: Any, E: Serializable>(
         try {
             closeCacheResource()
         } catch (e: Exception) {
-            log.warn(e) { "cache 종료 중 오류 발생" }
+            log.warn { "cache 종료 중 오류 발생. errorType=${e::class.simpleName}" }
         }
     }
 }

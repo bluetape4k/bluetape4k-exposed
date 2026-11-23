@@ -189,7 +189,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
     }
 
     @Test
-    fun `load 로그는 원시 ID와 엔티티 payload를 노출시킨다`() {
+    fun `load 로그는 원시 ID와 엔티티 payload를 노출하지 않는다`() {
         withTables(TestDB.H2, LoaderTable) {
             val sensitiveName = "credential=jdbc-redisson-secret"
             val insertedId = LoaderTable.insertAndGetId {
@@ -203,7 +203,7 @@ class ExposedEntityMapLoaderTest: AbstractExposedTest() {
             RecordingLogAppender().use { appender ->
                 loader.load(insertedId.value).shouldNotBeNull()
 
-                appender.rendered shouldContain insertedId.value.toString()
+                appender.rendered shouldNotContain insertedId.value.toString()
                 appender.rendered shouldNotContain sensitiveName
             }
         }

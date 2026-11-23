@@ -3,6 +3,7 @@ package io.bluetape4k.exposed.druid
 import io.bluetape4k.assertions.assertFailsWith
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldContain
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
 import org.junit.jupiter.api.Test
 
@@ -28,6 +29,27 @@ class DruidJdbcTest {
             DruidJdbc.query("INSERT INTO foo SELECT 1") { rs ->
                 rs.getInt(1)
             }
+        }
+    }
+
+    @Test
+    fun `query logs omit SQL text`() {
+        val sensitiveValue = "credential=druid-query-redaction-sentinel"
+        val sql = "SELECT '$sensitiveValue' AS secret_value"
+
+        RecordingLogAppender().use { appender ->
+            runCatching {
+                DruidJdbc.query(
+                    sql = sql,
+                    options = DruidConnectionOptions(
+                        avaticaEndpoint = "http://127.0.0.1:1/druid/v2/sql/avatica/",
+                        transparentReconnection = false,
+                    ),
+                ) { rs -> rs.getString(1) }
+            }
+
+            appender.rendered shouldNotContain sensitiveValue
+            appender.rendered shouldNotContain sql
         }
     }
 }

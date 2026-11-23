@@ -79,7 +79,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
     private fun redisKey(key: K): String = "${config.keyPrefix}:${keySerializer(key)}"
 
     suspend fun get(key: K): V? {
-        log.debug { "Getting key=$key" }
+        log.debug { "Getting cache entry: operation=get" }
 
         val redisKey = redisKey(key)
         val cached = try {
@@ -87,7 +87,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Redis GET failed, loader fallback: key=$key" }
+            log.warn { "Redis GET failed, loader fallback: errorType=${e::class.simpleName}" }
             null
         }
         if (cached != null) return cached
@@ -99,13 +99,13 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Redis SETEX failed: key=$key" }
+            log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" }
         }
         return value
     }
 
     suspend fun set(key: K, value: V) {
-        log.debug { "Setting key=$key, value=$value" }
+        log.debug { "Setting cache entry: operation=set" }
 
         when (config.writeMode) {
             WriteMode.NONE          -> {
@@ -128,7 +128,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
 
     /** 여러 엔트리를 [batchSize] 단위로 writer와 Redis pipeline에 저장한다. */
     suspend fun putAll(entries: Map<K, V>, batchSize: Int) {
-        log.debug { "Putting all entries=$entries, batchSize=$batchSize" }
+        log.debug { "Putting cache entries: entryCount=${entries.size}, batchSize=$batchSize" }
 
         batchSize.requirePositiveNumber("batchSize")
         if (entries.isEmpty()) return
@@ -148,7 +148,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
 
     /** DB writer를 호출하지 않고 여러 엔트리를 [batchSize] 단위 Redis pipeline으로 적재한다. */
     suspend fun warmAll(entries: Map<K, V>, batchSize: Int) {
-        log.debug { "Warming all entries=$entries, batchSize=$batchSize" }
+        log.debug { "Warming cache entries: entryCount=${entries.size}, batchSize=$batchSize" }
         batchSize.requirePositiveNumber("batchSize")
         if (entries.isEmpty()) return
 
@@ -187,7 +187,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
     }
 
     suspend fun getAll(keys: Set<K>): Map<K, V> {
-        log.debug { "Getting all keys=$keys" }
+        log.debug { "Getting cache entries: keyCount=${keys.size}" }
 
         if (keys.isEmpty()) return emptyMap()
         val keyList = keys.toList()
@@ -198,7 +198,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Redis MGET failed, loader fallback: requested keys=$keys" }
+            log.warn { "Redis MGET failed, loader fallback: requested=${keys.size}, errorType=${e::class.simpleName}" }
             null
         }
 
@@ -226,7 +226,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    log.warn(e) { "Redis SETEX failed: key=$key" }
+                    log.warn { "Redis SETEX failed: errorType=${e::class.simpleName}" }
                 }
             }
         }
@@ -234,7 +234,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
     }
 
     suspend fun delete(key: K) {
-        log.debug { "Deleting key=$key" }
+        log.debug { "Deleting cache entry: operation=delete" }
         if (config.writeMode != WriteMode.NONE) writer?.delete(listOf(key))
         asyncCommands.del(redisKey(key)).await()
     }
@@ -247,7 +247,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
     }
 
     suspend fun evict(key: K) {
-        log.debug { "Evicting key=$key" }
+        log.debug { "Evicting cache entry: operation=evict" }
         asyncCommands.del(redisKey(key)).await()
     }
 
@@ -263,7 +263,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         var cursor: ScanCursor = ScanCursor.INITIAL
         var deleted = 0L
 
-        log.debug { "Invalidating keys by pattern=$keyPattern" }
+        log.debug { "Invalidating cache entries: operation=invalidateByPattern" }
         do {
             val scanResult = asyncCommands.scan(cursor, scanArgs).await()
             if (scanResult.keys.isNotEmpty()) {
@@ -279,7 +279,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         val pattern = "${config.keyPrefix}:*"
         val scanArgs = ScanArgs.Builder.matches(pattern).limit(100)
         var cursor: ScanCursor = ScanCursor.INITIAL
-        log.debug { "Clearing keys by pattern=$pattern" }
+        log.debug { "Clearing cache entries: operation=clearByPattern" }
 
         do {
             val scanResult = asyncCommands.scan(cursor, scanArgs).await()
@@ -319,7 +319,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.error(e) { "Dead letter write failed: batch=$batch" }
+            log.error { "Dead letter write failed: entries=${batch.size}, errorType=${e::class.simpleName}" }
         }
     }
 
@@ -331,7 +331,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.error(e) { "Write-behind flush failed: entries=${batch.size}" }
+            log.error { "Write-behind flush failed: entries=${batch.size}, errorType=${e::class.simpleName}" }
             val dropped = mutableMapOf<K, V>()
             entries.forEach { (key, value, retryCount) ->
                 val nextRetryCount = retryCount + 1
@@ -357,7 +357,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
                 }
             }
         } catch (e: Exception) {
-            log.warn(e) { "Write-behind job drain timed out or failed during close()" }
+            log.warn { "Write-behind job drain timed out or failed during close(): errorType=${e::class.simpleName}" }
         } finally {
             ownedJob.cancel()
             if (lazyStrConnection.isInitialized()) lazyStrConnection.value.close()
@@ -383,7 +383,7 @@ class ExposedLettuceSuspendedLoadedMap<K: Any, V: Any>(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            log.warn(e) { "Write-behind job drain failed during suspendClose()" }
+            log.warn { "Write-behind job drain failed during suspendClose(): errorType=${e::class.simpleName}" }
         } finally {
             withContext(NonCancellable) {
                 ownedJob.cancel()

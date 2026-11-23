@@ -772,7 +772,7 @@ abstract class AbstractJdbcCaffeineRepository<ID: Any, E: Serializable>(
      * hook.
      */
     protected open fun afterPersisted(id: ID, entity: E) {
-        log.debug { "after persisted. id=$id entity=$entity" }
+        log.debug { "after persisted. operation=persist" }
         // Default no-op.
     }
 

@@ -2,9 +2,15 @@ package io.bluetape4k.exposed.core
 
 import io.bluetape4k.assertions.shouldBeEqualTo
 import io.bluetape4k.assertions.shouldBeNull
+import io.bluetape4k.assertions.shouldNotContain
 import io.bluetape4k.logging.KLogging
+import ch.qos.logback.classic.Logger as LogbackLogger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.junit.jupiter.api.Test
 import java.io.Serializable
 import java.math.BigDecimal
@@ -59,6 +65,26 @@ class ExposedColumnSupportsTest {
     @Test
     fun `convertToLanguageType 는 지원하지 않는 타입에 대해 null 을 반환한다`() {
         convertToLanguageType<Serializable>("serializable").shouldBeNull()
+    }
+
+    @Test
+    fun `지원하지 않는 ID 타입 경고는 caller ID 를 노출하지 않는다`() {
+        val rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as LogbackLogger
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        rootLogger.addAppender(appender)
+
+        try {
+            convertToLanguageType(CallerOwnedId("caller-id-canary"), Serializable::class).shouldBeNull()
+
+            appender.list.map { it.formattedMessage }.joinToString("\n") shouldNotContain "caller-id-canary"
+        } finally {
+            rootLogger.detachAppender(appender)
+            appender.stop()
+        }
+    }
+
+    private data class CallerOwnedId(val value: String) {
+        override fun toString(): String = value
     }
 
     @Test

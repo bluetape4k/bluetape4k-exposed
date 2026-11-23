@@ -89,7 +89,7 @@ class ExposedEntityMapWriter<ID: Any, E: Any>(
 
         if (newIds.isNotEmpty() && !isAutoInc) {
             newIds.chunked(chunkSize).forEach { chunk ->
-                log.debug { "inserting chunk: $chunk" }
+                log.debug { "inserting chunk: entryCount=${chunk.size}" }
                 table.batchInsert(chunk) { id ->
                     // WHY: newIds는 map.keys에서 existingIds를 뺀 집합이므로 map에 반드시 존재한다
                     val entity = map[id].requireNotNull { "map에 id=$id 에 해당하는 엔티티가 없습니다" }

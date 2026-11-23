@@ -65,7 +65,7 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에 Write 중 오류 발생." }
+                log.error { "DB에 Write 중 오류 발생. errorType=${e::class.simpleName}" }
                 throw e
             }
         }
@@ -91,7 +91,7 @@ open class SuspendedEntityMapWriter<ID: Any, E: Any>(
                 // CancellationException 은 코루틴 취소 신호이므로 반드시 재전파합니다.
                 throw e
             } catch (e: Throwable) {
-                log.error(e) { "DB에서 삭제 중 오류 발생." }
+                log.error { "DB에서 삭제 중 오류 발생. errorType=${e::class.simpleName}" }
                 throw e
             }
         }

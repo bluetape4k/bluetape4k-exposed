@@ -68,7 +68,7 @@ class SuspendedExposedEntityMapWriter<ID: Any, E: Any>(
     override fun writeEntities(map: Map<ID, E>) {
         if (map.isEmpty() || writeMode == WriteMode.NONE) return
 
-        log.debug { "writeEntities: map=$map" }
+        log.debug { "writeEntities: entryCount=${map.size}" }
 
         val existingIds = table
             .select(table.id)
@@ -105,7 +105,7 @@ class SuspendedExposedEntityMapWriter<ID: Any, E: Any>(
 
     override fun deleteEntities(keys: Collection<ID>) {
         if (keys.isEmpty()) return
-        log.debug { "deleteEntities: keys=$keys" }
+        log.debug { "deleteEntities: keyCount=${keys.size}" }
         table.deleteWhere { table.id inList keys }
     }
 }

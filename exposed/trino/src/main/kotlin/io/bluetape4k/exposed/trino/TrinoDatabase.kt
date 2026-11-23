@@ -83,6 +83,7 @@ object TrinoDatabase: KLogging() {
      * **주의**: Trino는 transaction을 지원하지 않습니다. 모든 statement는 autocommit mode로
      * 실행되며 block 중간에 실패하면 앞선 DML은 이미 commit된 상태로 남습니다.
      * DDL에서는 [TrinoTable]을 사용해 지원하지 않는 `PRIMARY KEY` syntax를 제거하십시오.
+     * JDBC URL은 credential이나 token을 포함할 수 있으므로 운영 로그에 원문을 기록하지 않습니다.
      *
      * @param host Trino coordinator host, 기본값은 `localhost`
      * @param port Trino coordinator port, 기본값은 `8080`
@@ -149,7 +150,7 @@ object TrinoDatabase: KLogging() {
         // Passing a different DB URL silently fails with an unhelpful "No suitable driver" error.
         jdbcUrl.requireStartsWith("jdbc:trino://", "jdbcUrl")
 
-        log.debug { "connect to trino. jdbcUrl=$jdbcUrl" }
+        log.debug { "connect to trino: operation=connect" }
 
         return Database.connect(
             getNewConnection = {
