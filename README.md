@@ -63,8 +63,9 @@ files remain concise entry points; detailed behavior belongs in `central manual`
 
 ## Modules
 
-The stable `2.1.0` BOM contains the released modules below. New changes on
-`develop` target the `2.2.0-SNAPSHOT` line.
+This table covers the stable `2.1.0` modules and current development modules.
+Entries marked `2.2.0 development` are not part of the stable `2.1.0` BOM.
+New changes on `develop` target the `2.2.0-SNAPSHOT` line.
 
 | Module | Description |
 |--------|-------------|
@@ -73,6 +74,7 @@ The stable `2.1.0` BOM contains the released modules below. New changes on
 | `exposed-jdbc` | JDBC-based Repository pattern, transaction DSL |
 | `exposed-tenant-jdbc` | Framework-neutral tenant `DataSource`/Exposed `Database` registry and lifecycle |
 | `exposed-r2dbc` | R2DBC coroutine-native Repository, suspend transactions |
+| [`exposed-r2dbc-dao`](exposed/r2dbc-dao/README.md) | Experimental JetBrains Exposed 1.6.1 R2DBC DAO dependency integration (`2.2.0 development`) |
 | `exposed-jdbc-tests` | JDBC integration test fixtures |
 | `exposed-r2dbc-tests` | R2DBC integration test fixtures |
 | `exposed-cache` | Cache abstraction interfaces |

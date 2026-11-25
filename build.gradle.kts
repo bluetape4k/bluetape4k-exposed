@@ -1444,8 +1444,10 @@ val productionAbiProjects = publishableProjects
     .filterNot { it.name == "bluetape4k-exposed-bom" }
     .sortedBy(Project::getPath)
 
-check(productionAbiProjects.size == 45) {
-    "Production ABI publication inventory must contain 45 JVM modules, found ${productionAbiProjects.size}"
+val dependencyOnlyModuleNames = setOf("bluetape4k-exposed-r2dbc-dao")
+
+check(productionAbiProjects.size == 46) {
+    "Production ABI publication inventory must contain 46 JVM modules, found ${productionAbiProjects.size}"
 }
 
 val productionAbiCheckTasks = productionAbiProjects.map { project ->
@@ -1466,6 +1468,7 @@ tasks.register<CheckProductionAbiTask>("checkProductionAbi") {
     group = "verification"
     description = "Checks the fail-closed ABI baseline for every published JVM module."
     expectedProjects.set(productionAbiProjects.map(Project::getName))
+    dependencyOnlyModules.set(dependencyOnlyModuleNames)
     baselineFiles.from(productionAbiBaselineFiles)
     actualDumpFiles.from(productionAbiActualFiles)
     reportFile.set(productionAbiReport)
@@ -1556,6 +1559,11 @@ dependencies {
 dependencies {
     subprojects
         .filterNot { sub -> sub.name == "bluetape4k-exposed-bom" }
-        .filter { it.plugins.hasPlugin("org.jetbrains.kotlinx.kover") }
+        .filter { sub ->
+            sub.plugins.hasPlugin("org.jetbrains.kotlinx.kover") &&
+                sub.fileTree("src/main") {
+                    include("**/*.kt", "**/*.java")
+                }.files.isNotEmpty()
+        }
         .forEach { sub -> add("kover", project(mapOf("path" to sub.path))) }
 }

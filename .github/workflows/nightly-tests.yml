@@ -614,9 +614,9 @@ jobs:
           path: '**/build/reports/kover/'
           retention-days: 14
 
-  # exposed-r2dbc + exposed-r2dbc-tests (H2)
+  # exposed-r2dbc, exposed-r2dbc-tests + exposed-r2dbc-dao (H2)
   test-r2dbc-h2:
-    name: Test / exposed-r2dbc + exposed-r2dbc-tests (H2)
+    name: Test / exposed-r2dbc, exposed-r2dbc-tests + exposed-r2dbc-dao (H2)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -633,7 +633,7 @@ jobs:
       - name: Test exposed-r2dbc (H2)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test :bluetape4k-exposed-r2dbc-dao:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -700,9 +700,12 @@ jobs:
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
           test -s build/abi/reports/production-abi.txt
-          grep -F 'modules=45/45' build/abi/reports/production-abi.txt
-          grep -F 'baselines=45/45' build/abi/reports/production-abi.txt
-          grep -F 'actualDumps=45/45' build/abi/reports/production-abi.txt
+          grep -F 'modules=46/46' build/abi/reports/production-abi.txt
+          grep -F 'baselines=46/46' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=46/46' build/abi/reports/production-abi.txt
+          grep -F 'emptyBaselines=1' build/abi/reports/production-abi.txt
+          grep -F 'emptyActualDumps=1' build/abi/reports/production-abi.txt
+          grep -F 'dependencyOnlyModules=1' build/abi/reports/production-abi.txt
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       - name: Validate Ktor dependency allowlist policy
@@ -797,7 +800,7 @@ jobs:
       - name: Test exposed-r2dbc (PostgreSQL)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test :bluetape4k-exposed-r2dbc-dao:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done

@@ -62,8 +62,9 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 
 ## 모듈 목록
 
-아래 목록의 배포된 모듈은 안정판 `2.1.0` BOM에 포함됩니다. `develop`의
-새 변경은 `2.2.0-SNAPSHOT` 개발선을 대상으로 합니다.
+이 표에는 안정판 `2.1.0` 모듈과 현재 개발 모듈이 함께 있습니다.
+`2.2.0 개발`로 표시한 항목은 안정판 `2.1.0` BOM에 포함되지 않습니다.
+`develop`의 새 변경은 `2.2.0-SNAPSHOT` 개발선을 대상으로 합니다.
 
 | 모듈 | 설명 |
 |------|------|
@@ -72,6 +73,7 @@ Column codec, 데이터베이스별 helper, Spring Boot 4 자동 설정을 더�
 | `exposed-jdbc` | JDBC 기반 Repository 패턴, 트랜잭션 DSL |
 | `exposed-tenant-jdbc` | framework-neutral tenant `DataSource`/Exposed `Database` registry와 lifecycle |
 | `exposed-r2dbc` | R2DBC 코루틴 네이티브 Repository, suspend 트랜잭션 |
+| [`exposed-r2dbc-dao`](exposed/r2dbc-dao/README.ko.md) | JetBrains Exposed 1.6.1 실험 R2DBC DAO 의존성 연동 (`2.2.0 개발`) |
 | `exposed-jdbc-tests` | JDBC 통합 테스트 픽스처 |
 | `exposed-r2dbc-tests` | R2DBC 통합 테스트 픽스처 |
 | `exposed-cache` | 캐시 추상화 인터페이스 |
@@ -123,7 +125,7 @@ event, after-commit 발행 hook은 다룰 수 있지만 JaVers audit 개념을 �
 않습니다.
 
 객체 이력, diff, JaVers commit metadata가 필요하면 `bluetape4k-javers`를 사용하세요.
-그쪽의 `javers-exposed`는 Exposed JDBC로 JaVers CDO snapshot을 저장하고,
+그쪽의 `javers-exposed`는 Exposed JDBC로 JaVers CDO 이력을 저장하고,
 `javers-ddd`는 aggregate/domain-event workflow를 JaVers commit으로 연결합니다. 두
 모듈은 이 저장소를 보완하지만 source-of-truth Exposed Repository나 cache decorator를
 대체하지 않습니다.
@@ -177,17 +179,17 @@ Rollback될 수 있는 database flush도 durable event boundary가 아닙니다.
 
 Repository 통합은 다음 순서를 따라야 합니다.
 
-1. `domainEvents()`로 event snapshot을 만듭니다.
+1. `domainEvents()`로 event 상태 복사본을 만듭니다.
 2. Aggregate 상태를 persist하고 after-transaction-commit 또는 동등한 durability
    boundary를 기다립니다.
-3. Snapshot을 outbox, persisted retry queue, transactionally recorded handoff처럼
+3. 복사본을 outbox, persisted retry queue, transactionally recorded handoff처럼
    durable owner가 있는 경로에 넘깁니다.
 4. 그 durable owner가 event 책임을 인수한 뒤에만 aggregate buffer를
    clear/drain합니다.
 
 Durable publication을 command transaction에 포함해야 하는 transaction-aware
 publisher는 다른 순서를 사용합니다. Commit 전에 aggregate를 저장하고 read-only
-snapshot을 인계한 뒤, commit 완료 후에만 buffer를 비웁니다. 동기 listener와 rollback
+복사본을 인계한 뒤, commit 완료 후에만 buffer를 비웁니다. 동기 listener와 rollback
 경계는 [JDBC transaction-aware publisher](spring-boot/jdbc/README.ko.md#transaction-aware-domain-events)를 참고하세요.
 
 Spring Modulith와 JaVers module은 별도 adapter로 유지됩니다. Core 계약은 Spring
@@ -221,8 +223,8 @@ dependencies {
 }
 ```
 
-TenantContext 어댑터는 안정판 `2.1.0` BOM에 포함됩니다. 아래 snapshot
-repository는 `2.2.0-SNAPSHOT` 개발선의 변경을 사용할 때만 필요합니다.
+TenantContext 어댑터는 안정판 `2.1.0` BOM에 포함됩니다. 아래 저장소는
+`2.2.0-SNAPSHOT` 개발선의 변경을 사용할 때만 필요합니다.
 
 ```kotlin
 dependencies {
@@ -239,7 +241,7 @@ registry는 tenant별 `DataSource`/Exposed `Database` 생성과 역순 cleanup�
 소유하지만, 애플리케이션은 lookup 전에 인가를 수행하고 종료 전에 활성
 transaction을 drain해야 합니다.
 
-스냅샷은 Maven Central Snapshots에 배포됩니다:
+개발용 artifact는 Maven Central Snapshots에 배포됩니다:
 
 ```kotlin
 repositories {

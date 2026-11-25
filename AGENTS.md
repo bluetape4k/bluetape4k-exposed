@@ -31,6 +31,7 @@ exposed/
   jdbc/
   tenant-jdbc/           # framework-neutral tenant DataSource/Exposed Database registry
   r2dbc/
+  r2dbc-dao/
   jdbc-tests/
   r2dbc-tests/
   cache/
@@ -94,6 +95,7 @@ buildSrc/
 | `exposed/jdbc` | `:bluetape4k-exposed-jdbc` |
 | `exposed/tenant-jdbc` | `:bluetape4k-exposed-tenant-jdbc` |
 | `exposed/r2dbc` | `:bluetape4k-exposed-r2dbc` |
+| `exposed/r2dbc-dao` | `:bluetape4k-exposed-r2dbc-dao` |
 | `spring-boot/jdbc` | `:bluetape4k-exposed-spring-boot-jdbc` |
 | `spring-boot/r2dbc` | `:bluetape4k-exposed-spring-boot-r2dbc` |
 | `ktor/core` | `:bluetape4k-exposed-ktor-core` |

@@ -14,6 +14,9 @@ abstract class CheckProductionAbiTask : DefaultTask() {
     @get:Input
     abstract val expectedProjects: SetProperty<String>
 
+    @get:Input
+    abstract val dependencyOnlyModules: SetProperty<String>
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val baselineFiles: ConfigurableFileCollection
@@ -37,7 +40,11 @@ abstract class CheckProductionAbiTask : DefaultTask() {
             .map { it.name.removeSuffix(".api") }
             .toSet()
         val actualProjects = actualDumpFiles.files
-            .filter { it.isFile && it.length() > 0L }
+            .filter { it.isFile }
+            .map { it.name.removeSuffix(".api") }
+            .toSet()
+        val emptyActualDumpProjects = actualDumpFiles.files
+            .filter { it.isFile && it.length() == 0L }
             .map { it.name.removeSuffix(".api") }
             .toSet()
 
@@ -46,6 +53,8 @@ abstract class CheckProductionAbiTask : DefaultTask() {
             baselineProjects = baselineProjects,
             actualProjects = actualProjects,
             emptyBaselineProjects = emptyBaselineProjects,
+            emptyActualDumpProjects = emptyActualDumpProjects,
+            dependencyOnlyModules = dependencyOnlyModules.get(),
         )
         result.requireValid()
 
@@ -59,6 +68,8 @@ abstract class CheckProductionAbiTask : DefaultTask() {
                     appendLine("orphanBaselines=${result.orphanBaselines.size}")
                     appendLine("orphanActuals=${result.orphanActuals.size}")
                     appendLine("emptyBaselines=${result.emptyBaselineProjects.size}")
+                    appendLine("emptyActualDumps=${result.emptyActualDumpProjects.size}")
+                    appendLine("dependencyOnlyModules=${result.dependencyOnlyModules.size}")
                     result.expectedProjects.sorted().forEach(::appendLine)
                 },
             )
