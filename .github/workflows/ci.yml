@@ -31,7 +31,7 @@ env:
   JAVA_DISTRIBUTION: 'temurin'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   # Required by the central adoption checker; the resolver below asserts this matches settings.gradle.kts.
-  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: 'c44ec6c47aa3a8dc3e862dbd7d041eb9d78355f3'
+  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: 'd9ad1af37d20545fa97af1c0d01ec05542a92e77'
 
 jobs:
   # Secret scan
