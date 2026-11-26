@@ -66,13 +66,16 @@ class CheckProductionAbiConfigurationCacheTest {
 
     private fun assertCompleteProductionAbiReport(repositoryRoot: File) {
         val report = File(repositoryRoot, "build/abi/reports/production-abi.txt").readText()
-        assertContains(report, "modules=45/45")
-        assertContains(report, "baselines=45/45")
-        assertContains(report, "actualDumps=45/45")
+        assertContains(report, "modules=46/46")
+        assertContains(report, "baselines=46/46")
+        assertContains(report, "actualDumps=46/46")
         assertContains(report, "orphanBaselines=0")
         assertContains(report, "orphanActuals=0")
-        assertContains(report, "emptyBaselines=0")
-        assertEquals(45, report.lineSequence().drop(6).filter(String::isNotBlank).count())
+        assertContains(report, "emptyBaselines=1")
+        assertContains(report, "emptyActualDumps=1")
+        assertContains(report, "dependencyOnlyModules=1")
+        assertContains(report, "bluetape4k-exposed-r2dbc-dao")
+        assertEquals(46, report.lineSequence().drop(8).filter(String::isNotBlank).count())
     }
 
     private fun findRepositoryRoot(): File {

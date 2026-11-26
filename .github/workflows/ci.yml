@@ -31,7 +31,7 @@ env:
   JAVA_DISTRIBUTION: 'temurin'
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   # Required by the central adoption checker; the resolver below asserts this matches settings.gradle.kts.
-  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: 'c44ec6c47aa3a8dc3e862dbd7d041eb9d78355f3'
+  BLUETAPE4K_DEPENDENCIES_CATALOG_REF: 'd9ad1af37d20545fa97af1c0d01ec05542a92e77'
 
 jobs:
   # Secret scan
@@ -177,6 +177,7 @@ jobs:
             r2dbc:
               - 'exposed/r2dbc/**'
               - 'exposed/r2dbc-tests/**'
+              - 'exposed/r2dbc-dao/**'
             jdbc-test-fixture:
               - 'exposed/jdbc/**'
               - 'exposed/jdbc-tests/**'
@@ -450,10 +451,12 @@ jobs:
           ./gradlew checkProductionAbi --no-daemon --no-configuration-cache --no-build-cache \
             2>&1 | tee build/abi/reports/check-production-abi.log
           test -s build/abi/reports/production-abi.txt
-          grep -F 'modules=45/45' build/abi/reports/production-abi.txt
-          grep -F 'baselines=45/45' build/abi/reports/production-abi.txt
-          grep -F 'actualDumps=45/45' build/abi/reports/production-abi.txt
-          grep -F 'emptyBaselines=0' build/abi/reports/production-abi.txt
+          grep -F 'modules=46/46' build/abi/reports/production-abi.txt
+          grep -F 'baselines=46/46' build/abi/reports/production-abi.txt
+          grep -F 'actualDumps=46/46' build/abi/reports/production-abi.txt
+          grep -F 'emptyBaselines=1' build/abi/reports/production-abi.txt
+          grep -F 'emptyActualDumps=1' build/abi/reports/production-abi.txt
+          grep -F 'dependencyOnlyModules=1' build/abi/reports/production-abi.txt
 
       - name: Upload production ABI evidence
         if: always()
@@ -809,9 +812,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # exposed-r2dbc + exposed-r2dbc-tests (H2)
+  # exposed-r2dbc, exposed-r2dbc-tests + exposed-r2dbc-dao (H2)
   test-r2dbc-h2:
-    name: Test / exposed-r2dbc + exposed-r2dbc-tests (H2)
+    name: Test / exposed-r2dbc, exposed-r2dbc-tests + exposed-r2dbc-dao (H2)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [build, changes]
@@ -829,7 +832,7 @@ jobs:
       - name: Test exposed-r2dbc (H2)
         run: |
           for attempt in 1 2 3 4 5; do
-            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test --no-configuration-cache --no-daemon && break
+            ./gradlew :bluetape4k-exposed-r2dbc:test :bluetape4k-exposed-r2dbc-tests:test :bluetape4k-exposed-r2dbc-dao:test --no-configuration-cache --no-daemon && break
             echo "Attempt $attempt failed"
             [ $attempt -lt 5 ] && sleep 30 || exit 1
           done
@@ -852,6 +855,14 @@ jobs:
         with:
           name: test-results-r2dbc-h2
           path: '**/build/test-results/test/*.xml'
+          retention-days: 7
+      - name: Upload R2DBC DAO test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-r2dbc-dao
+          path: exposed/r2dbc-dao/build/test-results/test/*.xml
+          if-no-files-found: error
           retention-days: 7
       - name: Upload coverage report
         if: always()

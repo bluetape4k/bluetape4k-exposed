@@ -1,8 +1,11 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
+require "digest"
 require "json"
 require "open3"
+require "rexml/document"
+require "rexml/xpath"
 require "tmpdir"
 
 require_relative "publication_inventory_policy"
@@ -10,10 +13,39 @@ require_relative "publication_inventory_policy"
 ROOT = File.expand_path("../..", __dir__)
 INVENTORY_PATH = File.join(ROOT, "build/publication/publication-inventory.json")
 GRADLE = ENV.fetch("GRADLE_COMMAND", File.join(ROOT, "gradlew"))
+R2DBC_DAO_FIXTURE_PATH = File.join(__dir__, "fixtures/r2dbc-dao-kotlin")
+EXPECTED_EXPOSED_DAO_COORDINATE = "org.jetbrains.exposed:exposed-dao-r2dbc:1.6.1"
 
 def abort_with(message)
   warn(message)
   exit 1
+end
+
+def managed_catalog_value(root, alias_name)
+  settings = File.read(File.join(root, "settings.gradle.kts"))
+  catalog_ref = ENV["BLUETAPE4K_DEPENDENCIES_CATALOG_REF"] ||
+    settings.match(/\.orElse\("([0-9a-f]{40,64})"\)/)&.[](1)
+  abort_with("cannot identify the pinned bluetape4k-dependencies catalog ref") unless catalog_ref
+
+  catalog_directory = File.join(root, ".gradle/bluetape4k-dependencies", catalog_ref)
+  catalog_path = File.join(catalog_directory, "libs.versions.toml")
+  checksum_path = "#{catalog_path}.sha256"
+  abort_with("pinned dependency catalog is missing: #{catalog_path}") unless File.file?(catalog_path)
+  abort_with("pinned dependency catalog checksum is missing: #{checksum_path}") unless File.file?(checksum_path)
+
+  expected_checksum = File.read(checksum_path).split.first
+  actual_checksum = Digest::SHA256.file(catalog_path).hexdigest
+  abort_with("pinned dependency catalog checksum mismatch: #{catalog_path}") unless actual_checksum == expected_checksum
+
+  catalog_text = File.read(catalog_path)
+  version = catalog_text.match(/^#{Regexp.escape(alias_name)}\s*=\s*"([^"]+)"/)&.[](1)
+  abort_with("version alias #{alias_name} is missing from #{catalog_path}") unless version
+
+  version
+end
+
+def resolved_coordinates(output, configuration_name)
+  output.scan(/^R2DBC_DAO_COORDINATE:#{Regexp.escape(configuration_name)}:([^\s]+)$/).flatten.uniq.sort
 end
 
 abort_with("publication inventory is missing: #{INVENTORY_PATH}") unless File.file?(INVENTORY_PATH)
@@ -85,6 +117,15 @@ abort_with("publication inventory has no library publications") if library_publi
 if (platform_error = Publication::InventoryPolicy.platform_publication_error(bom_publications.length))
   abort_with(platform_error)
 end
+
+r2dbc_dao_publication = library_publications.find do |publication|
+  publication[:module_name] == "bluetape4k-exposed-r2dbc-dao"
+end
+abort_with("R2DBC DAO publication is missing from the inventory") unless r2dbc_dao_publication
+staged_bom_publication = bom_publications.find do |publication|
+  publication[:module_name] == "bluetape4k-exposed-bom"
+end
+abort_with("staged Exposed BOM publication is missing from the inventory") unless staged_bom_publication
 
 fixture_targets = publications.flat_map do |publication|
   publication[:metadata].fetch("variants").map do |variant|
@@ -238,7 +279,7 @@ Dir.mktmpdir("bluetape4k-exposed-downstream-consumer") do |root|
     runtime_tasks << ":#{name}:resolvePublishedRuntime"
   end
 
-  bom = bom_publications.first
+  bom = staged_bom_publication
   library_publications.each_with_index do |publication, index|
     name = format("bom_target_%03d", index + 1)
     project_names << ":#{name}"
@@ -284,6 +325,9 @@ Dir.mktmpdir("bluetape4k-exposed-downstream-consumer") do |root|
           repositories {
               maven {
                   url = uri("#{repository_uri}")
+                  content {
+                      includeGroupAndSubgroups("io.github.bluetape4k")
+                  }
                   metadataSources {
                       gradleMetadata()
                   }
@@ -293,12 +337,12 @@ Dir.mktmpdir("bluetape4k-exposed-downstream-consumer") do |root|
                   url = uri("https://central.sonatype.com/repository/maven-snapshots/")
                   content {
                       includeGroupAndSubgroups("io.github.bluetape4k")
-                      excludeGroup("io.github.bluetape4k.exposed")
+                      excludeGroupAndSubgroups("io.github.bluetape4k.exposed")
                   }
               }
               mavenCentral {
                   content {
-                      excludeGroup("io.github.bluetape4k.exposed")
+                      excludeGroupAndSubgroups("io.github.bluetape4k.exposed")
                   }
               }
           }
@@ -329,6 +373,176 @@ Dir.mktmpdir("bluetape4k-exposed-downstream-consumer") do |root|
       "synthetic downstream consumer failed:\n" + (diagnostics.empty? ? (stdout + stderr).lines.last(100).join : diagnostics.join),
     )
   end
+
+  r2dbc_dao_directory = local_repository_path(
+    local_repo,
+    r2dbc_dao_publication[:group],
+    r2dbc_dao_publication[:module_name],
+    r2dbc_dao_publication[:version],
+  )
+  r2dbc_dao_prefix = "#{r2dbc_dao_publication[:module_name]}-#{r2dbc_dao_publication[:version]}"
+  staged_r2dbc_dao_pom = File.join(r2dbc_dao_directory, "#{r2dbc_dao_prefix}.pom")
+  staged_r2dbc_dao_jar = File.join(r2dbc_dao_directory, "#{r2dbc_dao_prefix}.jar")
+  pom_digest = Digest::SHA256.file(staged_r2dbc_dao_pom).hexdigest
+  jar_digest = Digest::SHA256.file(staged_r2dbc_dao_jar).hexdigest
+
+  pom_namespace = { "pom" => "http://maven.apache.org/POM/4.0.0" }
+  pom_document = REXML::Document.new(File.read(staged_r2dbc_dao_pom))
+  pom_dependencies = REXML::XPath.match(
+    pom_document,
+    "/pom:project/pom:dependencies/pom:dependency",
+    pom_namespace,
+  ).map do |dependency|
+    group = REXML::XPath.first(dependency, "pom:groupId", pom_namespace)&.text
+    module_name = REXML::XPath.first(dependency, "pom:artifactId", pom_namespace)&.text
+    version = REXML::XPath.first(dependency, "pom:version", pom_namespace)&.text
+    scope = REXML::XPath.first(dependency, "pom:scope", pom_namespace)&.text || "compile"
+    [group, module_name, version, scope]
+  end
+
+  required_pom_dependencies = [
+    ["org.jetbrains.exposed", "exposed-dao-r2dbc", "1.6.1", "compile"],
+    ["io.github.bluetape4k.exposed", "bluetape4k-exposed-core", r2dbc_dao_publication[:version], "compile"],
+  ]
+  missing_pom_dependencies = required_pom_dependencies - pom_dependencies
+  abort_with("R2DBC DAO POM is missing expected API dependencies: #{missing_pom_dependencies.inspect}") unless missing_pom_dependencies.empty?
+  forbidden_pom_dependencies = pom_dependencies.select do |group, module_name, _version, _scope|
+    (group == "org.jetbrains.exposed" && module_name == "exposed-dao") ||
+      (group == "io.github.bluetape4k.exposed" && module_name.match?(/(?:jdbc|bluetape4k-exposed-r2dbc\z|bluetape4k-exposed-dao)/))
+  end
+  abort_with("R2DBC DAO POM contains a JDBC or legacy DAO dependency: #{forbidden_pom_dependencies.inspect}") unless forbidden_pom_dependencies.empty?
+
+  jar_listing, jar_error, jar_status = Open3.capture3("jar", "tf", staged_r2dbc_dao_jar)
+  abort_with("cannot inspect staged R2DBC DAO JAR: #{jar_error}") unless jar_status.success?
+  jar_classes = jar_listing.lines.map(&:strip).grep(/\.class\z/)
+  abort_with("dependency-only R2DBC DAO JAR contains classes: #{jar_classes.inspect}") unless jar_classes.empty?
+
+  dependency_catalog_version = managed_catalog_value(ROOT, "kotlin")
+  r2dbc_h2_version = managed_catalog_value(ROOT, "r2dbc-h2")
+  r2dbc_dao_consumer = File.join(consumer, "r2dbc-dao-kotlin")
+  FileUtils.cp_r(R2DBC_DAO_FIXTURE_PATH, r2dbc_dao_consumer)
+  fixture_settings = File.join(r2dbc_dao_consumer, "settings.gradle.kts")
+  settings_text = File.read(fixture_settings).gsub("__KOTLIN_PLUGIN_VERSION__", dependency_catalog_version)
+  abort_with("Kotlin plugin version placeholder was not replaced") if settings_text.include?("__KOTLIN_PLUGIN_VERSION__")
+  File.write(fixture_settings, settings_text)
+
+  r2dbc_dao_command = [
+    GRADLE,
+    "-p", r2dbc_dao_consumer,
+    "compileKotlin",
+    "printCompileClasspathCoordinates",
+    "printRuntimeClasspathCoordinates",
+    "runR2dbcDaoConsumer",
+    "-PstagedRepository=#{File.expand_path(local_repo)}",
+    "-PstagedVersion=#{staged_bom_publication[:version]}",
+    "-Pr2dbcH2Version=#{r2dbc_h2_version}",
+    "--no-parallel",
+    "--max-workers=1",
+    "--refresh-dependencies",
+    "--no-daemon",
+    "--no-configuration-cache",
+    "--no-build-cache",
+    "--gradle-user-home", gradle_user_home,
+  ]
+  r2dbc_dao_stdout, r2dbc_dao_stderr, r2dbc_dao_status = Open3.capture3(*r2dbc_dao_command, chdir: ROOT)
+  unless r2dbc_dao_status.success?
+    diagnostics = (r2dbc_dao_stdout + r2dbc_dao_stderr).lines.grep(/(FAILURE|ERROR|FAILED|Could not|No matching variant|What went wrong)/i).last(100)
+    diagnostics = (r2dbc_dao_stdout + r2dbc_dao_stderr).lines.last(160) if diagnostics.length < 10
+    abort_with(
+      "staged R2DBC DAO Kotlin consumer failed:\n" +
+        (diagnostics.empty? ? (r2dbc_dao_stdout + r2dbc_dao_stderr).lines.last(100).join : diagnostics.join),
+    )
+  end
+
+  compile_coordinates = resolved_coordinates(r2dbc_dao_stdout + r2dbc_dao_stderr, "compileClasspath")
+  runtime_coordinates = resolved_coordinates(r2dbc_dao_stdout + r2dbc_dao_stderr, "runtimeClasspath")
+  abort_with("R2DBC DAO consumer did not report the full compileClasspath") if compile_coordinates.empty?
+  abort_with("R2DBC DAO consumer did not report the full runtimeClasspath") if runtime_coordinates.empty?
+
+  expected_exposed_modules = %w[exposed-bom exposed-core exposed-dao-r2dbc exposed-r2dbc]
+  [compile_coordinates, runtime_coordinates].each do |coordinates|
+    exposed_coordinates = coordinates.select { |coordinate| coordinate.start_with?("org.jetbrains.exposed:") }
+    exposed_modules = exposed_coordinates.map { |coordinate| coordinate.split(":", 3)[1] }.uniq.sort
+    unexpected_modules = exposed_modules - expected_exposed_modules
+    abort_with("unexpected Exposed components in the R2DBC DAO graph: #{unexpected_modules.inspect}") unless unexpected_modules.empty?
+    abort_with("Exposed DAO-R2DBC coordinate is missing from the dependency graph") unless exposed_coordinates.include?(EXPECTED_EXPOSED_DAO_COORDINATE)
+    wrong_versions = exposed_coordinates.reject { |coordinate| coordinate.end_with?(":1.6.1") }
+    abort_with("Exposed components do not all resolve to 1.6.1: #{wrong_versions.inspect}") unless wrong_versions.empty?
+
+    forbidden_coordinates = coordinates.select do |coordinate|
+      group, module_name, = coordinate.split(":", 3)
+      (group == "org.jetbrains.exposed" && module_name == "exposed-dao") ||
+        (group == "io.github.bluetape4k.exposed" && module_name.match?(/(?:jdbc|bluetape4k-exposed-r2dbc\z|bluetape4k-exposed-dao)/))
+    end
+    abort_with("JDBC or legacy DAO artifact resolved in the R2DBC DAO consumer: #{forbidden_coordinates.inspect}") unless forbidden_coordinates.empty?
+  end
+
+  negative_consumer = File.join(consumer, "r2dbc-dao-no-opt-in")
+  FileUtils.cp_r(R2DBC_DAO_FIXTURE_PATH, negative_consumer)
+  negative_settings = File.join(negative_consumer, "settings.gradle.kts")
+  negative_settings_text = File.read(negative_settings).gsub("__KOTLIN_PLUGIN_VERSION__", dependency_catalog_version)
+  abort_with("Kotlin plugin version placeholder was not replaced in negative consumer") if negative_settings_text.include?("__KOTLIN_PLUGIN_VERSION__")
+  File.write(negative_settings, negative_settings_text)
+  FileUtils.rm_rf(File.join(negative_consumer, "src/main/kotlin"))
+  negative_source = File.join(negative_consumer, "src/no-opt-in/kotlin/probe/NoOptInConsumer.kt")
+  negative_source_dir = File.join(negative_consumer, "src/main/kotlin")
+  FileUtils.mkdir_p(negative_source_dir)
+  FileUtils.cp(negative_source, File.join(negative_source_dir, "NoOptInConsumer.kt"))
+  negative_command = [
+    GRADLE,
+    "-p", negative_consumer,
+    "compileKotlin",
+    "-PstagedRepository=#{File.expand_path(local_repo)}",
+    "-PstagedVersion=#{staged_bom_publication[:version]}",
+    "-Pr2dbcH2Version=#{r2dbc_h2_version}",
+    "--no-parallel",
+    "--max-workers=1",
+    "--refresh-dependencies",
+    "--no-daemon",
+    "--no-configuration-cache",
+    "--no-build-cache",
+    "--gradle-user-home", gradle_user_home,
+  ]
+  negative_stdout, negative_stderr, negative_status = Open3.capture3(*negative_command, chdir: ROOT)
+  negative_output = negative_stdout + negative_stderr
+  abort_with("R2DBC DAO consumer compiled without ExperimentalR2dbcDaoApi opt-in") if negative_status.success?
+
+  opt_in_diagnostics = negative_output.lines.grep(/ExperimentalR2dbcDaoApi/)
+  abort_with("R2DBC DAO negative consumer failed without the expected ExperimentalR2dbcDaoApi diagnostic:\n#{negative_output.lines.last(80).join}") if opt_in_diagnostics.empty?
+  compiler_errors = negative_output.lines.grep(/^e: /)
+  unexpected_compiler_errors = compiler_errors.reject { |line| line.include?("ExperimentalR2dbcDaoApi") }
+  abort_with("R2DBC DAO negative consumer has unrelated compiler errors: #{unexpected_compiler_errors.join}") unless unexpected_compiler_errors.empty?
+
+  verification_metadata = File.join(ROOT, "gradle/verification-metadata.xml")
+  verification_status = if File.file?(verification_metadata)
+                          "present"
+                        else
+                          "N/A (gradle/verification-metadata.xml is absent)"
+                        end
+  validation_report = {
+    "publication" => r2dbc_dao_publication[:coordinate],
+    "bom" => staged_bom_publication[:coordinate],
+    "catalogVersions" => { "kotlin" => dependency_catalog_version, "r2dbc-h2" => r2dbc_h2_version },
+    "metadataSources" => ["Gradle module metadata (required, no POM fallback)"],
+    "pomSha256" => pom_digest,
+    "jarSha256" => jar_digest,
+    "jarClassEntries" => jar_classes,
+    "pomDependencies" => pom_dependencies.map { |dependency| dependency.join(":") }.sort,
+    "compileClasspath" => compile_coordinates,
+    "runtimeClasspath" => runtime_coordinates,
+    "positiveConsumer" => "compiled and ran with ExperimentalR2dbcDaoApi opt-in",
+    "negativeConsumer" => "failed only with ExperimentalR2dbcDaoApi diagnostics",
+    "dependencyVerificationMetadata" => verification_status,
+  }
+  validation_report_path = File.join(ROOT, "build/publication/r2dbc-dao-consumer-validation.json")
+  FileUtils.mkdir_p(File.dirname(validation_report_path))
+  File.write(validation_report_path, JSON.pretty_generate(validation_report) + "\n")
+
+  puts("r2dbc-dao-consumer: positive=PASS negative=EXPECTED_FAILURE diagnostic=ExperimentalR2dbcDaoApi")
+  puts("r2dbc-dao-consumer: exposed-dao-r2dbc:1.6.1 compile=#{compile_coordinates.length} runtime=#{runtime_coordinates.length}")
+  puts("r2dbc-dao-consumer: POM SHA-256=#{pom_digest} JAR SHA-256=#{jar_digest} classes=#{jar_classes.length}")
+  puts("r2dbc-dao-consumer: dependency-verification metadata: #{verification_status}")
+  puts("r2dbc-dao-consumer: report=#{validation_report_path}")
 
   puts(
     "published-consumer: publications=#{publications.length} libraries=#{library_publications.length} " \

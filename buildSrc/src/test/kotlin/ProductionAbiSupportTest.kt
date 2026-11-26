@@ -55,6 +55,71 @@ class ProductionAbiSupportTest {
         expectFailure<IllegalStateException> { result.requireValid() }
     }
 
+    @Test
+    fun `dependency only module accepts present empty baseline and actual dump`() {
+        val result = validateProductionAbiInventory(
+            expectedProjects = setOf("alpha", "bluetape4k-exposed-r2dbc-dao"),
+            baselineProjects = setOf("alpha", "bluetape4k-exposed-r2dbc-dao"),
+            actualProjects = setOf("alpha", "bluetape4k-exposed-r2dbc-dao"),
+            emptyBaselineProjects = setOf("bluetape4k-exposed-r2dbc-dao"),
+            emptyActualDumpProjects = setOf("bluetape4k-exposed-r2dbc-dao"),
+            dependencyOnlyModules = setOf("bluetape4k-exposed-r2dbc-dao"),
+        )
+
+        result.requireValid()
+        check(result.emptyBaselineProjects == setOf("bluetape4k-exposed-r2dbc-dao"))
+        check(result.emptyActualDumpProjects == setOf("bluetape4k-exposed-r2dbc-dao"))
+    }
+
+    @Test
+    fun `dependency only module cannot have a non empty baseline or actual dump`() {
+        val dependencyOnlyModules = setOf("bluetape4k-exposed-r2dbc-dao")
+
+        val nonEmptyBaseline = validateProductionAbiInventory(
+            expectedProjects = dependencyOnlyModules,
+            baselineProjects = dependencyOnlyModules,
+            actualProjects = dependencyOnlyModules,
+            emptyActualDumpProjects = dependencyOnlyModules,
+            dependencyOnlyModules = dependencyOnlyModules,
+        )
+        expectFailure<IllegalStateException> { nonEmptyBaseline.requireValid() }
+
+        val nonEmptyActualDump = validateProductionAbiInventory(
+            expectedProjects = dependencyOnlyModules,
+            baselineProjects = dependencyOnlyModules,
+            actualProjects = dependencyOnlyModules,
+            emptyBaselineProjects = dependencyOnlyModules,
+            dependencyOnlyModules = dependencyOnlyModules,
+        )
+        expectFailure<IllegalStateException> { nonEmptyActualDump.requireValid() }
+    }
+
+    @Test
+    fun `empty baseline and actual dump outside dependency only allowlist fail`() {
+        val result = validateProductionAbiInventory(
+            expectedProjects = setOf("alpha"),
+            baselineProjects = setOf("alpha"),
+            actualProjects = setOf("alpha"),
+            emptyBaselineProjects = setOf("alpha"),
+            emptyActualDumpProjects = setOf("alpha"),
+            dependencyOnlyModules = emptySet(),
+        )
+
+        expectFailure<IllegalStateException> { result.requireValid() }
+    }
+
+    @Test
+    fun `dependency only allowlist must be part of the publication inventory`() {
+        expectFailure<IllegalArgumentException> {
+            validateProductionAbiInventory(
+                expectedProjects = setOf("alpha"),
+                baselineProjects = setOf("alpha"),
+                actualProjects = setOf("alpha"),
+                dependencyOnlyModules = setOf("orphan"),
+            )
+        }
+    }
+
     private inline fun <reified T : Throwable> expectFailure(block: () -> Unit) {
         try {
             block()

@@ -28,6 +28,10 @@
 
 ### 추가
 
+- JetBrains Exposed 1.6.1의 실험 R2DBC DAO를 위한 dependency-only 모듈
+  `bluetape4k-exposed-r2dbc-dao`를 추가한다. JDBC DAO와 분리된 소비자 경로에서
+  `newSuspend`, 관계 `Flow`, `attach()` 계약과 experimental opt-in을 검증한다
+  ([#942](https://github.com/bluetape4k/bluetape4k-exposed/issues/942)).
 - Exposed 1.5.0 upstream 해시 컬럼의 JDBC/R2DBC 저장·재저장·알고리즘 전환 검증과
   양언어 사용 예제를 추가했다. 새 암호 adapter나 Tink 의존성은 추가하지 않는다 (#804).
 - tenant별 `DataSource`와 Exposed `Database`의 생성·exact lookup·역순 종료를
@@ -157,7 +161,7 @@
 - Spring, Spring Modulith, Exposed DAO 구현에 종속되지 않는 `AggregateRoot` 및
   `DomainEvent` 계약을 추가했습니다
   ([#320](https://github.com/bluetape4k/bluetape4k-exposed/issues/320)).
-- 트랜잭션 결과 이후의 불변 snapshot을 저장하는 DAO near-cache를 추가했습니다
+- 트랜잭션 결과 이후의 불변 상태 복사본을 저장하는 DAO near-cache를 추가했습니다
   ([#321](https://github.com/bluetape4k/bluetape4k-exposed/issues/321)).
 - 트랜잭션 인식 JDBC aggregate event 전달과 Spring Modulith DDD 예제를 추가했습니다
   ([#323](https://github.com/bluetape4k/bluetape4k-exposed/issues/323),
@@ -289,7 +293,7 @@
 - `exposed-trino`에서 이제 생성 키 조회를 기본적으로 비활성화하고 커넥터에 종속된 배치 쓰기를 제한된 범위로 수행하는 `trinoBatchInsert`를 제공합니다.
 - `exposed-trino`에서 이제 JDBC `ResultSet` 수명을 Exposed 트랜잭션 외부로 노출하지 않고 대규모 결과 집합을 페이지 단위로 수집하는 `pagedQueryFlow`를 제공합니다.
 - Root README hero image와 purpose, feature 및 Mermaid architecture documentation을 갱신했습니다 ([PR #64](https://github.com/bluetape4k/bluetape4k-exposed/pull/64)).
-- 현재 WIP 대기열에서 초기 독립 릴리스 이후 생성된 Trino Phase 2 및 CockroachDB 에픽을 추적합니다.
+- 현재 WIP 작업 대기 목록에서 초기 독립 릴리스 이후 생성된 Trino Phase 2 및 CockroachDB 에픽을 추적합니다.
 - Exposed consumer를 위한 `exposed-bom` BOM module을 추가했습니다 ([PR #15](https://github.com/bluetape4k/bluetape4k-exposed/pull/15)).
 - Exposed BOM module을 위한 English 및 Korean README file을 추가했습니다 ([PR #16](https://github.com/bluetape4k/bluetape4k-exposed/pull/16)).
 - `exposed-r2dbc-lettuce` documentation을 위한 Mermaid architecture 및 sequence diagram을 추가했습니다 ([PR #2](https://github.com/bluetape4k/bluetape4k-exposed/pull/2)).
